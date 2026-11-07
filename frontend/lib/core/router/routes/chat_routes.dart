@@ -1,21 +1,40 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/router/route_helpers.dart';
 import 'package:freebay/features/chat/presentation/pages/new_chat_page.dart';
 import 'package:freebay/features/chat/presentation/pages/archived_chats_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_conversation_page.dart';
 import 'package:freebay/features/chat/presentation/pages/conversation_details_page.dart';
+import 'package:freebay/features/chat/presentation/pages/chat_location_page.dart';
 import 'package:freebay/features/media_editor/media_editor.dart';
-import 'dart:typed_data';
 
 final List<RouteBase> chatRoutes = [
   appCupertinoRoute(AppRoutes.imageEditor, (context, state) {
-    final extra = state.extra as Map<String, dynamic>;
+    final request = ImageEditorRouteRequest.resolve(state);
+    if (request == null || !request.isValid) {
+      debugPrint('image-editor-route diagnostic: request=$request uri=${state.uri} extra=${state.extra.runtimeType}');
+      return AppErrorWidget(
+        details: FlutterErrorDetails(
+          exception: StateError('Image editor request unavailable'),
+        ),
+        action: AppErrorAction.back,
+        onRecover: () async {
+          if (!context.mounted) return;
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go(AppRoutes.feed);
+          }
+        },
+      );
+    }
     return ImageEditorPage(
-      initialImageBytes: extra['imageBytes'] as Uint8List,
-      purpose: extra['purpose'] as ImageEditorPurpose,
-      onComplete:
-          extra['onComplete'] as Future<bool> Function(ImageEditorResult),
+      initialImageBytes: request.imageBytes,
+      purpose: request.purpose,
+      initialViewOnce: request.initialViewOnce,
+      onComplete: request.onComplete,
     );
   }),
   appCupertinoRoute(
@@ -29,6 +48,16 @@ final List<RouteBase> chatRoutes = [
     AppRoutes.chatArchived,
     (context, state) => const ArchivedChatsPage(),
   ),
+  appCupertinoRoute(AppRoutes.chatLocationView, (context, state) {
+    final details = state.extra;
+    return details is ChatLocationDetails
+        ? ChatLocationPage(details: details)
+        : AppErrorWidget(
+            details: FlutterErrorDetails(
+              exception: StateError('Shared location unavailable'),
+            ),
+          );
+  }),
   appCupertinoRoute(
     AppRoutes.chatConversation,
     (context, state) =>

@@ -53,6 +53,7 @@ class _BrutalistBackgroundState extends State<BrutalistBackground>
   ValueListenable<TickerModeData>? _tickerModeNotifier;
   bool _appIsResumed = true;
   bool _dependenciesReady = false;
+  Future<void>? _programLoading;
 
   bool get _usesShader =>
       widget.mode == BrutalistBackgroundMode.animated ||
@@ -78,22 +79,18 @@ class _BrutalistBackgroundState extends State<BrutalistBackground>
     if (oldWidget.mode == widget.mode) return;
 
     if (_usesShader) {
-      _seconds ??= ValueNotifier(0);
+      _seconds ??= ValueNotifier(
+        widget.mode == BrutalistBackgroundMode.staticAurora
+            ? kFrozenAuroraSeconds
+            : 0,
+      );
       if (widget.mode == BrutalistBackgroundMode.staticAurora) {
         _seconds!.value = kFrozenAuroraSeconds;
       }
       WidgetsBinding.instance.addObserver(this);
       _loadProgram();
     } else {
-      WidgetsBinding.instance.removeObserver(this);
-      _tickerModeNotifier?.removeListener(_updateTickerMute);
-      _tickerModeNotifier = null;
-      _ticker?.dispose();
-      _ticker = null;
-      _shader?.dispose();
-      _shader = null;
-      _seconds?.dispose();
-      _seconds = null;
+      _updateTickerMute();
       setState(() {});
     }
   }
@@ -115,7 +112,17 @@ class _BrutalistBackgroundState extends State<BrutalistBackground>
     }
   }
 
-  Future<void> _loadProgram() async {
+  Future<void> _loadProgram() {
+    final loading = _programLoading;
+    if (loading != null) return loading;
+    final next = _loadProgramOnce();
+    _programLoading = next;
+    return next.whenComplete(() {
+      if (identical(_programLoading, next)) _programLoading = null;
+    });
+  }
+
+  Future<void> _loadProgramOnce() async {
     if (_programFailed) return;
     try {
       await (_resourcesLoading ??= _loadResources());
@@ -125,33 +132,38 @@ class _BrutalistBackgroundState extends State<BrutalistBackground>
       return;
     }
     if (!mounted || !_usesShader) return;
-    _ticker?.dispose();
-    _ticker = null;
     _shader?.dispose();
     // Warp coordinates must interpolate between texels, not jump in blocks.
     _shader = _program!.fragmentShader()
       ..setImageSampler(0, _noiseTexture!, filterQuality: ui.FilterQuality.low);
-    if (widget.mode == BrutalistBackgroundMode.animated) {
+    if (widget.mode == BrutalistBackgroundMode.animated && _ticker == null) {
       _seconds!.value = 0;
       _ticker = createTicker((elapsed) {
         _seconds?.value =
             elapsed.inMicroseconds / Duration.microsecondsPerSecond;
       })..start();
       _updateTickerMute();
-    } else {
+    } else if (widget.mode == BrutalistBackgroundMode.staticAurora) {
       _seconds!.value = kFrozenAuroraSeconds;
     }
+    _updateTickerMute();
     setState(() {});
   }
 
   void _updateTickerMute() {
+    if (!mounted) return;
     if (!_dependenciesReady) {
-      _ticker?.muted = !_appIsResumed;
+      _ticker?.muted =
+          !_appIsResumed || widget.mode != BrutalistBackgroundMode.animated;
       return;
     }
     final routeIsCurrent = ModalRoute.of(context)?.isCurrent ?? true;
     final tickerModeEnabled = _tickerModeNotifier?.value.enabled ?? true;
-    _ticker?.muted = !_appIsResumed || !routeIsCurrent || !tickerModeEnabled;
+    _ticker?.muted =
+        !_appIsResumed ||
+        widget.mode != BrutalistBackgroundMode.animated ||
+        !routeIsCurrent ||
+        !tickerModeEnabled;
   }
 
   @override
@@ -182,7 +194,7 @@ class _BrutalistBackgroundState extends State<BrutalistBackground>
 
   @override
   void dispose() {
-    if (_usesShader) {
+    if (_seconds != null) {
       WidgetsBinding.instance.removeObserver(this);
     }
     _tickerModeNotifier?.removeListener(_updateTickerMute);

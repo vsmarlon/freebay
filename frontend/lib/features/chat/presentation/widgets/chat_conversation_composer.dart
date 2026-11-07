@@ -43,7 +43,7 @@ class ChatConversationComposer extends StatelessWidget {
   final VoidCallback onCancelRecording;
   final VoidCallback onSend;
   final VoidCallback onRecordAudio;
-  final VoidCallback onAttachment;
+  final void Function({bool camera}) onAttachment;
   final ValueChanged<bool> onViewOnceToggled;
 
   @override
@@ -61,7 +61,12 @@ class ChatConversationComposer extends StatelessWidget {
             onCancel: onCancelReply,
           ),
         if (isRecording)
-          AudioRecorderBar(onSend: onSendAudio, onCancel: onCancelRecording)
+          AudioRecorderBar(
+            onSend: onSendAudio,
+            onCancel: onCancelRecording,
+            viewOnceEnabled: viewOnceEnabled,
+            onViewOnceToggled: onViewOnceToggled,
+          )
         else
           ChatInputBar(
             controller: messageController,

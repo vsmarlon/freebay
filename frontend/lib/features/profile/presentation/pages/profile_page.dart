@@ -76,7 +76,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       return const GuestProfileView();
     }
 
-    final userId = authState.value!.id;
     final profileAsync = ref.watch(profileFirstPaintProvider('me'));
     final statsAsync = ref.watch(profileStatsProvider);
 
@@ -124,18 +123,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
               data: (firstPaint) {
                 final u = firstPaint.user;
                 return AppRefreshIndicator(
-                  onRefresh: () async {
-                    for (final kind in ['posts', 'reposts', 'products']) {
-                      ref.invalidate(
-                        profileTimelineProvider(
-                          userId,
-                          kind: kind,
-                          viewerId: userId,
-                        ),
-                      );
-                    }
-                    await _refreshProfile();
-                  },
+                  notificationPredicate: (notification) =>
+                      notification.depth == 0 &&
+                      notification.metrics.axis == Axis.vertical,
+                  onRefresh: _refreshProfile,
                   child: ProfileTabs(
                     user: u,
                     headerSlivers: [
@@ -251,6 +242,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   }
 
   Future<void> _refreshProfile() async {
+    final userId = ref.read(authControllerProvider).asData?.value?.id;
     final provider = profileFirstPaintProvider('me');
     final refreshed = Completer<void>();
     final subscription = ref.listenManual<AsyncValue<ProfileFirstPaint>>(
@@ -264,8 +256,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       },
     );
     ref.invalidate(provider);
+    ref.invalidate(profileStatsProvider);
     try {
-      await refreshed.future;
+      await Future.wait([
+        refreshed.future,
+        ref
+            .read(profileStatsProvider.future)
+            .then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+        if (userId != null)
+          for (final kind in ['posts', 'reposts', 'products'])
+            ref
+                .read(
+                  profileTimelineProvider(
+                    userId,
+                    kind: kind,
+                    viewerId: userId,
+                  ).notifier,
+                )
+                .refresh(),
+      ]);
     } finally {
       subscription.close();
     }

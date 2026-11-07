@@ -9,6 +9,34 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get chatPin => 'Pin message';
+
+  @override
+  String get chatUnpin => 'Unpin message';
+
+  @override
+  String get chatReact => 'React';
+
+  @override
+  String get chatMore => 'More options';
+
+  @override
+  String get chatMediaInfo => 'Media information';
+
+  @override
+  String get chatPreviousMedia => 'Previous media';
+
+  @override
+  String get chatNextMedia => 'Next media';
+
+  @override
+  String get chatNoMedia => 'No media';
+
+  @override
+  String get chatMediaHint =>
+      'Images and videos sent here appear in this list.';
+
+  @override
   String get onboardingSkip => 'Skip';
 
   @override
@@ -156,6 +184,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authEmail => 'Email';
 
   @override
+  String get authLoginIdentifier => 'Email or @username';
+
+  @override
+  String get authLoginRequired => 'Enter your email or @username';
+
+  @override
+  String get authUsernameInvalid => 'Use 3-20 lowercase letters, numbers or _';
+
+  @override
   String get authPassword => 'Password';
 
   @override
@@ -169,7 +206,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authSessionExpiredBody =>
-      'For your security, sign in again to continue.';
+      'You were signed out after 12 minutes without activity. Sign in again to continue.';
 
   @override
   String get authUseBiometrics => 'Use biometrics';
@@ -259,6 +296,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatTitle => 'Messages';
 
   @override
+  String get chatMediaUnavailable =>
+      'Media unavailable — it may have been deleted';
+
+  @override
+  String get chatMediaUnavailableSender =>
+      'Attachment is unavailable on the server';
+
+  @override
+  String get chatViewOnceOpen => 'Open once';
+
+  @override
+  String get chatViewOnceBurned => 'Viewed — deleted';
+
+  @override
+  String get chatViewOnceBurnedTimestamp => 'Deleted';
+
+  @override
+  String get chatViewOnceSentTimestamp => 'Sent';
+
+  @override
+  String get chatViewOnceSent => 'View-once message sent';
+
+  @override
+  String get chatViewOnceToggle => 'View once';
+
+  @override
+  String get chatViewOnceEnabled => 'View once enabled';
+
+  @override
+  String get chatViewOnceDisabled => 'View once disabled';
+
+  @override
+  String get chatViewOnceExpiresOnClose => 'DISAPPEARS WHEN CLOSED';
+
+  @override
   String get chatArchivedTitle => 'Archived conversations';
 
   @override
@@ -305,7 +377,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatChooseProduct => 'CHOOSE PRODUCT';
 
   @override
-  String get chatMessageHint => 'Write a message…';
+  String get chatMessageHint => 'Message…';
 
   @override
   String get chatEmptyTitle => 'No messages yet';
@@ -323,6 +395,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatSendFailed => 'Message could not be sent.';
+
+  @override
+  String get chatSendDeliveryUncertain => 'Delivery unconfirmed. Tap to retry.';
+
+  @override
+  String get chatSendingSlow => 'Trying to send…';
+
+  @override
+  String get chatSendCancelled => 'Send cancelled';
 
   @override
   String get chatAttachment => 'Attachment';
@@ -686,6 +767,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authSendCode => 'Send code';
 
   @override
+  String get authRecoveryHint =>
+      'Enter your email to receive the verification code.';
+
+  @override
+  String get authRecoveryCodeHint =>
+      'Enter the 6-digit code sent to your email.';
+
+  @override
   String get authConfirmPassword => 'Confirm password';
 
   @override
@@ -744,25 +833,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authRecoveryCodeRequired => 'Enter the verification code';
 
   @override
-  String get authBiometryNotEnabled => 'Biometrics are not enabled.';
+  String get authBiometryNotEnabled =>
+      'Fingerprint or Face ID sign-in is not enabled. A device PIN or passcode cannot be used.';
 
   @override
   String get authBiometryUnavailable =>
-      'Biometrics are unavailable on this device.';
+      'Fingerprint or Face ID is unavailable on this device. A device PIN or passcode cannot be used.';
 
   @override
   String get authBiometryCredentialsMissing =>
-      'Biometric credentials were not found.';
+      'Fingerprint or Face ID sign-in credentials were not found. A device PIN or passcode cannot be used.';
 
   @override
   String get authBiometryAccountMismatch =>
-      'Biometrics belong to another account.';
+      'Fingerprint or Face ID sign-in belongs to another account. A device PIN or passcode cannot be used.';
 
   @override
-  String get authBiometryCancelled => 'Biometric authentication was cancelled.';
+  String get authBiometryCancelled =>
+      'Fingerprint or Face ID authentication was cancelled. A device PIN or passcode cannot be used.';
 
   @override
-  String get authBiometryTokenMissing => 'Biometric token was not found.';
+  String get authBiometryTokenMissing =>
+      'The fingerprint or Face ID sign-in token was not found. A device PIN or passcode cannot be used.';
 
   @override
   String get authLoginFailed => 'Unable to sign in. Please try again.';
@@ -789,7 +881,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authPermissionNotifications => 'Enable notifications';
 
   @override
-  String get authOnboardingBiometry => 'SIGN IN WITH BIOMETRICS';
+  String get authOnboardingBiometry => 'SIGN IN WITH FINGERPRINT OR FACE ID';
 
   @override
   String get authOnboardingNotifications => 'STAY IN THE LOOP';
@@ -852,7 +944,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingWalletBody =>
-      'Receive sales proceeds transparently, withdraw when eligible, and build a reputation with verified reviews.';
+      'Track available and pending balances, configure Stripe receiving details, and build a reputation with verified reviews.';
 
   @override
   String get onboardingHighlightPayout => 'PIX / STRIPE PAYOUTS';
@@ -864,7 +956,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingHighlightStatement => 'LIVE STATEMENT';
 
   @override
-  String get onboardingConfirmBiometry => 'Confirm to enable biometric sign-in';
+  String get onboardingConfirmBiometry =>
+      'Confirm with fingerprint or Face ID to enable sign-in. PIN/passcode is not accepted.';
 
   @override
   String get onboardingBiometryEnableFailed => 'Unable to enable biometrics.';
@@ -877,7 +970,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingBiometryBody =>
-      'Use your fingerprint or Face ID to sign in quickly without entering your password.';
+      'Use your fingerprint or Face ID to sign in quickly. Device PINs and passcodes are not accepted.';
 
   @override
   String get onboardingBiometryUnavailableBody =>
@@ -1999,6 +2092,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatThemeOcean => 'Ocean blue';
 
   @override
+  String get chatThemeCrimson => 'Crimson red';
+
+  @override
+  String get chatThemeCobalt => 'Cobalt blue';
+
+  @override
+  String get chatThemeForest => 'Forest green';
+
+  @override
+  String get chatThemeAmber => 'Amber';
+
+  @override
+  String get chatThemeSlate => 'Slate grey';
+
+  @override
   String get chatBlockUser => 'Block user';
 
   @override
@@ -2059,6 +2167,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatOfferAccept => 'ACCEPT';
+
+  @override
+  String chatOfferPreview(String amount) {
+    return 'Purchase offer — $amount';
+  }
 
   @override
   String get chatSendText => 'SEND MESSAGE';
@@ -2153,6 +2266,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatReport => 'Report';
 
   @override
+  String get chatMessageDeleted => 'Message deleted';
+
+  @override
+  String get chatForwardedLabel => 'Forwarded';
+
+  @override
+  String get chatAlreadyViewed => 'Message already viewed';
+
+  @override
+  String get chatMute => 'Mute';
+
+  @override
+  String get chatUnmute => 'Unmute';
+
+  @override
   String get chatViewOnce => 'View once';
 
   @override
@@ -2213,7 +2341,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatEditorTextDefault => 'NEW TEXT';
 
   @override
-  String get chatEditorProcessingError => 'Unable to process the image';
+  String get chatEditorProcessingError => 'Unable to process this media';
 
   @override
   String get chatEditorFilterNormal => 'Normal';
@@ -2247,6 +2375,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatImageEditorLabel => 'Edit image';
+
+  @override
+  String get mediaEditorPhoto => 'Photo';
+
+  @override
+  String get mediaEditorVideo => 'Video';
+
+  @override
+  String get mediaEditorSaveToDevice => 'Save to device';
+
+  @override
+  String get mediaEditorSavedToDevice => 'Saved to device';
+
+  @override
+  String get mediaEditorSaveFailed => 'Couldn\'t save media. Try again.';
+
+  @override
+  String get mediaEditorPermissionDenied =>
+      'Allow media access to save this file.';
+
+  @override
+  String get mediaEditorKeepEditing => 'Keep editing';
+
+  @override
+  String get mediaEditorApply => 'Apply';
+
+  @override
+  String get mediaEditorReset => 'Reset';
+
+  @override
+  String get mediaEditorWarmth => 'Warmth';
+
+  @override
+  String get mediaEditorIntensity => 'Intensity';
+
+  @override
+  String get mediaEditorEditText => 'Edit text';
+
+  @override
+  String get mediaEditorDeleteText => 'Delete text';
+
+  @override
+  String get mediaEditorTextHint => 'Enter text';
+
+  @override
+  String get mediaEditorFont => 'Font';
+
+  @override
+  String get mediaEditorTextColor => 'Text color';
+
+  @override
+  String get mediaEditorTextBackground => 'Text background';
+
+  @override
+  String get mediaEditorAlignLeft => 'Align left';
+
+  @override
+  String get mediaEditorAlignCenter => 'Align center';
+
+  @override
+  String get mediaEditorAlignRight => 'Align right';
+
+  @override
+  String get mediaEditorTrim => 'Trim';
+
+  @override
+  String get mediaEditorTrimStart => 'Start';
+
+  @override
+  String get mediaEditorTrimEnd => 'End';
+
+  @override
+  String get mediaEditorDuration => 'Duration';
+
+  @override
+  String get mediaEditorOriginal => 'Original';
+
+  @override
+  String get mediaEditorPortrait => 'Portrait';
+
+  @override
+  String get mediaEditorStory => 'Story';
+
+  @override
+  String get mediaEditorRedo => 'Redo';
+
+  @override
+  String get mediaEditorProcessing => 'Processing media…';
+
+  @override
+  String get mediaEditorMute => 'Mute';
+
+  @override
+  String get mediaEditorUnmute => 'Unmute';
+
+  @override
+  String get mediaEditorDragTextHint => 'Drag text to position it';
+
+  @override
+  String get mediaEditorNoText => 'No text added';
+
+  @override
+  String get mediaEditorNoChanges => 'No changes to save';
 
   @override
   String get chatVideoLabel => 'Video';
@@ -2708,10 +2939,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get profileBiometry => 'Biometrics';
+  String get profileBiometry => 'Fingerprint or Face ID';
 
   @override
-  String get profileBiometryLogin => 'Use biometrics to sign in';
+  String get profileBiometryLogin =>
+      'Use fingerprint or Face ID to sign in (no PIN/passcode)';
 
   @override
   String get profileBiometryUpdateFailed => 'Unable to update biometrics.';
@@ -2736,7 +2968,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stepUpBiometrics => 'Confirm with biometrics';
 
   @override
-  String get profileConfirmBiometry => 'Confirm to enable biometric sign-in';
+  String get profileConfirmBiometry =>
+      'Confirm with fingerprint or Face ID to enable sign-in. PIN/passcode is not accepted.';
 
   @override
   String get profileTheme => 'Theme';
@@ -2749,6 +2982,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileThemeSystem => 'System';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsLanguageSystem => 'System';
+
+  @override
+  String get settingsLanguagePortugueseBrazil => 'Português (Brasil)';
+
+  @override
+  String get settingsLanguageEnglish => 'English';
+
+  @override
+  String get settingsSessionLockTitle => 'Inactivity lock';
+
+  @override
+  String get settingsSessionLockDescription => 'Lock the app after inactivity';
+
+  @override
+  String get settingsSessionLockOff => 'Disabled';
+
+  @override
+  String get settingsSessionLockOneMinute => '1 minute';
+
+  @override
+  String get settingsSessionLockFiveMinutes => '5 minutes';
+
+  @override
+  String get settingsSessionLockFifteenMinutes => '15 minutes';
+
+  @override
+  String get settingsSessionLockThirtyMinutes => '30 minutes';
+
+  @override
+  String get sessionLockRequiredTitle => 'Session locked';
+
+  @override
+  String get sessionLockRequiredDescription =>
+      'Confirm your identity to continue using FreeBay.';
+
+  @override
+  String get sessionLockRetry => 'Try again';
+
+  @override
+  String get sessionLockUsePassword => 'Use password';
 
   @override
   String get profileCloseFriendsDescription =>
@@ -2998,7 +3277,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get faqBiometryAnswer =>
-      'After signing in with your email and password, enable Face ID or fingerprint authentication for faster, secure future sign-ins.';
+      'After signing in with your email and password, enable fingerprint or Face ID for future sign-ins. Device PINs and passcodes are not accepted.';
 
   @override
   String get faqBuyProductQuestion => 'How do I buy a product?';
@@ -3050,18 +3329,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'A fixed 10% fee is charged when a sale is completed successfully and the buyer confirms delivery.';
 
   @override
-  String get faqPayoutQuestion => 'When do I receive sale proceeds?';
+  String get faqPayoutQuestion => 'How do I set up sales receipts?';
 
   @override
   String get faqPayoutAnswer =>
-      'Funds remain in your Wallet as held balance until the buyer confirms receipt. They then become available for withdrawal.';
+      'The Wallet shows available and pending balances. You can open Stripe setup to configure receiving details; actual payout availability and timing depend on Stripe and your account setup, and are not guaranteed by this screen.';
 
   @override
-  String get faqPixWithdrawalQuestion => 'How do I request a Pix withdrawal?';
+  String get faqPixWithdrawalQuestion =>
+      'Can I request a Pix withdrawal in FreeBay?';
 
   @override
   String get faqPixWithdrawalAnswer =>
-      'In your Wallet, select Request withdrawal, enter at least R\$ 5.00, and confirm your registered Pix key. Processing depends on provider confirmation.';
+      'FreeBay currently has no in-app Pix withdrawal request or R\$ 5 minimum withdrawal feature. The Wallet lets you view balances and open Stripe setup for receiving configuration; it does not confirm or promise a payout.';
 
   @override
   String get faqCancelOrderQuestion => 'Can I cancel an order?';
@@ -3407,4 +3687,103 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get socialQuoteUnavailable =>
       'This quoted content is no longer available.';
+
+  @override
+  String get mediaEditorFlip => 'Flip';
+
+  @override
+  String get mediaEditorNeon => 'Neon';
+
+  @override
+  String get mediaEditorBlur => 'Blur';
+
+  @override
+  String get mediaEditorSticker => 'Sticker';
+
+  @override
+  String get mediaEditorPrice => 'Price';
+
+  @override
+  String get mediaEditorSold => 'SOLD';
+
+  @override
+  String get mediaEditorFade => 'Fade';
+
+  @override
+  String get mediaEditorVignette => 'Vignette';
+
+  @override
+  String get mediaEditorUndo => 'Undo';
+
+  @override
+  String get mediaEditorFilterAdjust => 'FILTERS & ADJUST';
+
+  @override
+  String get mediaEditorRotate90 => 'Rotate 90°';
+
+  @override
+  String get mediaEditorEmojiTab => 'EMOJIS';
+
+  @override
+  String get mediaEditorMarketTab => 'MARKETPLACE TAGS';
+
+  @override
+  String get mediaEditorPriceStickerTitle => 'Price label';
+
+  @override
+  String get mediaEditorPriceExample => 'e.g. R\$ 199.90';
+
+  @override
+  String get mediaEditorPriceDialogTitle => 'PRODUCT PRICE';
+
+  @override
+  String get mediaEditorPriceHint => 'R\$ 0.00';
+
+  @override
+  String get mediaEditorSoldStickerTitle => 'SOLD badge';
+
+  @override
+  String get mediaEditorSoldSubtitle => 'Red sold badge';
+
+  @override
+  String get mediaEditorLocationTitle => 'Location';
+
+  @override
+  String get mediaEditorLocationExample => 'e.g. Downtown, Porto Alegre';
+
+  @override
+  String get mediaEditorLocationHint => 'City or neighborhood';
+
+  @override
+  String get mediaEditorLinkTitle => 'Link / Listing';
+
+  @override
+  String get mediaEditorLinkSubtitle => 'Link to the listing';
+
+  @override
+  String get mediaEditorLinkDialogTitle => 'LISTING LINK';
+
+  @override
+  String get mediaEditorLinkHint => 'freebay.com/p/...';
+
+  @override
+  String get mediaEditorFilterVivid => 'Vivid';
+
+  @override
+  String get mediaEditorFilterWarm => 'Warm';
+
+  @override
+  String get mediaEditorFilterCool => 'Cool';
+
+  @override
+  String get mediaEditorFilterVintage => 'Vintage';
+
+  @override
+  String get mediaEditorFilterBW => 'B&W';
+
+  @override
+  String get mediaEditorFilterDrama => 'Drama';
+
+  @override
+  String get mediaEditorFilterSepia => 'Sepia';
 }

@@ -129,21 +129,15 @@ class _EditorCropViewState extends State<EditorCropView> {
                 ),
                 const SizedBox(width: 8),
                 _AspectRatioButton(
-                  label: '4:3',
-                  isSelected: _aspectRatio == 4 / 3,
-                  onTap: () => _setAspectRatio(4 / 3),
+                  label: '4:5',
+                  isSelected: _aspectRatio == 4 / 5,
+                  onTap: () => _setAspectRatio(4 / 5),
                 ),
                 const SizedBox(width: 8),
                 _AspectRatioButton(
-                  label: '3:4',
-                  isSelected: _aspectRatio == 3 / 4,
-                  onTap: () => _setAspectRatio(3 / 4),
-                ),
-                const SizedBox(width: 8),
-                _AspectRatioButton(
-                  label: '16:9',
-                  isSelected: _aspectRatio == 16 / 9,
-                  onTap: () => _setAspectRatio(16 / 9),
+                  label: '9:16',
+                  isSelected: _aspectRatio == 9 / 16,
+                  onTap: () => _setAspectRatio(9 / 16),
                 ),
               ],
             ),
@@ -201,9 +195,15 @@ class EditorCanvasView extends StatelessWidget {
     required this.brightness,
     required this.contrast,
     required this.saturation,
+    required this.warmth,
     required this.filterMatrix,
     required this.rotationAngle,
     required this.textOverlays,
+    required this.selectedTextIndex,
+    required this.onTextSelect,
+    required this.onTextMove,
+    required this.onTextTransform,
+    required this.onTextEdit,
   });
 
   final Future<ui.Image>? decodedImageFuture;
@@ -221,9 +221,15 @@ class EditorCanvasView extends StatelessWidget {
   final double brightness;
   final double contrast;
   final double saturation;
+  final double warmth;
   final List<double> filterMatrix;
   final double rotationAngle;
   final List<TextOverlay> textOverlays;
+  final int? selectedTextIndex;
+  final ValueChanged<int> onTextSelect;
+  final void Function(int, Offset) onTextMove;
+  final void Function(int, double, double) onTextTransform;
+  final ValueChanged<int> onTextEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -280,23 +286,16 @@ class EditorCanvasView extends StatelessWidget {
 
               // Apply color filters
               content = ColorFiltered(
-                colorFilter: ColorFilter.matrix(filterMatrix),
-                child: ColorFiltered(
-                  colorFilter: ColorFilter.matrix(
+                colorFilter: ColorFilter.matrix(
+                  ColorFilterMatrices.combine([
+                    filterMatrix,
                     ColorFilterMatrices.brightness(brightness),
-                  ),
-                  child: ColorFiltered(
-                    colorFilter: ColorFilter.matrix(
-                      ColorFilterMatrices.contrast(contrast),
-                    ),
-                    child: ColorFiltered(
-                      colorFilter: ColorFilter.matrix(
-                        ColorFilterMatrices.saturation(saturation),
-                      ),
-                      child: content,
-                    ),
-                  ),
+                    ColorFilterMatrices.contrast(contrast),
+                    ColorFilterMatrices.saturation(saturation),
+                    ColorFilterMatrices.warmth(warmth),
+                  ]),
                 ),
+                child: content,
               );
 
               // Stack text overlays on top
@@ -304,15 +303,52 @@ class EditorCanvasView extends StatelessWidget {
                 content = Stack(
                   children: [
                     content,
-                    ...textOverlays.map((overlay) {
+                    ...textOverlays.indexed.map((entry) {
+                      final index = entry.$1;
+                      final overlay = entry.$2;
                       return Positioned(
                         left: overlay.position.dx,
                         top: overlay.position.dy,
-                        child: Text(
-                          overlay.text,
-                          style: AppTypography.h1.copyWith(
-                            color: overlay.color,
-                            fontSize: overlay.fontSize,
+                        child: GestureDetector(
+                          onTap: () => onTextSelect(index),
+                          onDoubleTap: () => onTextEdit(index),
+                          onScaleStart: (_) => onTextSelect(index),
+                          onScaleUpdate: (details) {
+                            if (details.pointerCount == 1) {
+                              onTextMove(index, details.focalPointDelta);
+                            } else {
+                              onTextTransform(
+                                index,
+                                details.scale,
+                                details.rotation,
+                              );
+                            }
+                          },
+                          child: Transform.rotate(
+                            angle: overlay.rotation,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: overlay.backgroundColor,
+                                border: selectedTextIndex == index
+                                    ? Border.all(
+                                        color: AppColors.primaryContainer,
+                                        width: 2,
+                                      )
+                                    : null,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Text(
+                                  overlay.text,
+                                  textAlign: overlay.alignment,
+                                  style: AppTypography.h1.copyWith(
+                                    color: overlay.color,
+                                    fontSize: overlay.fontSize * overlay.scale,
+                                    fontFamily: overlay.fontFamily,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       );

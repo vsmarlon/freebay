@@ -9,7 +9,7 @@ class ChatInputBar extends StatefulWidget {
   final bool viewOnceEnabled;
   final Color accentColor;
   final VoidCallback onSend;
-  final VoidCallback onAttachment;
+  final void Function({bool camera}) onAttachment;
   final ValueChanged<bool> onViewOnceToggled;
   final VoidCallback? onRecordAudio;
 
@@ -41,9 +41,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   void _handleTextChange() {
     final has = widget.controller.text.trim().isNotEmpty;
-    if (has != _hasText) {
-      setState(() => _hasText = has);
-    }
+    if (has != _hasText) setState(() => _hasText = has);
   }
 
   @override
@@ -56,88 +54,123 @@ class _ChatInputBarState extends State<ChatInputBar> {
   Widget build(BuildContext context) {
     final strings = l10n(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: context.surfaceColor,
         border: Border(top: BorderSide(color: context.borderColor, width: 2)),
       ),
       child: Row(
         children: [
-          BrutalistIconButton(
-            icon: Icons.add,
-            semanticLabel: strings.accessibilityAttach,
-            onTap: widget.onAttachment,
-            size: 48,
-            iconSize: 24,
-            iconColor: context.textPrimary,
-            borderColor: context.borderColor,
+          SizedBox(
+            width: 48,
+            child: Tooltip(
+              message: strings.accessibilityAttach,
+              child: BrutalistIconButton(
+                icon: Icons.add,
+                semanticLabel: strings.accessibilityAttach,
+                onTap: widget.onAttachment,
+                size: 48,
+                iconSize: 24,
+                iconColor: context.textPrimary,
+                borderColor: context.borderColor,
+              ),
+            ),
+          ),
+          Spacing.hSm,
+          Tooltip(
+            message: strings.accessibilityCamera,
+            child: BrutalistIconButton(
+              icon: Icons.camera_alt_outlined,
+              semanticLabel: strings.accessibilityCamera,
+              onTap: () => widget.onAttachment(camera: true),
+              size: 48,
+              iconSize: 24,
+              iconColor: context.textPrimary,
+              borderColor: context.borderColor,
+            ),
           ),
           Spacing.hSm,
           Expanded(
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 48, maxHeight: 144),
-              decoration: BoxDecoration(
-                color: context.isDark
-                    ? Colors.white.withAlpha(13)
-                    : Colors.black.withAlpha(13),
-                border: Border.all(color: context.borderColor, width: 2),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: widget.controller,
-                      maxLines: 6,
-                      minLines: 1,
-                      style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontSize: 14,
-                        color: context.textPrimary,
-                      ),
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: InputDecoration(
-                        hintText: strings.chatMessageHint,
-                        hintStyle: TextStyle(
+            child: KeyedSubtree(
+              key: const ValueKey('chat-input-surface'),
+              child: Container(
+                constraints: BoxConstraints(
+                  minHeight: 48,
+                  maxHeight: MediaQuery.textScalerOf(
+                    context,
+                  ).scale(72).clamp(72.0, 144.0),
+                ),
+                decoration: BoxDecoration(
+                  color: context.surfaceHighColor,
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: widget.controller,
+                        minLines: 1,
+                        textAlignVertical: TextAlignVertical.center,
+                        style: TextStyle(
                           fontFamily: AppTypography.fontFamily,
                           fontSize: 14,
-                          color: context.textSecondary,
+                          color: context.textPrimary,
                         ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: InputDecoration(
+                          hintText: strings.chatMessageHint,
+                          hintMaxLines: 1,
+                          hintStyle: TextStyle(
+                            fontFamily: AppTypography.fontFamily,
+                            fontSize: 14,
+                            color: context.textSecondary,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 8,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  ViewOnceToggle(
-                    enabled: widget.viewOnceEnabled,
-                    onTap: () =>
-                        widget.onViewOnceToggled(!widget.viewOnceEnabled),
-                  ),
-                  if (widget.isSending)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: widget.accentColor,
-                        ),
-                      ),
-                    )
-                  else if (_hasText)
-                    IconButton(
-                      icon: Icon(Icons.send, color: widget.accentColor),
-                      onPressed: widget.onSend,
-                    )
-                  else
-                    IconButton(
-                      icon: Icon(Icons.mic, color: widget.accentColor),
-                      onPressed: widget.onRecordAudio ?? widget.onSend,
+                    ViewOnceToggle(
+                      enabled: widget.viewOnceEnabled,
+                      semanticLabel: strings.chatViewOnce,
+                      onTap: () =>
+                          widget.onViewOnceToggled(!widget.viewOnceEnabled),
                     ),
-                ],
+                    if (widget.isSending)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: widget.accentColor,
+                          ),
+                        ),
+                      )
+                    else if (_hasText)
+                      BrutalistIconButton(
+                        icon: Icons.send,
+                        semanticLabel: strings.accessibilitySend,
+                        size: 48,
+                        iconColor: widget.accentColor,
+                        onTap: widget.onSend,
+                      )
+                    else
+                      BrutalistIconButton(
+                        icon: Icons.mic,
+                        semanticLabel: strings.chatSendAudio,
+                        size: 48,
+                        iconColor: widget.accentColor,
+                        onTap: widget.onRecordAudio ?? widget.onSend,
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

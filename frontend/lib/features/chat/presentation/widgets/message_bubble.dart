@@ -3,7 +3,9 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/shared/utils/date_utils.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/data/entities/message_type.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/features/chat/presentation/widgets/product_card_bubble.dart';
+import 'package:freebay/features/chat/presentation/widgets/offer_message_bubble.dart';
 import 'reply_preview_banner.dart';
 import 'reaction_bar.dart';
 import 'image_message_bubble.dart';
@@ -19,6 +21,7 @@ class MessageBubble extends StatelessWidget {
   final bool isMe;
   final bool isDark;
   final bool isConsecutive;
+  final bool isDateBoundaryAfter;
   final bool showTimestamp;
   final Color accentColor;
   final ValueChanged<String>? onReactionTap;
@@ -41,6 +44,7 @@ class MessageBubble extends StatelessWidget {
     required this.isMe,
     required this.isDark,
     this.isConsecutive = false,
+    this.isDateBoundaryAfter = false,
     this.showTimestamp = true,
     this.accentColor = AppColors.primaryContainer,
     this.onReactionTap,
@@ -64,15 +68,25 @@ class MessageBubble extends StatelessWidget {
   bool get _hasReactions => message.reactions.isNotEmpty;
   bool get _isViewOnceRevealed =>
       message.viewOnce && message.readAt != null && viewOnceOpeningKey != null;
-  bool get _isViewOnceLocked => message.viewOnce && !_isViewOnceRevealed;
+  bool get _isViewOnceBurned =>
+      message.viewOnce && message.readAt != null && viewOnceOpeningKey == null;
+  bool get _isViewOnceLocked =>
+      message.viewOnce && message.readAt == null && !_isViewOnceRevealed;
   bool get _isForwarded => message.metadata?['isForwarded'] == true;
+  bool get _deliveryUncertain =>
+      message.metadata?['_deliveryUncertain'] == true;
 
   @override
   Widget build(BuildContext context) {
-    final timeStr = formatMessageTime(message.createdAt);
+    final timeStr = formatMessageTime(
+      _isViewOnceBurned ? message.readAt! : message.createdAt,
+    );
 
     return Padding(
-      padding: EdgeInsets.only(bottom: isConsecutive ? 2 : 8),
+      padding: EdgeInsets.only(
+        top: Spacing.xs,
+        bottom: isDateBoundaryAfter || isConsecutive ? Spacing.xs : Spacing.md,
+      ),
       child: Column(
         crossAxisAlignment: isMe
             ? CrossAxisAlignment.end
@@ -110,25 +124,30 @@ class MessageBubble extends StatelessWidget {
                   : MainAxisAlignment.start,
               children: [
                 Flexible(
-                  child: GestureDetector(
-                    onLongPress: onLongPressMessage,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.sizeOf(context).width * 0.76,
+                    ),
+                    child: GestureDetector(
+                      onLongPress: onLongPressMessage,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _isDeleted
+                              ? (isDark
+                                    ? AppColors.surfaceContainerDark
+                                    : AppColors.surfaceContainerHigh)
+                              : isMe
+                              ? accentColor
+                              : (isDark
+                                    ? AppColors.surfaceDark
+                                    : AppColors.surfaceContainerLow),
+                        ),
+                        child: _buildContent(context),
                       ),
-                      decoration: BoxDecoration(
-                        color: _isDeleted
-                            ? (isDark
-                                  ? AppColors.surfaceContainerDark
-                                  : AppColors.surfaceContainerHigh)
-                            : isMe
-                            ? accentColor
-                            : (isDark
-                                  ? AppColors.surfaceDark
-                                  : AppColors.surfaceContainerLow),
-                      ),
-                      child: _buildContent(context),
                     ),
                   ),
                 ),
@@ -158,7 +177,13 @@ class MessageBubble extends StatelessWidget {
                     const SizedBox(width: 4),
                   ],
                   Text(
-                    timeStr,
+                    _deliveryUncertain
+                        ? l10n(context).chatSendDeliveryUncertain
+                        : _isViewOnceBurned
+                        ? '${l10n(context).chatViewOnceBurnedTimestamp} $timeStr'
+                        : _isViewOnceLocked
+                        ? '${l10n(context).chatViewOnceSentTimestamp} $timeStr'
+                        : timeStr,
                     style: TextStyle(
                       fontFamily: AppTypography.fontFamily,
                       fontSize: 11,
@@ -187,7 +212,7 @@ class MessageBubble extends StatelessWidget {
   Widget _buildContent(BuildContext context) {
     if (_isDeleted) {
       return Text(
-        'Mensagem apagada',
+        l10n(context).chatMessageDeleted,
         style: TextStyle(
           fontFamily: AppTypography.fontFamily,
           fontSize: 14,
@@ -200,9 +225,13 @@ class MessageBubble extends StatelessWidget {
     // View-once locked bubble
     if (_isViewOnceLocked) {
       return GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: isMe ? null : onViewOnceReveal,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.md,
+            vertical: Spacing.md + Spacing.xs,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -213,9 +242,11 @@ class MessageBubble extends StatelessWidget {
                     ? AppColors.onPrimary.withValues(alpha: 0.7)
                     : context.textSecondary,
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: Spacing.xs),
               Text(
-                'Mensagem de\nvisualização única',
+                isMe
+                    ? l10n(context).chatViewOnceSent
+                    : l10n(context).chatViewOnceOpen,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
@@ -225,6 +256,29 @@ class MessageBubble extends StatelessWidget {
                       ? AppColors.onPrimary.withValues(alpha: 0.7)
                       : context.textSecondary,
                 ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_isViewOnceBurned) {
+      return Opacity(
+        opacity: 0.42,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.md,
+            vertical: Spacing.md + Spacing.xs,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.visibility_off_outlined, color: context.textSecondary),
+              const SizedBox(height: Spacing.xs),
+              Text(
+                l10n(context).chatViewOnceBurned,
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -267,7 +321,7 @@ class MessageBubble extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Encaminhada',
+                  l10n(context).chatForwardedLabel,
                   style: TextStyle(
                     fontFamily: AppTypography.fontFamily,
                     fontSize: 11,
@@ -290,10 +344,21 @@ class MessageBubble extends StatelessWidget {
             otherUserName: otherUserName,
             onTap: onReplyTap,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: Spacing.sm),
         ],
         // Main content by type
         _buildTypedContent(context),
+        if (_hasMediaCaption) ...[
+          const SizedBox(height: Spacing.sm),
+          Text(
+            message.content!.trim(),
+            style: AppTypography.bodyMedium.copyWith(
+              color: isMe
+                  ? context.colors.onPrimaryContainer
+                  : context.textPrimary,
+            ),
+          ),
+        ],
         if (showViewedFooter) ...[
           const SizedBox(height: 6),
           Row(
@@ -306,7 +371,7 @@ class MessageBubble extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                'Mensagem já visualizada',
+                l10n(context).chatAlreadyViewed,
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 11,
@@ -322,6 +387,9 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildTypedContent(BuildContext context) {
+    if (message.isOffer) {
+      return OfferMessageBubble(message: message, isMe: isMe);
+    }
     switch (message.type) {
       case MessageType.image:
       case MessageType.gif:
@@ -371,6 +439,12 @@ class MessageBubble extends StatelessWidget {
         );
     }
   }
+
+  bool get _hasMediaCaption =>
+      (message.type == MessageType.image ||
+          message.type == MessageType.gif ||
+          message.type == MessageType.video) &&
+      message.content?.trim().isNotEmpty == true;
 }
 
 class _ViewOnceLifetime extends StatefulWidget {

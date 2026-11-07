@@ -33,11 +33,31 @@ mixin SocialRepositoryDiscovery {
 
   Future<Either<Failure, List<UserSearchEntity>>> getSuggestions({
     int limit = 10,
+  }) async {
+    final result = await getSuggestionsPage(limit: limit);
+    return result.fold(Left.new, (page) => Right(page.users));
+  }
+
+  Future<Either<Failure, UserSearchPageResult>> getSuggestionsPage({
+    int limit = 10,
+    int offset = 0,
   }) => requestEither(
-    () => client.get('/users/suggestions', queryParameters: {'limit': limit}),
+    () => client.get(
+      '/users/suggestions',
+      queryParameters: {'limit': limit, 'offset': offset},
+    ),
     decoder: (response) {
-      final raw = response.data['data']['users'];
-      return Right(_jsonMaps(raw).map(UserSearchEntity.fromJson).toList());
+      final data = _jsonMap(response.data['data']) ?? const <String, dynamic>{};
+      final meta = _jsonMap(data['meta']) ?? const <String, dynamic>{};
+      return Right(
+        UserSearchPageResult(
+          users: _jsonMaps(
+            data['users'],
+          ).map(UserSearchEntity.fromJson).toList(),
+          hasMore: meta['hasMore'] == true,
+          nextOffset: meta['nextOffset'] as int?,
+        ),
+      );
     },
   );
 

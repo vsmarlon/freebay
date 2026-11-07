@@ -10,6 +10,7 @@ class SocialPostMedia extends StatelessWidget {
   final String? blurHash;
   final bool showHeartBurst;
   final bool isPressed;
+  final double aspectRatio;
   final VoidCallback onTap;
   final VoidCallback onDoubleTap;
   final ValueChanged<bool> onPressedChanged;
@@ -21,6 +22,7 @@ class SocialPostMedia extends StatelessWidget {
     this.blurHash,
     required this.showHeartBurst,
     required this.isPressed,
+    this.aspectRatio = 1,
     required this.onTap,
     required this.onDoubleTap,
     required this.onPressedChanged,
@@ -36,7 +38,7 @@ class SocialPostMedia extends StatelessWidget {
             .ceil()
             .clamp(1, 1080);
     return AspectRatio(
-      aspectRatio: 1,
+      aspectRatio: aspectRatio,
       child: Stack(
         children: [
           GestureDetector(

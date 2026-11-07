@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:crypto/crypto.dart';
 // flutter_cache_manager is already resolved through cached_network_image; keep
 // the dependency set unchanged for this one-off legacy cache cleanup.
 // ignore: depend_on_referenced_packages
@@ -17,13 +18,16 @@ class StorageService {
   static const _tokenKey = 'auth_token';
   static const _refreshTokenKey = 'refresh_token';
   static const _biometricTokenKey = 'biometric_token';
+  static const _boundBiometricTokenKey = 'biometric_bound_token_v2';
   static const _biometricOwnerKey = 'biometry_owner_id';
   static const _biometricVaultPresentKey = 'biometric_auth_v1_present';
   static const _savedEmailKey = 'saved_email';
   static const _rememberMeKey = 'remember_me';
+  static const _sessionLockMinutesKey = 'session_lock_minutes';
+  static const _localePreferenceKey = 'locale_preference';
+  static const _sessionLockActivityKey = 'session_lock_activity_v1';
   static const _hasSeenOnboardingKey = 'has_seen_onboarding';
   static const _welcomeSetupDonePrefix = 'welcome_setup_done_';
-  static const _lastActiveAtKey = 'last_active_at';
   static const _pushInstallationKey = 'push_installation_id';
   static const _privateMediaCacheCleanupKey = 'private_media_cache_cleaned_v1';
 
@@ -220,8 +224,9 @@ class StorageService {
   }
 
   static Future<void> saveBiometricToken(String token) async {
-    await BiometricKeyService().writeVault(token);
-    await _storage.write(key: _biometricVaultPresentKey, value: 'true');
+    await _enqueueTokenOperation(
+      () => _storage.write(key: _boundBiometricTokenKey, value: token),
+    );
   }
 
   static Future<void> saveBiometricOwner(String userId) async {
@@ -246,11 +251,26 @@ class StorageService {
   static Future<void> clearEmail() => _storage.delete(key: _savedEmailKey);
 
   static Future<String?> getBiometricToken() async {
-    return BiometricKeyService().readVault();
+    return _enqueueTokenRead(() async {
+      final current = await _storage.read(key: _boundBiometricTokenKey);
+      if (current != null) return current;
+      if (!await _storage.containsKey(key: _biometricVaultPresentKey)) {
+        return null;
+      }
+      // Legacy credentials migrate only after successful biometric vault access.
+      final legacy = await BiometricKeyService().readVault();
+      if (legacy == null) return null;
+      await _storage.write(key: _boundBiometricTokenKey, value: legacy);
+      await _storage.delete(key: _biometricVaultPresentKey);
+      return legacy;
+    });
   }
 
-  static Future<bool> hasBiometricToken() =>
-      _storage.containsKey(key: _biometricVaultPresentKey);
+  static Future<bool> hasBiometricToken() => _enqueueTokenRead(
+    () async =>
+        await _storage.containsKey(key: _boundBiometricTokenKey) ||
+        await _storage.containsKey(key: _biometricVaultPresentKey),
+  );
 
   static Future<void> saveRememberMe(bool rememberMe) async {
     if (_prefs != null) {
@@ -268,8 +288,66 @@ class StorageService {
     return value != 'false';
   }
 
+  static bool getRememberMeSync() {
+    final value = _prefs?.get(_rememberMeKey);
+    return value is bool ? value : true;
+  }
+
   static bool hasSeenOnboardingSync() {
     return _prefs?.getBool(_hasSeenOnboardingKey) ?? false;
+  }
+
+  static int getSessionLockMinutesSync() {
+    final value = _prefs?.get(_sessionLockMinutesKey);
+    return value is int && const {0, 1, 5, 15, 30}.contains(value) ? value : 0;
+  }
+
+  static Future<void> setSessionLockMinutes(int minutes) async {
+    if (!const {0, 1, 5, 15, 30}.contains(minutes)) {
+      throw ArgumentError.value(minutes, 'minutes');
+    }
+    final prefs = _prefs ??= await SharedPreferences.getInstance();
+    await prefs.setInt(_sessionLockMinutesKey, minutes);
+  }
+
+  static int? getSessionLockActivityAtSync(String userId) {
+    final encoded = _prefs?.getString(_sessionLockActivityKey);
+    if (encoded == null) return null;
+    try {
+      final value = jsonDecode(encoded);
+      if (value is Map<String, dynamic> &&
+          value['userHash'] == _sessionLockUserHash(userId) &&
+          value['atMs'] is int) {
+        return value['atMs'] as int;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<void> setSessionLockActivityAt(String userId, int atMs) async {
+    final prefs = _prefs ??= await SharedPreferences.getInstance();
+    await prefs.setString(
+      _sessionLockActivityKey,
+      jsonEncode({'userHash': _sessionLockUserHash(userId), 'atMs': atMs}),
+    );
+  }
+
+  static String _sessionLockUserHash(String userId) =>
+      sha256.convert(utf8.encode(userId)).toString();
+
+  static String getLocalePreferenceSync() {
+    final value = _prefs?.get(_localePreferenceKey);
+    return value is String && const {'system', 'pt_BR', 'en'}.contains(value)
+        ? value
+        : 'system';
+  }
+
+  static Future<void> setLocalePreference(String preference) async {
+    if (!const {'system', 'pt_BR', 'en'}.contains(preference)) {
+      throw ArgumentError.value(preference, 'preference');
+    }
+    final prefs = _prefs ??= await SharedPreferences.getInstance();
+    await prefs.setString(_localePreferenceKey, preference);
   }
 
   static String _welcomeSetupKey(String userId) =>
@@ -286,20 +364,6 @@ class StorageService {
     } catch (e) {
       debugPrint('[StorageService] setWelcomeSetupDone error: $e');
     }
-  }
-
-  static DateTime? lastActiveAtSync() {
-    final millis = _prefs?.getInt(_lastActiveAtKey);
-    if (millis == null) return null;
-    return DateTime.fromMillisecondsSinceEpoch(millis);
-  }
-
-  static void touchLastActiveAt() {
-    _prefs?.setInt(_lastActiveAtKey, DateTime.now().millisecondsSinceEpoch);
-  }
-
-  static Future<void> clearLastActiveAt() async {
-    await _prefs?.remove(_lastActiveAtKey);
   }
 
   static Future<void> setHasSeenOnboarding() async {
@@ -365,7 +429,11 @@ class StorageService {
           try {
             await _storage.delete(key: _biometricOwnerKey);
           } finally {
-            await _storage.delete(key: _biometricVaultPresentKey);
+            try {
+              await _storage.delete(key: _boundBiometricTokenKey);
+            } finally {
+              await _storage.delete(key: _biometricVaultPresentKey);
+            }
           }
         }
       });

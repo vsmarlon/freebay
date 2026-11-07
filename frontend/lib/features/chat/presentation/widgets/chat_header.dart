@@ -6,6 +6,7 @@ import 'package:freebay/shared/l10n/app_localizations_context.dart';
 class ChatHeader extends StatelessWidget {
   final String name;
   final String? avatarUrl;
+  final VoidCallback? onAvatarTap;
   final ChatThreadType chatType;
   final Color accentColor;
   final VoidCallback onBack;
@@ -21,6 +22,7 @@ class ChatHeader extends StatelessWidget {
     super.key,
     required this.name,
     this.avatarUrl,
+    this.onAvatarTap,
     required this.chatType,
     required this.accentColor,
     required this.onBack,
@@ -72,7 +74,14 @@ class ChatHeader extends StatelessWidget {
             onTap: onBack,
           ),
           const SizedBox(width: 12),
-          UserAvatar(imageUrl: avatarUrl, size: AppAvatarSize.small),
+          Semantics(
+            button: onAvatarTap != null,
+            label: onAvatarTap == null ? null : l10n(context).navProfile,
+            child: InkWell(
+              onTap: onAvatarTap,
+              child: UserAvatar(imageUrl: avatarUrl, size: AppAvatarSize.small),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

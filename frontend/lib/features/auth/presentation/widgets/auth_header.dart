@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
-/// Shared top bar for the login and register pages: centered massive
-/// title with an optional back button.
+/// Shared auth top bar with a fixed-height, single-line title.
 class AuthHeader extends StatelessWidget {
   const AuthHeader({
     super.key,
@@ -26,41 +25,47 @@ class AuthHeader extends StatelessWidget {
       onTap: onBack,
     );
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: context.borderColor.withAlpha(40),
-            width: 1.5,
-          ),
-        ),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          if (showBack)
-            Align(alignment: Alignment.centerLeft, child: backButton),
-          Center(
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2.0,
-                color: context.textPrimary,
-                shadows: [
-                  const Shadow(
-                    color: AppColors.primaryContainer,
-                    offset: AppDepth.shadowOffsetSmall,
-                  ),
-                ],
-              ),
+    return SizedBox(
+      height: 72,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: context.borderColor.withAlpha(40),
+              width: 1.5,
             ),
           ),
-        ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (showBack)
+              Align(alignment: Alignment.centerLeft, child: backButton),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Spacing.xxl),
+              child: Center(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.h2
+                      .weight(900)
+                      .copyWith(
+                        color: context.textPrimary,
+                        shadows: const [
+                          Shadow(
+                            color: AppColors.primaryContainer,
+                            offset: AppDepth.shadowOffsetSmall,
+                          ),
+                        ],
+                      ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -10,6 +10,7 @@ import 'package:freebay/features/social/presentation/providers/saves_provider.da
 import 'package:freebay/features/social/presentation/providers/reposts_provider.dart';
 import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/features/social/presentation/widgets/post_overflow.dart';
 import 'package:freebay/features/social/presentation/widgets/quote_source_preview.dart';
 
 class FeedPostItem extends ConsumerStatefulWidget {
@@ -167,6 +168,13 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
                 return success;
               },
               onComment: () => context.push(AppRoutes.postPath(post.id)),
+              onMore: () => showPostOverflowMenu(
+                context,
+                ref,
+                postId: post.id,
+                authorId: post.user.id,
+                viewerId: ref.read(authControllerProvider).value?.id,
+              ),
             ),
           ],
         ),

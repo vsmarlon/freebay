@@ -13,15 +13,15 @@ import 'package:freebay/features/profile/presentation/providers/profile_timeline
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/shared/utils/media_url.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/models/cursor_page.dart';
 
-final userPostsProvider = FutureProvider.family<List<PostEntity>, String>((
-  ref,
-  userId,
-) async {
-  final repository = ref.watch(socialRepositoryProvider);
-  final result = await repository.getPostsByUser(userId);
-  return result.fold((failure) => throw failure, (page) => page.items);
-});
+final userPostsProvider =
+    FutureProvider.family<CursorPage<PostEntity>, String?>((ref, userId) async {
+      if (userId == null) return const CursorPage.empty();
+      final repository = ref.watch(socialRepositoryProvider);
+      final result = await repository.getPostsByUser(userId);
+      return result.fold((failure) => throw failure, (page) => page);
+    });
 
 class MyPostsPage extends HookConsumerWidget {
   final String userId;
@@ -31,9 +31,62 @@ class MyPostsPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final strings = l10n(context);
-    final postsAsync = ref.watch(userPostsProvider(userId));
+    final authUserId = ref.watch(authControllerProvider).value?.id;
+    final targetUserId = userId == 'me' ? authUserId : userId;
+    final postsAsync = ref.watch(userPostsProvider(targetUserId));
     final hiddenPosts = useState(<String>{});
-    final currentUserId = ref.watch(authControllerProvider).value?.id;
+    final accumulated = useState(<PostEntity>[]);
+    final ownerGeneration = useRef(0);
+    final cursor = useState<String?>(null);
+    final hasMore = useState(true);
+    final loadingMore = useState(false);
+    final loadError = useState<String?>(null);
+    final currentUserId = authUserId;
+
+    useEffect(() {
+      ownerGeneration.value++;
+      hiddenPosts.value = {};
+      accumulated.value = [];
+      cursor.value = null;
+      hasMore.value = true;
+      loadingMore.value = false;
+      loadError.value = null;
+      return null;
+    }, [targetUserId]);
+
+    useEffect(() {
+      final firstPage = postsAsync.asData?.value;
+      if (firstPage != null) {
+        accumulated.value = firstPage.items;
+        cursor.value = firstPage.nextCursor;
+        hasMore.value = firstPage.hasMore && firstPage.nextCursor != null;
+      }
+      return null;
+    }, [postsAsync]);
+
+    Future<void> loadMore() async {
+      if (targetUserId == null ||
+          loadingMore.value ||
+          !hasMore.value ||
+          cursor.value == null) {
+        return;
+      }
+      final requestGeneration = ownerGeneration.value;
+      loadingMore.value = true;
+      loadError.value = null;
+      final result = await ref
+          .read(socialRepositoryProvider)
+          .getPostsByUser(targetUserId, cursor: cursor.value);
+      if (!context.mounted || requestGeneration != ownerGeneration.value) {
+        return;
+      }
+      result.fold((failure) => loadError.value = failure.message, (page) {
+        accumulated.value = [...accumulated.value, ...page.items];
+        cursor.value = page.nextCursor;
+        hasMore.value = page.hasMore && page.nextCursor != null;
+      });
+      loadingMore.value = false;
+    }
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -55,7 +108,10 @@ class MyPostsPage extends HookConsumerWidget {
           ),
           Expanded(
             child: postsAsync.when(
-              data: (posts) {
+              data: (page) {
+                final posts = accumulated.value.isEmpty
+                    ? page.items
+                    : accumulated.value;
                 final visiblePosts = posts
                     .where((post) => !hiddenPosts.value.contains(post.id))
                     .toList();
@@ -77,28 +133,60 @@ class MyPostsPage extends HookConsumerWidget {
                             )
                           : RefreshIndicator(
                               onRefresh: () async {
-                                ref.invalidate(userPostsProvider(userId));
+                                ownerGeneration.value++;
+                                accumulated.value = [];
+                                cursor.value = null;
+                                hasMore.value = true;
+                                loadingMore.value = false;
+                                loadError.value = null;
+                                ref.invalidate(userPostsProvider(targetUserId));
                               },
-                              child: GridView.builder(
-                                padding: const EdgeInsets.all(8),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 3,
-                                      crossAxisSpacing: 4,
-                                      mainAxisSpacing: 4,
-                                    ),
-                                itemCount: visiblePosts.length,
-                                itemBuilder: (_, index) {
-                                  final post = visiblePosts[index];
-                                  return _buildPostTile(
-                                    context,
-                                    ref,
-                                    post,
-                                    hiddenPosts,
-                                    currentUserId == post.userId &&
-                                        post.repostedAt == null,
-                                  );
+                              child: NotificationListener<ScrollNotification>(
+                                onNotification: (notification) {
+                                  if (notification.metrics.extentAfter < 300) {
+                                    loadMore();
+                                  }
+                                  return false;
                                 },
+                                child: GridView.builder(
+                                  padding: const EdgeInsets.all(8),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        crossAxisSpacing: 4,
+                                        mainAxisSpacing: 4,
+                                      ),
+                                  itemCount:
+                                      visiblePosts.length +
+                                      (loadingMore.value ||
+                                              loadError.value != null
+                                          ? 1
+                                          : 0),
+                                  itemBuilder: (_, index) {
+                                    if (index == visiblePosts.length) {
+                                      return Center(
+                                        child: loadError.value != null
+                                            ? AppButton(
+                                                label: strings.commonRetry,
+                                                onPressed: loadMore,
+                                              )
+                                            : const Padding(
+                                                padding: EdgeInsets.all(16),
+                                                child: ShimmerBlock(height: 72),
+                                              ),
+                                      );
+                                    }
+                                    final post = visiblePosts[index];
+                                    return _buildPostTile(
+                                      context,
+                                      ref,
+                                      post,
+                                      hiddenPosts,
+                                      currentUserId == post.userId &&
+                                          post.repostedAt == null,
+                                    );
+                                  },
+                                ),
                               ),
                             ),
                     ),
@@ -145,22 +233,9 @@ class MyPostsPage extends HookConsumerWidget {
                   ],
                 ),
               ),
-              error: (err, _) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: AppColors.error,
-                    ),
-                    Spacing.vMd,
-                    Text(
-                      strings.commonError,
-                      style: TextStyle(color: context.textPrimary),
-                    ),
-                  ],
-                ),
+              error: (err, _) => EmptyState.error(
+                message: strings.commonError,
+                onRetry: () => ref.invalidate(userPostsProvider(targetUserId)),
               ),
             ),
           ),
@@ -208,10 +283,10 @@ class MyPostsPage extends HookConsumerWidget {
                   }
                 },
                 (_) {
-                  container.invalidate(userPostsProvider(userId));
+                  container.invalidate(userPostsProvider(post.userId));
                   container.invalidate(
                     profileTimelineProvider(
-                      userId,
+                      post.userId,
                       kind: post.type == PostType.product
                           ? 'products'
                           : 'posts',

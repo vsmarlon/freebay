@@ -15,6 +15,7 @@ class SocialPostActionChrome extends StatelessWidget {
   final VoidCallback onRepost;
   final VoidCallback? onComment;
   final VoidCallback? onQuote;
+  final VoidCallback? onMore;
 
   const SocialPostActionChrome({
     super.key,
@@ -31,6 +32,7 @@ class SocialPostActionChrome extends StatelessWidget {
     required this.onRepost,
     required this.onComment,
     this.onQuote,
+    this.onMore,
   });
 
   @override
@@ -49,6 +51,7 @@ class SocialPostActionChrome extends StatelessWidget {
       allowRepost: allowRepost,
       onComment: onComment,
       onQuote: onQuote,
+      onMore: onMore,
     );
   }
 }

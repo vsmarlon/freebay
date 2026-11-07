@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
-class ProfileStats extends StatelessWidget {
+class ProfileStats extends ConsumerWidget {
   const ProfileStats({
     super.key,
     required this.user,
@@ -18,8 +21,17 @@ class ProfileStats extends StatelessWidget {
   final int followingCount;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final strings = l10n(context);
+    final viewerId = ref.watch(
+      authControllerProvider.select((auth) => auth.asData?.value?.id),
+    );
+    // `/users/me/stats` only describes the signed-in user; other profiles keep
+    // the counts resolved by the follow-status provider.
+    final stats = viewerId != null && viewerId == user.id
+        ? ref.watch(profileStatsProvider).value
+        : null;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -29,13 +41,13 @@ class ProfileStats extends StatelessWidget {
           size: 18,
         ),
         StatColumn(
-          value: '$followersCount',
+          value: '${stats?.followersCount ?? followersCount}',
           label: strings.profileFollowers.toLowerCase(),
           size: 18,
           onTap: () => context.push(AppRoutes.followersWith(user.id)),
         ),
         StatColumn(
-          value: '$followingCount',
+          value: '${stats?.followingCount ?? followingCount}',
           label: strings.profileFollowing.toLowerCase(),
           size: 18,
           onTap: () => context.push(AppRoutes.followingWith(user.id)),

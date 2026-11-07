@@ -96,7 +96,7 @@ class FollowersPage extends ConsumerWidget {
                                     ),
                                     color: context.surfaceMidColor,
                                     child: Text(
-                                      'VOCÊ',
+                                      strings.commonYou.toUpperCase(),
                                       style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w800,
@@ -106,7 +106,11 @@ class FollowersPage extends ConsumerWidget {
                                     ),
                                   )
                                 : AppButton(
-                                    label: isFollowing ? 'SEGUINDO' : 'SEGUIR',
+                                    label:
+                                        (isFollowing
+                                                ? strings.profileFollowing
+                                                : strings.profileFollow)
+                                            .toUpperCase(),
                                     size: AppButtonSize.compact,
                                     variant: isFollowing
                                         ? AppButtonVariant.secondary

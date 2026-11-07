@@ -28,32 +28,36 @@ class AuthRepository {
       refreshToken = await StorageService.getRefreshToken();
       final installationId = await StorageService.getPushInstallationId();
 
-      final result = await requestEither<void>(
-        () => client.post(
-          '/auth/logout',
-          data: {
-            'refreshToken': ?refreshToken,
-            'installationId': installationId,
-          },
-          options: Options(
-            extra: {
-              HttpClient.preserveCapturedAuthKey: true,
-              HttpClient.capturedAuthTokenKey: accessToken,
-              HttpClient.disableRefreshKey: true,
-            },
-          ),
-        ),
-        decoder: (_) => const Right(null),
-        debugLabel: 'AUTH logout',
-      );
+      Future<Either<Failure, void>> revoke(String? bearer) =>
+          requestEither<void>(
+            () => client.post(
+              '/auth/logout',
+              data: {
+                'refreshToken': ?refreshToken,
+                'installationId': installationId,
+              },
+              options: Options(
+                extra: {
+                  HttpClient.preserveCapturedAuthKey: true,
+                  HttpClient.capturedAuthTokenKey: bearer,
+                  HttpClient.disableRefreshKey: true,
+                },
+              ),
+            ),
+            decoder: (_) => const Right(null),
+            debugLabel: 'AUTH logout',
+          );
 
+      var result = await revoke(accessToken);
+      // An expired access token must not skip server-side revocation:
+      // /auth/logout also accepts a refresh token.
+      if (result.leftOrNull is UnauthorizedFailure && refreshToken != null) {
+        result = await revoke(refreshToken);
+      }
       return result;
     } catch (_) {
       return const Left(CacheFailure('Erro ao limpar tokens de acesso.'));
     } finally {
-      try {
-        await BiometryService().clearState();
-      } catch (_) {}
       try {
         await StorageService.clearTokens();
       } catch (_) {}
@@ -107,9 +111,6 @@ class AuthRepository {
               },
               afterInstall: () async {
                 await afterTokens?.call(data);
-                if (user.email != null) {
-                  await StorageService.saveEmail(user.email!);
-                }
               },
             );
         if (!installed) {
@@ -167,7 +168,10 @@ class AuthRepository {
       ),
       debugLabel: 'AUTH register',
       missingDataFailure: const ServerFailure('Falha ao registrar usuário.'),
-      afterTokens: (_) => StorageService.saveRememberMe(false),
+      afterTokens: (_) async {
+        await StorageService.saveEmail(email);
+        await StorageService.saveRememberMe(true);
+      },
     );
     return result;
   }
@@ -190,7 +194,9 @@ class AuthRepository {
   Future<Either<Failure, void>> requestPasswordRecovery(String email) =>
       requestEither<void>(
         () => client.post('/auth/forgot-password', data: {'email': email}),
-        decoder: (_) => const Right(null),
+        decoder: (response) => response.data?['data']?['sent'] == true
+            ? const Right(null)
+            : const Left(ServerFailure('Não foi possível enviar o código.')),
       );
 
   Future<Either<Failure, bool>> verifyPasswordRecoveryCode(
@@ -201,7 +207,7 @@ class AuthRepository {
       '/auth/verify-reset-code',
       data: {'email': email, 'code': code},
     ),
-    decoder: (_) => const Right(true),
+    decoder: (response) => Right(response.data?['data']?['verified'] == true),
   );
 
   Future<Either<Failure, void>> resetPassword(
@@ -318,16 +324,42 @@ class AuthRepository {
   }
 
   Future<Either<Failure, String>> enrollBiometricToken({
-    required String stepUpToken,
     required String publicKey,
+    required String challengeId,
+    required String signature,
   }) => requestEither(
     () => client.post(
       '/auth/biometric-token/enroll',
-      data: {'stepUpToken': stepUpToken, 'publicKey': publicKey},
+      data: {
+        'publicKey': publicKey,
+        'challengeId': challengeId,
+        'signature': signature,
+      },
     ),
     decoder: (response) =>
         Right(response.data['data']['biometricToken'] as String),
     debugLabel: 'AUTH enroll biometric',
+  );
+
+  Future<Either<Failure, ({String challengeId, String challenge})>>
+  createBiometricEnrollmentChallenge(String publicKey) => requestEither(
+    () => client.post(
+      '/auth/biometric-token/enroll/challenge',
+      data: {'publicKey': publicKey},
+    ),
+    decoder: (response) {
+      final data = response.data?['data'];
+      if (data is! Map<String, dynamic> ||
+          data['challengeId'] is! String ||
+          data['challenge'] is! String) {
+        return const Left(ServerFailure('Invalid biometric challenge.'));
+      }
+      return Right((
+        challengeId: data['challengeId'] as String,
+        challenge: data['challenge'] as String,
+      ));
+    },
+    debugLabel: 'AUTH biometric enrollment challenge',
   );
 
   Future<Either<Failure, UserEntity>> googleAuth(

@@ -104,7 +104,9 @@ class OfferMessageBubble extends StatelessWidget {
               ),
             ),
           ],
-          if (!isMe) ...[
+          // ponytail: accept only when the offer carries a productId to pay
+          // for; make-offer messages don't yet — negotiation flow is pending.
+          if (!isMe && productId != null) ...[
             Spacing.vMd,
             Row(
               children: [
@@ -114,11 +116,9 @@ class OfferMessageBubble extends StatelessWidget {
                     size: AppButtonSize.compact,
                     onPressed: () {
                       HapticFeedback.mediumImpact();
-                      if (productId != null) {
-                        context.push(
-                          '/profile/payment?productId=$productId&offerPrice=$offerPrice',
-                        );
-                      }
+                      context.push(
+                        '/profile/payment?productId=$productId&offerPrice=$offerPrice',
+                      );
                     },
                   ),
                 ),

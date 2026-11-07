@@ -9,22 +9,68 @@ import 'package:freebay/shared/utils/media_url.dart';
 
 const httpRequestTimeout = Duration(seconds: 10);
 
+String sanitizeHttpRoute(String path) {
+  const routeNames = {
+    'auth',
+    'login',
+    'logout',
+    'refresh',
+    'register',
+    'google',
+    'apple',
+    'biometric-login',
+    'biometric-challenge',
+    'users',
+    'me',
+    'profile',
+    'cart',
+    'orders',
+    'posts',
+    'stories',
+    'chat',
+    'conversations',
+    'notifications',
+    'wallet',
+    'products',
+    'search',
+    'upload',
+  };
+  final cleanPath = path.split(RegExp(r'[?#]')).first;
+  final parts = cleanPath.split('/').where((part) => part.isNotEmpty);
+  return '/${parts.map((part) => routeNames.contains(part) ? part : ':id').join('/')}';
+}
+
+String _authPhase(RequestOptions options) {
+  final route = sanitizeHttpRoute(options.path);
+  if (route.startsWith('/auth/')) return route.substring('/auth/'.length);
+  if (route == '/users/me') return 'session-validation';
+  return 'request';
+}
+
 class LoggingInterceptor extends Interceptor {
-  String _safeUri(Uri uri) => uri.replace(query: '', fragment: '').toString();
+  final Map<RequestOptions, Stopwatch> _timers = Map.identity();
+
+  bool get _enabled => !kReleaseMode;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    if (kDebugMode) {
-      debugPrint('[HTTP] ${options.method} ${_safeUri(options.uri)}');
+    if (_enabled) {
+      _timers[options] = Stopwatch()..start();
+      debugPrint(
+        '[HTTP] ${options.method} ${sanitizeHttpRoute(options.path)} phase=${_authPhase(options)}',
+      );
     }
     handler.next(options);
   }
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    if (kDebugMode) {
+    if (_enabled) {
+      final elapsed = _timers
+          .remove(response.requestOptions)
+          ?.elapsedMilliseconds;
       debugPrint(
-        '[HTTP] ${response.statusCode} ${_safeUri(response.requestOptions.uri)}',
+        '[HTTP] ${response.requestOptions.method} ${sanitizeHttpRoute(response.requestOptions.path)} ${response.statusCode} ${elapsed ?? 0}ms phase=${_authPhase(response.requestOptions)}',
       );
     }
     handler.next(response);
@@ -32,11 +78,12 @@ class LoggingInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (kDebugMode) {
+    if (_enabled) {
+      final options = err.requestOptions;
+      final elapsed = _timers.remove(options)?.elapsedMilliseconds;
       debugPrint(
-        '[HTTP ERROR] ${err.response?.statusCode} ${_safeUri(err.requestOptions.uri)}',
+        '[HTTP ERROR] ${options.method} ${sanitizeHttpRoute(options.path)} ${err.response?.statusCode ?? 'network'} ${elapsed ?? 0}ms ${err.type} phase=${_authPhase(options)}',
       );
-      debugPrint('[HTTP ERROR TYPE] ${err.type}');
       if (err.type == DioExceptionType.connectionError) {
         debugPrint(
           '[HTTP ERROR HINT] No route to backend. USB/emulador: adb reverse tcp:3000 tcp:3000. Wi-Fi: --dart-define=API_BASE_URL=http://YOUR_LAN_IP:3000',
@@ -59,6 +106,29 @@ class HttpClient {
   static const preserveCapturedAuthKey = 'preserve_captured_auth';
   static const capturedAuthTokenKey = 'captured_auth_token';
   static const disableRefreshKey = 'disable_refresh';
+
+  /// Endpoints callable without a session. A 401 there means the credentials
+  /// presented are wrong, never that the current session expired.
+  static const _publicAuthPaths = {
+    '/auth/login',
+    '/auth/register',
+    '/auth/google',
+    '/auth/apple',
+    '/auth/forgot-password',
+    '/auth/verify-reset-code',
+    '/auth/reset-password',
+    '/auth/username-available',
+    '/auth/biometric-login',
+    '/auth/biometric-challenge',
+  };
+
+  static bool _isPublicAuthRequest(String path) =>
+      _publicAuthPaths.contains(path.split(RegExp(r'[?#]')).first);
+
+  static String? _errorCode(Object? body) => switch (body) {
+    {'error': {'code': final String code}} => code,
+    _ => null,
+  };
 
   static void invalidateSession() {
     suspendRefresh();
@@ -150,7 +220,7 @@ class HttpClient {
 
     // Auth interceptor — inject JWT token + refresh on 401
     dio.interceptors.add(
-      QueuedInterceptorsWrapper(
+      InterceptorsWrapper(
         onRequest: (options, handler) async {
           final captured = options.extra[_originGenerationKey];
           final generation = captured is int ? captured : _sessionGeneration;
@@ -181,22 +251,25 @@ class HttpClient {
           final captured = error.requestOptions.extra[_originGenerationKey];
           final generation = captured is int ? captured : _sessionGeneration;
 
-          if (error.requestOptions.extra[disableRefreshKey] == true) {
+          if (error.requestOptions.extra[disableRefreshKey] == true ||
+              error.requestOptions.extra[_authRetryKey] == true) {
+            return handler.next(error);
+          }
+
+          if (_isPublicAuthRequest(error.requestOptions.path)) {
             return handler.next(error);
           }
 
           if (error.response?.statusCode == 404 &&
               error.requestOptions.path.contains('/users/me')) {
-            await _notifyAuthLostIfCurrent(generation);
+            if (_errorCode(error.response?.data) == 'USER_NOT_FOUND') {
+              await _notifyAuthLostIfCurrent(generation);
+            }
             return handler.next(error);
           }
 
-          if (error.response?.statusCode == 401 &&
-              error.requestOptions.path.contains('/auth/biometric-login')) {
-            return handler.next(error);
-          }
-
-          if (error.response?.statusCode == 401 &&
+          if (error.type == DioExceptionType.badResponse &&
+              error.response?.statusCode == 401 &&
               !error.requestOptions.path.contains('/auth/refresh') &&
               !error.requestOptions.path.contains('/auth/login')) {
             final refreshToken = await StorageService.getRefreshToken();
@@ -218,6 +291,14 @@ class HttpClient {
                   opts.extra[_originGenerationKey] != generation) {
                 return handler.next(error);
               }
+              final body = opts.data;
+              if (body is FormData && body.isFinalized) {
+                try {
+                  opts.data = body.clone();
+                } catch (_) {
+                  return handler.next(error);
+                }
+              }
               opts.headers['Authorization'] = 'Bearer ${refreshed.token}';
               opts.extra[_authRetryKey] = true;
               try {
@@ -227,8 +308,12 @@ class HttpClient {
                   return handler.next(error);
                 }
                 return handler.resolve(retryResponse);
+              } on DioException catch (_) {
+                // A 401 on the retried request is a business rejection, not
+                // session loss. Only a 401 from /auth/refresh is (see
+                // _performRefresh), so no auth-lost notification here.
+                return handler.next(error);
               } catch (_) {
-                await _notifyAuthLostIfCurrent(generation);
                 return handler.next(error);
               }
             }
@@ -240,6 +325,13 @@ class HttpClient {
     );
 
     return dio;
+  }
+
+  static Future<bool> refreshCurrentSession() async {
+    final generation = _sessionGeneration;
+    final refreshToken = await StorageService.getRefreshToken();
+    if (refreshToken == null || !_isCurrent(generation)) return false;
+    return await _refreshSession(instance, refreshToken, generation) != null;
   }
 
   static Future<_TokenPair?> _refreshSession(
@@ -272,20 +364,21 @@ class HttpClient {
     int generation,
   ) async {
     try {
-      final refreshDio = Dio(
-        BaseOptions(
-          baseUrl: dio.options.baseUrl,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $refreshToken',
+      final response = await dio.post<Object?>(
+        '/auth/refresh',
+        options: Options(
+          extra: {
+            disableRefreshKey: true,
+            preserveCapturedAuthKey: true,
+            capturedAuthTokenKey: refreshToken,
           },
         ),
       );
-      final response = await refreshDio.post('/auth/refresh');
-      final data = response.data['data'];
+      final data = response.data! as Map<String, Object?>;
+      final envelope = data['data']! as Map<String, Object?>;
       final pair = _TokenPair(
-        data['token'] as String,
-        data['refreshToken'] as String,
+        envelope['token'] as String,
+        envelope['refreshToken'] as String,
       );
       if (!_isCurrent(generation)) return null;
       await StorageService.saveTokenPair(pair.token, pair.refreshToken);
@@ -295,8 +388,12 @@ class HttpClient {
         return null;
       }
       return pair;
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 401) {
+        await _notifyAuthLostIfCurrent(generation);
+      }
+      return null;
     } catch (_) {
-      await _notifyAuthLostIfCurrent(generation);
       return null;
     }
   }

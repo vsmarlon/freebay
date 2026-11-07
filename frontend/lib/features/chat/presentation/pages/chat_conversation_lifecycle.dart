@@ -1,6 +1,7 @@
 part of 'chat_conversation_page.dart';
 
 mixin _ChatConversationLifecycle on ConsumerState<ChatConversationPage> {
+  TextEditingController get _messageController;
   Timer? get _typingDebounceTimer;
   set _typingDebounceTimer(Timer? value);
   Map<String, GlobalKey> get _messageKeys;
@@ -26,9 +27,16 @@ mixin _ChatConversationLifecycle on ConsumerState<ChatConversationPage> {
 
   void _onTextChanged() {
     _typingDebounceTimer?.cancel();
+    final ws = ref.read(chatSocketServiceProvider);
+    if (_messageController.text.isEmpty) {
+      // Programmatic clear after send must read as stop-typing, not typing.
+      ws.stopTyping(widget.chatId);
+      return;
+    }
     _typingDebounceTimer = Timer(const Duration(milliseconds: 300), () {
-      final ws = ref.read(chatSocketServiceProvider);
-      ws.sendTyping(widget.chatId);
+      if (_messageController.text.isNotEmpty) {
+        ws.sendTyping(widget.chatId);
+      }
     });
   }
 

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 import 'empty_state.dart';
@@ -27,6 +26,12 @@ class AppErrorWidget extends StatefulWidget {
 
 class _AppErrorWidgetState extends State<AppErrorWidget> {
   bool _recovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('app-error diagnostic: ${widget.details.exception}');
+  }
 
   static AppLocalizations _localizations(BuildContext context) =>
       maybeL10n(context) ??
@@ -59,9 +64,7 @@ class _AppErrorWidgetState extends State<AppErrorWidget> {
             child: EmptyState(
               icon: Icons.error_outline,
               title: localizations.commonError.toUpperCase(),
-              subtitle: kDebugMode
-                  ? widget.details.exception.toString()
-                  : localizations.errorScreenLoad,
+              subtitle: localizations.errorScreenLoad,
               action: widget.onRecover == null
                   ? null
                   : AppButton(

@@ -10,6 +10,7 @@ import 'package:freebay/features/social/presentation/providers/comment_context_p
 import 'package:freebay/features/social/presentation/providers/comment_likes_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
+import 'package:freebay/features/social/presentation/widgets/mention_suggestions.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 
@@ -30,6 +31,7 @@ class CommentContextPage extends ConsumerStatefulWidget {
 
 class _CommentContextPageState extends ConsumerState<CommentContextPage> {
   final _composer = TextEditingController();
+  final _composerFocus = FocusNode();
   final _scrollController = ScrollController();
   bool _sending = false;
   String _replySort = 'recent';
@@ -43,6 +45,7 @@ class _CommentContextPageState extends ConsumerState<CommentContextPage> {
   @override
   void dispose() {
     _composer.dispose();
+    _composerFocus.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -50,7 +53,7 @@ class _CommentContextPageState extends ConsumerState<CommentContextPage> {
   Future<void> _send(CommentEntity target) async {
     final rawContent = _composer.text;
     final content = rawContent.trim();
-    if (content.isEmpty || _sending) return;
+    if (content.isEmpty || content.characters.length > 280 || _sending) return;
     if (_pendingContent != null && _pendingContent != content) return;
     final requestId = _pendingClientRequestId ??= const Uuid().v4();
     _pendingContent = content;
@@ -117,51 +120,51 @@ class _CommentContextPageState extends ConsumerState<CommentContextPage> {
       backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: true,
       body: AppBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              PageHeader(text: l10n(context).feedComments),
-              Expanded(
-                child: state.when(
-                  loading: () => const Center(child: ShimmerBlock(height: 84)),
-                  error: (error, _) => EmptyState.error(
-                    message: error.toString(),
-                    onRetry: () => ref.invalidate(provider),
-                  ),
-                  data: (thread) {
-                    final current = thread.value;
-                    if (current.focus.postId != widget.postId) {
-                      return Center(
-                        child: Text(l10n(context).feedPostNotFound),
-                      );
-                    }
-                    final entries = [
-                      ...current.ancestors,
-                      current.focus,
-                      ...current.replies,
-                    ];
-                    final focusIndex = current.ancestors.length;
-                    final hasAncestorControl =
-                        current.nextAncestorCursor != null ||
-                        thread.ancestorError != null;
-                    final hasReplyControl =
-                        current.nextReplyCursor != null ||
-                        thread.replyError != null;
-                    final commentStart = hasAncestorControl ? 2 : 1;
-                    final replyControlIndex = commentStart + entries.length;
-                    final rowKeys = <Key>[
-                      const ValueKey('conversation-header'),
-                      if (hasAncestorControl) const ValueKey('load-ancestors'),
-                      ...entries.map(
-                        (comment) => ValueKey('comment:${comment.id}'),
-                      ),
-                      if (hasReplyControl) const ValueKey('load-replies'),
-                      const ValueKey('conversation-bottom'),
-                    ];
-                    final rowIndexes = {
-                      for (var i = 0; i < rowKeys.length; i++) rowKeys[i]: i,
-                    };
-                    return ListView.builder(
+        child: Column(
+          children: [
+            PageHeader(text: l10n(context).feedComments),
+            Expanded(
+              child: state.when(
+                loading: () => const Center(child: ShimmerBlock(height: 84)),
+                error: (error, _) => EmptyState.error(
+                  message: error.toString(),
+                  onRetry: () => ref.invalidate(provider),
+                ),
+                data: (thread) {
+                  final current = thread.value;
+                  if (current.focus.postId != widget.postId) {
+                    return Center(child: Text(l10n(context).feedPostNotFound));
+                  }
+                  final entries = [
+                    ...current.ancestors,
+                    current.focus,
+                    ...current.replies,
+                  ];
+                  final focusIndex = current.ancestors.length;
+                  final hasAncestorControl =
+                      current.nextAncestorCursor != null ||
+                      thread.ancestorError != null;
+                  final hasReplyControl =
+                      current.nextReplyCursor != null ||
+                      thread.replyError != null;
+                  final commentStart = hasAncestorControl ? 2 : 1;
+                  final replyControlIndex = commentStart + entries.length;
+                  final rowKeys = <Key>[
+                    const ValueKey('conversation-header'),
+                    if (hasAncestorControl) const ValueKey('load-ancestors'),
+                    ...entries.map(
+                      (comment) => ValueKey('comment:${comment.id}'),
+                    ),
+                    if (hasReplyControl) const ValueKey('load-replies'),
+                    const ValueKey('conversation-bottom'),
+                  ];
+                  final rowIndexes = {
+                    for (var i = 0; i < rowKeys.length; i++) rowKeys[i]: i,
+                  };
+                  return RefreshIndicator(
+                    onRefresh: () async =>
+                        ref.read(provider.notifier).refresh(),
+                    child: ListView.builder(
                       controller: _scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),
                       keyboardDismissBehavior:
@@ -171,15 +174,11 @@ class _CommentContextPageState extends ConsumerState<CommentContextPage> {
                       itemBuilder: (context, index) {
                         if (index == 0) {
                           return Padding(
-                            padding: const EdgeInsets.all(Spacing.md),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Spacing.md,
+                            ),
                             child: Row(
                               children: [
-                                Expanded(
-                                  child: Text(
-                                    l10n(context).feedComments,
-                                    style: AppTypography.h3,
-                                  ),
-                                ),
                                 DropdownButton<String>(
                                   value: _replySort,
                                   onChanged: (sort) {
@@ -202,12 +201,6 @@ class _CommentContextPageState extends ConsumerState<CommentContextPage> {
                                       ),
                                     ),
                                   ],
-                                ),
-                                BrutalistIconButton(
-                                  icon: Icons.refresh,
-                                  semanticLabel: l10n(context).commonRetry,
-                                  onTap: () =>
-                                      ref.read(provider.notifier).refresh(),
                                 ),
                               ],
                             ),
@@ -277,34 +270,39 @@ class _CommentContextPageState extends ConsumerState<CommentContextPage> {
                           ),
                         );
                       },
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.all(Spacing.sm),
-                  child: contextValue == null
-                      ? const SizedBox.shrink()
-                      : CommentInput(
+            ),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(Spacing.sm),
+                child: contextValue == null
+                    ? const SizedBox.shrink()
+                    : CommentInput(
+                        controller: _composer,
+                        focusNode: _composerFocus,
+                        isSending: _sending,
+                        hint: l10n(context).feedReplyingHint,
+                        onSend: () => _send(contextValue.focus),
+                        onChanged: _onDraftChanged,
+                        suggestions: MentionSuggestions(
                           controller: _composer,
-                          isSending: _sending,
-                          hint: l10n(context).feedReplyingHint,
-                          onSend: () => _send(contextValue.focus),
-                          onChanged: _onDraftChanged,
-                          onDiscard: () {
-                            _composer.clear();
-                            _pendingClientRequestId = null;
-                            _pendingContent = null;
-                            _persistDraft('');
-                            FocusScope.of(context).unfocus();
-                          },
+                          focusNode: _composerFocus,
                         ),
-                ),
+                        onDiscard: () {
+                          _composer.clear();
+                          _pendingClientRequestId = null;
+                          _pendingContent = null;
+                          _persistDraft('');
+                          FocusScope.of(context).unfocus();
+                        },
+                      ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

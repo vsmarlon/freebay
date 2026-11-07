@@ -24,6 +24,31 @@ class _CartPageState extends ConsumerState<CartPage> {
     ref.read(cartProvider.notifier).loadCart();
   }
 
+  Future<void> _confirmClear(BuildContext context) async {
+    final strings = l10n(context);
+    final confirmed = await AppDialog.show<bool>(
+      context: context,
+      title: strings.commonClear,
+      subtitle: strings.cartTitleCount(ref.read(cartProvider).cart.totalItems),
+      customActions: [
+        BrutalistDialogAction(
+          text: strings.commonCancel.toUpperCase(),
+          onPressed: () => Navigator.of(context).pop(false),
+        ),
+        BrutalistDialogAction(
+          text: strings.commonClear.toUpperCase(),
+          isDestructiveAction: true,
+          isDefaultAction: true,
+          onPressed: () => Navigator.of(context).pop(true),
+        ),
+      ],
+    );
+    if (confirmed != true || !context.mounted) return;
+    final ok = await ref.read(cartProvider.notifier).clearCart();
+    if (!context.mounted || !ok) return;
+    AppSnackbar.info(context, strings.cartCleared);
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = l10n(context);
@@ -33,6 +58,9 @@ class _CartPageState extends ConsumerState<CartPage> {
       (item) =>
           item.product.status != ProductStatus.active ||
           item.quantity > item.product.quantity - item.product.soldCount,
+    );
+    final hasRemovedProducts = cart.items.any(
+      (item) => item.product.status != ProductStatus.active,
     );
 
     return Scaffold(
@@ -50,13 +78,7 @@ class _CartPageState extends ConsumerState<CartPage> {
               actions: [
                 if (cart.items.isNotEmpty)
                   TextButton(
-                    onPressed: () async {
-                      final ok = await ref
-                          .read(cartProvider.notifier)
-                          .clearCart();
-                      if (!context.mounted) return;
-                      if (ok) AppSnackbar.info(context, strings.cartCleared);
-                    },
+                    onPressed: () => _confirmClear(context),
                     child: Text(
                       strings.commonClear,
                       style: TextStyle(
@@ -67,6 +89,34 @@ class _CartPageState extends ConsumerState<CartPage> {
                   ),
               ],
             ),
+            if (hasRemovedProducts)
+              Container(
+                margin: const EdgeInsets.only(
+                  left: Spacing.md,
+                  top: Spacing.md,
+                  right: Spacing.md,
+                ),
+                padding: const EdgeInsets.all(Spacing.md),
+                color: context.surfaceMidColor,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_outlined,
+                      size: 18,
+                      color: AppColors.warning,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        strings.productUnavailable,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: context.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: state.isLoading && cart.items.isEmpty
                   ? const SkeletonPage(
@@ -81,7 +131,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                     )
                   : state.error != null && cart.items.isEmpty
                   ? EmptyState.error(
-                      message: strings.errorUnknown,
+                      message: localizedFailureMessage(context, state.error),
                       onRetry: () => ref.read(cartProvider.notifier).loadCart(),
                     )
                   : cart.items.isEmpty
@@ -100,6 +150,9 @@ class _CartPageState extends ConsumerState<CartPage> {
                             const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final item = cart.items[index];
+                          final isUpdating = state.pendingProductIds.contains(
+                            item.productId,
+                          );
                           return Container(
                             color: context.surfaceColor,
                             padding: const EdgeInsets.all(12),
@@ -182,7 +235,8 @@ class _CartPageState extends ConsumerState<CartPage> {
                                                   item.product.title,
                                                 ),
                                             size: 24,
-                                            onTap: item.quantity > 1
+                                            onTap:
+                                                item.quantity > 1 && !isUpdating
                                                 ? () => ref
                                                       .read(
                                                         cartProvider.notifier,
@@ -218,7 +272,8 @@ class _CartPageState extends ConsumerState<CartPage> {
                                                         item.product.quantity -
                                                             item
                                                                 .product
-                                                                .soldCount
+                                                                .soldCount &&
+                                                    !isUpdating
                                                 ? () => ref
                                                       .read(
                                                         cartProvider.notifier,
@@ -282,7 +337,7 @@ class _CartPageState extends ConsumerState<CartPage> {
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  strings.errorUnknown,
+                  localizedFailureMessage(context, state.error),
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.error,
                   ),

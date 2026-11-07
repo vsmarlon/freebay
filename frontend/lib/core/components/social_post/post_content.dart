@@ -32,9 +32,6 @@ class SocialPostContent extends StatelessWidget {
             ),
             maxLines: compact ? 12 : 3,
             overflow: TextOverflow.ellipsis,
-            linkColor: compact ? AppColors.primaryContainer : null,
-            mentionColor: compact ? AppColors.primaryContainer : null,
-            hashtagColor: compact ? AppColors.primaryContainer : null,
             onLinkTap: (url) => showBrutalistSafeLinkDialog(context, url),
             onMentionTap: (mention) => context.push(
               AppRoutes.peopleSearchWith(mention.replaceFirst('@', '')),

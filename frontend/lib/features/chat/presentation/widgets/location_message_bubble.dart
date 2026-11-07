@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/features/chat/presentation/pages/chat_location_page.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class LocationMessageBubble extends StatelessWidget {
   final Map<String, dynamic>? metadata;
@@ -97,7 +99,7 @@ class LocationMessageBubble extends StatelessWidget {
             Icon(Icons.location_off, size: 16, color: context.textSecondary),
             const SizedBox(width: 6),
             Text(
-              'Localização indisponível',
+              l10n(context).locationUnavailable,
               style: TextStyle(fontSize: 12, color: context.textSecondary),
             ),
           ],
@@ -107,98 +109,97 @@ class LocationMessageBubble extends StatelessWidget {
 
     final address = _address;
 
-    return GestureDetector(
-      onTap: () async {
-        final url =
-            'https://www.google.com/maps/search/?api=1&query=${coords.latitude},${coords.longitude}';
-        try {
-          final launched = await launchUrl(
-            Uri.parse(url),
-            mode: LaunchMode.externalApplication,
-          );
-          if (!launched && context.mounted) {
-            AppSnackbar.error(context, 'Não foi possível abrir o mapa.');
-          }
-        } on PlatformException {
-          if (context.mounted) {
-            AppSnackbar.error(context, 'Não foi possível abrir o mapa.');
-          }
-        } catch (_) {
-          if (context.mounted) {
-            AppSnackbar.error(context, 'Não foi possível abrir o mapa.');
-          }
-        }
-      },
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 240),
-        decoration: BoxDecoration(
-          color: context.isDark
-              ? AppColors.surfaceContainerDark
-              : AppColors.surfaceContainerLow,
-          border: Border.all(color: context.borderColor),
+    return Semantics(
+      button: true,
+      label: l10n(context).chatLocationLabel,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => context.push(
+          AppRoutes.chatLocationView,
+          extra: ChatLocationDetails(
+            coordinates: coords,
+            address: address,
+            accuracyMeters: _accuracy,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: 140,
-              child: ClipRect(
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: coords,
-                    initialZoom: 15,
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.none,
-                    ),
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.freebay.app',
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: coords,
-                          width: 32,
-                          height: 32,
-                          child: const Icon(
-                            Icons.location_pin,
-                            color: AppColors.primaryContainer,
-                            size: 32,
-                          ),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 240),
+          decoration: BoxDecoration(
+            color: context.isDark
+                ? AppColors.surfaceContainerDark
+                : AppColors.surfaceContainerLow,
+            border: Border.all(color: context.borderColor),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 140,
+                child: IgnorePointer(
+                  child: ClipRect(
+                    child: FlutterMap(
+                      options: MapOptions(
+                        initialCenter: coords,
+                        initialZoom: 15,
+                        interactionOptions: const InteractionOptions(
+                          flags: InteractiveFlag.none,
+                        ),
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.freebay.app',
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: coords,
+                              width: 32,
+                              height: 32,
+                              child: const Icon(
+                                Icons.location_pin,
+                                color: AppColors.primaryContainer,
+                                size: 32,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-            if (address != null && address.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  address,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: context.textPrimary,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-            if (_accuracy != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                child: Text(
-                  'Precisão: ${_accuracy!.toStringAsFixed(0)} m',
-                  style: TextStyle(fontSize: 11, color: context.textSecondary),
+              if (address != null && address.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    address,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: context.textPrimary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-          ],
+              if (_accuracy != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                  child: Text(
+                    l10n(
+                      context,
+                    ).locationAccuracy(_accuracy!.toStringAsFixed(0)),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.textSecondary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

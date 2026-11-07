@@ -30,9 +30,9 @@ class PageHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => Size.fromHeight(
-    subtitle != null || (breadcrumbs != null && breadcrumbs!.isNotEmpty)
-        ? 76.0
-        : 56.0,
+    56.0 +
+        (subtitle != null ? 20 : 0) +
+        (breadcrumbs != null && breadcrumbs!.isNotEmpty ? 28 : 0),
   );
 
   @override
@@ -41,8 +41,7 @@ class PageHeader extends StatelessWidget implements PreferredSizeWidget {
 
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 4,
-        bottom: 8,
+        top: MediaQuery.of(context).padding.top,
         left: 16,
         right: 16,
       ),
@@ -61,37 +60,40 @@ class PageHeader extends StatelessWidget implements PreferredSizeWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              if (leading != null) ...[leading!, const SizedBox(width: 12)],
-              Expanded(
-                child: RichText(
-                  overflow: TextOverflow.ellipsis,
-                  text: TextSpan(
-                    text: text.toUpperCase(),
-                    style: TextStyle(
-                      fontFamily: AppTypography.headlineFontFamily,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                      color: context.textPrimary,
-                    ),
-                    children: exclamation != null
-                        ? [
-                            TextSpan(
-                              text: exclamation,
-                              style: const TextStyle(
-                                color: AppColors.primaryContainer,
-                                fontWeight: FontWeight.w900,
+          SizedBox(
+            height: 56,
+            child: Row(
+              children: [
+                if (leading != null) ...[leading!, const SizedBox(width: 12)],
+                Expanded(
+                  child: RichText(
+                    overflow: TextOverflow.ellipsis,
+                    text: TextSpan(
+                      text: text.toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: AppTypography.headlineFontFamily,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                        color: context.textPrimary,
+                      ),
+                      children: exclamation != null
+                          ? [
+                              TextSpan(
+                                text: exclamation,
+                                style: const TextStyle(
+                                  color: AppColors.primaryContainer,
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
-                            ),
-                          ]
-                        : null,
+                            ]
+                          : null,
+                    ),
                   ),
                 ),
-              ),
-              ...?actionsList,
-            ],
+                ...?actionsList,
+              ],
+            ),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 4),

@@ -83,7 +83,7 @@ class BiometricLoginUsecase implements Usecase<UserEntity, int> {
       return const Left(CacheFailure('Authentication attempt superseded.'));
     }
 
-    // The token vault and non-exportable signing key each enforce biometrics.
+    // The non-exportable signing key supplies the only prompt for new credentials.
     String? biometricToken;
     try {
       biometricToken = await StorageService.getBiometricToken();

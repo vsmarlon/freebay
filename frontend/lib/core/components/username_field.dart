@@ -48,10 +48,17 @@ class _UsernameFieldState extends ConsumerState<UsernameField> {
   void _onChanged(String value) {
     _debounce?.cancel();
     final version = ++_requestVersion;
-    final candidate = value.trim().toLowerCase();
+    final candidate = value
+        .trim()
+        .replaceFirst(RegExp(r'^@'), '')
+        .toLowerCase();
     _suggestions = [];
 
-    if (candidate == widget.initialUsername) {
+    if (candidate ==
+        widget.initialUsername
+            ?.trim()
+            .replaceFirst(RegExp(r'^@'), '')
+            .toLowerCase()) {
       setState(() => _status = UsernameFieldStatus.idle);
       return;
     }

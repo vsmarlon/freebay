@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/stories/data/entities/story_entity.dart';
@@ -11,6 +13,10 @@ class StoryPage extends StatefulWidget {
   final AnimationController animationController;
   final bool isPaused;
   final VoidCallback onComplete;
+  final VoidCallback onReady;
+  final GestureDragStartCallback? onVerticalDragStart;
+  final GestureDragUpdateCallback? onVerticalDragUpdate;
+  final GestureDragEndCallback? onVerticalDragEnd;
 
   const StoryPage({
     super.key,
@@ -18,6 +24,10 @@ class StoryPage extends StatefulWidget {
     required this.animationController,
     required this.isPaused,
     required this.onComplete,
+    required this.onReady,
+    this.onVerticalDragStart,
+    this.onVerticalDragUpdate,
+    this.onVerticalDragEnd,
   });
 
   @override
@@ -28,6 +38,9 @@ class _StoryPageState extends State<StoryPage> {
   VideoPlayerController? _videoController;
   bool _imageReady = false;
   bool _mediaError = false;
+  Duration? _videoViewDuration;
+  bool _videoCompleted = false;
+  final _transform = TransformationController();
 
   @override
   void initState() {
@@ -39,7 +52,7 @@ class _StoryPageState extends State<StoryPage> {
     if (widget.story.mediaType == StoryMediaType.video) {
       _initializeVideo();
     } else {
-      widget.animationController.duration = const Duration(seconds: 7);
+      widget.animationController.duration = const Duration(seconds: 5);
       widget.animationController.stop();
     }
   }
@@ -51,6 +64,7 @@ class _StoryPageState extends State<StoryPage> {
       return;
     }
     _imageReady = true;
+    widget.onReady();
     if (!widget.isPaused) widget.animationController.forward();
   }
 
@@ -68,10 +82,13 @@ class _StoryPageState extends State<StoryPage> {
       await controller.initialize().timeout(const Duration(seconds: 20));
       if (!mounted || !identical(_videoController, controller)) return;
       final duration = controller.value.duration;
-      widget.animationController.duration = duration > Duration.zero
-          ? duration
-          : const Duration(seconds: 1);
+      if (duration <= Duration.zero) {
+        throw StateError('Story video has no duration');
+      }
+      _videoViewDuration = duration;
+      widget.animationController.duration = _videoViewDuration;
       setState(() {});
+      widget.onReady();
       if (!widget.isPaused) {
         await controller.play();
       }
@@ -86,12 +103,24 @@ class _StoryPageState extends State<StoryPage> {
 
   void _onVideoUpdate() {
     final controller = _videoController;
-    if (!mounted || controller?.value.isInitialized != true) return;
+    if (!mounted ||
+        _videoCompleted ||
+        controller?.value.isInitialized != true) {
+      return;
+    }
     final duration = controller!.value.duration;
     if (duration <= Duration.zero) return;
-    final progress =
-        (controller.value.position.inMicroseconds / duration.inMicroseconds)
-            .clamp(0.0, 1.0);
+    final viewDuration = _videoViewDuration;
+    if (viewDuration == null) return;
+    final position = controller.value.position;
+    if (position >= viewDuration) {
+      _videoCompleted = true;
+      unawaited(controller.pause());
+      widget.animationController.value = 1;
+      return;
+    }
+    final progress = (position.inMicroseconds / viewDuration.inMicroseconds)
+        .clamp(0.0, 1.0);
     widget.animationController.value = progress;
   }
 
@@ -119,10 +148,14 @@ class _StoryPageState extends State<StoryPage> {
   void didUpdateWidget(StoryPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.story.id != oldWidget.story.id) {
+      _videoController?.removeListener(_onVideoUpdate);
       _videoController?.dispose();
       _videoController = null;
       _imageReady = false;
       _mediaError = false;
+      _videoViewDuration = null;
+      _videoCompleted = false;
+      _transform.value = Matrix4.identity();
       widget.animationController.reset();
       _setupAnimation();
     } else if (widget.isPaused != oldWidget.isPaused) {
@@ -146,6 +179,7 @@ class _StoryPageState extends State<StoryPage> {
   void dispose() {
     _videoController?.removeListener(_onVideoUpdate);
     _videoController?.dispose();
+    _transform.dispose();
     super.dispose();
   }
 
@@ -153,58 +187,95 @@ class _StoryPageState extends State<StoryPage> {
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.onSurface,
-      child: StoryCanvas(
-        blocks: widget.story.textBlocks ?? const [],
-        background: Stack(
-          children: [
-            Center(
-              child: widget.story.mediaType == StoryMediaType.video
-                  ? _mediaError
-                        ? _buildMediaError()
-                        : _videoController?.value.isInitialized == true
-                        ? AspectRatio(
-                            aspectRatio: _videoController!.value.aspectRatio,
-                            child: VideoPlayer(_videoController!),
-                          )
-                        : const CircularProgressIndicator(
-                            color: AppColors.onPrimary,
-                          )
-                  : Image.network(
-                      widget.story.imageUrl,
-                      headers: mediaAuthHeaders(widget.story.imageUrl),
-                      cacheWidth:
-                          (MediaQuery.sizeOf(context).width *
-                                  MediaQuery.devicePixelRatioOf(context))
-                              .ceil()
-                              .clamp(1, 1440),
-                      fit: BoxFit.contain,
-                      frameBuilder: (context, child, frame, wasSync) {
-                        if (frame != null || wasSync) {
-                          WidgetsBinding.instance.addPostFrameCallback(
-                            (_) => _startImageTimer(),
-                          );
-                        }
-                        return child;
-                      },
-                      errorBuilder: (context, error, stackTrace) =>
-                          _buildMediaError(),
+      child: InteractiveViewer(
+        transformationController: _transform,
+        panEnabled: false,
+        maxScale: 4,
+        // InteractiveViewer also owns single-finger drags in the gesture arena.
+        onInteractionStart: (details) {
+          if (details.pointerCount == 1) {
+            widget.onVerticalDragStart?.call(
+              DragStartDetails(globalPosition: details.focalPoint),
+            );
+          }
+        },
+        onInteractionUpdate: (details) {
+          if (details.pointerCount == 1) {
+            widget.onVerticalDragUpdate?.call(
+              DragUpdateDetails(
+                globalPosition: details.focalPoint,
+                delta: details.focalPointDelta,
+              ),
+            );
+          }
+        },
+        onInteractionEnd: (details) {
+          _transform.value = Matrix4.identity();
+          widget.onVerticalDragEnd?.call(
+            DragEndDetails(velocity: details.velocity),
+          );
+        },
+        child: StoryCanvas(
+          blocks: widget.story.textBlocks ?? const [],
+          background: Stack(
+            children: [
+              Center(
+                child: widget.story.mediaType == StoryMediaType.video
+                    ? _mediaError
+                          ? _buildMediaError()
+                          : _videoController?.value.isInitialized == true
+                          ? AspectRatio(
+                              aspectRatio: _videoController!.value.aspectRatio,
+                              child: VideoPlayer(_videoController!),
+                            )
+                          : const CircularProgressIndicator(
+                              color: AppColors.onPrimary,
+                            )
+                    : Image.network(
+                        widget.story.imageUrl,
+                        headers: mediaAuthHeaders(widget.story.imageUrl),
+                        cacheWidth:
+                            (MediaQuery.sizeOf(context).width *
+                                    MediaQuery.devicePixelRatioOf(context))
+                                .ceil()
+                                .clamp(1, 1440),
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, progress) =>
+                            progress == null
+                            ? child
+                            : const Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.onPrimary,
+                                ),
+                              ),
+                        frameBuilder: (context, child, frame, wasSync) {
+                          if (frame != null || wasSync) {
+                            WidgetsBinding.instance.addPostFrameCallback(
+                              (_) => _startImageTimer(),
+                            );
+                          }
+                          return child;
+                        },
+                        errorBuilder: (context, error, stackTrace) =>
+                            _buildMediaError(),
+                      ),
+              ),
+              if (widget.story.caption?.isNotEmpty == true)
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 72,
+                  child: Text(
+                    widget.story.caption!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.onPrimary,
+                      fontSize: 18,
                     ),
-            ),
-            if (widget.story.caption?.isNotEmpty == true)
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 72,
-                child: Text(
-                  widget.story.caption!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.onPrimary,
-                    fontSize: 18,
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

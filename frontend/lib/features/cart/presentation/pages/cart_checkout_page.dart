@@ -88,7 +88,7 @@ class CartCheckoutPage extends HookConsumerWidget {
                     )
                   : state.error != null
                   ? EmptyState.error(
-                      message: state.error!,
+                      message: localizedFailureMessage(context, state.error),
                       onRetry: () => ref.read(cartProvider.notifier).loadCart(),
                     )
                   : cart.items.isEmpty

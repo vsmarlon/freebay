@@ -13,12 +13,13 @@ import 'package:freebay/features/profile/presentation/controllers/profile_contro
 import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
-import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/shared/services/error_reporter.dart';
 import 'package:freebay/shared/services/auth_session_coordinator.dart';
 import 'package:uuid/uuid.dart';
 import 'package:freebay/features/social/presentation/widgets/quote_source_preview.dart';
+import 'package:freebay/features/social/presentation/widgets/local_image_inspector.dart';
+import 'package:freebay/features/social/presentation/widgets/mention_suggestions.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
   final QuoteSource? quoteSource;
@@ -31,6 +32,8 @@ class CreatePostPage extends ConsumerStatefulWidget {
 class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   final _contentController = TextEditingController();
   final _mentionController = TextEditingController();
+  final _contentFocus = FocusNode();
+  final _mentionFocus = FocusNode();
   final _imagePicker = ImagePicker();
   String? _selectedImagePath;
   bool _isLoading = false;
@@ -38,12 +41,13 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   String? _quoteRequestId;
   String? _quoteRequestFingerprint;
   final List<UserSearchEntity> _selectedMentionUsers = [];
-  String _searchedMentionQuery = '';
 
   @override
   void dispose() {
     _contentController.dispose();
     _mentionController.dispose();
+    _contentFocus.dispose();
+    _mentionFocus.dispose();
     super.dispose();
   }
 
@@ -58,28 +62,26 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
       if (pickedFile != null && mounted) {
         final bytes = await pickedFile.readAsBytes();
         if (!mounted) return;
-        await context.push(
-          AppRoutes.imageEditor,
-          extra: {
-            'imageBytes': bytes,
-            'purpose': ImageEditorPurpose.post,
-            'onComplete': (ImageEditorResult result) async {
-              final editedFile = File(
-                '${Directory.systemTemp.path}${Platform.pathSeparator}freebay_post_${DateTime.now().microsecondsSinceEpoch}.png',
-              );
-              await editedFile.writeAsBytes(result.imageBytes, flush: true);
-              if (mounted) {
-                setState(() => _selectedImagePath = editedFile.path);
-                final caption = result.caption?.trim();
-                if (caption?.isNotEmpty == true &&
-                    _contentController.text.trim().isEmpty) {
-                  _contentController.text = caption!;
-                }
+        final request = ImageEditorRouteRequest(
+          imageBytes: bytes,
+          purpose: ImageEditorPurpose.post,
+          onComplete: (ImageEditorResult result) async {
+            final editedFile = File(
+              '${Directory.systemTemp.path}${Platform.pathSeparator}freebay_post_${DateTime.now().microsecondsSinceEpoch}.png',
+            );
+            await editedFile.writeAsBytes(result.imageBytes, flush: true);
+            if (mounted) {
+              setState(() => _selectedImagePath = editedFile.path);
+              final caption = result.caption?.trim();
+              if (caption?.isNotEmpty == true &&
+                  _contentController.text.trim().isEmpty) {
+                _contentController.text = caption!;
               }
-              return true;
-            },
+            }
+            return true;
           },
         );
+        await request.push<void>(context, AppRoutes.imageEditor);
       }
     } catch (error, stackTrace) {
       ErrorReporter.report('post-media-pick', error, stackTrace);
@@ -99,11 +101,11 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         _audience == PostAudience.everyone &&
         mention.isNotEmpty &&
         content != null) {
-      content = '$content\n@$mention';
+      content = '$content\n@${mention.replaceFirst(RegExp(r'^@+'), '')}';
     } else if (widget.quoteSource == null &&
         _audience == PostAudience.everyone &&
         mention.isNotEmpty) {
-      content = '@$mention';
+      content = '@${mention.replaceFirst(RegExp(r'^@+'), '')}';
     }
 
     if (widget.quoteSource != null &&
@@ -179,17 +181,6 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   Widget build(BuildContext context) {
     final strings = l10n(context);
     final user = ref.watch(authControllerProvider).value;
-    final mentionQuery = _mentionController.text.trim();
-    final mentionCandidates =
-        widget.quoteSource != null &&
-            mentionQuery.isNotEmpty &&
-            mentionQuery == _searchedMentionQuery
-        ? ref
-                  .watch(quoteMentionCandidatesProvider(mentionQuery))
-                  .asData
-                  ?.value ??
-              const <UserSearchEntity>[]
-        : const <UserSearchEntity>[];
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -301,6 +292,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                       padding: const EdgeInsets.all(16),
                       child: TextField(
                         controller: _contentController,
+                        focusNode: _contentFocus,
                         maxLength: widget.quoteSource == null ? null : 1000,
                         maxLines: null,
                         minLines: 5,
@@ -312,6 +304,18 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                         ),
                       ),
                     ),
+                    MentionSuggestions(
+                      controller: _contentController,
+                      focusNode: _contentFocus,
+                      onSelected: (user) {
+                        if (widget.quoteSource != null &&
+                            !_selectedMentionUsers.any(
+                              (item) => item.id == user.id,
+                            )) {
+                          setState(() => _selectedMentionUsers.add(user));
+                        }
+                      },
+                    ),
                     Spacing.vSm,
                     if (widget.quoteSource != null) ...[
                       Row(
@@ -319,21 +323,26 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                           Expanded(
                             child: TextField(
                               controller: _mentionController,
+                              focusNode: _mentionFocus,
                               decoration: InputDecoration(
                                 hintText: strings.feedMentionUser,
                               ),
-                              onChanged: (_) =>
-                                  setState(() => _searchedMentionQuery = ''),
                             ),
                           ),
                           Spacing.hSm,
-                          BrutalistIconButton(
-                            key: const ValueKey('quote-mention-search'),
-                            icon: Icons.search,
-                            semanticLabel: strings.commonSearch,
-                            onTap: _searchQuoteMentionCandidates,
-                          ),
                         ],
+                      ),
+                      MentionSuggestions(
+                        controller: _mentionController,
+                        focusNode: _mentionFocus,
+                        allowBareQuery: true,
+                        onSelected: (user) {
+                          if (!_selectedMentionUsers.any(
+                            (item) => item.id == user.id,
+                          )) {
+                            setState(() => _selectedMentionUsers.add(user));
+                          }
+                        },
                       ),
                       if (_selectedMentionUsers.isNotEmpty)
                         Wrap(
@@ -350,26 +359,6 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                               ),
                           ],
                         ),
-                      if (mentionCandidates.isNotEmpty)
-                        ...mentionCandidates
-                            .where(
-                              (candidate) => !_selectedMentionUsers.any(
-                                (selected) => selected.id == candidate.id,
-                              ),
-                            )
-                            .take(5)
-                            .map(
-                              (candidate) => ListTile(
-                                leading: UserAvatar(
-                                  imageUrl: candidate.avatarUrl,
-                                ),
-                                title: Text(candidate.displayName),
-                                subtitle: candidate.username == null
-                                    ? null
-                                    : Text('@${candidate.username}'),
-                                onTap: () => _selectQuoteMention(candidate),
-                              ),
-                            ),
                     ],
                     Spacing.vSm,
                     if (widget.quoteSource == null &&
@@ -391,6 +380,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                             Expanded(
                               child: TextField(
                                 controller: _mentionController,
+                                focusNode: _mentionFocus,
                                 style: TextStyle(
                                   color: context.textPrimary,
                                   fontSize: 14,
@@ -410,15 +400,35 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                           ],
                         ),
                       ),
+                    if (widget.quoteSource == null &&
+                        _audience == PostAudience.everyone)
+                      MentionSuggestions(
+                        controller: _mentionController,
+                        focusNode: _mentionFocus,
+                        allowBareQuery: true,
+                      ),
                     if (_selectedImagePath != null) ...[
                       Spacing.vMd,
                       Stack(
                         children: [
-                          Image.file(
-                            File(_selectedImagePath!),
-                            width: double.infinity,
-                            height: 200,
-                            fit: BoxFit.cover,
+                          GestureDetector(
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => LocalImageFullScreen(
+                                  path: _selectedImagePath!,
+                                  onEdit: () {
+                                    Navigator.of(context).pop();
+                                    _pickImage(ImageSource.gallery);
+                                  },
+                                ),
+                              ),
+                            ),
+                            child: Image.file(
+                              File(_selectedImagePath!),
+                              width: double.infinity,
+                              height: 200,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                           Positioned(
                             top: 8,
@@ -455,6 +465,8 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                           ),
                           label: Text(strings.commonGallery),
                           style: OutlinedButton.styleFrom(
+                            foregroundColor: context.textPrimary,
+                            backgroundColor: context.surfaceColor,
                             shape: const RoundedRectangleBorder(),
                           ),
                         ),
@@ -464,6 +476,8 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                           icon: const Icon(Icons.camera_alt_outlined, size: 18),
                           label: Text(strings.commonCamera),
                           style: OutlinedButton.styleFrom(
+                            foregroundColor: context.textPrimary,
+                            backgroundColor: context.surfaceColor,
                             shape: const RoundedRectangleBorder(),
                           ),
                         ),
@@ -477,22 +491,5 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         ),
       ),
     );
-  }
-
-  void _searchQuoteMentionCandidates() {
-    final query = _mentionController.text.trim();
-    setState(() => _searchedMentionQuery = query);
-    if (query.isNotEmpty) {
-      ref.read(quoteMentionCandidatesProvider(query));
-    }
-  }
-
-  void _selectQuoteMention(UserSearchEntity user) {
-    if (_selectedMentionUsers.any((selected) => selected.id == user.id)) return;
-    setState(() {
-      _selectedMentionUsers.add(user);
-      _mentionController.clear();
-      _searchedMentionQuery = '';
-    });
   }
 }

@@ -9,6 +9,7 @@ class StoryCaptureView extends StatelessWidget {
   final bool isTakingPicture;
   final bool canSwitchCamera;
   final String? cameraError;
+  final VoidCallback onRetryCamera;
   final VoidCallback onClose;
   final VoidCallback onSwitchCamera;
   final VoidCallback onPickFromGallery;
@@ -21,6 +22,7 @@ class StoryCaptureView extends StatelessWidget {
     required this.isTakingPicture,
     required this.canSwitchCamera,
     required this.cameraError,
+    required this.onRetryCamera,
     required this.onClose,
     required this.onSwitchCamera,
     required this.onPickFromGallery,
@@ -38,9 +40,23 @@ class StoryCaptureView extends StatelessWidget {
             SizedBox.expand(child: CameraPreview(cameraController!))
           else
             Center(
-              child: Text(
-                cameraError ?? strings.commonLoading,
-                style: const TextStyle(color: AppColors.onPrimary),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    cameraError ?? strings.commonLoading,
+                    style: const TextStyle(color: AppColors.onPrimary),
+                  ),
+                  if (cameraError != null) ...[
+                    const SizedBox(height: 8),
+                    AppButton(
+                      label: strings.commonRetry,
+                      onPressed: onRetryCamera,
+                      variant: AppButtonVariant.secondary,
+                      size: AppButtonSize.compact,
+                    ),
+                  ],
+                ],
               ),
             ),
           SafeArea(

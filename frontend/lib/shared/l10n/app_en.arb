@@ -1,4 +1,13 @@
 {
+  "chatPin": "Pin message",
+  "chatUnpin": "Unpin message",
+  "chatReact": "React",
+  "chatMore": "More options",
+  "chatMediaInfo": "Media information",
+  "chatPreviousMedia": "Previous media",
+  "chatNextMedia": "Next media",
+  "chatNoMedia": "No media",
+  "chatMediaHint": "Images and videos sent here appear in this list.",
   "@@locale": "en",
   "onboardingSkip": "Skip",
   "onboardingNext": "Next",
@@ -49,11 +58,14 @@
   "authSignUp": "Create account",
   "authLogout": "Log out",
   "authEmail": "Email",
+  "authLoginIdentifier": "Email or @username",
+  "authLoginRequired": "Enter your email or @username",
+  "authUsernameInvalid": "Use 3-20 lowercase letters, numbers or _",
   "authPassword": "Password",
   "authForgotPassword": "Forgot password?",
   "authResetPassword": "Reset password",
   "authSessionExpired": "Session expired",
-  "authSessionExpiredBody": "For your security, sign in again to continue.",
+  "authSessionExpiredBody": "You were signed out after 12 minutes without activity. Sign in again to continue.",
   "authUseBiometrics": "Use biometrics",
   "authContinueAsGuest": "Continue as guest",
   "feedTitle": "Feed",
@@ -83,6 +95,17 @@
   "profileSettings": "Settings",
   "profileBlocked": "This profile is unavailable.",
   "chatTitle": "Messages",
+  "chatMediaUnavailable": "Media unavailable — it may have been deleted",
+  "chatMediaUnavailableSender": "Attachment is unavailable on the server",
+  "chatViewOnceOpen": "Open once",
+  "chatViewOnceBurned": "Viewed — deleted",
+  "chatViewOnceBurnedTimestamp": "Deleted",
+  "chatViewOnceSentTimestamp": "Sent",
+  "chatViewOnceSent": "View-once message sent",
+  "chatViewOnceToggle": "View once",
+  "chatViewOnceEnabled": "View once enabled",
+  "chatViewOnceDisabled": "View once disabled",
+  "chatViewOnceExpiresOnClose": "DISAPPEARS WHEN CLOSED",
   "chatArchivedTitle": "Archived conversations",
   "chatNewConversation": "New conversation",
   "chatUnarchive": "Unarchive",
@@ -97,12 +120,15 @@
   "chatMessageToSeller": "Message the seller",
   "chatPurchaseOffer": "PURCHASE OFFER",
   "chatChooseProduct": "CHOOSE PRODUCT",
-  "chatMessageHint": "Write a message…",
+  "chatMessageHint": "Message…",
   "chatEmptyTitle": "No messages yet",
   "chatNoConversations": "NO CONVERSATIONS",
   "chatNoConversationsBody": "Start a conversation or receive a message to see it here.",
   "chatLoadFailed": "Unable to load your conversations. Check your connection.",
   "chatSendFailed": "Message could not be sent.",
+  "chatSendDeliveryUncertain": "Delivery unconfirmed. Tap to retry.",
+  "chatSendingSlow": "Trying to send…",
+  "chatSendCancelled": "Send cancelled",
   "chatAttachment": "Attachment",
   "chatVoiceMessage": "Voice message",
   "chatLocation": "Location",
@@ -112,7 +138,13 @@
   "locationUnavailable": "Unable to get your location. Try again.",
   "locationUseCurrent": "Use current location",
   "locationAccuracy": "Provider accuracy: {meters} m",
-  "@locationAccuracy": {"placeholders": {"meters": {"type": "String"}}},
+  "@locationAccuracy": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
   "productTitle": "Products",
   "productSearchHint": "Search products",
   "productAddToCart": "Add to cart",
@@ -124,7 +156,13 @@
   "cartEmptyTitle": "Your cart is empty",
   "cartCheckout": "Continue to checkout",
   "cartQuantity": "Quantity: {quantity}",
-  "@cartQuantity": {"placeholders": {"quantity": {"type": "int"}}},
+  "@cartQuantity": {
+    "placeholders": {
+      "quantity": {
+        "type": "int"
+      }
+    }
+  },
   "paymentPending": "Payment pending",
   "paymentFailed": "Payment could not be completed.",
   "ordersTitle": "Orders",
@@ -139,15 +177,36 @@
   "ordersShowingCached": "Showing saved orders.",
   "ordersEndOfList": "END OF LIST",
   "ordersNumber": "ORDER #{orderId}",
-  "@ordersNumber": {"placeholders": {"orderId": {"type": "String"}}},
+  "@ordersNumber": {
+    "placeholders": {
+      "orderId": {
+        "type": "String"
+      }
+    }
+  },
   "ordersNotFound": "Order not found",
   "ordersInformation": "Information",
   "ordersOrderId": "Order ID",
   "ordersOrderDate": "Order date",
   "ordersItemNumber": "Item #{shortId}",
-  "@ordersItemNumber": {"placeholders": {"shortId": {"type": "String"}}},
+  "@ordersItemNumber": {
+    "placeholders": {
+      "shortId": {
+        "type": "String"
+      }
+    }
+  },
   "ordersOtherParty": "{role}: {name}",
-  "@ordersOtherParty": {"placeholders": {"role": {"type": "String"}, "name": {"type": "String"}}},
+  "@ordersOtherParty": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "orderStatusHeading": "Order status",
   "escrowStatusHeld": "Held in escrow",
   "escrowStatusReleased": "Released",
@@ -163,7 +222,13 @@
   "escrowRefundedSeller": "Amount refunded to the buyer.",
   "ordersConfirmCancellation": "Confirm cancellation",
   "ordersConfirmCancellationBody": "Are you sure you want to cancel this order?\n\nReason: {reason}\n\nThe amount will be refunded if it has already been paid.",
-  "@ordersConfirmCancellationBody": {"placeholders": {"reason": {"type": "String"}}},
+  "@ordersConfirmCancellationBody": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "ordersCancelReasonPrompt": "Select a reason for cancellation:",
   "ordersCancelReasonChangedMind": "I changed my mind",
   "ordersCancelReasonBetterPrice": "I found a better price",
@@ -221,6 +286,8 @@
   "authRecoveryCodeInvalid": "The code is invalid or expired. Please try again.",
   "authCodeSixDigitsRequired": "Enter the 6-digit code",
   "authSendCode": "Send code",
+  "authRecoveryHint": "Enter your email to receive the verification code.",
+  "authRecoveryCodeHint": "Enter the 6-digit code sent to your email.",
   "authConfirmPassword": "Confirm password",
   "authNewPassword": "New password",
   "authVerificationCode": "Verification code",
@@ -240,12 +307,12 @@
   "authPasswordMinLength": "Use at least 8 characters",
   "authPasswordMismatch": "Passwords do not match",
   "authRecoveryCodeRequired": "Enter the verification code",
-  "authBiometryNotEnabled": "Biometrics are not enabled.",
-  "authBiometryUnavailable": "Biometrics are unavailable on this device.",
-  "authBiometryCredentialsMissing": "Biometric credentials were not found.",
-  "authBiometryAccountMismatch": "Biometrics belong to another account.",
-  "authBiometryCancelled": "Biometric authentication was cancelled.",
-  "authBiometryTokenMissing": "Biometric token was not found.",
+  "authBiometryNotEnabled": "Fingerprint or Face ID sign-in is not enabled. A device PIN or passcode cannot be used.",
+  "authBiometryUnavailable": "Fingerprint or Face ID is unavailable on this device. A device PIN or passcode cannot be used.",
+  "authBiometryCredentialsMissing": "Fingerprint or Face ID sign-in credentials were not found. A device PIN or passcode cannot be used.",
+  "authBiometryAccountMismatch": "Fingerprint or Face ID sign-in belongs to another account. A device PIN or passcode cannot be used.",
+  "authBiometryCancelled": "Fingerprint or Face ID authentication was cancelled. A device PIN or passcode cannot be used.",
+  "authBiometryTokenMissing": "The fingerprint or Face ID sign-in token was not found. A device PIN or passcode cannot be used.",
   "authLoginFailed": "Unable to sign in. Please try again.",
   "authRegistrationFailed": "Unable to create your account. Please try again.",
   "authRecoverySent": "If the account exists, recovery instructions will be sent.",
@@ -253,7 +320,7 @@
   "authGoogleUnavailable": "Google sign-in is currently unavailable.",
   "authPermissionBiometry": "Enable biometrics",
   "authPermissionNotifications": "Enable notifications",
-  "authOnboardingBiometry": "SIGN IN WITH BIOMETRICS",
+  "authOnboardingBiometry": "SIGN IN WITH FINGERPRINT OR FACE ID",
   "authOnboardingNotifications": "STAY IN THE LOOP",
   "authOnboardingReady": "YOU'RE ALL SET",
   "onboardingShopAndSell": "BUY AND SELL",
@@ -273,22 +340,31 @@
   "onboardingHighlightChat": "PRIVATE CHAT",
   "onboardingHighlightHeldPayment": "PAYMENT HELD SECURELY",
   "onboardingHighlightDisputes": "DISPUTE SUPPORT",
-  "onboardingWalletBody": "Receive sales proceeds transparently, withdraw when eligible, and build a reputation with verified reviews.",
+  "onboardingWalletBody": "Track available and pending balances, configure Stripe receiving details, and build a reputation with verified reviews.",
   "onboardingHighlightPayout": "PIX / STRIPE PAYOUTS",
   "onboardingHighlightReviews": "VERIFIED REVIEWS",
   "onboardingHighlightStatement": "LIVE STATEMENT",
-  "onboardingConfirmBiometry": "Confirm to enable biometric sign-in",
+  "onboardingConfirmBiometry": "Confirm with fingerprint or Face ID to enable sign-in. PIN/passcode is not accepted.",
   "onboardingBiometryEnableFailed": "Unable to enable biometrics.",
   "onboardingBackToStart": "Back to start",
   "onboardingNotNow": "Not now",
-  "onboardingBiometryBody": "Use your fingerprint or Face ID to sign in quickly without entering your password.",
+  "onboardingBiometryBody": "Use your fingerprint or Face ID to sign in quickly. Device PINs and passcodes are not accepted.",
   "onboardingBiometryUnavailableBody": "Your device does not support biometrics. You can continue without it.",
   "onboardingUnavailableOnDevice": "Not available on this device",
   "onboardingBiometryAlreadyEnabled": "Biometrics are already enabled",
   "onboardingNotificationsBody": "Get real-time alerts about sales, chat messages, and order updates.",
   "onboardingReadyBody": "Your account is ready. You can change biometrics and the animated background anytime in Profile > Settings.",
   "onboardingStepCount": "STEP {step} OF {total}",
-  "@onboardingStepCount": {"placeholders": {"step": {"type": "int"}, "total": {"type": "int"}}},
+  "@onboardingStepCount": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "feedCreatePublication": "Create post",
   "feedNoPosts": "NO POSTS YET",
   "feedRefreshFailedShowingPosts": "Couldn't refresh the feed. Showing the posts already loaded.",
@@ -301,7 +377,13 @@
   "feedShareSuccess": "Post shared successfully.",
   "feedReplyingHint": "Write your reply…",
   "feedRepostedBy": "Reposted by {userName}",
-  "@feedRepostedBy": {"placeholders": {"userName": {"type": "String"}}},
+  "@feedRepostedBy": {
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
   "feedNoPostsBody": "Follow people or create your first post.",
   "feedNoResults": "NO RESULTS",
   "feedNoResultsBody": "Change the filters or search for another term.",
@@ -363,7 +445,13 @@
   "profileNoRepostsBody": "Reposts shared by this person will appear here.",
   "profileNoReviews": "No reviews yet",
   "profileReviewCount": "{count, plural, =0{No reviews} =1{1 review} other{{count} reviews}}",
-  "@profileReviewCount": {"placeholders": {"count": {"type": "int"}}},
+  "@profileReviewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "profileLoginToFollow": "Sign in to follow this person.",
   "profileNoFollowers": "NO FOLLOWERS",
   "profileNoFollowersBody": "You don't have any followers yet.",
@@ -387,13 +475,31 @@
   "profileVerificationCodeSent": "Verification code sent by SMS.",
   "profileDocumentVerificationCodeSent": "A verification code was sent to your account email.",
   "profileDocumentVerificationCooldown": "You can request another code in {seconds} seconds.",
-  "@profileDocumentVerificationCooldown": { "placeholders": { "seconds": { "type": "int" } } },
+  "@profileDocumentVerificationCooldown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "profileDocumentVerificationExpiry": "The code expires in {seconds} seconds.",
-  "@profileDocumentVerificationExpiry": { "placeholders": { "seconds": { "type": "int" } } },
+  "@profileDocumentVerificationExpiry": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "socialCommentApprovePending": "Approve pending comment",
   "profileVerificationIntro": "Verify your account to receive a verified badge and build trust on the platform.",
   "profileEnterPhoneCode": "Enter the 6-digit code sent to {phone}.",
-  "@profileEnterPhoneCode": {"placeholders": {"phone": {"type": "String"}}},
+  "@profileEnterPhoneCode": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
   "profileVerified": "Profile verified!",
   "profileVerifiedBody": "Congratulations! Your account now has the official verification badge, helping you trade with greater confidence.",
   "profilePhoneNumber": "Phone number",
@@ -450,7 +556,16 @@
   "productFavoriteRemove": "Remove from favorites",
   "productFavoriteAdd": "Add to favorites",
   "productShareMessage": "{productName} — see it on FreeBay: {url}",
-  "@productShareMessage": {"placeholders": {"productName": {"type": "String"}, "url": {"type": "String"}}},
+  "@productShareMessage": {
+    "placeholders": {
+      "productName": {
+        "type": "String"
+      },
+      "url": {
+        "type": "String"
+      }
+    }
+  },
   "productSeller": "Seller",
   "productNoDescription": "No description provided.",
   "productClearFilters": "Clear filters",
@@ -468,7 +583,13 @@
   "productBuyNow": "Buy now",
   "productChatWithSeller": "Message seller",
   "productCartLabel": "Cart, {count} items",
-  "@productCartLabel": {"placeholders": {"count": {"type": "int"}}},
+  "@productCartLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "productConditionLabel": "Condition",
   "productUnavailableLabel": "Unavailable",
   "productListingTitle": "Listing title",
@@ -506,29 +627,83 @@
   "productLoadFailedBody": "Please try again later.",
   "cartEmptyBody": "Add products to continue.",
   "cartTitleCount": "Cart ({count})",
-  "@cartTitleCount": {"placeholders": {"count": {"type": "int"}}},
+  "@cartTitleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "cartCleared": "Cart cleared",
   "cartProductUnavailable": "{productName} (unavailable)",
-  "@cartProductUnavailable": {"placeholders": {"productName": {"type": "String"}}},
+  "@cartProductUnavailable": {
+    "placeholders": {
+      "productName": {
+        "type": "String"
+      }
+    }
+  },
   "cartInsufficientStock": "{productName} (insufficient stock)",
-  "@cartInsufficientStock": {"placeholders": {"productName": {"type": "String"}}},
+  "@cartInsufficientStock": {
+    "placeholders": {
+      "productName": {
+        "type": "String"
+      }
+    }
+  },
   "accessibilityDecreaseQuantity": "Decrease quantity of {productName}",
-  "@accessibilityDecreaseQuantity": {"placeholders": {"productName": {"type": "String"}}},
+  "@accessibilityDecreaseQuantity": {
+    "placeholders": {
+      "productName": {
+        "type": "String"
+      }
+    }
+  },
   "accessibilityIncreaseQuantity": "Increase quantity of {productName}",
-  "@accessibilityIncreaseQuantity": {"placeholders": {"productName": {"type": "String"}}},
+  "@accessibilityIncreaseQuantity": {
+    "placeholders": {
+      "productName": {
+        "type": "String"
+      }
+    }
+  },
   "accessibilityRemoveCartItem": "Remove {productName} from cart",
-  "@accessibilityRemoveCartItem": {"placeholders": {"productName": {"type": "String"}}},
+  "@accessibilityRemoveCartItem": {
+    "placeholders": {
+      "productName": {
+        "type": "String"
+      }
+    }
+  },
   "cartContinue": "CONTINUE",
   "cartGenerateCheckout": "CREATE CHECKOUT",
   "cartCheckoutTitle": "Checkout",
   "cartCheckoutFailed": "Unable to create checkout.",
   "cartCheckoutGenerated": "CHECKOUT CREATED",
   "cartTotalItems": "Total ({count, plural, =1{1 item} other{{count} items}})",
-  "@cartTotalItems": {"placeholders": {"count": {"type": "int"}}},
+  "@cartTotalItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "cartTotalAmount": "Total: {amount}",
-  "@cartTotalAmount": {"placeholders": {"amount": {"type": "String"}}},
+  "@cartTotalAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "ordersCreatedCount": "{count, plural, =1{1 order created} other{{count} orders created}}",
-  "@ordersCreatedCount": {"placeholders": {"count": {"type": "int"}}},
+  "@ordersCreatedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "cartPayNow": "PAY NOW",
   "cartPayByCard": "PAY BY CARD",
   "cartViewOrders": "VIEW MY ORDERS",
@@ -543,7 +718,13 @@
   "paymentStripeCheckout": "Stripe checkout",
   "paymentGenerated": "Payment created",
   "paymentExpiresAt": "Expires at {date}",
-  "@paymentExpiresAt": {"placeholders": {"date": {"type": "String"}}},
+  "@paymentExpiresAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "paymentCpfCnpj": "CPF or CNPJ",
   "paymentInvalidCpfCnpj": "Enter a valid CPF or CNPJ",
   "paymentPayWithStripe": "PAY WITH STRIPE",
@@ -635,13 +816,24 @@
   "chatNotificationsMuted": "Notifications muted",
   "chatNotificationsEnabled": "Notifications enabled",
   "chatBlockConfirmation": "Are you sure you want to block {userName}? You won't receive any more messages from this person.",
-  "@chatBlockConfirmation": {"placeholders": {"userName": {"type": "String"}}},
+  "@chatBlockConfirmation": {
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
   "chatConfirmBlock": "Confirm block",
   "chatUserBlocked": "User blocked",
   "chatDeleteAllMessagesConfirmation": "Delete all messages in this conversation?",
   "chatConfirmDelete": "Confirm and delete",
   "chatThemeDefault": "FreeBay magenta",
   "chatThemeOcean": "Ocean blue",
+  "chatThemeCrimson": "Crimson red",
+  "chatThemeCobalt": "Cobalt blue",
+  "chatThemeForest": "Forest green",
+  "chatThemeAmber": "Amber",
+  "chatThemeSlate": "Slate grey",
   "chatBlockUser": "Block user",
   "chatDeleteConversation": "Delete conversation",
   "chatDeleteConversationUndo": "Conversation deleted.",
@@ -656,21 +848,47 @@
   "chatOfferProduct": "PRODUCT / ITEM",
   "chatOfferProductHint": "Listed product name",
   "chatOriginalPrice": "Original price: {amount}",
-  "@chatOriginalPrice": {"placeholders": {"amount": {"type": "String"}}},
+  "@chatOriginalPrice": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "chatYourOfferPrice": "YOUR OFFER (R$)",
   "chatOfferPriceHint": "Example: 250,00",
   "chatOfferMessage": "MESSAGE (OPTIONAL)",
   "chatOfferMessageHint": "Example: I can pick it up today…",
   "chatOfferSend": "SEND OFFER",
   "chatOfferAccept": "ACCEPT",
+  "chatOfferPreview": "Purchase offer — {amount}",
+  "@chatOfferPreview": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "chatSendText": "SEND MESSAGE",
   "chatConfirmSendLocation": "CONFIRM AND SEND LOCATION",
   "chatSelectLocation": "LOCATION",
   "chatForwardTitle": "FORWARD MESSAGE",
   "chatForwardSuccessCount": "{count, plural, =1{1 message forwarded successfully!} other{{count} messages forwarded successfully!}}",
-  "@chatForwardSuccessCount": {"placeholders": {"count": {"type": "int"}}},
+  "@chatForwardSuccessCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatForwardSelectedCount": "{count, plural, =1{1 message selected} other{{count} messages selected}}",
-  "@chatForwardSelectedCount": {"placeholders": {"count": {"type": "int"}}},
+  "@chatForwardSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatConversationOptions": "CONVERSATION OPTIONS",
   "chatThemeTitle": "THEME",
   "chatBlockTitle": "BLOCK USER",
@@ -680,13 +898,30 @@
   "chatReply": "Reply",
   "chatFavorite": "Save to favorites",
   "chatSelectedCount": "{count, plural, =1{1 selected} other{{count} selected}}",
-  "@chatSelectedCount": {"placeholders": {"count": {"type": "int"}}},
+  "@chatSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatDeletedMessages": "{count, plural, =1{Message deleted.} other{{count} messages deleted.}}",
-  "@chatDeletedMessages": {"placeholders": {"count": {"type": "int"}}},
+  "@chatDeletedMessages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatDeleteSomeFailed": "Unable to delete some messages.",
   "chatForward": "Forward",
   "chatDelete": "Delete",
   "chatReport": "Report",
+  "chatMessageDeleted": "Message deleted",
+  "chatForwardedLabel": "Forwarded",
+  "chatAlreadyViewed": "Message already viewed",
+  "chatMute": "Mute",
+  "chatUnmute": "Unmute",
   "chatViewOnce": "View once",
   "chatImageCaption": "ADD CAPTION",
   "chatVideoCaption": "ADD CAPTION",
@@ -707,7 +942,7 @@
   "chatEditorTitleText": "TEXT",
   "chatEditorTitleDraw": "DRAW",
   "chatEditorTextDefault": "NEW TEXT",
-  "chatEditorProcessingError": "Unable to process the image",
+  "chatEditorProcessingError": "Unable to process this media",
   "chatEditorFilterNormal": "Normal",
   "chatEditorFilterClarendon": "Clarendon",
   "chatEditorFilterGingham": "Gingham",
@@ -719,6 +954,40 @@
   "chatRotatePlus90": "+90°",
   "chatImageLabel": "Image",
   "chatImageEditorLabel": "Edit image",
+  "mediaEditorPhoto": "Photo",
+  "mediaEditorVideo": "Video",
+  "mediaEditorSaveToDevice": "Save to device",
+  "mediaEditorSavedToDevice": "Saved to device",
+  "mediaEditorSaveFailed": "Couldn't save media. Try again.",
+  "mediaEditorPermissionDenied": "Allow media access to save this file.",
+  "mediaEditorKeepEditing": "Keep editing",
+  "mediaEditorApply": "Apply",
+  "mediaEditorReset": "Reset",
+  "mediaEditorWarmth": "Warmth",
+  "mediaEditorIntensity": "Intensity",
+  "mediaEditorEditText": "Edit text",
+  "mediaEditorDeleteText": "Delete text",
+  "mediaEditorTextHint": "Enter text",
+  "mediaEditorFont": "Font",
+  "mediaEditorTextColor": "Text color",
+  "mediaEditorTextBackground": "Text background",
+  "mediaEditorAlignLeft": "Align left",
+  "mediaEditorAlignCenter": "Align center",
+  "mediaEditorAlignRight": "Align right",
+  "mediaEditorTrim": "Trim",
+  "mediaEditorTrimStart": "Start",
+  "mediaEditorTrimEnd": "End",
+  "mediaEditorDuration": "Duration",
+  "mediaEditorOriginal": "Original",
+  "mediaEditorPortrait": "Portrait",
+  "mediaEditorStory": "Story",
+  "mediaEditorRedo": "Redo",
+  "mediaEditorProcessing": "Processing media…",
+  "mediaEditorMute": "Mute",
+  "mediaEditorUnmute": "Unmute",
+  "mediaEditorDragTextHint": "Drag text to position it",
+  "mediaEditorNoText": "No text added",
+  "mediaEditorNoChanges": "No changes to save",
   "chatVideoLabel": "Video",
   "chatVoiceLabel": "Voice message",
   "chatLocationLabel": "Shared location",
@@ -763,14 +1032,32 @@
   "errorUploadInvalidUrl": "The server returned an invalid file URL.",
   "errorUploadFailed": "Unable to upload the file.",
   "errorUploadTooLarge": "File is too large. Maximum size: {maxSizeMb} MB",
-  "@errorUploadTooLarge": {"placeholders": {"maxSizeMb": {"type": "int"}}},
+  "@errorUploadTooLarge": {
+    "placeholders": {
+      "maxSizeMb": {
+        "type": "int"
+      }
+    }
+  },
   "errorUploadConnection": "Connection error while uploading the file.",
   "errorImageProcessing": "Unable to process the image.",
   "errorScreenLoad": "Something went wrong while loading this screen.",
   "dateSeparatorToday": "TODAY",
   "dateSeparatorYesterday": "YESTERDAY",
   "dateSeparatorLong": "{day} {month} {year}",
-  "@dateSeparatorLong": {"placeholders": {"day": {"type": "int"}, "month": {"type": "String"}, "year": {"type": "int"}}},
+  "@dateSeparatorLong": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String"
+      },
+      "year": {
+        "type": "int"
+      }
+    }
+  },
   "dateMonthJanuary": "Jan",
   "dateMonthFebruary": "Feb",
   "dateMonthMarch": "Mar",
@@ -785,27 +1072,93 @@
   "dateMonthDecember": "Dec",
   "timeAgoNow": "now",
   "timeAgoMinutes": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
-  "@timeAgoMinutes": {"placeholders": {"count": {"type": "int"}}},
+  "@timeAgoMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeAgoHours": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
-  "@timeAgoHours": {"placeholders": {"count": {"type": "int"}}},
+  "@timeAgoHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeAgoDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
-  "@timeAgoDays": {"placeholders": {"count": {"type": "int"}}},
+  "@timeAgoDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeAgoWeeks": "{count, plural, =1{1 week ago} other{{count} weeks ago}}",
-  "@timeAgoWeeks": {"placeholders": {"count": {"type": "int"}}},
+  "@timeAgoWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeAgoMonths": "{count, plural, =1{1 month ago} other{{count} months ago}}",
-  "@timeAgoMonths": {"placeholders": {"count": {"type": "int"}}},
+  "@timeAgoMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeAgoYears": "{count, plural, =1{1 year ago} other{{count} years ago}}",
-  "@timeAgoYears": {"placeholders": {"count": {"type": "int"}}},
+  "@timeAgoYears": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeCompactMinutes": "{count} min",
-  "@timeCompactMinutes": {"placeholders": {"count": {"type": "int"}}},
+  "@timeCompactMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeCompactHours": "{count}h",
-  "@timeCompactHours": {"placeholders": {"count": {"type": "int"}}},
+  "@timeCompactHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeCompactDays": "{count}d",
-  "@timeCompactDays": {"placeholders": {"count": {"type": "int"}}},
+  "@timeCompactDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeCompactWeeks": "{count}w",
-  "@timeCompactWeeks": {"placeholders": {"count": {"type": "int"}}},
+  "@timeCompactWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeCompactMonths": "{count}mo",
-  "@timeCompactMonths": {"placeholders": {"count": {"type": "int"}}},
+  "@timeCompactMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeFormat24Hour": "HH:mm",
   "dateFormatShort": "MM/dd/yyyy",
   "platformAndroid": "Android",
@@ -813,11 +1166,29 @@
   "accessibilityClose": "Close",
   "accessibilityBack": "Go back",
   "accessibilityOpenProfile": "Open {name}'s profile",
-  "@accessibilityOpenProfile": {"placeholders": {"name": {"type": "String"}}},
+  "@accessibilityOpenProfile": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "accessibilityLikeCount": "{count, plural, =0{No likes} =1{1 like} other{{count} likes}}",
-  "@accessibilityLikeCount": {"placeholders": {"count": {"type": "int"}}},
+  "@accessibilityLikeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "accessibilityCommentCount": "{count, plural, =0{No comments} =1{1 comment} other{{count} comments}}",
-  "@accessibilityCommentCount": {"placeholders": {"count": {"type": "int"}}},
+  "@accessibilityCommentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "accessibilitySelected": "Selected",
   "accessibilityNotSelected": "Not selected",
   "accessibilityLoading": "Loading",
@@ -839,23 +1210,71 @@
   "accessibilityCamera": "Open camera",
   "accessibilityGallery": "Open gallery",
   "accessibilityTabSelected": "{label}, selected tab",
-  "@accessibilityTabSelected": {"placeholders": {"label": {"type": "String"}}},
+  "@accessibilityTabSelected": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "accessibilityProgress": "{percent} percent complete",
-  "@accessibilityProgress": {"placeholders": {"percent": {"type": "int"}}},
+  "@accessibilityProgress": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "accessibilityItemPosition": "Item {position} of {total}",
-  "@accessibilityItemPosition": {"placeholders": {"position": {"type": "int"}, "total": {"type": "int"}}},
+  "@accessibilityItemPosition": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "accessibilityCartCount": "{count, plural, =0{Cart is empty} =1{1 item in cart} other{{count} items in cart}}",
-  "@accessibilityCartCount": {"placeholders": {"count": {"type": "int"}}},
+  "@accessibilityCartCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "accessibilityUnreadCount": "{count, plural, =0{No unread messages} =1{1 unread message} other{{count} unread messages}}",
-  "@accessibilityUnreadCount": {"placeholders": {"count": {"type": "int"}}},
+  "@accessibilityUnreadCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "accessibilityStoryPosition": "Story {position} of {total}",
-  "@accessibilityStoryPosition": {"placeholders": {"position": {"type": "int"}, "total": {"type": "int"}}},
+  "@accessibilityStoryPosition": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "dateToday": "Today",
   "dateYesterday": "Yesterday",
   "itemCount": "{count, plural, =0{No items} =1{1 item} other{{count} items}}",
-  "@itemCount": {"placeholders": {"count": {"type": "int"}}},
-  "profileBiometry": "Biometrics",
-  "profileBiometryLogin": "Use biometrics to sign in",
+  "@itemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileBiometry": "Fingerprint or Face ID",
+  "profileBiometryLogin": "Use fingerprint or Face ID to sign in (no PIN/passcode)",
   "profileBiometryUpdateFailed": "Unable to update biometrics.",
   "profileBiometryRevocationPending": "Biometric sign-in is disabled on this device, but server revocation could not be confirmed. Retry while online.",
   "stepUpConfirmTitle": "Confirm it’s you",
@@ -863,11 +1282,26 @@
   "stepUpGoogle": "Continue with Google",
   "stepUpApple": "Continue with Apple",
   "stepUpBiometrics": "Confirm with biometrics",
-  "profileConfirmBiometry": "Confirm to enable biometric sign-in",
+  "profileConfirmBiometry": "Confirm with fingerprint or Face ID to enable sign-in. PIN/passcode is not accepted.",
   "profileTheme": "Theme",
   "profileThemeDark": "Dark",
   "profileThemeLight": "Light",
   "profileThemeSystem": "System",
+  "settingsLanguage": "Language",
+  "settingsLanguageSystem": "System",
+  "settingsLanguagePortugueseBrazil": "Português (Brasil)",
+  "settingsLanguageEnglish": "English",
+  "settingsSessionLockTitle": "Inactivity lock",
+  "settingsSessionLockDescription": "Lock the app after inactivity",
+  "settingsSessionLockOff": "Disabled",
+  "settingsSessionLockOneMinute": "1 minute",
+  "settingsSessionLockFiveMinutes": "5 minutes",
+  "settingsSessionLockFifteenMinutes": "15 minutes",
+  "settingsSessionLockThirtyMinutes": "30 minutes",
+  "sessionLockRequiredTitle": "Session locked",
+  "sessionLockRequiredDescription": "Confirm your identity to continue using FreeBay.",
+  "sessionLockRetry": "Try again",
+  "sessionLockUsePassword": "Use password",
   "profileCloseFriendsDescription": "Choose who can see your private stories",
   "profileAnimatedBackground": "Animated background",
   "profileStaticBackgroundDescription": "Turn off to use a static background",
@@ -923,11 +1357,29 @@
   "chatOnlineNow": "Online now",
   "chatLastSeenNow": "Seen just now",
   "chatLastSeenMinutes": "Seen {count}m ago",
-  "@chatLastSeenMinutes": {"placeholders": {"count": {"type": "int"}}},
+  "@chatLastSeenMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatLastSeenHours": "Seen {count}h ago",
-  "@chatLastSeenHours": {"placeholders": {"count": {"type": "int"}}},
+  "@chatLastSeenHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatLastSeenDays": "Seen {count}d ago",
-  "@chatLastSeenDays": {"placeholders": {"count": {"type": "int"}}},
+  "@chatLastSeenDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatOrderLabel": "ORDER",
   "chatDirectLabel": "DIRECT",
   "chatLoadRetry": "LOAD ERROR • TAP TO RETRY",
@@ -948,7 +1400,7 @@
   "faqForgotPasswordQuestion": "I forgot my password. What should I do?",
   "faqForgotPasswordAnswer": "On the sign-in screen, select Forgot password. Enter your registered email to receive a six-digit password reset code.",
   "faqBiometryQuestion": "How does biometric sign-in work?",
-  "faqBiometryAnswer": "After signing in with your email and password, enable Face ID or fingerprint authentication for faster, secure future sign-ins.",
+  "faqBiometryAnswer": "After signing in with your email and password, enable fingerprint or Face ID for future sign-ins. Device PINs and passcodes are not accepted.",
   "faqBuyProductQuestion": "How do I buy a product?",
   "faqBuyProductAnswer": "Browse the Feed or Explore, open a product, then select Buy. You will go to secure checkout to pay by card through Stripe.",
   "faqEscrowQuestion": "What is escrow?",
@@ -963,10 +1415,10 @@
   "faqListProductAnswer": "Select the plus button in the bottom menu, add photos, title, description, price in reais, and a category. Your listing will be visible immediately.",
   "faqSellingFeeQuestion": "What fee is charged per sale?",
   "faqSellingFeeAnswer": "A fixed 10% fee is charged when a sale is completed successfully and the buyer confirms delivery.",
-  "faqPayoutQuestion": "When do I receive sale proceeds?",
-  "faqPayoutAnswer": "Funds remain in your Wallet as held balance until the buyer confirms receipt. They then become available for withdrawal.",
-  "faqPixWithdrawalQuestion": "How do I request a Pix withdrawal?",
-  "faqPixWithdrawalAnswer": "In your Wallet, select Request withdrawal, enter at least R$ 5.00, and confirm your registered Pix key. Processing depends on provider confirmation.",
+  "faqPayoutQuestion": "How do I set up sales receipts?",
+  "faqPayoutAnswer": "The Wallet shows available and pending balances. You can open Stripe setup to configure receiving details; actual payout availability and timing depend on Stripe and your account setup, and are not guaranteed by this screen.",
+  "faqPixWithdrawalQuestion": "Can I request a Pix withdrawal in FreeBay?",
+  "faqPixWithdrawalAnswer": "FreeBay currently has no in-app Pix withdrawal request or R$ 5 minimum withdrawal feature. The Wallet lets you view balances and open Stripe setup for receiving configuration; it does not confirm or promise a payout.",
   "faqCancelOrderQuestion": "Can I cancel an order?",
   "faqCancelOrderAnswer": "The buyer or seller can cancel while the order is Pending or Confirmed, before shipping. After shipping, use a dispute instead.",
   "faqRefundQuestion": "How does a refund after cancellation work?",
@@ -987,7 +1439,13 @@
   "feedHighlightEditAction": "EDIT",
   "feedHighlightCreateAction": "NEW",
   "feedHighlightSelectStory": "Select story {storyId}",
-  "@feedHighlightSelectStory": {"placeholders": {"storyId": {"type": "String"}}},
+  "@feedHighlightSelectStory": {
+    "placeholders": {
+      "storyId": {
+        "type": "String"
+      }
+    }
+  },
   "feedStoryPublish": "PUBLISH",
   "feedStoryCaptionHint": "Add a caption",
   "feedStoryRemoveText": "REMOVE",
@@ -1023,7 +1481,13 @@
   "chatEditorPenHighlighter": "Highlighter pen",
   "chatEditorPenEraser": "Eraser",
   "chatEditorStrokeWidth": "Stroke width {width}",
-  "@chatEditorStrokeWidth": {"placeholders": {"width": {"type": "int"}}},
+  "@chatEditorStrokeWidth": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      }
+    }
+  },
   "feedPostContentRequired": "Add text or an image.",
   "feedCloseFriendsPostDescription": "Only people on your Close Friends list can see this post.",
   "feedPostContentHint": "Share an update, idea, or behind-the-scenes moment…",
@@ -1058,7 +1522,13 @@
   "privacyDeleteConfirmTitle": "Request account deletion?",
   "privacyDeleteConfirmBody": "Your sessions will be revoked and deletion will remain pending for 30 days. Open orders, disputes, or a wallet balance may block the request. Listings may be paused. Some financial records may be retained where legally required.",
   "privacyDeletionPending": "Deletion requested on {date}. Sign in again to cancel while it is pending.",
-  "@privacyDeletionPending": {"placeholders": {"date": {"type": "String"}}},
+  "@privacyDeletionPending": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "privacyCancelDeletion": "CANCEL DELETION",
   "privacyCancelDeletionRelogin": "Could not cancel deletion. Sign in again and retry if the request is still pending.",
   "privacyDeletionCancelled": "Deletion request cancelled.",
@@ -1075,5 +1545,38 @@
   "profileReportOther": "Other",
   "profileReportSubmitted": "Report submitted for review.",
   "socialQuoteLabel": "QUOTED SOURCE",
-  "socialQuoteUnavailable": "This quoted content is no longer available."
+  "socialQuoteUnavailable": "This quoted content is no longer available.",
+  "mediaEditorFlip": "Flip",
+  "mediaEditorNeon": "Neon",
+  "mediaEditorBlur": "Blur",
+  "mediaEditorSticker": "Sticker",
+  "mediaEditorPrice": "Price",
+  "mediaEditorSold": "SOLD",
+  "mediaEditorFade": "Fade",
+  "mediaEditorVignette": "Vignette",
+  "mediaEditorUndo": "Undo",
+  "mediaEditorFilterAdjust": "FILTERS & ADJUST",
+  "mediaEditorRotate90": "Rotate 90°",
+  "mediaEditorEmojiTab": "EMOJIS",
+  "mediaEditorMarketTab": "MARKETPLACE TAGS",
+  "mediaEditorPriceStickerTitle": "Price label",
+  "mediaEditorPriceExample": "e.g. R$ 199.90",
+  "mediaEditorPriceDialogTitle": "PRODUCT PRICE",
+  "mediaEditorPriceHint": "R$ 0.00",
+  "mediaEditorSoldStickerTitle": "SOLD badge",
+  "mediaEditorSoldSubtitle": "Red sold badge",
+  "mediaEditorLocationTitle": "Location",
+  "mediaEditorLocationExample": "e.g. Downtown, Porto Alegre",
+  "mediaEditorLocationHint": "City or neighborhood",
+  "mediaEditorLinkTitle": "Link / Listing",
+  "mediaEditorLinkSubtitle": "Link to the listing",
+  "mediaEditorLinkDialogTitle": "LISTING LINK",
+  "mediaEditorLinkHint": "freebay.com/p/...",
+  "mediaEditorFilterVivid": "Vivid",
+  "mediaEditorFilterWarm": "Warm",
+  "mediaEditorFilterCool": "Cool",
+  "mediaEditorFilterVintage": "Vintage",
+  "mediaEditorFilterBW": "B&W",
+  "mediaEditorFilterDrama": "Drama",
+  "mediaEditorFilterSepia": "Sepia"
 }

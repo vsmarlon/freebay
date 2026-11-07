@@ -3,6 +3,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_filters.dart';
 import 'package:freebay/features/stories/stories.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class FeedIntroSections extends StatelessWidget {
   final FeedType feedType;
@@ -56,6 +57,7 @@ class FeedTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Column(
       children: [
         Theme(
@@ -79,13 +81,13 @@ class FeedTitle extends StatelessWidget {
                 context,
                 FeedType.explore,
                 Icons.explore,
-                'EXPLORAR',
+                strings.feedExplore,
               ),
               _feedTypeItem(
                 context,
                 FeedType.following,
                 Icons.people,
-                'SEGUINDO',
+                strings.feedFilterFollowing.toUpperCase(),
               ),
             ],
             child: Container(
@@ -109,7 +111,9 @@ class FeedTitle extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    currentType == FeedType.explore ? 'EXPLORE' : 'SEGUINDO',
+                    currentType == FeedType.explore
+                        ? strings.feedExplore
+                        : strings.feedFilterFollowing.toUpperCase(),
                     style: TextStyle(
                       fontFamily: AppTypography.headlineFontFamily,
                       fontSize: 12,
@@ -204,7 +208,7 @@ class FeedComposerPrompt extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Criar post social ou anúncio de venda',
+                  l10n(context).feedCreatePost,
                   style: TextStyle(
                     fontFamily: AppTypography.fontFamily,
                     fontSize: 14,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -63,6 +64,16 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
   // typing/presence) lives in conversationMessagesProvider(widget.chatId).
   @override
   bool _isSending = false;
+  @override
+  String? _pendingOptimisticMessageId;
+  @override
+  ConversationMessagesNotifier? _pendingOptimisticNotifier;
+  @override
+  String? _pendingDraftText;
+  @override
+  CancelToken? _sendCancelToken;
+  @override
+  Timer? _sendSlowTimer;
   @override
   bool _isSelecting = false;
   @override
@@ -136,6 +147,13 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
     if (oldWidget.chatId == widget.chatId) return;
 
     _cancelQuotedScroll();
+    final pendingId = _pendingOptimisticMessageId;
+    if (pendingId != null) {
+      _pendingOptimisticNotifier?.removeByIds({pendingId});
+      _pendingOptimisticMessageId = null;
+      _pendingOptimisticNotifier = null;
+      _pendingDraftText = null;
+    }
     _messageSubscription?.close();
     _messageSubscription = null;
     _messageKeys.clear();
@@ -144,6 +162,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
     _viewOnceEnabled = false;
     _isRecording = false;
     _isSending = false;
+    _sendCancelToken?.cancel('Conversation changed');
+    _sendCancelToken = null;
+    _sendSlowTimer?.cancel();
     _highlightedMessageId = null;
     _replyTarget = null;
     _typingDebounceTimer?.cancel();
@@ -168,6 +189,15 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
 
   @override
   void dispose() {
+    final pendingId = _pendingOptimisticMessageId;
+    if (pendingId != null) {
+      _pendingOptimisticNotifier?.removeByIds({pendingId});
+      _pendingOptimisticMessageId = null;
+      _pendingOptimisticNotifier = null;
+      _pendingDraftText = null;
+    }
+    _sendCancelToken?.cancel('Conversation closed');
+    _sendSlowTimer?.cancel();
     _cancelQuotedScroll();
     _messageSubscription?.close();
     _typingDebounceTimer?.cancel();
@@ -213,6 +243,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
                           theme: state.preference?.theme,
                           name: state.otherUserName,
                           avatarUrl: state.otherUserAvatarUrl,
+                          peerId: state.otherUserId,
                           chatType: state.threadType,
                           isOnline: state.otherUserOnline,
                         ),
@@ -225,14 +256,31 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
                       loadError: header.loadError,
                       name: header.name ?? '',
                       avatarUrl: header.avatarUrl,
+                      peerId: header.peerId,
                       chatType: header.chatType ?? ChatThreadType.direct,
                       accentColor: _accentColor,
                       isOnline: header.isOnline,
                       onBack: () => context.pop(),
+                      onAvatarTap: () {
+                        final peerId = header.peerId;
+                        if (header.chatType == ChatThreadType.direct &&
+                            peerId != null &&
+                            peerId.isNotEmpty) {
+                          context.push(AppRoutes.userPath(peerId));
+                        }
+                      },
                       onConfig: _showMenu,
-                      onInfo: () => context.push(
-                        AppRoutes.chatDetailsPath(widget.chatId),
-                      ),
+                      onInfo: () async {
+                        final result = await context.push<Object>(
+                          AppRoutes.chatDetailsPath(widget.chatId),
+                        );
+                        if (!mounted) return;
+                        if (result is MessageEntity) {
+                          setState(() => _replyTarget = result);
+                        } else if (result is String) {
+                          _scrollToQuoted(result);
+                        }
+                      },
                       onRetry: () => _notifier.refresh(),
                       onCloseSelection: () =>
                           setState(() => _isSelecting = false),
@@ -373,13 +421,24 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
                         onSend: _sendMessage,
                         onRecordAudio: () =>
                             setState(() => _isRecording = true),
-                        onAttachment: () => showConversationAttachmentSheet(
-                          context: context,
-                          takeReplyTarget: _takeReplyTarget,
-                          sendRich: _sendRich,
-                          sendLocation: _sendLocation,
-                          showError: (e) => AppSnackbar.error(context, e),
-                        ),
+                        onAttachment: ({bool camera = false}) {
+                          final draft = _messageController.text;
+                          showConversationAttachmentSheet(
+                            context: context,
+                            openCamera: camera,
+                            initialViewOnce: _viewOnceEnabled,
+                            initialCaption: draft,
+                            onAttachmentSent: () {
+                              if (mounted && _messageController.text == draft) {
+                                _messageController.clear();
+                              }
+                            },
+                            takeReplyTarget: _takeReplyTarget,
+                            sendRich: _sendRich,
+                            sendLocation: _sendLocation,
+                            showError: (e) => AppSnackbar.error(context, e),
+                          );
+                        },
                         onViewOnceToggled: (v) =>
                             setState(() => _viewOnceEnabled = v),
                       );

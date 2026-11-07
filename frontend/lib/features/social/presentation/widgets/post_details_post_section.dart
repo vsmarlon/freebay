@@ -18,6 +18,7 @@ class PostDetailsPostSection extends StatelessWidget {
   final VoidCallback onComment;
   final VoidCallback onShare;
   final VoidCallback? onQuote;
+  final VoidCallback? onMore;
 
   const PostDetailsPostSection({
     super.key,
@@ -34,10 +35,14 @@ class PostDetailsPostSection extends StatelessWidget {
     required this.onComment,
     required this.onShare,
     this.onQuote,
+    this.onMore,
   });
 
   @override
   Widget build(BuildContext context) {
+    final price = post.product?.price != null && post.product!.price > 0
+        ? post.product!.price / 100
+        : null;
     return SocialPost(
       userId: post.user.id,
       userName: post.user.displayNameOrDefault,
@@ -58,6 +63,8 @@ class PostDetailsPostSection extends StatelessWidget {
       isReposted: isReposted,
       isVerified: post.user.isVerified,
       createdAt: post.createdAt,
+      price: price,
+      isSelling: post.type == PostType.product,
       heroTag: 'post-media-${post.id}',
       onUserTap: onUserTap,
       onLike: onLike,
@@ -66,6 +73,7 @@ class PostDetailsPostSection extends StatelessWidget {
       onComment: onComment,
       onShare: onShare,
       onQuote: onQuote,
+      onMore: onMore,
       quotePreview: post.isQuote
           ? QuoteSourcePreview(source: post.quoteSource)
           : null,

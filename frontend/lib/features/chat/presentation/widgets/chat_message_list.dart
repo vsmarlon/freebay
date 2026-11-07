@@ -68,6 +68,25 @@ class ChatMessageList extends StatelessWidget {
     return current == next;
   }
 
+  bool _isSameGroup(int index) {
+    if (index == 0 || !_isSameSender(index - 1)) return false;
+    if (_isLargeMedia(messages[index - 1]) || _isLargeMedia(messages[index])) {
+      return false;
+    }
+    if (!isSameDay(messages[index].createdAt, messages[index - 1].createdAt)) {
+      return false;
+    }
+    return messages[index].createdAt
+            .difference(messages[index - 1].createdAt)
+            .abs() <=
+        const Duration(seconds: 60);
+  }
+
+  bool _isLargeMedia(MessageEntity message) =>
+      message.type == MessageType.image ||
+      message.type == MessageType.gif ||
+      message.type == MessageType.video;
+
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
@@ -79,10 +98,10 @@ class ChatMessageList extends StatelessWidget {
       itemBuilder: (context, index) {
         final msgEntity = messages[index];
         final isMe = msgEntity.senderId == currentUserId;
-        final prevIsMe = index > 0
-            ? messages[index - 1].senderId == currentUserId
-            : false;
-        final isConsecutive = isMe == prevIsMe;
+        final isConsecutive = _isSameGroup(index);
+        final isDateBoundaryAfter =
+            index + 1 < messages.length &&
+            !isSameDay(msgEntity.createdAt, messages[index + 1].createdAt);
         final messageKey = messageKeys[msgEntity.id];
 
         // Date separator when day changes
@@ -92,7 +111,7 @@ class ChatMessageList extends StatelessWidget {
 
         // Show timestamp on last msg of group
         final isLastMsg = index == messages.length - 1;
-        final showTime = isLastMsg || !_isSameSender(index);
+        final showTime = isLastMsg || !_isSameGroup(index + 1);
 
         return RepaintBoundary(
           key: ValueKey('msg_${msgEntity.id}'),
@@ -152,6 +171,7 @@ class ChatMessageList extends StatelessWidget {
                           isMe: isMe,
                           isDark: isDark,
                           isConsecutive: isConsecutive,
+                          isDateBoundaryAfter: isDateBoundaryAfter,
                           showTimestamp: showTime,
                           accentColor: accentColor,
                           isStarred: starredIds.contains(msgEntity.id),
@@ -218,6 +238,7 @@ class ChatMessageList extends StatelessWidget {
                                           ChatMediaGalleryViewer(
                                             mediaMessages: allMedia,
                                             initialIndex: mediaIndex,
+                                            onReply: onSwipeToReply,
                                           ),
                                     ),
                                   );

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/media_editor/media_editor.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/data/entities/create_product_input.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
@@ -48,7 +51,15 @@ class CreateProductPage extends HookConsumerWidget {
         maxHeight: 1600,
         imageQuality: 82,
       );
-      if (image != null) selectedImagePath.value = image.path;
+      if (image != null) {
+        if (!context.mounted) return;
+        final edited = await MediaEditorPage.push(
+          context,
+          file: File(image.path),
+          config: EditorConfig.listing,
+        );
+        selectedImagePath.value = edited?.file.path ?? image.path;
+      }
     }
 
     Future<void> submit() async {

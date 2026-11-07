@@ -1,18 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/features/chat/data/entities/message_type.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_media_gallery_viewer.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/shared/utils/media_url.dart';
+
+typedef ConversationMediaPage = ({
+  List<MessageEntity> messages,
+  String? nextCursor,
+});
 
 class MediaGrid extends StatefulWidget {
   final String conversationId;
   final List<MessageEntity> initialMessages;
-  final Future<List<MessageEntity>> Function(String? cursor) onLoadMore;
+  final Future<ConversationMediaPage> Function(String? cursor) onLoadMore;
+  final ValueChanged<MessageEntity> onReply;
 
   const MediaGrid({
     super.key,
     required this.conversationId,
     required this.initialMessages,
     required this.onLoadMore,
+    required this.onReply,
   });
 
   @override
@@ -25,15 +35,31 @@ class _MediaGridState extends State<MediaGrid> {
   String? _cursor;
   bool _isLoading = false;
   bool _hasMore = true;
-  bool _firstLoad = true;
+  bool _failed = false;
 
   @override
   void initState() {
     super.initState();
-    _messages.addAll(widget.initialMessages);
-    _firstLoad = _messages.isEmpty;
+    _merge(widget.initialMessages);
     _scrollController.addListener(_onScroll);
-    if (_firstLoad) _load();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant MediaGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _merge(widget.initialMessages);
+  }
+
+  void _merge(List<MessageEntity> messages) {
+    final byId = {for (final message in _messages) message.id: message};
+    for (final message in ChatMediaGalleryViewer.extractMedia(messages)) {
+      byId[message.id] = message;
+    }
+    _messages
+      ..clear()
+      ..addAll(byId.values)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   @override
@@ -43,177 +69,127 @@ class _MediaGridState extends State<MediaGrid> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      _load();
-    }
+    if (_scrollController.position.extentAfter < 200) _load();
   }
 
   Future<void> _load() async {
     if (_isLoading || !_hasMore) return;
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _failed = false;
+    });
     try {
-      final results = await widget.onLoadMore(_cursor);
+      final page = await widget.onLoadMore(_cursor);
+      if (!mounted) return;
       setState(() {
-        _messages.addAll(results);
-        _hasMore = results.isNotEmpty;
-        _cursor = results.isNotEmpty ? results.last.id : _cursor;
-        _firstLoad = false;
+        _merge(page.messages);
+        _hasMore = page.nextCursor != null && page.nextCursor != _cursor;
+        _cursor = page.nextCursor;
       });
+    } catch (_) {
+      if (mounted) setState(() => _failed = true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_firstLoad && _isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primaryContainer,
-          strokeWidth: 2,
-        ),
-      );
-    }
-
-    if (!_firstLoad && _messages.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.photo_library_outlined,
-              size: 48,
-              color: context.textSecondary,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'NENHUMA MÍDIA',
-              style: TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
-                color: context.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Imagens enviadas aparecem aqui.',
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 12,
-                color: context.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return GridView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(2),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-      ),
-      itemCount: _messages.length + (_isLoading ? 3 : 0),
-      itemBuilder: (context, index) {
-        if (index >= _messages.length) {
-          return Container(color: context.surfaceMidColor);
-        }
-        final msg = _messages[index];
-        final imageUrl = msg.attachmentUrl;
-        if (imageUrl == null || imageUrl.isEmpty) {
-          return Container(color: context.surfaceMidColor);
-        }
-        return _MediaTile(imageUrl: mediaUrl(imageUrl), message: msg);
-      },
-    );
-  }
-}
-
-class _MediaTile extends StatelessWidget {
-  final String imageUrl;
-  final MessageEntity message;
-
-  const _MediaTile({required this.imageUrl, required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        // Full-screen view — push ChatImageViewer when available
-        showDialog(
-          context: context,
-          useSafeArea: false,
-          builder: (_) => _FullscreenImageDialog(imageUrl: imageUrl),
-        );
-      },
-      child: Container(
-        color: context.surfaceMidColor,
-        child: Image.network(
-          imageUrl,
-          headers: mediaAuthHeaders(imageUrl),
-          fit: BoxFit.cover,
-          loadingBuilder: (_, child, progress) {
-            if (progress == null) return child;
-            return Container(color: context.surfaceMidColor);
+  void _open(int index) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => ChatMediaGalleryViewer(
+          mediaMessages: List.of(_messages),
+          initialIndex: index,
+          onReply: widget.onReply,
+          onDeleted: (id) {
+            if (mounted) {
+              setState(
+                () => _messages.removeWhere((message) => message.id == id),
+              );
+            }
           },
-          errorBuilder: (context, error, stackTrace) => Container(
-            color: context.surfaceMidColor,
-            child: Icon(
-              Icons.broken_image_outlined,
-              color: context.textSecondary,
-              size: 24,
-            ),
-          ),
         ),
       ),
     );
   }
-}
-
-class _FullscreenImageDialog extends StatelessWidget {
-  final String imageUrl;
-
-  const _FullscreenImageDialog({required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.of(context).pop(),
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            Center(
-              child: InteractiveViewer(
-                child: Image.network(
-                  imageUrl,
-                  headers: mediaAuthHeaders(imageUrl),
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    Icons.broken_image_outlined,
-                    color: context.textSecondary,
-                    size: 48,
+    if (_isLoading && _messages.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_messages.isEmpty && !_failed) {
+      return EmptyState(
+        icon: Icons.photo_library_outlined,
+        title: l10n(context).chatNoMedia,
+        subtitle: l10n(context).chatMediaHint,
+      );
+    }
+    return Column(
+      children: [
+        Expanded(
+          child: GridView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(2),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 2,
+              mainAxisSpacing: 2,
+            ),
+            itemCount: _messages.length,
+            itemBuilder: (context, index) {
+              final message = _messages[index];
+              final video = message.type == MessageType.video;
+              final thumbnail = video
+                  ? (message.metadata?['thumbnailUrl'])
+                  : message.attachmentUrl;
+              final url = thumbnail is String && thumbnail.isNotEmpty
+                  ? mediaUrl(thumbnail)
+                  : null;
+              return InkWell(
+                key: ValueKey('media-${message.id}'),
+                onTap: () => _open(index),
+                child: ColoredBox(
+                  color: context.surfaceMidColor,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (url != null)
+                        Image.network(
+                          url,
+                          headers: mediaAuthHeaders(url),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Icon(
+                            video
+                                ? Icons.videocam_outlined
+                                : Icons.broken_image_outlined,
+                            color: context.textSecondary,
+                          ),
+                        ),
+                      if (video)
+                        const Center(
+                          child: Icon(
+                            Icons.play_circle_outline,
+                            color: AppColors.onSurfaceDark,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              ),
-            ),
-            Positioned(
-              top: MediaQuery.paddingOf(context).top + 8,
-              left: 8,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         ),
-      ),
+        if (_isLoading) const LinearProgressIndicator(),
+        if (_failed || _hasMore && !_isLoading)
+          TextButton(
+            onPressed: _load,
+            child: Text(
+              _failed
+                  ? l10n(context).commonRetry
+                  : l10n(context).commonViewMore,
+            ),
+          ),
+      ],
     );
   }
 }

@@ -5,12 +5,14 @@ class AppRefreshIndicator extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final Widget child;
   final Color? color;
+  final ScrollNotificationPredicate notificationPredicate;
 
   const AppRefreshIndicator({
     super.key,
     required this.onRefresh,
     required this.child,
     this.color,
+    this.notificationPredicate = defaultScrollNotificationPredicate,
   });
 
   @override
@@ -18,6 +20,7 @@ class AppRefreshIndicator extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       color: color ?? AppColors.primaryContainer,
+      notificationPredicate: notificationPredicate,
       child: child,
     );
   }

@@ -18,8 +18,9 @@ class UploadService {
 
   static Future<Either<Failure, UploadedMedia>> uploadMedia(
     File file,
-    String context,
-  ) async {
+    String context, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       final filename = basename(file.path);
       final multipart = _compressedImageContexts.contains(context)
@@ -32,6 +33,7 @@ class UploadService {
         '/uploads',
         queryParameters: {'context': context},
         data: FormData.fromMap({'file': multipart}),
+        cancelToken: cancelToken,
       );
       if (response.statusCode != 201) {
         return const Left(ServerFailure('Falha ao enviar arquivo'));
@@ -53,9 +55,10 @@ class UploadService {
 
   static Future<Either<Failure, String>> uploadFile(
     File file,
-    String context,
-  ) async {
-    final result = await uploadMedia(file, context);
+    String context, {
+    CancelToken? cancelToken,
+  }) async {
+    final result = await uploadMedia(file, context, cancelToken: cancelToken);
     return result.fold(Left.new, (media) => Right(media.url));
   }
 

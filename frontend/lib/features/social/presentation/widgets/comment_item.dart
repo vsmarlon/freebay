@@ -18,6 +18,9 @@ class CommentItem extends StatelessWidget {
   final bool isApproving;
   final VoidCallback? onApprove;
   final VoidCallback? onQuote;
+  final bool canDelete;
+  final bool isDeleting;
+  final VoidCallback? onDelete;
 
   const CommentItem({
     super.key,
@@ -32,6 +35,9 @@ class CommentItem extends StatelessWidget {
     this.isApproving = false,
     this.onApprove,
     this.onQuote,
+    this.canDelete = false,
+    this.isDeleting = false,
+    this.onDelete,
   });
 
   @override
@@ -80,7 +86,8 @@ class CommentItem extends StatelessWidget {
                       GestureDetector(
                         onTap: onUserTap,
                         child: Text(
-                          comment.user?.displayName ?? 'Usuário',
+                          comment.user?.displayName ??
+                              l10n(context).commonUnknownUser,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -130,8 +137,8 @@ class CommentItem extends StatelessWidget {
                             onTap: onReply,
                             child: Text(
                               comment.replies.isNotEmpty
-                                  ? 'Responder • ${comment.replies.length} ${comment.replies.length == 1 ? 'resposta' : 'respostas'}'
-                                  : 'Responder',
+                                  ? '${l10n(context).chatReply} • ${comment.replies.length}'
+                                  : l10n(context).chatReply,
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -139,6 +146,21 @@ class CommentItem extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (canDelete) ...[
+                            Spacing.hMd,
+                            Semantics(
+                              button: true,
+                              label: l10n(context).commonDelete,
+                              child: GestureDetector(
+                                onTap: isDeleting ? null : onDelete,
+                                child: Icon(
+                                  Icons.delete_outline,
+                                  size: 16,
+                                  color: context.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
                           Spacing.hMd,
                           if (onQuote != null)
                             Semantics(

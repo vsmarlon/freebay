@@ -1,26 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/features/media_editor/presentation/widgets/image_editor_models.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
-/// Horizontal draw-tools palette of the image editor: colors, pens, widths.
+import '../../domain/editor_models.dart';
+
+/// Paleta de desenho: cores (+ picker custom), tipos de pincel e espessuras.
+/// A espessura chega em px; o chamador converte para widthFactor com a
+/// largura do canvas.
 class DrawPalette extends StatelessWidget {
   const DrawPalette({
     super.key,
-    required this.drawColor,
-    required this.penStyle,
-    required this.drawWidth,
+    required this.strokeKind,
+    required this.color,
+    required this.widthPx,
+    required this.onStrokeKind,
     required this.onColor,
-    required this.onPenStyle,
-    required this.onWidth,
+    required this.onWidthPx,
+    this.blur = false,
   });
 
-  final Color drawColor;
-  final PenStyle penStyle;
-  final double drawWidth;
+  final StrokeKind strokeKind;
+  final Color color;
+  final double widthPx;
+  final ValueChanged<StrokeKind> onStrokeKind;
   final ValueChanged<Color> onColor;
-  final ValueChanged<PenStyle> onPenStyle;
-  final ValueChanged<double> onWidth;
+  final ValueChanged<double> onWidthPx;
+  final bool blur;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +61,7 @@ class DrawPalette extends StatelessWidget {
                 ...colors.map(
                   (c) => Semantics(
                     button: true,
-                    selected: drawColor == c && penStyle != PenStyle.eraser,
+                    selected: color == c && strokeKind != StrokeKind.eraser,
                     label: strings.chatEditorChooseColor,
                     child: GestureDetector(
                       onTap: () => onColor(c),
@@ -67,7 +72,7 @@ class DrawPalette extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: c,
                           border: Border.all(
-                            color: drawColor == c && penStyle != PenStyle.eraser
+                            color: color == c && strokeKind != StrokeKind.eraser
                                 ? context.textPrimary
                                 : Colors.transparent,
                             width: 2,
@@ -112,34 +117,47 @@ class DrawPalette extends StatelessWidget {
                 _ToolBtn(
                   icon: Icons.edit,
                   label: strings.chatEditorPenMarker,
-                  isSelected: penStyle == PenStyle.marker,
-                  onTap: () => onPenStyle(PenStyle.marker),
+                  isSelected: strokeKind == StrokeKind.pen,
+                  onTap: () => onStrokeKind(StrokeKind.pen),
                 ),
                 _ToolBtn(
                   icon: Icons.brush,
                   label: strings.chatEditorPenHighlighter,
-                  isSelected: penStyle == PenStyle.highlighter,
-                  onTap: () => onPenStyle(PenStyle.highlighter),
+                  isSelected: strokeKind == StrokeKind.marker,
+                  onTap: () => onStrokeKind(StrokeKind.marker),
+                ),
+                _ToolBtn(
+                  icon: Icons.auto_awesome,
+                  label: strings.mediaEditorNeon,
+                  isSelected: strokeKind == StrokeKind.neon,
+                  onTap: () => onStrokeKind(StrokeKind.neon),
                 ),
                 _ToolBtn(
                   icon: Icons.cleaning_services,
                   label: strings.chatEditorPenEraser,
-                  isSelected: penStyle == PenStyle.eraser,
-                  onTap: () => onPenStyle(PenStyle.eraser),
+                  isSelected: strokeKind == StrokeKind.eraser,
+                  onTap: () => onStrokeKind(StrokeKind.eraser),
                 ),
+                if (blur)
+                  _ToolBtn(
+                    icon: Icons.blur_on,
+                    label: strings.mediaEditorBlur,
+                    isSelected: strokeKind == StrokeKind.blur,
+                    onTap: () => onStrokeKind(StrokeKind.blur),
+                  ),
                 const SizedBox(width: 16),
                 for (final width in [4.0, 8.0, 14.0, 24.0])
                   Semantics(
                     button: true,
-                    selected: drawWidth == width,
+                    selected: widthPx == width,
                     label: strings.chatEditorStrokeWidth(width.toInt()),
                     child: GestureDetector(
-                      onTap: () => onWidth(width),
+                      onTap: () => onWidthPx(width),
                       child: Container(
                         width: 32,
                         height: 32,
                         margin: const EdgeInsets.symmetric(horizontal: 4),
-                        color: drawWidth == width
+                        color: widthPx == width
                             ? context.surfaceColor
                             : Colors.transparent,
                         child: Center(

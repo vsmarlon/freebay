@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
+import 'app_depth.dart';
 import 'app_typography.dart';
+import 'spacing.dart';
 
 class AppTheme {
   AppTheme._();
@@ -46,6 +48,11 @@ class AppTheme {
       useMaterial3: true,
       brightness: scheme.brightness,
       colorScheme: scheme,
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: scheme.primary,
+        selectionColor: scheme.primary.withValues(alpha: 0.3),
+        selectionHandleColor: scheme.primary,
+      ),
       fontFamily: AppTypography.fontFamily,
       pageTransitionsTheme: pageTransitionsTheme,
       textTheme: _textTheme(ink, muted),
@@ -62,25 +69,45 @@ class AppTheme {
         titleTextStyle: AppTypography.h3.copyWith(color: ink),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        filled: false,
-        border: UnderlineInputBorder(
-          borderSide: BorderSide(color: scheme.outlineVariant),
+        filled: true,
+        fillColor: scheme.surfaceContainerHigh,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+        enabledBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.zero,
+          borderSide: BorderSide(color: Colors.transparent),
         ),
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: scheme.outlineVariant),
+        disabledBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.zero,
+          borderSide: BorderSide(color: Colors.transparent),
         ),
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.primaryContainer, width: 2),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.zero,
+          borderSide: BorderSide(
+            color: scheme.primary,
+            width: AppDepth.borderThick,
+          ),
         ),
-        errorBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: scheme.error),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.zero,
+          borderSide: BorderSide(
+            color: scheme.error,
+            width: AppDepth.borderThick,
+          ),
         ),
-        focusedErrorBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: scheme.error, width: 2),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.zero,
+          borderSide: BorderSide(
+            color: scheme.error,
+            width: AppDepth.borderThick,
+          ),
         ),
         labelStyle: AppTypography.bodyMedium.copyWith(color: muted),
         hintStyle: AppTypography.bodyMedium.copyWith(color: muted),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md,
+          vertical: Spacing.md,
+        ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,

@@ -7,6 +7,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
@@ -159,6 +160,10 @@ class ProductDetailPage extends ConsumerWidget {
                 iconColor: isFavorited ? AppColors.error : context.textPrimary,
                 borderColor: context.borderColor,
                 onTap: () async {
+                  if (ref.read(authControllerProvider).value == null) {
+                    AppSnackbar.warning(context, l10n(context).feedLoginToSave);
+                    return;
+                  }
                   await ref
                       .read(favoritesProvider.notifier)
                       .toggleFavorite(product.id);

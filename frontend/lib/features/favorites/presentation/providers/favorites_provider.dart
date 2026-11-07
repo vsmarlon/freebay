@@ -4,6 +4,7 @@ import 'package:freebay/features/favorites/data/services/favorites_service.dart'
 import 'package:freebay/features/favorites/data/repositories/favorites_repository.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
 
 final favoritesServiceProvider = Provider((ref) => FavoritesService());
 
@@ -15,22 +16,27 @@ class FavoritesState {
   final bool isLoading;
   final List<ProductEntity> products;
   final Set<String> favoritedProductIds;
+  final Failure? loadFailure;
 
   const FavoritesState({
     this.isLoading = false,
     this.products = const [],
     this.favoritedProductIds = const {},
+    this.loadFailure,
   });
 
   FavoritesState copyWith({
     bool? isLoading,
     List<ProductEntity>? products,
     Set<String>? favoritedProductIds,
+    Failure? loadFailure,
+    bool clearLoadFailure = false,
   }) {
     return FavoritesState(
       isLoading: isLoading ?? this.isLoading,
       products: products ?? this.products,
       favoritedProductIds: favoritedProductIds ?? this.favoritedProductIds,
+      loadFailure: clearLoadFailure ? null : loadFailure ?? this.loadFailure,
     );
   }
 
@@ -68,19 +74,24 @@ class FavoritesNotifier extends Notifier<FavoritesState> {
     if (_inFlight.isNotEmpty) return;
     final sessionId = _sessionId;
     final requestId = ++_requestId;
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, clearLoadFailure: true);
     final result = await ref.read(favoritesRepositoryProvider).getFavorites();
     if (!ref.mounted || sessionId != _sessionId || requestId != _requestId) {
       return;
     }
-    result.fold((_) => state = state.copyWith(isLoading: false), (products) {
-      final ids = products.map((p) => p.id).toSet();
-      state = state.copyWith(
-        isLoading: false,
-        products: products,
-        favoritedProductIds: ids,
-      );
-    });
+    result.fold(
+      (failure) =>
+          state = state.copyWith(isLoading: false, loadFailure: failure),
+      (products) {
+        final ids = products.map((p) => p.id).toSet();
+        state = state.copyWith(
+          isLoading: false,
+          products: products,
+          favoritedProductIds: ids,
+          clearLoadFailure: true,
+        );
+      },
+    );
   }
 
   Future<bool> initializeFavoriteStatus(String productId) async {

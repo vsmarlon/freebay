@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:freebay/shared/pagination/paginated_state.dart';
 
@@ -58,7 +59,11 @@ class UserSearch extends _$UserSearch {
       offset: offset,
     );
 
-    final result = await _repository.searchUsers(query: query, offset: offset);
+    final normalizedQuery = query?.trim().replaceAll(RegExp(r'\s+'), ' ');
+    final result = await _repository.searchUsers(
+      query: normalizedQuery,
+      offset: offset,
+    );
     if (!ref.mounted || !_requestGuard.isCurrent(requestId)) return;
 
     result.fold(
@@ -82,22 +87,30 @@ class UserSearch extends _$UserSearch {
 class SuggestionsState {
   final List<UserSearchEntity> users;
   final bool isLoading;
+  final bool hasMore;
+  final int offset;
   final String? error;
 
   const SuggestionsState({
     this.users = const [],
     this.isLoading = false,
+    this.hasMore = true,
+    this.offset = 0,
     this.error,
   });
 
   SuggestionsState copyWith({
     List<UserSearchEntity>? users,
     bool? isLoading,
+    bool? hasMore,
+    int? offset,
     String? error,
   }) {
     return SuggestionsState(
       users: users ?? this.users,
       isLoading: isLoading ?? this.isLoading,
+      hasMore: hasMore ?? this.hasMore,
+      offset: offset ?? this.offset,
       error: error,
     );
   }
@@ -108,6 +121,7 @@ class SuggestionsState {
 @Riverpod(keepAlive: true)
 class Suggestions extends _$Suggestions {
   int _sessionId = 0;
+  final PageRequestGuard _requestGuard = PageRequestGuard();
   SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
@@ -122,6 +136,7 @@ class Suggestions extends _$Suggestions {
 
   void clear() {
     _sessionId++;
+    _requestGuard.invalidate();
     state = const SuggestionsState();
   }
 
@@ -129,50 +144,77 @@ class Suggestions extends _$Suggestions {
     if (state.isLoading) return;
 
     final sessionId = _sessionId;
+    final requestId = _requestGuard.begin();
     state = state.copyWith(isLoading: true);
 
-    final result = await _repository.getSuggestions();
-    if (!ref.mounted || sessionId != _sessionId) return;
+    final result = await _repository.getSuggestionsPage();
+    if (!ref.mounted ||
+        sessionId != _sessionId ||
+        !_requestGuard.isCurrent(requestId)) {
+      return;
+    }
 
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
-      (users) => state = state.copyWith(users: users, isLoading: false),
+      (page) => state = state.copyWith(
+        users: page.users,
+        hasMore: page.hasMore,
+        offset: page.nextOffset ?? 0,
+        isLoading: false,
+      ),
     );
   }
 
   /// Force-refresh after the user follows or unfollows someone.
   Future<void> refresh() async {
     final sessionId = _sessionId;
-    state = state.copyWith(users: [], isLoading: true);
-    final result = await _repository.getSuggestions();
-    if (!ref.mounted || sessionId != _sessionId) return;
+    final requestId = _requestGuard.begin();
+    state = const SuggestionsState(isLoading: true);
+    final result = await _repository.getSuggestionsPage();
+    if (!ref.mounted ||
+        sessionId != _sessionId ||
+        !_requestGuard.isCurrent(requestId)) {
+      return;
+    }
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
-      (users) => state = state.copyWith(users: users, isLoading: false),
+      (page) => state = state.copyWith(
+        users: page.users,
+        hasMore: page.hasMore,
+        offset: page.nextOffset ?? 0,
+        isLoading: false,
+      ),
     );
   }
 
   /// Fetches more suggestions and appends them to the current list
   Future<void> fetchMore() async {
-    if (state.isLoading) return;
+    if (state.isLoading || !state.hasMore) return;
     final sessionId = _sessionId;
+    final requestId = _requestGuard.begin();
     state = state.copyWith(isLoading: true);
 
-    final result = await _repository.getSuggestions();
-    if (!ref.mounted || sessionId != _sessionId) return;
+    final result = await _repository.getSuggestionsPage(offset: state.offset);
+    if (!ref.mounted ||
+        sessionId != _sessionId ||
+        !_requestGuard.isCurrent(requestId)) {
+      return;
+    }
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
-      (newUsers) {
+      (page) {
         // filter out duplicates
         final currentIds = state.users.map((u) => u.id).toSet();
-        final uniqueNew = newUsers
+        final uniqueNew = page.users
             .where((u) => !currentIds.contains(u.id))
             .toList();
         state = state.copyWith(
           users: [...state.users, ...uniqueNew],
+          hasMore: page.hasMore,
+          offset: page.nextOffset ?? state.offset,
           isLoading: false,
         );
       },
@@ -185,8 +227,17 @@ Future<List<UserSearchEntity>> quoteMentionCandidates(
   Ref ref,
   String query,
 ) async {
+  final userId = ref.watch(authControllerProvider).value?.id;
+  if (userId == null) return const [];
+  await Future<void>.delayed(const Duration(milliseconds: 250));
+  if (!ref.mounted) return const [];
   final trimmed = query.trim();
-  if (trimmed.isEmpty) return const [];
+  if (trimmed.isEmpty) {
+    final suggestions = await ref
+        .read(socialRepositoryProvider)
+        .getSuggestionsPage();
+    return suggestions.fold((failure) => throw failure, (page) => page.users);
+  }
   final result = await ref
       .read(socialRepositoryProvider)
       .searchUsers(query: trimmed);

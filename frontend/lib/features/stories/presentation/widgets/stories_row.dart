@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/stories/data/entities/story_entity.dart';
+import 'package:freebay/features/stories/presentation/pages/story_viewer_wrapper.dart';
 import 'package:freebay/features/stories/presentation/providers/stories_provider.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
@@ -31,8 +32,33 @@ class StoriesRow extends ConsumerWidget {
     List<StoryGroupEntity> groups, {
     bool isLoading = false,
   }) {
+    final rowHeight = 60 + 30 * MediaQuery.textScalerOf(context).scale(1);
+    if (isLoading) {
+      return SizedBox(
+        height: rowHeight,
+        child: ExcludeSemantics(
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 5,
+            itemBuilder: (context, index) => const Padding(
+              padding: EdgeInsets.only(right: Spacing.md),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ShimmerBlock(width: 56, height: 56),
+                  Spacing.vXs,
+                  ShimmerBlock(width: 48, height: 10),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return SizedBox(
-      height: 60 + 30 * MediaQuery.textScalerOf(context).scale(1),
+      height: rowHeight,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -46,7 +72,7 @@ class StoriesRow extends ConsumerWidget {
             group: group,
             onTap: () {
               HapticFeedback.lightImpact();
-              context.push(AppRoutes.storyAt(index - 1));
+              context.push(storyViewerLocation(group.stories.first.id));
             },
           );
         },
@@ -61,6 +87,8 @@ class _AddStoryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = l10n(context);
+    final labelWidth =
+        64.0 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 2.0);
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: GestureDetector(
@@ -86,7 +114,7 @@ class _AddStoryItem extends StatelessWidget {
             ),
             Spacing.vXs,
             SizedBox(
-              width: 140,
+              width: labelWidth,
               child: Text(
                 strings.feedCreateStory,
                 style: TextStyle(

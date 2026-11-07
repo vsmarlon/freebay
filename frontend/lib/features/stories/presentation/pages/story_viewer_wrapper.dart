@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/features/stories/presentation/pages/story_viewer_page.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/stories/presentation/providers/story_highlight_provider.dart';
 import 'package:freebay/features/stories/presentation/providers/stories_provider.dart';
@@ -13,6 +14,11 @@ final freshViewerStoriesProvider = FutureProvider.autoDispose<StoriesResponse>((
   final result = await ref.read(storiesRepositoryProvider).getStories();
   return result.fold((failure) => throw failure, (stories) => stories);
 });
+
+/// Viewer location for [storyId]. The `index` query parameter carries the story
+/// id; a numeric value still works for older links (see [StoryViewerWrapper]).
+String storyViewerLocation(String storyId) =>
+    '${AppRoutes.story}?index=${Uri.encodeComponent(storyId)}';
 
 class StoryViewerWrapper extends ConsumerWidget {
   final String? indexParam;
@@ -38,11 +44,19 @@ class StoryViewerWrapper extends ConsumerWidget {
         }
 
         int initialIndex = 0;
-        if (indexParam != null) {
-          initialIndex = int.tryParse(indexParam!) ?? 0;
-          if (initialIndex < 0 || initialIndex >= groups.length) {
-            initialIndex = 0;
-          }
+        final target = indexParam;
+        if (target != null && target.isNotEmpty) {
+          // Legacy links carried a group position; new ones carry the story id,
+          // resolved here against the list the viewer actually shows.
+          final legacyIndex = int.tryParse(target);
+          final resolved =
+              legacyIndex ??
+              groups.indexWhere(
+                (group) => group.stories.any((story) => story.id == target),
+              );
+          initialIndex = resolved < 0 || resolved >= groups.length
+              ? 0
+              : resolved;
         }
 
         return StoryViewerPage(groups: groups, initialGroupIndex: initialIndex);

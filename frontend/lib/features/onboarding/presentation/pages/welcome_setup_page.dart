@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/router/app_router.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/auth/auth.dart';
 import 'package:freebay/shared/services/notification_service.dart';
 import 'package:freebay/shared/services/storage_service.dart';
@@ -19,8 +19,15 @@ class WelcomeSetupPage extends ConsumerStatefulWidget {
 }
 
 class _WelcomeSetupPageState extends ConsumerState<WelcomeSetupPage> {
+  final _pageController = PageController();
   int _step = 0;
   bool _busy = false;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   Future<void> _finish() async {
     // Riverpod 3: .value is null (never throws) while loading/in error.
@@ -35,14 +42,17 @@ class _WelcomeSetupPageState extends ConsumerState<WelcomeSetupPage> {
       await StorageService.setWelcomeSetupDone(user.id);
     }
     if (!mounted) return;
-    // go() alone re-evaluates the router redirect; no manual bump needed.
-    context.go(AppRoutes.feed);
+    navigatePostAuthDestination(
+      GoRouterState.of(context).uri.queryParameters['from'],
+    );
   }
 
   void _next() {
-    HapticFeedback.selectionClick();
     if (_step < 2) {
-      setState(() => _step++);
+      _pageController.nextPage(
+        duration: AppMotion.enter,
+        curve: AppMotion.baseCurve,
+      );
     } else {
       _finish();
     }
@@ -54,16 +64,9 @@ class _WelcomeSetupPageState extends ConsumerState<WelcomeSetupPage> {
     try {
       final userId = ref.read(authControllerProvider).value?.id;
       if (userId == null) return;
-      final stepUpToken = await StepUpAuthenticator.authorize(
-        context,
-        ref,
-        purpose: 'biometric_enroll',
-      );
-      if (stepUpToken == null || !mounted) return;
-
       final enrolled = await ref
           .read(authControllerProvider.notifier)
-          .enrollBiometrics(stepUpToken, expectedUserId: userId);
+          .enrollBiometrics(expectedUserId: userId);
       if (!enrolled) {
         if (mounted) {
           AppSnackbar.error(context, strings.onboardingBiometryEnableFailed);
@@ -122,7 +125,21 @@ class _WelcomeSetupPageState extends ConsumerState<WelcomeSetupPage> {
                   ),
                 ),
                 Spacing.vXl,
-                Expanded(child: _buildStep(isAvailable, isEnabled)),
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    physics: _busy
+                        ? const NeverScrollableScrollPhysics()
+                        : null,
+                    itemCount: 3,
+                    onPageChanged: (step) {
+                      HapticFeedback.selectionClick();
+                      setState(() => _step = step);
+                    },
+                    itemBuilder: (context, step) =>
+                        _buildStep(step, isAvailable, isEnabled),
+                  ),
+                ),
                 Spacing.vLg,
                 if (_step == 0 && isAvailable && !isEnabled)
                   AppButton(
@@ -173,9 +190,9 @@ class _WelcomeSetupPageState extends ConsumerState<WelcomeSetupPage> {
     );
   }
 
-  Widget _buildStep(bool isAvailable, bool isEnabled) {
+  Widget _buildStep(int step, bool isAvailable, bool isEnabled) {
     final strings = l10n(context);
-    switch (_step) {
+    switch (step) {
       case 0:
         return _StepContent(
           icon: Icons.fingerprint,

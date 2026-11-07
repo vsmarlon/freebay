@@ -420,22 +420,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 ),
                 loading: () =>
                     const Center(child: ShimmerBlock(width: 20, height: 20)),
-                error: (err, _) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: AppColors.error,
-                      ),
-                      Spacing.vMd,
-                      Text(
-                        strings.profileEditLoadError,
-                        style: TextStyle(color: context.textPrimary),
-                      ),
-                    ],
-                  ),
+                error: (err, _) => EmptyState.error(
+                  message: strings.profileEditLoadError,
+                  onRetry: () => ref.invalidate(profileFutureProvider('me')),
                 ),
               ),
             ),

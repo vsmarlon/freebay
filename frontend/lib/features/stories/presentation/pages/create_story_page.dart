@@ -1,5 +1,7 @@
-import 'package:freebay/features/stories/presentation/providers/stories_provider.dart';
+import 'dart:async';
 import 'dart:io';
+
+import 'package:freebay/features/stories/presentation/providers/stories_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -23,7 +25,8 @@ class CreateStoryPage extends ConsumerStatefulWidget {
   ConsumerState<CreateStoryPage> createState() => _CreateStoryPageState();
 }
 
-class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
+class _CreateStoryPageState extends ConsumerState<CreateStoryPage>
+    with WidgetsBindingObserver {
   CameraController? _cameraController;
   List<CameraDescription>? _cameras;
   bool _isInitialized = false;
@@ -33,54 +36,128 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
   bool _isLoading = false;
   StoryAudience _audience = StoryAudience.everyone;
   String? _cameraError;
+  int _cameraGeneration = 0;
+  bool _isInitializingCamera = false;
+  CameraController? _disposingCamera;
+  Future<void>? _cameraDisposal;
   final _captionController = TextEditingController();
   final List<StoryTextBlockEntity> _textBlocks = [];
   String? _selectedTextId;
   VideoPlayerController? _videoController;
+  String? _editorOwnedVideoPath;
   final StorySubmissionCoordinator _submissionCoordinator =
       StorySubmissionCoordinator();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initCamera();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _initCamera();
+    } else {
+      _cameraGeneration++;
+      _isInitializingCamera = false;
+      _isInitialized = false;
+      final disposal = _disposeCamera();
+      if (mounted) setState(() {});
+      unawaited(disposal);
+    }
+  }
+
   Future<void> _initCamera() async {
+    if (_isInitialized || _isInitializingCamera) return;
+    _isInitializingCamera = true;
+    final generation = ++_cameraGeneration;
+    _cameraError = null;
     try {
-      _cameras = await availableCameras();
-      if (_cameras != null && _cameras!.isNotEmpty) {
+      _cameras = await availableCameras().timeout(const Duration(seconds: 10));
+      if (!mounted || generation != _cameraGeneration) return;
+      if (_cameras!.isNotEmpty) {
         final camera = _cameras!.firstWhere(
           (cam) => cam.lensDirection == CameraLensDirection.front,
           orElse: () => _cameras!.first,
         );
-
-        _cameraController = CameraController(
+        await _initializeCameraController(
           camera,
           ResolutionPreset.medium,
-          enableAudio: false,
+          generation,
         );
-
-        await _cameraController!.initialize();
-
-        if (mounted) {
-          setState(() {
-            _isInitialized = true;
-          });
-        }
+      } else {
+        throw StateError('No cameras available');
       }
     } catch (error, stackTrace) {
-      ErrorReporter.report('story-camera-init', error, stackTrace);
-      if (mounted) {
-        setState(() => _cameraError = l10n(context).feedCameraUnavailable);
-      }
+      _handleCameraError(error, stackTrace, generation);
+    } finally {
+      if (generation == _cameraGeneration) _isInitializingCamera = false;
     }
+  }
+
+  Future<void> _initializeCameraController(
+    CameraDescription camera,
+    ResolutionPreset resolution,
+    int generation,
+  ) async {
+    final pendingDisposal = _cameraDisposal;
+    if (pendingDisposal != null) {
+      await pendingDisposal.timeout(const Duration(seconds: 10));
+    }
+    if (!mounted || generation != _cameraGeneration) return;
+
+    final controller = CameraController(camera, resolution, enableAudio: false);
+    _cameraController = controller;
+    await controller.initialize().timeout(const Duration(seconds: 10));
+    if (!mounted || generation != _cameraGeneration) {
+      await _disposeCamera(controller);
+      return;
+    }
+    setState(() => _isInitialized = true);
+  }
+
+  Future<void> _disposeCamera([CameraController? controller]) {
+    final target = controller ?? _cameraController;
+    if (identical(_cameraController, target)) _cameraController = null;
+    if (target == null) return Future<void>.value();
+    if (identical(_disposingCamera, target)) return _cameraDisposal!;
+    late final Future<void> disposal;
+    disposal = target
+        .dispose()
+        .catchError((Object error, StackTrace stackTrace) {
+          ErrorReporter.report('story-camera-dispose', error, stackTrace);
+        })
+        .whenComplete(() {
+          if (identical(_cameraDisposal, disposal)) {
+            _cameraDisposal = null;
+            _disposingCamera = null;
+          }
+        });
+    _disposingCamera = target;
+    _cameraDisposal = disposal;
+    return disposal;
+  }
+
+  void _handleCameraError(Object error, StackTrace stackTrace, int generation) {
+    ErrorReporter.report('story-camera-init', error, stackTrace);
+    if (!mounted || generation != _cameraGeneration) return;
+    _isInitialized = false;
+    unawaited(_disposeCamera());
+    setState(() => _cameraError = l10n(context).feedCameraUnavailable);
   }
 
   @override
   void dispose() {
-    _cameraController?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    _cameraGeneration++;
+    unawaited(_disposeCamera());
     _videoController?.dispose();
+    final ownedVideo = _editorOwnedVideoPath;
+    if (ownedVideo != null) {
+      unawaited(File(ownedVideo).delete().catchError((_) => File(ownedVideo)));
+    }
     _captionController.dispose();
     super.dispose();
   }
@@ -94,14 +171,13 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
 
     try {
       final XFile image = await _cameraController!.takePicture();
+      if (!mounted) return;
       setState(() => _isTakingPicture = false);
       await _openImageEditor(image.path);
     } catch (error, stackTrace) {
       ErrorReporter.report('story-camera-capture', error, stackTrace);
-      setState(() {
-        _isTakingPicture = false;
-      });
       if (mounted) {
+        setState(() => _isTakingPicture = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n(context).feedCameraUnavailable)),
         );
@@ -113,10 +189,23 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickMedia();
+      if (!mounted) return;
 
       if (image != null) {
         if (_isVideo(image.path)) {
-          await _setVideo(image.path);
+          final edited = await showVideoEditor(context, File(image.path));
+          if (edited != null && mounted) {
+            final previous = _editorOwnedVideoPath;
+            _editorOwnedVideoPath = edited.path;
+            await _setVideo(edited.path);
+            if (previous != null) {
+              try {
+                await File(previous).delete();
+              } on FileSystemException {
+                /* already replaced */
+              }
+            }
+          }
         } else {
           await _openImageEditor(image.path);
         }
@@ -154,26 +243,24 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
     try {
       final bytes = await File(path).readAsBytes();
       if (!mounted) return;
-      await context.push(
-        AppRoutes.imageEditor,
-        extra: {
-          'imageBytes': bytes,
-          'purpose': ImageEditorPurpose.story,
-          'onComplete': (ImageEditorResult result) async {
-            final editedFile = File(
-              '${Directory.systemTemp.path}${Platform.pathSeparator}freebay_story_${DateTime.now().microsecondsSinceEpoch}.png',
-            );
-            await editedFile.writeAsBytes(result.imageBytes, flush: true);
-            if (mounted) {
-              setState(() {
-                _capturedImagePath = editedFile.path;
-                _captionController.text = result.caption ?? '';
-              });
-            }
-            return true;
-          },
+      final request = ImageEditorRouteRequest(
+        imageBytes: bytes,
+        purpose: ImageEditorPurpose.story,
+        onComplete: (ImageEditorResult result) async {
+          final editedFile = File(
+            '${Directory.systemTemp.path}${Platform.pathSeparator}freebay_story_${DateTime.now().microsecondsSinceEpoch}.png',
+          );
+          await editedFile.writeAsBytes(result.imageBytes, flush: true);
+          if (mounted) {
+            setState(() {
+              _capturedImagePath = editedFile.path;
+              _captionController.text = result.caption ?? '';
+            });
+          }
+          return true;
         },
       );
+      await request.push<void>(context, AppRoutes.imageEditor);
     } catch (error, stackTrace) {
       ErrorReporter.report('story-image-edit', error, stackTrace);
       if (mounted) {
@@ -233,32 +320,35 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
     }
   }
 
-  void _switchCamera() async {
-    if (_cameras == null || _cameras!.length < 2) return;
-
-    setState(() {
-      _useFrontCamera = !_useFrontCamera;
-    });
-
-    final camera = _cameras!.firstWhere(
-      (cam) => _useFrontCamera
-          ? cam.lensDirection == CameraLensDirection.front
-          : cam.lensDirection == CameraLensDirection.back,
-      orElse: () => _cameras!.first,
-    );
-
-    await _cameraController?.dispose();
-
-    _cameraController = CameraController(
-      camera,
-      ResolutionPreset.high,
-      enableAudio: false,
-    );
-
-    await _cameraController!.initialize();
-
-    if (mounted) {
-      setState(() {});
+  Future<void> _switchCamera() async {
+    if (_isInitializingCamera || _cameras == null || _cameras!.length < 2) {
+      return;
+    }
+    _isInitializingCamera = true;
+    final generation = ++_cameraGeneration;
+    final useFrontCamera = !_useFrontCamera;
+    _cameraError = null;
+    setState(() => _isInitialized = false);
+    try {
+      final camera = _cameras!.firstWhere(
+        (cam) => useFrontCamera
+            ? cam.lensDirection == CameraLensDirection.front
+            : cam.lensDirection == CameraLensDirection.back,
+        orElse: () => _cameras!.first,
+      );
+      await _disposeCamera();
+      await _initializeCameraController(
+        camera,
+        ResolutionPreset.high,
+        generation,
+      );
+      if (mounted && generation == _cameraGeneration && _isInitialized) {
+        setState(() => _useFrontCamera = useFrontCamera);
+      }
+    } catch (error, stackTrace) {
+      _handleCameraError(error, stackTrace, generation);
+    } finally {
+      if (generation == _cameraGeneration) _isInitializingCamera = false;
     }
   }
 
@@ -274,6 +364,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
       isTakingPicture: _isTakingPicture,
       canSwitchCamera: _cameras != null && _cameras!.length > 1,
       cameraError: _cameraError,
+      onRetryCamera: _initCamera,
       onClose: () => Navigator.pop(context),
       onSwitchCamera: _switchCamera,
       onPickFromGallery: _pickFromGallery,

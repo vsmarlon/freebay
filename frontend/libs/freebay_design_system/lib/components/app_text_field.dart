@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../tokens/app_colors.dart';
 import '../tokens/app_typography.dart';
 import '../tokens/theme_extension.dart';
 
@@ -27,6 +26,7 @@ class AppTextField extends StatefulWidget {
   final bool enabled;
   final FocusNode? focusNode;
   final bool autofocus;
+  final Iterable<String>? autofillHints;
 
   const AppTextField({
     super.key,
@@ -52,6 +52,7 @@ class AppTextField extends StatefulWidget {
     this.enabled = true,
     this.focusNode,
     this.autofocus = false,
+    this.autofillHints,
   });
 
   @override
@@ -100,40 +101,16 @@ class _AppTextFieldState extends State<AppTextField> {
       enabled: widget.enabled,
       focusNode: widget.focusNode,
       autofocus: widget.autofocus,
+      autofillHints: widget.autofillHints,
       style: AppTypography.bodyLarge.copyWith(color: context.textPrimary),
       decoration: InputDecoration(
         labelText: widget.label?.isNotEmpty == true ? widget.label : null,
-        labelStyle: widget.label?.isNotEmpty == true
-            ? TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontWeight: FontWeight.w500,
-                color: context.textSecondary,
-              )
-            : null,
         hintText: widget.hint,
-        hintStyle: AppTypography.bodyMedium.copyWith(
-          color: context.textSecondary,
-        ),
         errorText: widget.errorText,
-        filled: false,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
         prefixIcon: widget.prefixIcon != null
             ? Icon(widget.prefixIcon, color: context.textSecondary)
             : null,
         suffixIcon: builtSuffix,
-        border: const UnderlineInputBorder(),
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: context.borderSoftColor),
-        ),
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.primaryContainer, width: 2.0),
-        ),
-        errorBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.error, width: 2.0),
-        ),
-        focusedErrorBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.error, width: 2.0),
-        ),
       ),
     );
   }

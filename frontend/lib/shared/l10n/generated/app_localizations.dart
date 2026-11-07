@@ -99,6 +99,60 @@ abstract class AppLocalizations {
     Locale('pt', 'BR'),
   ];
 
+  /// No description provided for @chatPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin message'**
+  String get chatPin;
+
+  /// No description provided for @chatUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin message'**
+  String get chatUnpin;
+
+  /// No description provided for @chatReact.
+  ///
+  /// In en, this message translates to:
+  /// **'React'**
+  String get chatReact;
+
+  /// No description provided for @chatMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get chatMore;
+
+  /// No description provided for @chatMediaInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Media information'**
+  String get chatMediaInfo;
+
+  /// No description provided for @chatPreviousMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous media'**
+  String get chatPreviousMedia;
+
+  /// No description provided for @chatNextMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Next media'**
+  String get chatNextMedia;
+
+  /// No description provided for @chatNoMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'No media'**
+  String get chatNoMedia;
+
+  /// No description provided for @chatMediaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Images and videos sent here appear in this list.'**
+  String get chatMediaHint;
+
   /// No description provided for @onboardingSkip.
   ///
   /// In en, this message translates to:
@@ -393,6 +447,24 @@ abstract class AppLocalizations {
   /// **'Email'**
   String get authEmail;
 
+  /// No description provided for @authLoginIdentifier.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or @username'**
+  String get authLoginIdentifier;
+
+  /// No description provided for @authLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email or @username'**
+  String get authLoginRequired;
+
+  /// No description provided for @authUsernameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 3-20 lowercase letters, numbers or _'**
+  String get authUsernameInvalid;
+
   /// No description provided for @authPassword.
   ///
   /// In en, this message translates to:
@@ -420,7 +492,7 @@ abstract class AppLocalizations {
   /// No description provided for @authSessionExpiredBody.
   ///
   /// In en, this message translates to:
-  /// **'For your security, sign in again to continue.'**
+  /// **'You were signed out after 12 minutes without activity. Sign in again to continue.'**
   String get authSessionExpiredBody;
 
   /// No description provided for @authUseBiometrics.
@@ -597,6 +669,72 @@ abstract class AppLocalizations {
   /// **'Messages'**
   String get chatTitle;
 
+  /// No description provided for @chatMediaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Media unavailable — it may have been deleted'**
+  String get chatMediaUnavailable;
+
+  /// No description provided for @chatMediaUnavailableSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment is unavailable on the server'**
+  String get chatMediaUnavailableSender;
+
+  /// No description provided for @chatViewOnceOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open once'**
+  String get chatViewOnceOpen;
+
+  /// No description provided for @chatViewOnceBurned.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewed — deleted'**
+  String get chatViewOnceBurned;
+
+  /// No description provided for @chatViewOnceBurnedTimestamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted'**
+  String get chatViewOnceBurnedTimestamp;
+
+  /// No description provided for @chatViewOnceSentTimestamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get chatViewOnceSentTimestamp;
+
+  /// No description provided for @chatViewOnceSent.
+  ///
+  /// In en, this message translates to:
+  /// **'View-once message sent'**
+  String get chatViewOnceSent;
+
+  /// No description provided for @chatViewOnceToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'View once'**
+  String get chatViewOnceToggle;
+
+  /// No description provided for @chatViewOnceEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'View once enabled'**
+  String get chatViewOnceEnabled;
+
+  /// No description provided for @chatViewOnceDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'View once disabled'**
+  String get chatViewOnceDisabled;
+
+  /// No description provided for @chatViewOnceExpiresOnClose.
+  ///
+  /// In en, this message translates to:
+  /// **'DISAPPEARS WHEN CLOSED'**
+  String get chatViewOnceExpiresOnClose;
+
   /// No description provided for @chatArchivedTitle.
   ///
   /// In en, this message translates to:
@@ -684,7 +822,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatMessageHint.
   ///
   /// In en, this message translates to:
-  /// **'Write a message…'**
+  /// **'Message…'**
   String get chatMessageHint;
 
   /// No description provided for @chatEmptyTitle.
@@ -716,6 +854,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Message could not be sent.'**
   String get chatSendFailed;
+
+  /// No description provided for @chatSendDeliveryUncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery unconfirmed. Tap to retry.'**
+  String get chatSendDeliveryUncertain;
+
+  /// No description provided for @chatSendingSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Trying to send…'**
+  String get chatSendingSlow;
+
+  /// No description provided for @chatSendCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Send cancelled'**
+  String get chatSendCancelled;
 
   /// No description provided for @chatAttachment.
   ///
@@ -1389,6 +1545,18 @@ abstract class AppLocalizations {
   /// **'Send code'**
   String get authSendCode;
 
+  /// No description provided for @authRecoveryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email to receive the verification code.'**
+  String get authRecoveryHint;
+
+  /// No description provided for @authRecoveryCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code sent to your email.'**
+  String get authRecoveryCodeHint;
+
   /// No description provided for @authConfirmPassword.
   ///
   /// In en, this message translates to:
@@ -1506,37 +1674,37 @@ abstract class AppLocalizations {
   /// No description provided for @authBiometryNotEnabled.
   ///
   /// In en, this message translates to:
-  /// **'Biometrics are not enabled.'**
+  /// **'Fingerprint or Face ID sign-in is not enabled. A device PIN or passcode cannot be used.'**
   String get authBiometryNotEnabled;
 
   /// No description provided for @authBiometryUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Biometrics are unavailable on this device.'**
+  /// **'Fingerprint or Face ID is unavailable on this device. A device PIN or passcode cannot be used.'**
   String get authBiometryUnavailable;
 
   /// No description provided for @authBiometryCredentialsMissing.
   ///
   /// In en, this message translates to:
-  /// **'Biometric credentials were not found.'**
+  /// **'Fingerprint or Face ID sign-in credentials were not found. A device PIN or passcode cannot be used.'**
   String get authBiometryCredentialsMissing;
 
   /// No description provided for @authBiometryAccountMismatch.
   ///
   /// In en, this message translates to:
-  /// **'Biometrics belong to another account.'**
+  /// **'Fingerprint or Face ID sign-in belongs to another account. A device PIN or passcode cannot be used.'**
   String get authBiometryAccountMismatch;
 
   /// No description provided for @authBiometryCancelled.
   ///
   /// In en, this message translates to:
-  /// **'Biometric authentication was cancelled.'**
+  /// **'Fingerprint or Face ID authentication was cancelled. A device PIN or passcode cannot be used.'**
   String get authBiometryCancelled;
 
   /// No description provided for @authBiometryTokenMissing.
   ///
   /// In en, this message translates to:
-  /// **'Biometric token was not found.'**
+  /// **'The fingerprint or Face ID sign-in token was not found. A device PIN or passcode cannot be used.'**
   String get authBiometryTokenMissing;
 
   /// No description provided for @authLoginFailed.
@@ -1584,7 +1752,7 @@ abstract class AppLocalizations {
   /// No description provided for @authOnboardingBiometry.
   ///
   /// In en, this message translates to:
-  /// **'SIGN IN WITH BIOMETRICS'**
+  /// **'SIGN IN WITH FINGERPRINT OR FACE ID'**
   String get authOnboardingBiometry;
 
   /// No description provided for @authOnboardingNotifications.
@@ -1704,7 +1872,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingWalletBody.
   ///
   /// In en, this message translates to:
-  /// **'Receive sales proceeds transparently, withdraw when eligible, and build a reputation with verified reviews.'**
+  /// **'Track available and pending balances, configure Stripe receiving details, and build a reputation with verified reviews.'**
   String get onboardingWalletBody;
 
   /// No description provided for @onboardingHighlightPayout.
@@ -1728,7 +1896,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingConfirmBiometry.
   ///
   /// In en, this message translates to:
-  /// **'Confirm to enable biometric sign-in'**
+  /// **'Confirm with fingerprint or Face ID to enable sign-in. PIN/passcode is not accepted.'**
   String get onboardingConfirmBiometry;
 
   /// No description provided for @onboardingBiometryEnableFailed.
@@ -1752,7 +1920,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingBiometryBody.
   ///
   /// In en, this message translates to:
-  /// **'Use your fingerprint or Face ID to sign in quickly without entering your password.'**
+  /// **'Use your fingerprint or Face ID to sign in quickly. Device PINs and passcodes are not accepted.'**
   String get onboardingBiometryBody;
 
   /// No description provided for @onboardingBiometryUnavailableBody.
@@ -3801,6 +3969,36 @@ abstract class AppLocalizations {
   /// **'Ocean blue'**
   String get chatThemeOcean;
 
+  /// No description provided for @chatThemeCrimson.
+  ///
+  /// In en, this message translates to:
+  /// **'Crimson red'**
+  String get chatThemeCrimson;
+
+  /// No description provided for @chatThemeCobalt.
+  ///
+  /// In en, this message translates to:
+  /// **'Cobalt blue'**
+  String get chatThemeCobalt;
+
+  /// No description provided for @chatThemeForest.
+  ///
+  /// In en, this message translates to:
+  /// **'Forest green'**
+  String get chatThemeForest;
+
+  /// No description provided for @chatThemeAmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Amber'**
+  String get chatThemeAmber;
+
+  /// No description provided for @chatThemeSlate.
+  ///
+  /// In en, this message translates to:
+  /// **'Slate grey'**
+  String get chatThemeSlate;
+
   /// No description provided for @chatBlockUser.
   ///
   /// In en, this message translates to:
@@ -3921,6 +4119,12 @@ abstract class AppLocalizations {
   /// **'ACCEPT'**
   String get chatOfferAccept;
 
+  /// No description provided for @chatOfferPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase offer — {amount}'**
+  String chatOfferPreview(String amount);
+
   /// No description provided for @chatSendText.
   ///
   /// In en, this message translates to:
@@ -4040,6 +4244,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report'**
   String get chatReport;
+
+  /// No description provided for @chatMessageDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Message deleted'**
+  String get chatMessageDeleted;
+
+  /// No description provided for @chatForwardedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded'**
+  String get chatForwardedLabel;
+
+  /// No description provided for @chatAlreadyViewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Message already viewed'**
+  String get chatAlreadyViewed;
+
+  /// No description provided for @chatMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get chatMute;
+
+  /// No description provided for @chatUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get chatUnmute;
 
   /// No description provided for @chatViewOnce.
   ///
@@ -4164,7 +4398,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatEditorProcessingError.
   ///
   /// In en, this message translates to:
-  /// **'Unable to process the image'**
+  /// **'Unable to process this media'**
   String get chatEditorProcessingError;
 
   /// No description provided for @chatEditorFilterNormal.
@@ -4232,6 +4466,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit image'**
   String get chatImageEditorLabel;
+
+  /// No description provided for @mediaEditorPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get mediaEditorPhoto;
+
+  /// No description provided for @mediaEditorVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get mediaEditorVideo;
+
+  /// No description provided for @mediaEditorSaveToDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to device'**
+  String get mediaEditorSaveToDevice;
+
+  /// No description provided for @mediaEditorSavedToDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to device'**
+  String get mediaEditorSavedToDevice;
+
+  /// No description provided for @mediaEditorSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save media. Try again.'**
+  String get mediaEditorSaveFailed;
+
+  /// No description provided for @mediaEditorPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow media access to save this file.'**
+  String get mediaEditorPermissionDenied;
+
+  /// No description provided for @mediaEditorKeepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get mediaEditorKeepEditing;
+
+  /// No description provided for @mediaEditorApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get mediaEditorApply;
+
+  /// No description provided for @mediaEditorReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get mediaEditorReset;
+
+  /// No description provided for @mediaEditorWarmth.
+  ///
+  /// In en, this message translates to:
+  /// **'Warmth'**
+  String get mediaEditorWarmth;
+
+  /// No description provided for @mediaEditorIntensity.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensity'**
+  String get mediaEditorIntensity;
+
+  /// No description provided for @mediaEditorEditText.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit text'**
+  String get mediaEditorEditText;
+
+  /// No description provided for @mediaEditorDeleteText.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete text'**
+  String get mediaEditorDeleteText;
+
+  /// No description provided for @mediaEditorTextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter text'**
+  String get mediaEditorTextHint;
+
+  /// No description provided for @mediaEditorFont.
+  ///
+  /// In en, this message translates to:
+  /// **'Font'**
+  String get mediaEditorFont;
+
+  /// No description provided for @mediaEditorTextColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Text color'**
+  String get mediaEditorTextColor;
+
+  /// No description provided for @mediaEditorTextBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Text background'**
+  String get mediaEditorTextBackground;
+
+  /// No description provided for @mediaEditorAlignLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Align left'**
+  String get mediaEditorAlignLeft;
+
+  /// No description provided for @mediaEditorAlignCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Align center'**
+  String get mediaEditorAlignCenter;
+
+  /// No description provided for @mediaEditorAlignRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Align right'**
+  String get mediaEditorAlignRight;
+
+  /// No description provided for @mediaEditorTrim.
+  ///
+  /// In en, this message translates to:
+  /// **'Trim'**
+  String get mediaEditorTrim;
+
+  /// No description provided for @mediaEditorTrimStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get mediaEditorTrimStart;
+
+  /// No description provided for @mediaEditorTrimEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get mediaEditorTrimEnd;
+
+  /// No description provided for @mediaEditorDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get mediaEditorDuration;
+
+  /// No description provided for @mediaEditorOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get mediaEditorOriginal;
+
+  /// No description provided for @mediaEditorPortrait.
+  ///
+  /// In en, this message translates to:
+  /// **'Portrait'**
+  String get mediaEditorPortrait;
+
+  /// No description provided for @mediaEditorStory.
+  ///
+  /// In en, this message translates to:
+  /// **'Story'**
+  String get mediaEditorStory;
+
+  /// No description provided for @mediaEditorRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get mediaEditorRedo;
+
+  /// No description provided for @mediaEditorProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing media…'**
+  String get mediaEditorProcessing;
+
+  /// No description provided for @mediaEditorMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get mediaEditorMute;
+
+  /// No description provided for @mediaEditorUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get mediaEditorUnmute;
+
+  /// No description provided for @mediaEditorDragTextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag text to position it'**
+  String get mediaEditorDragTextHint;
+
+  /// No description provided for @mediaEditorNoText.
+  ///
+  /// In en, this message translates to:
+  /// **'No text added'**
+  String get mediaEditorNoText;
+
+  /// No description provided for @mediaEditorNoChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'No changes to save'**
+  String get mediaEditorNoChanges;
 
   /// No description provided for @chatVideoLabel.
   ///
@@ -4908,13 +5346,13 @@ abstract class AppLocalizations {
   /// No description provided for @profileBiometry.
   ///
   /// In en, this message translates to:
-  /// **'Biometrics'**
+  /// **'Fingerprint or Face ID'**
   String get profileBiometry;
 
   /// No description provided for @profileBiometryLogin.
   ///
   /// In en, this message translates to:
-  /// **'Use biometrics to sign in'**
+  /// **'Use fingerprint or Face ID to sign in (no PIN/passcode)'**
   String get profileBiometryLogin;
 
   /// No description provided for @profileBiometryUpdateFailed.
@@ -4962,7 +5400,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileConfirmBiometry.
   ///
   /// In en, this message translates to:
-  /// **'Confirm to enable biometric sign-in'**
+  /// **'Confirm with fingerprint or Face ID to enable sign-in. PIN/passcode is not accepted.'**
   String get profileConfirmBiometry;
 
   /// No description provided for @profileTheme.
@@ -4988,6 +5426,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System'**
   String get profileThemeSystem;
+
+  /// No description provided for @settingsLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguage;
+
+  /// No description provided for @settingsLanguageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settingsLanguageSystem;
+
+  /// No description provided for @settingsLanguagePortugueseBrazil.
+  ///
+  /// In en, this message translates to:
+  /// **'Português (Brasil)'**
+  String get settingsLanguagePortugueseBrazil;
+
+  /// No description provided for @settingsLanguageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get settingsLanguageEnglish;
+
+  /// No description provided for @settingsSessionLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactivity lock'**
+  String get settingsSessionLockTitle;
+
+  /// No description provided for @settingsSessionLockDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock the app after inactivity'**
+  String get settingsSessionLockDescription;
+
+  /// No description provided for @settingsSessionLockOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get settingsSessionLockOff;
+
+  /// No description provided for @settingsSessionLockOneMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'1 minute'**
+  String get settingsSessionLockOneMinute;
+
+  /// No description provided for @settingsSessionLockFiveMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'5 minutes'**
+  String get settingsSessionLockFiveMinutes;
+
+  /// No description provided for @settingsSessionLockFifteenMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'15 minutes'**
+  String get settingsSessionLockFifteenMinutes;
+
+  /// No description provided for @settingsSessionLockThirtyMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'30 minutes'**
+  String get settingsSessionLockThirtyMinutes;
+
+  /// No description provided for @sessionLockRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Session locked'**
+  String get sessionLockRequiredTitle;
+
+  /// No description provided for @sessionLockRequiredDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your identity to continue using FreeBay.'**
+  String get sessionLockRequiredDescription;
+
+  /// No description provided for @sessionLockRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get sessionLockRetry;
+
+  /// No description provided for @sessionLockUsePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Use password'**
+  String get sessionLockUsePassword;
 
   /// No description provided for @profileCloseFriendsDescription.
   ///
@@ -5454,7 +5982,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqBiometryAnswer.
   ///
   /// In en, this message translates to:
-  /// **'After signing in with your email and password, enable Face ID or fingerprint authentication for faster, secure future sign-ins.'**
+  /// **'After signing in with your email and password, enable fingerprint or Face ID for future sign-ins. Device PINs and passcodes are not accepted.'**
   String get faqBiometryAnswer;
 
   /// No description provided for @faqBuyProductQuestion.
@@ -5544,25 +6072,25 @@ abstract class AppLocalizations {
   /// No description provided for @faqPayoutQuestion.
   ///
   /// In en, this message translates to:
-  /// **'When do I receive sale proceeds?'**
+  /// **'How do I set up sales receipts?'**
   String get faqPayoutQuestion;
 
   /// No description provided for @faqPayoutAnswer.
   ///
   /// In en, this message translates to:
-  /// **'Funds remain in your Wallet as held balance until the buyer confirms receipt. They then become available for withdrawal.'**
+  /// **'The Wallet shows available and pending balances. You can open Stripe setup to configure receiving details; actual payout availability and timing depend on Stripe and your account setup, and are not guaranteed by this screen.'**
   String get faqPayoutAnswer;
 
   /// No description provided for @faqPixWithdrawalQuestion.
   ///
   /// In en, this message translates to:
-  /// **'How do I request a Pix withdrawal?'**
+  /// **'Can I request a Pix withdrawal in FreeBay?'**
   String get faqPixWithdrawalQuestion;
 
   /// No description provided for @faqPixWithdrawalAnswer.
   ///
   /// In en, this message translates to:
-  /// **'In your Wallet, select Request withdrawal, enter at least R\$ 5.00, and confirm your registered Pix key. Processing depends on provider confirmation.'**
+  /// **'FreeBay currently has no in-app Pix withdrawal request or R\$ 5 minimum withdrawal feature. The Wallet lets you view balances and open Stripe setup for receiving configuration; it does not confirm or promise a payout.'**
   String get faqPixWithdrawalAnswer;
 
   /// No description provided for @faqCancelOrderQuestion.
@@ -6200,6 +6728,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This quoted content is no longer available.'**
   String get socialQuoteUnavailable;
+
+  /// No description provided for @mediaEditorFlip.
+  ///
+  /// In en, this message translates to:
+  /// **'Flip'**
+  String get mediaEditorFlip;
+
+  /// No description provided for @mediaEditorNeon.
+  ///
+  /// In en, this message translates to:
+  /// **'Neon'**
+  String get mediaEditorNeon;
+
+  /// No description provided for @mediaEditorBlur.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur'**
+  String get mediaEditorBlur;
+
+  /// No description provided for @mediaEditorSticker.
+  ///
+  /// In en, this message translates to:
+  /// **'Sticker'**
+  String get mediaEditorSticker;
+
+  /// No description provided for @mediaEditorPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get mediaEditorPrice;
+
+  /// No description provided for @mediaEditorSold.
+  ///
+  /// In en, this message translates to:
+  /// **'SOLD'**
+  String get mediaEditorSold;
+
+  /// No description provided for @mediaEditorFade.
+  ///
+  /// In en, this message translates to:
+  /// **'Fade'**
+  String get mediaEditorFade;
+
+  /// No description provided for @mediaEditorVignette.
+  ///
+  /// In en, this message translates to:
+  /// **'Vignette'**
+  String get mediaEditorVignette;
+
+  /// No description provided for @mediaEditorUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get mediaEditorUndo;
+
+  /// No description provided for @mediaEditorFilterAdjust.
+  ///
+  /// In en, this message translates to:
+  /// **'FILTERS & ADJUST'**
+  String get mediaEditorFilterAdjust;
+
+  /// No description provided for @mediaEditorRotate90.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate 90°'**
+  String get mediaEditorRotate90;
+
+  /// No description provided for @mediaEditorEmojiTab.
+  ///
+  /// In en, this message translates to:
+  /// **'EMOJIS'**
+  String get mediaEditorEmojiTab;
+
+  /// No description provided for @mediaEditorMarketTab.
+  ///
+  /// In en, this message translates to:
+  /// **'MARKETPLACE TAGS'**
+  String get mediaEditorMarketTab;
+
+  /// No description provided for @mediaEditorPriceStickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Price label'**
+  String get mediaEditorPriceStickerTitle;
+
+  /// No description provided for @mediaEditorPriceExample.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. R\$ 199.90'**
+  String get mediaEditorPriceExample;
+
+  /// No description provided for @mediaEditorPriceDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'PRODUCT PRICE'**
+  String get mediaEditorPriceDialogTitle;
+
+  /// No description provided for @mediaEditorPriceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'R\$ 0.00'**
+  String get mediaEditorPriceHint;
+
+  /// No description provided for @mediaEditorSoldStickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SOLD badge'**
+  String get mediaEditorSoldStickerTitle;
+
+  /// No description provided for @mediaEditorSoldSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Red sold badge'**
+  String get mediaEditorSoldSubtitle;
+
+  /// No description provided for @mediaEditorLocationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get mediaEditorLocationTitle;
+
+  /// No description provided for @mediaEditorLocationExample.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Downtown, Porto Alegre'**
+  String get mediaEditorLocationExample;
+
+  /// No description provided for @mediaEditorLocationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'City or neighborhood'**
+  String get mediaEditorLocationHint;
+
+  /// No description provided for @mediaEditorLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link / Listing'**
+  String get mediaEditorLinkTitle;
+
+  /// No description provided for @mediaEditorLinkSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to the listing'**
+  String get mediaEditorLinkSubtitle;
+
+  /// No description provided for @mediaEditorLinkDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'LISTING LINK'**
+  String get mediaEditorLinkDialogTitle;
+
+  /// No description provided for @mediaEditorLinkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'freebay.com/p/...'**
+  String get mediaEditorLinkHint;
+
+  /// No description provided for @mediaEditorFilterVivid.
+  ///
+  /// In en, this message translates to:
+  /// **'Vivid'**
+  String get mediaEditorFilterVivid;
+
+  /// No description provided for @mediaEditorFilterWarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm'**
+  String get mediaEditorFilterWarm;
+
+  /// No description provided for @mediaEditorFilterCool.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool'**
+  String get mediaEditorFilterCool;
+
+  /// No description provided for @mediaEditorFilterVintage.
+  ///
+  /// In en, this message translates to:
+  /// **'Vintage'**
+  String get mediaEditorFilterVintage;
+
+  /// No description provided for @mediaEditorFilterBW.
+  ///
+  /// In en, this message translates to:
+  /// **'B&W'**
+  String get mediaEditorFilterBW;
+
+  /// No description provided for @mediaEditorFilterDrama.
+  ///
+  /// In en, this message translates to:
+  /// **'Drama'**
+  String get mediaEditorFilterDrama;
+
+  /// No description provided for @mediaEditorFilterSepia.
+  ///
+  /// In en, this message translates to:
+  /// **'Sepia'**
+  String get mediaEditorFilterSepia;
 }
 
 class _AppLocalizationsDelegate

@@ -25,7 +25,11 @@ class ChatListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final productTitle = chat.productTitle;
+    // Muted conversations keep their unread count but lose the magenta
+    // treatment — magenta is reserved for the one thing that matters.
+    final emphasized = chat.unread && !chat.isMuted;
     Widget tile = Padding(
       padding: EdgeInsets.zero,
       child: InkWell(
@@ -36,7 +40,7 @@ class ChatListTile extends StatelessWidget {
             color: context.bgColor,
             border: Border(
               left: BorderSide(
-                color: chat.unread
+                color: emphasized
                     ? AppColors.primaryContainer
                     : Colors.transparent,
                 width: 4,
@@ -47,7 +51,7 @@ class ChatListTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              _buildAvatar(context),
+              _buildAvatar(context, emphasized),
               Spacing.hMd,
               Expanded(
                 child: Column(
@@ -62,7 +66,7 @@ class ChatListTile extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: AppTypography.headlineFontFamily,
-                              fontWeight: chat.unread
+                              fontWeight: emphasized
                                   ? FontWeight.w700
                                   : FontWeight.w600,
                               color: isDark
@@ -72,6 +76,17 @@ class ChatListTile extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (chat.isMuted) ...[
+                          Spacing.hXs,
+                          Tooltip(
+                            message: strings.chatNotificationsMuted,
+                            child: Icon(
+                              Icons.volume_off_outlined,
+                              size: 14,
+                              color: context.textSecondary,
+                            ),
+                          ),
+                        ],
                         Spacing.hXs,
                         Text(
                           localizedTimeAgo(
@@ -82,10 +97,10 @@ class ChatListTile extends StatelessWidget {
                           style: TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontSize: 12,
-                            fontWeight: chat.unread
+                            fontWeight: emphasized
                                 ? FontWeight.w700
                                 : FontWeight.normal,
-                            color: chat.unread
+                            color: emphasized
                                 ? AppColors.primaryContainer
                                 : context.textSecondary,
                           ),
@@ -104,7 +119,7 @@ class ChatListTile extends StatelessWidget {
                             ? AppColors.surfaceContainerLowDark
                             : AppColors.surfaceContainerHighest,
                         child: Text(
-                          l10n(context).chatOrderLabel,
+                          strings.chatOrderLabel,
                           style: const TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontSize: 10,
@@ -138,12 +153,12 @@ class ChatListTile extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: AppTypography.fontFamily,
-                              color: chat.unread
+                              color: emphasized
                                   ? (isDark
                                         ? AppColors.white
                                         : AppColors.darkGray)
                                   : context.textSecondary,
-                              fontWeight: chat.unread
+                              fontWeight: emphasized
                                   ? FontWeight.w500
                                   : FontWeight.normal,
                               fontSize: 13,
@@ -153,8 +168,7 @@ class ChatListTile extends StatelessWidget {
                         if (!canSwipe) ...[
                           Spacing.hXs,
                           Tooltip(
-                            message:
-                                'Ações disponíveis apenas após o pedido ser concluído ou cancelado.',
+                            message: strings.chatOrderModifyRule,
                             child: Icon(
                               Icons.lock_outline,
                               size: 16,
@@ -176,7 +190,7 @@ class ChatListTile extends StatelessWidget {
     return RepaintBoundary(child: tile);
   }
 
-  Widget _buildAvatar(BuildContext context) {
+  Widget _buildAvatar(BuildContext context, bool emphasized) {
     final avatarUrl = chat.otherAvatarUrl;
     final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
     return Stack(
@@ -208,14 +222,18 @@ class ChatListTile extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(horizontal: 4),
-              color: AppColors.primaryContainer,
+              color: emphasized
+                  ? AppColors.primaryContainer
+                  : context.surfaceHighColor,
               child: Text(
                 '${chat.unreadCount}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onPrimary,
+                  color: emphasized
+                      ? AppColors.onPrimary
+                      : context.textSecondary,
                 ),
               ),
             ),

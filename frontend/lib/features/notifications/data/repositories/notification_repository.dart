@@ -57,19 +57,13 @@ class NotificationRepository {
   Future<Either<Failure, void>> updateFcmToken(
     String token, {
     required String installationId,
-    required String authToken,
   }) {
+    // Let the auth interceptor own the access token: pinning a captured one
+    // 401s once it expires mid-session.
     return requestEither<void>(
       () => client.patch(
         '/users/me/fcm-token',
         data: {'fcmToken': token, 'installationId': installationId},
-        options: Options(
-          extra: {
-            HttpClient.preserveCapturedAuthKey: true,
-            HttpClient.capturedAuthTokenKey: authToken,
-            HttpClient.disableRefreshKey: true,
-          },
-        ),
       ),
       decoder: (_) => const Right(null),
     );

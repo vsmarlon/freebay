@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/stories/presentation/providers/stories_provider.dart';
+import 'package:freebay/features/stories/presentation/pages/story_viewer_wrapper.dart';
 import 'package:freebay/features/stories/data/entities/story_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
@@ -147,7 +148,7 @@ class MyStoriesPage extends HookConsumerWidget {
     final isExpired = expiry.isBefore(now);
 
     return GestureDetector(
-      onTap: () => context.push(AppRoutes.storyAt(0)),
+      onTap: () => context.push(storyViewerLocation(story.id)),
       onLongPress: isOwner
           ? () => _showDeleteDialog(context, ref, story, hiddenStories)
           : null,

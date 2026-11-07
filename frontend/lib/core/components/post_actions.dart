@@ -17,6 +17,7 @@ class PostActions extends StatelessWidget {
   final VoidCallback onRepost;
   final VoidCallback? onComment;
   final VoidCallback? onQuote;
+  final VoidCallback? onMore;
 
   const PostActions({
     super.key,
@@ -33,10 +34,12 @@ class PostActions extends StatelessWidget {
     required this.onRepost,
     this.onComment,
     this.onQuote,
+    this.onMore,
   });
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -55,56 +58,67 @@ class PostActions extends StatelessWidget {
             child: PostActionButton(
               key: const ValueKey('post-action-like'),
               icon: isLiked ? Icons.favorite : Icons.favorite_border,
-              iconColor: isLiked ? AppColors.primaryContainer : null,
+              iconColor: isLiked ? context.colors.primary : null,
               label: likesCount > 0 ? likesCount.toString() : null,
               onTap: onLike,
             ),
           ),
+          PostActionButton(
+            key: const ValueKey('post-action-comment'),
+            icon: Icons.chat_bubble_outline,
+            label: commentsCount > 0 ? commentsCount.toString() : null,
+            semanticLabel: strings.accessibilityCommentCount(commentsCount),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onComment?.call();
+            },
+          ),
           if (allowRepost)
             PostActionButton(
-              key: const ValueKey('post-action-comment'),
-              icon: Icons.chat_bubble_outline,
-              label: commentsCount > 0 ? commentsCount.toString() : null,
-              onTap: () {
-                HapticFeedback.lightImpact();
-                onComment?.call();
-              },
-            ),
-          PostActionButton(
-            key: const ValueKey('post-action-repost'),
-            icon: isReposted ? Icons.repeat : Icons.repeat,
-            iconColor: isReposted ? AppColors.primaryContainer : null,
-            label: sharesCount > 0 ? sharesCount.toString() : null,
-            semanticLabel: l10n(context).feedRepost,
-            onTap: onRepost,
-            onLongPress: onQuote == null
-                ? null
-                : () => showBrutalistSheet<void>(
-                    context: context,
-                    title: l10n(context).feedRepost,
-                    builder: (sheetContext) => ListTile(
-                      leading: const Icon(Icons.format_quote),
-                      title: Text(l10n(context).socialQuoteLabel),
-                      onTap: () {
-                        Navigator.pop(sheetContext);
-                        onQuote!();
-                      },
+              key: const ValueKey('post-action-repost'),
+              icon: Icons.repeat,
+              iconColor: isReposted ? context.colors.primary : null,
+              label: sharesCount > 0 ? sharesCount.toString() : null,
+              semanticLabel: strings.feedRepost,
+              onTap: onRepost,
+              onLongPress: onQuote == null
+                  ? null
+                  : () => showBrutalistSheet<void>(
+                      context: context,
+                      title: strings.feedRepost,
+                      builder: (sheetContext) => ListTile(
+                        leading: const Icon(Icons.format_quote),
+                        title: Text(strings.socialQuoteLabel),
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          onQuote!();
+                        },
+                      ),
                     ),
-                  ),
-          ),
+            ),
           if (onQuote != null) ...[
             PostActionButton(
               key: const ValueKey('post-action-quote'),
               icon: Icons.format_quote,
-              semanticLabel: l10n(context).socialQuoteLabel,
+              semanticLabel: strings.socialQuoteLabel,
               onTap: onQuote!,
             ),
           ],
           PostActionButton(
             key: const ValueKey('post-action-save'),
             icon: isSaved ? Icons.bookmark : Icons.bookmark_border,
+            semanticLabel: isSaved
+                ? strings.feedUnsavePost
+                : strings.feedSavePost,
             onTap: onSave,
           ),
+          if (onMore != null)
+            PostActionButton(
+              key: const ValueKey('post-action-more'),
+              icon: Icons.more_horiz,
+              semanticLabel: strings.accessibilityMoreOptions,
+              onTap: onMore!,
+            ),
         ],
       ),
     );
@@ -171,66 +185,3 @@ class PostActionButton extends StatelessWidget {
   }
 }
 
-class PostShareBottomSheet extends StatelessWidget {
-  final String userName;
-  final String? content;
-  final VoidCallback onShareExternal;
-  final VoidCallback? onShareAsPost;
-
-  const PostShareBottomSheet({
-    super.key,
-    required this.userName,
-    this.content,
-    required this.onShareExternal,
-    required this.onShareAsPost,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (onShareAsPost != null)
-          ListTile(
-            leading: Icon(Icons.link, color: context.textPrimary),
-            title: Text(
-              'Compartilhar externamente',
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                color: context.textPrimary,
-              ),
-            ),
-            subtitle: const Text(
-              'WhatsApp, Instagram, etc.',
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                color: AppColors.outline,
-                fontSize: 12,
-              ),
-            ),
-            onTap: onShareExternal,
-          ),
-        ListTile(
-          leading: Icon(Icons.article_outlined, color: context.textPrimary),
-          title: Text(
-            'Compartilhar no perfil',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              color: context.textPrimary,
-            ),
-          ),
-          subtitle: Text(
-            'Criar post com "Compartilhado de @$userName"',
-            style: const TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              color: AppColors.outline,
-              fontSize: 12,
-            ),
-          ),
-          onTap: onShareAsPost,
-        ),
-        Spacing.vMd,
-      ],
-    );
-  }
-}

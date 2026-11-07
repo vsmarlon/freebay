@@ -298,8 +298,10 @@ StatefulShellBranch appShellBranch(
   String path,
   Widget Function(BuildContext context, GoRouterState state) builder, {
   List<GoRoute> additionalRoutes = const [],
+  bool preload = false,
 }) {
   return StatefulShellBranch(
     routes: [appSlideRoute(path, builder), ...additionalRoutes],
+    preload: preload,
   );
 }

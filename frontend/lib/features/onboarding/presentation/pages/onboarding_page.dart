@@ -51,14 +51,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Image.asset(
-                      'assets/freebay-textonly.png',
-                      height: 28,
-                      fit: BoxFit.contain,
-                      color: context.isDark
-                          ? AppColors.white
-                          : AppColors.primaryContainer,
-                    ),
+                    const FreeBayLogo(width: 112),
                     GestureDetector(
                       onTap: _finish,
                       child: Text(

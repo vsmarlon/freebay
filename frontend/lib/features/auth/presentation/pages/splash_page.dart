@@ -122,15 +122,9 @@ class _SplashPageState extends State<SplashPage>
                         opacity: _logoOpacity,
                         child: ScaleTransition(
                           scale: _logoScale,
-                          child: const Text(
-                            'freebay',
-                            style: TextStyle(
-                              fontFamily: AppTypography.headlineFontFamily,
-                              fontSize: 80,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -3,
-                              color: Colors.white,
-                            ),
+                          child: const FreeBayLogo(
+                            width: 320,
+                            color: Colors.white,
                           ),
                         ),
                       ),

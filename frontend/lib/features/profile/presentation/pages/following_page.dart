@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/providers/follow_list_provider.dart';
 import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
 
@@ -16,6 +17,11 @@ class FollowingPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final strings = l10n(context);
     final followingAsync = ref.watch(followingListProvider(userId));
+    final currentUserId = ref.watch(authControllerProvider).value?.id;
+    // Own following list means the edge exists until the follow provider says
+    // otherwise; someone else's list says nothing about the viewer.
+    final defaultFollowed =
+        currentUserId != null && (userId == 'me' || userId == currentUserId);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AppBackground(
@@ -61,7 +67,7 @@ class FollowingPage extends ConsumerWidget {
                                   ref
                                       .watch(followStateProvider)[user.id]
                                       ?.isFollowing ??
-                                  true;
+                                  defaultFollowed;
                               return UserListTile(
                                 user: UserListTileItem(
                                   id: user.id,
@@ -70,10 +76,15 @@ class FollowingPage extends ConsumerWidget {
                                   avatarUrl: user.avatarUrl,
                                 ),
                                 trailing: AppButton(
-                                  label: isFollowing
-                                      ? 'DEIXAR DE SEGUIR'
-                                      : 'SEGUIR',
+                                  label:
+                                      (isFollowing
+                                              ? strings.profileUnfollow
+                                              : strings.profileFollow)
+                                          .toUpperCase(),
                                   size: AppButtonSize.compact,
+                                  variant: isFollowing
+                                      ? AppButtonVariant.secondary
+                                      : AppButtonVariant.primary,
                                   onPressed: () async {
                                     await ref
                                         .read(followStateProvider.notifier)

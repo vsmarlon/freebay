@@ -25,23 +25,6 @@ class BiometryService {
     }
   }
 
-  /// Return the preferred biometric type, if any.
-  Future<BiometryType?> getBiometryType() async {
-    try {
-      final availableBiometrics = await _localAuth.getAvailableBiometrics();
-      if (availableBiometrics.contains(BiometricType.face)) {
-        return BiometryType.face;
-      } else if (availableBiometrics.contains(BiometricType.fingerprint)) {
-        return BiometryType.fingerprint;
-      } else if (availableBiometrics.contains(BiometricType.iris)) {
-        return BiometryType.iris;
-      }
-      return null;
-    } on PlatformException {
-      return null;
-    }
-  }
-
   /// Prompt the user for biometric authentication.
   /// Returns true if the user authenticated successfully.
   Future<bool> authenticate({
@@ -126,5 +109,3 @@ class BiometryService {
     }
   }
 }
-
-enum BiometryType { face, fingerprint, iris }

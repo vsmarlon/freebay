@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:freebay/shared/config/app_config.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/services/http_client.dart';
 
 typedef NotificationSocketFactory =
     NotificationSocketClient Function(String url, String token);
@@ -69,6 +70,7 @@ class NotificationSocketService with WidgetsBindingObserver {
   int _generation = 0;
   bool _wanted = false;
   bool _disposed = false;
+  bool _recoveringAuth = false;
 
   Stream<NotificationSocketEvent> get events => _events.stream;
 
@@ -122,15 +124,25 @@ class NotificationSocketService with WidgetsBindingObserver {
         if (!_isCurrent(generation) || !identical(socket, _socket)) return;
         _events.add(const NotificationSocketReconnected());
       })
-      ..on('disconnect', (_) {
+      ..on('disconnect', (reason) {
         if (!_isCurrent(generation) || !identical(socket, _socket)) return;
         _events.add(const NotificationSocketSuspended());
-        unawaited(connect());
+        final message = reason.toString().toLowerCase();
+        if (message.contains('jwt') ||
+            message.contains('io server disconnect')) {
+          unawaited(_recoverExpiredToken(socket, generation));
+        } else {
+          unawaited(connect());
+        }
       })
-      ..on('connect_error', (_) {
+      ..on('connect_error', (error) {
         if (!_isCurrent(generation) || !identical(socket, _socket)) return;
         _events.add(const NotificationSocketSuspended());
-        unawaited(connect());
+        if (error.toString().toLowerCase().contains('jwt')) {
+          unawaited(_recoverExpiredToken(socket, generation));
+        } else {
+          unawaited(connect());
+        }
       })
       ..on('private_content_invalidated', (payload) {
         if (!_isCurrent(generation) || !identical(socket, _socket)) return;
@@ -139,6 +151,29 @@ class NotificationSocketService with WidgetsBindingObserver {
         }
       });
     if (_isCurrent(generation)) socket.connect();
+  }
+
+  Future<void> _recoverExpiredToken(
+    NotificationSocketClient socket,
+    int generation,
+  ) async {
+    if (_recoveringAuth ||
+        !_isCurrent(generation) ||
+        !identical(socket, _socket)) {
+      return;
+    }
+    _recoveringAuth = true;
+    try {
+      if (await HttpClient.refreshCurrentSession() &&
+          _isCurrent(generation) &&
+          identical(socket, _socket)) {
+        await reconnectWithFreshToken();
+      } else if (_isCurrent(generation) && identical(socket, _socket)) {
+        disconnect();
+      }
+    } finally {
+      _recoveringAuth = false;
+    }
   }
 
   bool _isCurrent(int generation) =>

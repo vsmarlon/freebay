@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:freebay/features/media_editor/presentation/widgets/image_editor_models.dart';
 import 'package:freebay/features/media_editor/presentation/widgets/image_editor_compositor.dart';
+import 'package:freebay/features/media_editor/presentation/widgets/color_filters.dart';
 
 /// Flattens strokes, text, filters, and rotation into [image] bytes.
 /// Returns the PNG bytes, or null when [decodedImage] is unavailable.
@@ -19,12 +20,20 @@ Future<Uint8List?> exportFinalImage({
   required double brightness,
   required double contrast,
   required double saturation,
+  double warmth = 0,
   required List<double> filterMatrix,
   required double rotationAngle,
   required List<TextOverlay> textOverlays,
 }) async {
   if (decodedImageFuture == null) return null;
   final image = await decodedImageFuture;
+  final matrix = ColorFilterMatrices.combine([
+    filterMatrix,
+    ColorFilterMatrices.brightness(brightness),
+    ColorFilterMatrices.contrast(contrast),
+    ColorFilterMatrices.saturation(saturation),
+    ColorFilterMatrices.warmth(warmth),
+  ]);
   if (defaultTargetPlatform == TargetPlatform.android ||
       defaultTargetPlatform == TargetPlatform.iOS) {
     return composeImageNatively(
@@ -37,7 +46,7 @@ Future<Uint8List?> exportFinalImage({
       color: color,
       width: width,
       style: style,
-      filterMatrix: filterMatrix,
+      filterMatrix: matrix,
       rotationAngle: rotationAngle,
       textOverlays: textOverlays,
     );
@@ -70,7 +79,7 @@ Future<Uint8List?> exportFinalImage({
   }
 
   // To apply color filters to the base image, we use a paint
-  final paint = Paint()..colorFilter = ColorFilter.matrix(filterMatrix);
+  final paint = Paint()..colorFilter = ColorFilter.matrix(matrix);
   canvas.drawImage(image, Offset.zero, paint);
 
   canvas.restore();
@@ -89,15 +98,24 @@ Future<Uint8List?> exportFinalImage({
         text: overlay.text,
         style: TextStyle(
           color: overlay.color,
-          fontSize: overlay.fontSize,
+          fontSize: overlay.fontSize * overlay.scale,
           fontWeight: FontWeight.w700,
-          fontFamily: 'SpaceGrotesk',
+          fontFamily: overlay.fontFamily,
+          backgroundColor: overlay.backgroundColor,
         ),
       ),
       textDirection: TextDirection.ltr,
+      textAlign: overlay.alignment,
     );
     textPainter.layout();
-    textPainter.paint(canvas, overlay.position);
+    canvas.save();
+    canvas.translate(overlay.position.dx, overlay.position.dy);
+    canvas.rotate(overlay.rotation);
+    textPainter.paint(
+      canvas,
+      Offset(-textPainter.width / 2, -textPainter.height / 2),
+    );
+    canvas.restore();
   }
 
   final result = await recorder.endRecording().toImage(

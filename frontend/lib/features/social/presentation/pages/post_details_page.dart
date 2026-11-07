@@ -17,6 +17,8 @@ import 'package:freebay/features/social/presentation/providers/social_repository
 import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
 import 'package:freebay/features/social/presentation/widgets/post_details_post_section.dart';
 import 'package:freebay/features/social/presentation/widgets/post_details_skeleton.dart';
+import 'package:freebay/features/social/presentation/widgets/post_overflow.dart';
+import 'package:freebay/features/social/presentation/widgets/mention_suggestions.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PostDetailsPage extends ConsumerStatefulWidget {
@@ -30,17 +32,22 @@ class PostDetailsPage extends ConsumerStatefulWidget {
 
 class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
   final _commentController = TextEditingController();
+  final _commentFocus = FocusNode();
   bool _isCommentSending = false;
   final Set<String> _approvingCommentIds = {};
+  final Set<String> _deletingCommentIds = {};
 
   @override
   void dispose() {
     _commentController.dispose();
+    _commentFocus.dispose();
     super.dispose();
   }
 
   Future<void> _sendComment() async {
-    if (_isCommentSending) return;
+    if (_isCommentSending || _commentController.text.characters.length > 280) {
+      return;
+    }
     setState(() => _isCommentSending = true);
     await ref
         .read(postDetailsControllerProvider(widget.postId))
@@ -121,6 +128,39 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
     }
   }
 
+  Future<void> _deleteComment(CommentEntity comment) async {
+    if (_deletingCommentIds.contains(comment.id)) return;
+    final strings = l10n(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final repository = ref.read(socialRepositoryProvider);
+    final notifier = ref.read(postDetailsProvider(widget.postId).notifier);
+    await AppDialog.show(
+      context: context,
+      icon: Icons.delete_outline,
+      iconColor: AppColors.error,
+      title: strings.feedComment,
+      dismissText: strings.commonCancel,
+      okText: strings.commonDelete,
+      isError: true,
+      onOk: () async {
+        setState(() => _deletingCommentIds.add(comment.id));
+        final result = await repository.deleteComment(comment.id);
+        result.fold(
+          (failure) {
+            if (messenger.mounted) {
+              AppSnackbar.errorOnMessenger(messenger, failure.message);
+            }
+          },
+          (_) async {
+            notifier.incrementCommentCount(-1);
+            await notifier.refreshComments();
+          },
+        );
+        if (mounted) setState(() => _deletingCommentIds.remove(comment.id));
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(postDetailsProvider(widget.postId));
@@ -130,7 +170,14 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
       body: AppBackground(
         child: Column(
           children: [
-            PageHeader(text: strings.feedPostTitle),
+            PageHeader(
+              text: strings.feedPostTitle,
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
+                onTap: () => context.pop(),
+              ),
+            ),
             BrutalistBreadcrumb(items: context.breadcrumbs),
             Expanded(child: _buildBody(context, state)),
           ],
@@ -180,7 +227,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
     );
     final flattenedComments = _flattenComments(visibleComments);
     final hiddenParents = _hiddenCommentsWithHiddenParent(visibleComments);
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: () =>
           ref.read(postDetailsProvider(widget.postId).notifier).refresh(),
       child: CustomScrollView(
@@ -206,6 +253,14 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                       AppRoutes.createPost,
                       extra: QuoteSource.post(id: post.id, post: post),
                     ),
+              onMore: () => showPostOverflowMenu(
+                context,
+                ref,
+                postId: post.id,
+                authorId: post.user.id,
+                viewerId: viewerId,
+                onDeleted: () => context.pop(),
+              ),
             ),
           ),
           SliverToBoxAdapter(
@@ -226,8 +281,13 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: CommentInput(
                 controller: _commentController,
+                focusNode: _commentFocus,
                 isSending: _isCommentSending,
                 onSend: _sendComment,
+                suggestions: MentionSuggestions(
+                  controller: _commentController,
+                  focusNode: _commentFocus,
+                ),
               ),
             ),
           ),
@@ -329,6 +389,9 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               !hiddenParents.contains(comment.id),
           isApproving: _approvingCommentIds.contains(comment.id),
           onApprove: () => _approveComment(comment, postOwnerId),
+          canDelete: viewerId != null && comment.user?.id == viewerId,
+          isDeleting: _deletingCommentIds.contains(comment.id),
+          onDelete: () => _deleteComment(comment),
           onQuote: comment.isHidden || comment.user == null || !isPublicPost
               ? null
               : () => context.push(

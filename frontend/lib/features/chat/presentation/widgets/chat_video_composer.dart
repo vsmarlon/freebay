@@ -1,42 +1,61 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/presentation/widgets/view_once_toggle.dart';
 import 'package:freebay/shared/services/upload_service.dart';
-import 'package:video_player/video_player.dart';
+import 'package:freebay/features/chat/presentation/widgets/video_message_bubble.dart';
 import 'package:freebay/features/chat/data/entities/message_type.dart';
+import 'package:freebay/features/media_editor/media_editor.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 Future<void> showChatVideoComposer({
   required BuildContext context,
   required File videoFile,
-  required Future<void> Function({
+  bool initialViewOnce = false,
+  String? initialCaption,
+  required Future<bool> Function({
     required String attachmentUrl,
     required MessageType type,
     String? caption,
     required bool viewOnce,
+    CancelToken? cancelToken,
   })
   onSend,
 }) {
   return showBrutalistSheet<void>(
     context: context,
     title: l10n(context).chatVideoSend,
-    builder: (_) => _ChatVideoComposer(videoFile: videoFile, onSend: onSend),
+    builder: (_) => _ChatVideoComposer(
+      videoFile: videoFile,
+      onSend: onSend,
+      initialViewOnce: initialViewOnce,
+      initialCaption: initialCaption,
+    ),
   );
 }
 
 class _ChatVideoComposer extends StatefulWidget {
   final File videoFile;
-  final Future<void> Function({
+  final bool initialViewOnce;
+  final String? initialCaption;
+  final Future<bool> Function({
     required String attachmentUrl,
     required MessageType type,
     String? caption,
     required bool viewOnce,
+    CancelToken? cancelToken,
   })
   onSend;
 
-  const _ChatVideoComposer({required this.videoFile, required this.onSend});
+  const _ChatVideoComposer({
+    required this.videoFile,
+    required this.onSend,
+    required this.initialViewOnce,
+    required this.initialCaption,
+  });
 
   @override
   State<_ChatVideoComposer> createState() => _ChatVideoComposerState();
@@ -44,133 +63,160 @@ class _ChatVideoComposer extends StatefulWidget {
 
 class _ChatVideoComposerState extends State<_ChatVideoComposer> {
   final _captionController = TextEditingController();
-  VideoPlayerController? _controller;
-  bool _viewOnce = false;
+  late bool _viewOnce = widget.initialViewOnce;
   bool _isBusy = false;
+  bool _slow = false;
+  CancelToken? _cancelToken;
+  Timer? _slowTimer;
+  File? _editedVideoFile;
 
   @override
   void initState() {
     super.initState();
-    _initPreview();
-  }
-
-  Future<void> _initPreview() async {
-    final controller = VideoPlayerController.file(widget.videoFile);
-    try {
-      await controller.initialize();
-      await controller.setLooping(true);
-      await controller.setVolume(0);
-    } catch (_) {
-      await controller.dispose();
-      return;
-    }
-    if (!mounted) {
-      await controller.dispose();
-      return;
-    }
-    setState(() => _controller = controller);
+    _captionController.text = widget.initialCaption ?? '';
   }
 
   @override
   void dispose() {
     _captionController.dispose();
-    _controller?.dispose();
+    _slowTimer?.cancel();
+    _cancelToken?.cancel('Composer closed');
+    final edited = _editedVideoFile;
+    if (edited != null) unawaited(edited.delete().catchError((_) => edited));
     super.dispose();
   }
 
-  Future<void> _togglePreview() async {
-    final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) return;
-    if (controller.value.isPlaying) {
-      await controller.pause();
-    } else {
-      await controller.play();
+  Future<void> _editVideo() async {
+    final edited = await showVideoEditor(
+      context,
+      _editedVideoFile ?? widget.videoFile,
+    );
+    if (!mounted || edited == null) return;
+    final previous = _editedVideoFile;
+    setState(() => _editedVideoFile = edited);
+    if (previous != null && previous.path != edited.path) {
+      await previous.delete().catchError((_) => previous);
     }
-    if (mounted) setState(() {});
   }
 
   Future<void> _send() async {
     if (_isBusy) return;
-    setState(() => _isBusy = true);
+    final strings = l10n(context);
+    final cancelToken = CancelToken();
+    _slowTimer?.cancel();
+    _cancelToken = cancelToken;
+    setState(() {
+      _isBusy = true;
+      _slow = false;
+    });
+    _slowTimer = Timer(const Duration(seconds: 15), () {
+      if (mounted &&
+          !cancelToken.isCancelled &&
+          identical(_cancelToken, cancelToken)) {
+        setState(() => _slow = true);
+      }
+    });
 
     try {
-      final result = await UploadService.uploadFile(widget.videoFile, 'chat');
+      final result = await UploadService.uploadFile(
+        _editedVideoFile ?? widget.videoFile,
+        'chat',
+        cancelToken: cancelToken,
+      );
+      if (!mounted || cancelToken.isCancelled) return;
       final url = result.rightOrNull;
       if (url == null) {
         if (mounted) {
           AppSnackbar.error(
             context,
-            result.leftOrNull?.message ?? 'Erro ao enviar vídeo',
+            result.leftOrNull?.message ?? strings.chatSendFailed,
           );
         }
         return;
       }
 
       final caption = _captionController.text.trim();
-      await widget.onSend(
+      final sent = await widget.onSend(
         attachmentUrl: url,
         type: MessageType.video,
         caption: caption.isEmpty ? null : caption,
         viewOnce: _viewOnce,
+        cancelToken: cancelToken,
       );
-      if (mounted) Navigator.of(context).pop();
+      if (sent && mounted && !cancelToken.isCancelled) {
+        Navigator.of(context).pop();
+      }
     } catch (_) {
-      if (mounted) AppSnackbar.error(context, 'Erro ao enviar vídeo');
+      if (mounted && !cancelToken.isCancelled) {
+        AppSnackbar.error(context, strings.chatSendFailed);
+      }
     } finally {
-      if (mounted) setState(() => _isBusy = false);
+      if (identical(_cancelToken, cancelToken)) {
+        _slowTimer?.cancel();
+        _slowTimer = null;
+        _cancelToken = null;
+        if (mounted) {
+          setState(() {
+            _isBusy = false;
+            _slow = false;
+          });
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final strings = l10n(context);
-    final controller = _controller;
-    final initialized = controller?.value.isInitialized == true;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        GestureDetector(
-          onTap: _togglePreview,
-          child: Container(
-            height: 280,
-            color: context.surfaceColor,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                if (initialized && controller != null)
-                  AspectRatio(
-                    aspectRatio: controller.value.aspectRatio,
-                    child: VideoPlayer(controller),
-                  )
-                else
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                if (initialized && !(controller?.value.isPlaying ?? false))
-                  Icon(Icons.play_arrow, color: context.textPrimary, size: 42),
-              ],
-            ),
+        SizedBox(
+          height: 280,
+          child: VideoMessageBubble(
+            videoUrl: null,
+            isMe: true,
+            localFilePath: (_editedVideoFile ?? widget.videoFile).path,
+            autoPlay: true,
           ),
         ),
+        AppButton(
+          label: strings.commonEdit,
+          variant: AppButtonVariant.secondary,
+          onPressed: _isBusy ? null : _editVideo,
+          icon: Icons.edit,
+        ),
+        if (_slow)
+          Row(
+            children: [
+              Expanded(child: Text(strings.chatSendingSlow)),
+              AppButton(
+                variant: AppButtonVariant.secondary,
+                label: strings.commonCancel,
+                onPressed: () {
+                  final token = _cancelToken;
+                  if (token == null) return;
+                  token.cancel('Cancelled by user');
+                  _slowTimer?.cancel();
+                  _slowTimer = null;
+                  _cancelToken = null;
+                  setState(() {
+                    _isBusy = false;
+                    _slow = false;
+                  });
+                  AppSnackbar.info(context, strings.chatSendCancelled);
+                },
+              ),
+            ],
+          ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(
-              child: Text(
-                'Pré-visualização com som desligado',
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 12,
-                  color: context.textSecondary,
-                ),
-              ),
-            ),
             ViewOnceToggle(
               enabled: _viewOnce,
+              semanticLabel: strings.chatViewOnce,
               onTap: () => setState(() => _viewOnce = !_viewOnce),
             ),
           ],
@@ -199,30 +245,12 @@ class _ChatVideoComposerState extends State<_ChatVideoComposer> {
           ),
         ),
         const SizedBox(height: 12),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: _isBusy ? null : _send,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              color: AppColors.primaryContainer,
-              child: _isBusy
-                  ? const Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  : Text(
-                      'SEND',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.button.copyWith(
-                        color: AppColors.onPrimary,
-                      ),
-                    ),
-            ),
-          ),
+        AppButton(
+          label: strings.chatSendText,
+          isLoading: _isBusy,
+          onPressed: _isBusy ? null : _send,
+          width: double.infinity,
+          icon: Icons.send,
         ),
       ],
     );

@@ -29,6 +29,7 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
   late int _currentGroupIndex;
   StreamSubscription<NotificationSocketEvent>? _privacyEvents;
   bool _privateContentRemoved = false;
+  bool _pinching = false;
 
   @override
   void initState() {
@@ -38,9 +39,9 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
       initialPage: widget.initialGroupIndex,
     );
     _privacyEvents = ref.read(notificationSocketServiceProvider).events.listen((
-      _,
+      event,
     ) {
-      _removePrivateContent();
+      if (event is PrivateContentInvalidated) _removePrivateContent();
     });
     ref.listenManual(
       authControllerProvider.select((session) => session.value?.id),
@@ -112,6 +113,7 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: PageView.builder(
+        physics: _pinching ? const NeverScrollableScrollPhysics() : null,
         controller: _groupPageController,
         onPageChanged: (idx) {
           setState(() {
@@ -127,6 +129,11 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
             onNextGroup: _nextGroup,
             onPrevGroup: _prevGroup,
             onClose: () => Navigator.pop(context),
+            onPinchChanged: (pinching) {
+              if (mounted && _pinching != pinching) {
+                setState(() => _pinching = pinching);
+              }
+            },
           );
         },
       ),
@@ -140,6 +147,7 @@ class GroupStoryViewer extends ConsumerStatefulWidget {
   final VoidCallback onNextGroup;
   final VoidCallback onPrevGroup;
   final VoidCallback onClose;
+  final ValueChanged<bool>? onPinchChanged;
 
   const GroupStoryViewer({
     super.key,
@@ -148,6 +156,7 @@ class GroupStoryViewer extends ConsumerStatefulWidget {
     required this.onNextGroup,
     required this.onPrevGroup,
     required this.onClose,
+    this.onPinchChanged,
   });
 
   @override
@@ -160,6 +169,7 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
   int _currentIndex = 0;
   bool _isPaused = false;
   int _activePointers = 0;
+  bool _wasPinching = false;
   Timer? _holdTimer;
   bool _wasHeld = false;
   bool _isDraggingDown = false;
@@ -167,7 +177,10 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
   double _settleFrom = 0;
   bool _isSettlingDismiss = false;
   bool _lifecyclePaused = false;
-  double _pointerDownY = 0;
+  Offset _pointerDown = Offset.zero;
+  String? _readyStoryId;
+  String? _viewedStoryId;
+  int _playbackEpoch = 0;
 
   @override
   void initState() {
@@ -175,10 +188,11 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
     WidgetsBinding.instance.addObserver(this);
     _animController = AnimationController(
       vsync: this,
+      // This controller measures reading time, not decorative motion.
+      animationBehavior: AnimationBehavior.preserve,
       duration: const Duration(seconds: 7),
     );
     _animController.addStatusListener(_onAnimStatus);
-    _markStoryViewed(widget.group.stories[_currentIndex].id);
   }
 
   @override
@@ -186,7 +200,10 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
     super.didUpdateWidget(oldWidget);
     if (widget.isActive != oldWidget.isActive) {
       if (widget.isActive) {
-        _markStoryViewed(widget.group.stories[_currentIndex].id);
+        _playbackEpoch++;
+        _readyStoryId = null;
+        _viewedStoryId = null;
+        _animController.reset();
       } else {
         _animController.stop();
       }
@@ -227,9 +244,10 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
       setState(() {
         _currentIndex++;
         _isPaused = false;
+        _readyStoryId = null;
+        _viewedStoryId = null;
         _animController.reset();
       });
-      _markStoryViewed(widget.group.stories[_currentIndex].id);
     } else {
       widget.onNextGroup();
     }
@@ -240,22 +258,34 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
       setState(() {
         _currentIndex--;
         _isPaused = false;
+        _readyStoryId = null;
+        _viewedStoryId = null;
         _animController.reset();
       });
-      _markStoryViewed(widget.group.stories[_currentIndex].id);
     } else {
       widget.onPrevGroup();
     }
   }
 
   Future<void> _markStoryViewed(String storyId) async {
-    if (!widget.isActive) return;
+    if (!widget.isActive ||
+        _readyStoryId != storyId ||
+        _viewedStoryId == storyId) {
+      return;
+    }
+    _viewedStoryId = storyId;
     try {
       final repository = ref.read(storiesRepositoryProvider);
       await repository.viewStory(storyId);
     } catch (e) {
       // Silently fail
     }
+  }
+
+  void _onStoryReady(String storyId) {
+    if (!mounted || widget.group.stories[_currentIndex].id != storyId) return;
+    _readyStoryId = storyId;
+    unawaited(_markStoryViewed(storyId));
   }
 
   void _onTapUp(TapUpDetails details) {
@@ -273,10 +303,24 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
   }
 
   void _onPointerDown(PointerDownEvent event) {
-    _pointerDownY = event.position.dy;
+    _pointerDown = event.position;
     _activePointers++;
+    if (_activePointers > 1) {
+      _holdTimer?.cancel();
+      _wasHeld = true;
+      _wasPinching = true;
+      if (_isDraggingDown) {
+        setState(() {
+          _isDraggingDown = false;
+          _settleFrom = _dragOffset;
+          _dragOffset = 0;
+        });
+      }
+      widget.onPinchChanged?.call(true);
+    }
     if (_activePointers == 1) {
       _wasHeld = false;
+      _wasPinching = false;
       _holdTimer?.cancel();
       _holdTimer = Timer(const Duration(milliseconds: 300), () {
         _wasHeld = true;
@@ -289,6 +333,7 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
   void _onPointerEnd(PointerEvent event) {
     _activePointers = (_activePointers - 1).clamp(0, 10);
     if (_activePointers == 0) {
+      widget.onPinchChanged?.call(false);
       _holdTimer?.cancel();
       WidgetsBinding.instance.addPostFrameCallback((_) => _wasHeld = false);
     }
@@ -304,12 +349,14 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
   }
 
   void _onVerticalDragStart(DragStartDetails details) {
-    if (!widget.isActive) return;
+    if (!widget.isActive || _wasPinching) return;
+    final displacement = details.globalPosition - _pointerDown;
+    if (displacement.dy <= displacement.dx.abs()) return;
     setState(() {
       _isDraggingDown = true;
       _isSettlingDismiss = true;
       _settleFrom = 0;
-      _dragOffset = (details.globalPosition.dy - _pointerDownY).clamp(
+      _dragOffset = displacement.dy.clamp(
         0.0,
         MediaQuery.sizeOf(context).height,
       );
@@ -317,9 +364,15 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
   }
 
   void _onVerticalDragUpdate(DragUpdateDetails details) {
-    if (!_isDraggingDown || details.delta.dy <= 0) return;
+    if (_wasPinching) return;
+    if (!_isDraggingDown) {
+      _onVerticalDragStart(
+        DragStartDetails(globalPosition: details.globalPosition),
+      );
+    }
+    if (!_isDraggingDown) return;
     setState(() {
-      _dragOffset = (_dragOffset + details.delta.dy).clamp(
+      _dragOffset = (details.globalPosition.dy - _pointerDown.dy).clamp(
         0.0,
         MediaQuery.sizeOf(context).height,
       );
@@ -385,11 +438,15 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
           child: Stack(
             children: [
               StoryPage(
-                key: ValueKey(story.id),
+                key: ValueKey('${story.id}-$_playbackEpoch'),
                 story: story,
                 animationController: _animController,
                 isPaused: _isPaused || !widget.isActive,
                 onComplete: _nextStory,
+                onReady: () => _onStoryReady(story.id),
+                onVerticalDragStart: _onVerticalDragStart,
+                onVerticalDragUpdate: _onVerticalDragUpdate,
+                onVerticalDragEnd: _onVerticalDragEnd,
               ),
               _buildProgressBars(),
               _buildHeader(story),

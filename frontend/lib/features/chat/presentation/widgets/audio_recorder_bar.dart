@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/features/chat/presentation/widgets/view_once_toggle.dart';
 import 'package:record/record.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
@@ -19,11 +20,15 @@ const maxAudioDuration = Duration(seconds: 60);
 class AudioRecorderBar extends StatefulWidget {
   final ValueChanged<AudioRecording> onSend;
   final VoidCallback onCancel;
+  final bool viewOnceEnabled;
+  final ValueChanged<bool> onViewOnceToggled;
 
   const AudioRecorderBar({
     super.key,
     required this.onSend,
     required this.onCancel,
+    required this.viewOnceEnabled,
+    required this.onViewOnceToggled,
   });
 
   @override
@@ -164,6 +169,12 @@ class _AudioRecorderBarState extends State<AudioRecorderBar> {
                 ),
               ),
             ),
+          ),
+          Spacing.hSm,
+          ViewOnceToggle(
+            enabled: widget.viewOnceEnabled,
+            semanticLabel: l10n(context).chatViewOnce,
+            onTap: () => widget.onViewOnceToggled(!widget.viewOnceEnabled),
           ),
           Spacing.hSm,
           BrutalistIconButton(

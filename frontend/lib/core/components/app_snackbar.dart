@@ -143,6 +143,13 @@ class AppSnackbar {
     final messenger = ScaffoldMessenger.of(context);
     Timer? timer;
     var resolved = false;
+    void resolve(VoidCallback action) {
+      if (resolved) return;
+      resolved = true;
+      timer?.cancel();
+      action();
+    }
+
     late ScaffoldFeatureController<SnackBar, SnackBarClosedReason> controller;
     controller = messenger.showSnackBar(
       _build(
@@ -151,9 +158,7 @@ class AppSnackbar {
         duration: duration,
         onVisible: () {
           timer = Timer(duration, () {
-            if (resolved) return;
-            resolved = true;
-            onCommit();
+            resolve(onCommit);
             controller.close();
           });
         },
@@ -161,17 +166,13 @@ class AppSnackbar {
           label: l10n(context).commonUndo,
           textColor: AppColors.onPrimaryContainer,
           onPressed: () {
-            if (resolved) return;
-            resolved = true;
-            timer?.cancel();
-            onUndo();
+            resolve(onUndo);
           },
         ),
       ),
     );
     controller.closed.then((_) {
-      timer?.cancel();
-      if (!resolved) onUndo();
+      resolve(onCommit);
     });
   }
 

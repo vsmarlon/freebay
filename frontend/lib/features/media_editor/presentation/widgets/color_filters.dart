@@ -1,4 +1,48 @@
 class ColorFilterMatrices {
+  static List<double> combine(List<List<double>> matrices) {
+    var result = _identity();
+    for (final next in matrices) {
+      final combined = List<double>.filled(20, 0);
+      for (var row = 0; row < 4; row++) {
+        for (var column = 0; column < 4; column++) {
+          for (var k = 0; k < 4; k++) {
+            combined[row * 5 + column] +=
+                next[row * 5 + k] * result[k * 5 + column];
+          }
+        }
+        combined[row * 5 + 4] = next[row * 5 + 4];
+        for (var k = 0; k < 4; k++) {
+          combined[row * 5 + 4] += next[row * 5 + k] * result[k * 5 + 4];
+        }
+      }
+      result = combined;
+    }
+    return result;
+  }
+
+  static List<double> warmth(double value) => [
+    1,
+    0,
+    0,
+    0,
+    value * 30,
+    0,
+    1,
+    0,
+    0,
+    value * 5,
+    0,
+    0,
+    1,
+    0,
+    -value * 30,
+    0,
+    0,
+    0,
+    1,
+    0,
+  ];
+
   static List<double> brightness(double value) {
     if (value == 0) return _identity();
     final v = value * 255;

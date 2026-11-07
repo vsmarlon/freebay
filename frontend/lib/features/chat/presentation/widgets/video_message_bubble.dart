@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
@@ -10,6 +12,8 @@ import 'package:freebay/core/components/app_video_viewer/video_source_resolver.d
 class VideoMessageBubble extends StatefulWidget {
   final String? videoUrl;
   final bool isMe;
+  final String? localFilePath;
+  final bool autoPlay;
   final String? thumbnailUrl;
   final String? viewOnceOpeningKey;
   final VoidCallback? onViewOnceClose;
@@ -18,6 +22,8 @@ class VideoMessageBubble extends StatefulWidget {
     super.key,
     required this.videoUrl,
     required this.isMe,
+    this.localFilePath,
+    this.autoPlay = false,
     this.thumbnailUrl,
     this.viewOnceOpeningKey,
     this.onViewOnceClose,
@@ -30,7 +36,7 @@ class VideoMessageBubble extends StatefulWidget {
 class _VideoMessageBubbleState extends State<VideoMessageBubble> {
   VideoPlayerController? _controller;
   bool _loading = false;
-  bool _muted = true;
+  bool _muted = false;
   String? _error;
   bool _thumbnailFailed = false;
   int _initialization = 0;
@@ -56,18 +62,30 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
   @override
   void initState() {
     super.initState();
+    if (widget.autoPlay && widget.localFilePath != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _initialize(play: true);
+      });
+    }
   }
 
   @override
   void didUpdateWidget(VideoMessageBubble oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.videoUrl != widget.videoUrl) {
+    if (oldWidget.videoUrl != widget.videoUrl ||
+        oldWidget.localFilePath != widget.localFilePath) {
       _initialization++;
+      _controller?.removeListener(_closeWhenCompleted);
       _controller?.dispose();
       _controller = null;
       _error = null;
       _thumbnailFailed = false;
       _loading = false;
+      if (widget.autoPlay && widget.localFilePath != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _initialize(play: true);
+        });
+      }
     } else if (oldWidget.thumbnailUrl != widget.thumbnailUrl) {
       _thumbnailFailed = false;
     }
@@ -75,7 +93,8 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
 
   Future<void> _initialize({required bool play}) async {
     final url = _url;
-    if (url == null) return;
+    final localFilePath = widget.localFilePath;
+    if (url == null && localFilePath == null) return;
     if (_loading) return;
     final initialization = ++_initialization;
     VideoPlayerController? controller;
@@ -85,10 +104,12 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
     });
     try {
       final openingKey = widget.viewOnceOpeningKey;
-      controller = openingKey == null
-          ? await _resolver.createController(url)
+      controller = localFilePath != null
+          ? VideoPlayerController.file(File(localFilePath))
+          : openingKey == null
+          ? await _resolver.createController(url!)
           : VideoPlayerController.networkUrl(
-              Uri.parse(url),
+              Uri.parse(url!),
               httpHeaders:
                   await getMediaAuthHeadersAsync(
                     url,
@@ -97,7 +118,9 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
                   const <String, String>{},
             );
       final initializedController = controller;
-      if (openingKey != null) await initializedController.initialize();
+      if (localFilePath != null || openingKey != null) {
+        await initializedController.initialize();
+      }
       await initializedController.setLooping(true);
       await initializedController.setVolume(_muted ? 0 : 1);
       if (!mounted || initialization != _initialization) {
@@ -151,7 +174,10 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
               url,
               viewOnceOpeningKey: widget.viewOnceOpeningKey,
             );
-      if (!mounted) return;
+      if (!mounted) {
+        await controller?.dispose();
+        return;
+      }
       await showFullScreenVideo(
         context,
         url,
@@ -211,6 +237,31 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
     return '$minutes:$seconds';
   }
 
+  Widget _thumbnailFallback(BuildContext context) => ColoredBox(
+    color: context.surfaceMidColor,
+    child: Center(
+      child: Icon(Icons.videocam_outlined, color: context.textSecondary),
+    ),
+  );
+
+  Widget _thumbnailLoading(BuildContext context) => ColoredBox(
+    color: context.surfaceMidColor,
+    child: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.videocam_outlined, color: context.textSecondary),
+          const SizedBox(height: Spacing.sm),
+          const SizedBox(
+            width: Spacing.md + Spacing.xs,
+            height: Spacing.md + Spacing.xs,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ],
+      ),
+    ),
+  );
+
   @override
   void dispose() {
     _initialization++;
@@ -222,7 +273,14 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
   @override
   Widget build(BuildContext context) {
     final url = _url;
-    if (url == null) return const SizedBox.shrink();
+    final source =
+        url ??
+        (widget.localFilePath == null
+            ? null
+            : Uri.file(widget.localFilePath!).toString());
+    if (source == null) {
+      return const SizedBox.shrink();
+    }
 
     final thumbnailUrl = _thumbnailUrl;
     final controller = _controller;
@@ -238,7 +296,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
           alignment: Alignment.center,
           children: [
             GestureDetector(
-              onTap: _loading ? null : () => _openFromBubble(url),
+              onTap: _loading ? null : () => _openFromBubble(source),
               behavior: HitTestBehavior.opaque,
               child: AspectRatio(
                 aspectRatio: initialized
@@ -247,12 +305,16 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
                 child: initialized && controller != null
                     ? VideoPlayer(controller)
                     : thumbnailUrl == null || _thumbnailFailed
-                    ? ColoredBox(color: context.surfaceMidColor)
+                    ? _thumbnailFallback(context)
                     : isPrivateMedia(thumbnailUrl)
                     ? Image.network(
                         thumbnailUrl,
                         headers: mediaAuthHeaders(thumbnailUrl),
                         fit: BoxFit.cover,
+                        loadingBuilder: (context, child, progress) =>
+                            progress == null
+                            ? child
+                            : _thumbnailLoading(context),
                         errorBuilder: (context, error, stackTrace) {
                           _onThumbnailError();
                           return ColoredBox(color: context.surfaceMidColor);
@@ -262,6 +324,8 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
                         imageUrl: thumbnailUrl,
                         httpHeaders: mediaAuthHeaders(thumbnailUrl),
                         fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                            _thumbnailLoading(context),
                         errorWidget: (context, url, error) {
                           _onThumbnailError();
                           return ColoredBox(color: context.surfaceMidColor);
@@ -269,6 +333,21 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
                       ),
               ),
             ),
+            if (widget.viewOnceOpeningKey != null)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: ColoredBox(
+                  color: context.colors.surface.withValues(alpha: 0.9),
+                  child: Padding(
+                    padding: const EdgeInsets.all(Spacing.xs),
+                    child: Text(
+                      l10n(context).chatViewOnceExpiresOnClose,
+                      style: AppTypography.labelSmall,
+                    ),
+                  ),
+                ),
+              ),
             if (!initialized || !(controller?.value.isPlaying ?? false))
               IconButton(
                 onPressed: _loading ? null : _togglePlayback,

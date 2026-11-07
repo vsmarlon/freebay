@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/media_editor/media_editor.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 
 class ProfileMediaActions {
@@ -45,10 +48,17 @@ class ProfileMediaActions {
       imageQuality: 85,
     );
     if (image == null) return;
+    if (!context.mounted) return;
+    final edited = await MediaEditorPage.push(
+      context,
+      file: File(image.path),
+      config: EditorConfig.avatar,
+    );
+    if (edited == null) return;
 
     final result = await ref
         .read(profileRepositoryProvider)
-        .updateAvatar(image.path);
+        .updateAvatar(edited.file.path);
     if (!context.mounted) return;
     result.fold(
       (failure) => ScaffoldMessenger.of(

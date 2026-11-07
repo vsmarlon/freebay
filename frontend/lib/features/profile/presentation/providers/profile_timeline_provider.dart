@@ -81,4 +81,14 @@ class ProfileTimeline extends _$ProfileTimeline {
       },
     );
   }
+
+  Future<void> refresh() async {
+    for (final token in _cancelTokens) {
+      token.cancel();
+    }
+    _cancelTokens.clear();
+    _requestGuard.invalidate();
+    state = const ProfileTimelineState();
+    await loadMore();
+  }
 }

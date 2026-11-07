@@ -15,7 +15,6 @@ import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/services/auth_session_coordinator.dart';
 import 'package:freebay/shared/services/biometry_service.dart';
-import 'package:freebay/shared/services/biometric_key_service.dart';
 import 'package:freebay/shared/services/error_reporter.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/storage_service.dart';
@@ -50,10 +49,7 @@ final authControllerProvider =
 
 class AuthController extends Notifier<AsyncValue<UserEntity?>>
     with AuthSessionLifecycle, AuthGoogleAuthentication {
-  Future<bool> enrollBiometrics(
-    String stepUpToken, {
-    required String expectedUserId,
-  }) {
+  Future<bool> enrollBiometrics({required String expectedUserId}) {
     final attempt = AuthSessionCoordinator.currentAuthenticationAttempt;
     return AuthSessionCoordinator.serialize(() async {
       bool current() =>
@@ -62,19 +58,30 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>>
           state.value?.id == expectedUserId;
       if (!current()) return false;
       final biometry = ref.read(biometryServiceProvider);
+      final keys = ref.read(biometricKeyServiceProvider);
+      final hadKey = await keys.hasKey();
+      if (!current()) return false;
       var installed = false;
+      var persisted = false;
       try {
-        final publicKey = await BiometricKeyService().generatePublicKey();
+        final publicKey = await keys.generatePublicKey();
         if (!current()) return false;
-        final result = await ref
-            .read(authRepositoryProvider)
-            .enrollBiometricToken(
-              stepUpToken: stepUpToken,
-              publicKey: publicKey,
-            );
+        final repository = ref.read(authRepositoryProvider);
+        final challengeResult = await repository
+            .createBiometricEnrollmentChallenge(publicKey);
+        final challenge = challengeResult.rightOrNull;
+        if (!current() || challenge == null) return false;
+        final signature = await keys.sign(challenge.challenge);
+        if (!current()) return false;
+        final result = await repository.enrollBiometricToken(
+          publicKey: publicKey,
+          challengeId: challenge.challengeId,
+          signature: signature,
+        );
         final token = result.rightOrNull;
         if (!current() || token == null || token.isEmpty) return false;
         await StorageService.saveBiometricToken(token);
+        persisted = true;
         if (!current()) return false;
         await StorageService.saveBiometricOwner(expectedUserId);
         if (!current()) return false;
@@ -87,8 +94,10 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>>
       } catch (_) {
         return false;
       } finally {
-        if (!installed) {
+        if (!installed && persisted) {
           await biometry.clearState();
+        } else if (!installed && !hadKey) {
+          await keys.delete();
         }
         if (ref.mounted) ref.invalidate(biometryEnabledProvider);
       }
@@ -142,6 +151,44 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>>
         await _establishAuthenticatedSession(user, attempt: attempt);
         routerRefreshNotifier.value++;
         return true;
+      },
+    );
+  }
+
+  Future<bool> reauthenticateSessionWithBiometrics(
+    String expectedUserId,
+  ) async {
+    if (!ref.mounted || state.value?.id != expectedUserId) return false;
+    final attempt = AuthSessionCoordinator.beginAuthentication();
+    final result = await ref.read(biometricLoginUsecaseProvider)(attempt);
+    if (!ref.mounted || !AuthSessionCoordinator.isCurrentAttempt(attempt)) {
+      return false;
+    }
+    bool current() =>
+        ref.mounted &&
+        AuthSessionCoordinator.isCurrentAttempt(attempt) &&
+        state.value?.id == expectedUserId;
+    return result.fold<Future<bool>>(
+      (failure) async {
+        if (failure is UnauthorizedFailure) {
+          await StorageService.clearTokens();
+          if (current()) {
+            state = const AsyncValue.data(null);
+            routerRefreshNotifier.value++;
+          }
+          return false;
+        }
+        // Cancelled/failed prompt: the previous session is still intact, so
+        // resume refresh instead of leaving the client suspended forever.
+        if (current()) {
+          await AuthSessionCoordinator.establishSession(canEstablish: current);
+        }
+        return false;
+      },
+      (user) async {
+        if (user.id != expectedUserId) return false;
+        await _establishAuthenticatedSession(user, attempt: attempt);
+        return ref.mounted && state.value?.id == expectedUserId;
       },
     );
   }

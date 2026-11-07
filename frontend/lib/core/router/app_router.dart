@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
@@ -70,6 +72,57 @@ final Set<String> _authScreenPaths = {
   AppRoutes.completeProfile,
 };
 
+final Set<String> _postAuthStaticPaths = {
+  AppRoutes.feed,
+  AppRoutes.explore,
+  AppRoutes.products,
+  AppRoutes.wallet,
+  AppRoutes.chat,
+  AppRoutes.profile,
+  AppRoutes.chatNew,
+  AppRoutes.chatArchived,
+  AppRoutes.profileBlocked,
+  AppRoutes.profileCloseFriends,
+  AppRoutes.faq,
+  AppRoutes.notifications,
+  AppRoutes.profilePosts,
+  AppRoutes.profileStories,
+  AppRoutes.profileProducts,
+  AppRoutes.profileLiked,
+  AppRoutes.profileFavorites,
+  AppRoutes.profileSaved,
+  AppRoutes.profilePurchases,
+  AppRoutes.profilePayment,
+  AppRoutes.profileEdit,
+  AppRoutes.profilePrivacy,
+  AppRoutes.profileFollowers,
+  AppRoutes.profileFollowing,
+  AppRoutes.cart,
+  AppRoutes.checkoutCart,
+  AppRoutes.createReview,
+  AppRoutes.disputes,
+  AppRoutes.checkout,
+  AppRoutes.orders,
+  AppRoutes.reviews,
+  AppRoutes.createPost,
+  AppRoutes.postSearch,
+  AppRoutes.peopleSearch,
+  AppRoutes.createProduct,
+  AppRoutes.story,
+  AppRoutes.createStory,
+};
+
+bool _isKnownPostAuthPath(String path) =>
+    _postAuthStaticPaths.contains(path) ||
+    RegExp(r'^/post/[^/]+(?:/comment/[^/]+)?$').hasMatch(path) ||
+    RegExp(r'^/products/[^/]+(?:/edit)?$').hasMatch(path) ||
+    RegExp(r'^/user/[^/]+(?:/reviews)?$').hasMatch(path) ||
+    RegExp(r'^/chat/[^/]+(?:/details)?$').hasMatch(path) ||
+    RegExp(r'^/story/highlights/[^/]+$').hasMatch(path) ||
+    RegExp(r'^/orders/[^/]+$').hasMatch(path) ||
+    RegExp(r'^/disputes/[^/]+$').hasMatch(path) ||
+    RegExp(r'^/disputes/create/[^/]+$').hasMatch(path);
+
 bool hasSeenWelcome(UserEntity user) {
   try {
     return StorageService.hasSeenWelcomeSetupSync(user.id);
@@ -80,13 +133,42 @@ bool hasSeenWelcome(UserEntity user) {
 
 String resolvePostAuthDestination(String? from) {
   if (from == null || from.isEmpty) return AppRoutes.feed;
-  final decoded = Uri.decodeComponent(from);
-  if (!decoded.startsWith('/') || decoded.startsWith('//')) {
+  if (!from.startsWith('/') || from.startsWith('//')) {
     return AppRoutes.feed;
   }
-  final path = Uri.parse(decoded).path;
-  if (_authScreenPaths.contains(path)) return AppRoutes.feed;
-  return decoded;
+  final uri = Uri.tryParse(from);
+  if (uri == null ||
+      uri.hasAuthority ||
+      _authScreenPaths.contains(uri.path) ||
+      !_isKnownPostAuthPath(uri.path)) {
+    return AppRoutes.feed;
+  }
+  return from;
+}
+
+String? _pendingPostAuthDestination;
+
+void _pushAfterFeed(String destination) {
+  if (destination == AppRoutes.feed) {
+    _pendingPostAuthDestination = null;
+    return;
+  }
+  if (_pendingPostAuthDestination == destination) return;
+  _pendingPostAuthDestination = destination;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (_pendingPostAuthDestination != destination) return;
+    _pendingPostAuthDestination = null;
+    if (appRouter.routeInformationProvider.value.uri.path != AppRoutes.feed) {
+      return;
+    }
+    unawaited(appRouter.push<void>(destination).then<void>((_) {}));
+  });
+}
+
+void navigatePostAuthDestination(String? from) {
+  final destination = resolvePostAuthDestination(from);
+  appRouter.go(AppRoutes.feed);
+  _pushAfterFeed(destination);
 }
 
 String loginPathFrom(BuildContext context) {
@@ -183,16 +265,19 @@ final GoRouter appRouter = GoRouter(
     final welcomeDone = hasSeenWelcome(user);
     if (state.matchedLocation == AppRoutes.welcome) {
       if (welcomeDone) {
-        return resolvePostAuthDestination(state.uri.queryParameters['from']);
+        return _postAuthRedirect(state.uri.queryParameters['from']);
       }
       return null;
     }
     if (!welcomeDone) {
-      return AppRoutes.welcome;
+      final from = state.uri.queryParameters['from'];
+      return from == null
+          ? AppRoutes.welcome
+          : '${AppRoutes.welcome}?from=${Uri.encodeComponent(from)}';
     }
 
     if (isAuthScreen) {
-      return resolvePostAuthDestination(state.uri.queryParameters['from']);
+      return _postAuthRedirect(state.uri.queryParameters['from']);
     }
 
     updateCurrentLocation(state.matchedLocation);
@@ -232,6 +317,7 @@ final GoRouter appRouter = GoRouter(
         appShellBranch(
           AppRoutes.chat,
           (context, state) => const ChatListPage(),
+          preload: true,
         ),
         appShellBranch(
           AppRoutes.profile,
@@ -246,3 +332,9 @@ final GoRouter appRouter = GoRouter(
     ),
   ],
 );
+
+String _postAuthRedirect(String? from) {
+  final destination = resolvePostAuthDestination(from);
+  _pushAfterFeed(destination);
+  return AppRoutes.feed;
+}

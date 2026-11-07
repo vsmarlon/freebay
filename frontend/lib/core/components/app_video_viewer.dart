@@ -52,6 +52,10 @@ class _AppVideoViewerState extends State<_AppVideoViewer> {
   String? _error;
   bool _showControls = true;
   Timer? _hideControlsTimer;
+  bool _zoomed = false;
+  bool _scaling = false;
+  int _activePointers = 0;
+  final _transform = TransformationController();
 
   @override
   void initState() {
@@ -123,6 +127,7 @@ class _AppVideoViewerState extends State<_AppVideoViewer> {
 
   @override
   void dispose() {
+    _transform.dispose();
     _hideControlsTimer?.cancel();
     _controller?.removeListener(_onControllerUpdate);
     _controller?.dispose();
@@ -184,25 +189,52 @@ class _AppVideoViewerState extends State<_AppVideoViewer> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Dismissible(
-              key: const Key('video_viewer'),
-              direction: DismissDirection.vertical,
-              onDismissed: (_) => Navigator.of(context).pop(),
-              child: Center(
-                child: _error != null
-                    ? VideoViewerError(message: _error!, onRetry: _retry)
-                    : isInitialized && controller != null
-                    ? GestureDetector(
-                        onTap: _toggleControls,
-                        behavior: HitTestBehavior.opaque,
-                        child: AspectRatio(
-                          aspectRatio: controller.value.aspectRatio,
-                          child: VideoPlayer(controller),
-                        ),
-                      )
-                    : const CircularProgressIndicator(
-                        color: AppColors.primaryContainer,
-                      ),
+            child: Listener(
+              onPointerDown: (_) {
+                _activePointers++;
+                if (_activePointers > 1) setState(() => _scaling = true);
+              },
+              onPointerUp: (_) {
+                _activePointers--;
+                if (_activePointers == 0) setState(() => _scaling = false);
+              },
+              onPointerCancel: (_) {
+                _activePointers = 0;
+                setState(() => _scaling = false);
+              },
+              child: InteractiveViewer(
+                transformationController: _transform,
+                panEnabled: _zoomed,
+                maxScale: 4,
+                onInteractionUpdate: (_) {
+                  final zoomed = _transform.value.getMaxScaleOnAxis() > 1.01;
+                  if (zoomed != _zoomed) {
+                    setState(() => _zoomed = zoomed);
+                  }
+                },
+                child: Dismissible(
+                  key: const Key('video_viewer'),
+                  direction: _zoomed || _scaling
+                      ? DismissDirection.none
+                      : DismissDirection.vertical,
+                  onDismissed: (_) => Navigator.of(context).pop(),
+                  child: Center(
+                    child: _error != null
+                        ? VideoViewerError(message: _error!, onRetry: _retry)
+                        : isInitialized && controller != null
+                        ? GestureDetector(
+                            onTap: _toggleControls,
+                            behavior: HitTestBehavior.opaque,
+                            child: AspectRatio(
+                              aspectRatio: controller.value.aspectRatio,
+                              child: VideoPlayer(controller),
+                            ),
+                          )
+                        : const CircularProgressIndicator(
+                            color: AppColors.primaryContainer,
+                          ),
+                  ),
+                ),
               ),
             ),
           ),

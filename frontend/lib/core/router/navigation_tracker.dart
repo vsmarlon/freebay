@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 String _currentLocation = '/';
 
@@ -9,45 +10,49 @@ void updateCurrentLocation(String location) {
   _currentLocation = location;
 }
 
-const _labels = <String, String>{
-  AppRoutes.feed: 'Feed',
-  AppRoutes.explore: 'Explorar',
-  AppRoutes.products: 'Produtos',
-  AppRoutes.wallet: 'Carteira',
-  AppRoutes.chat: 'Chat',
-  AppRoutes.profile: 'Perfil',
-  AppRoutes.createPost: 'Nova Publicação',
-  AppRoutes.postDetails: 'Post',
-  AppRoutes.postSearch: 'Buscar',
-  AppRoutes.createProduct: 'Novo Anúncio',
-  AppRoutes.productDetail: 'Produto',
-  '${AppRoutes.productDetail}/edit': 'Editar Anúncio',
-  AppRoutes.profileEdit: 'Editar Perfil',
-  AppRoutes.profileBlocked: 'Usuários Bloqueados',
-  AppRoutes.profileSaved: 'Salvos',
-  AppRoutes.profilePosts: 'Meus Posts',
-  AppRoutes.profileStories: 'Minhas Histórias',
-  AppRoutes.profileLiked: 'Posts Curtidos',
-  AppRoutes.profileProducts: 'Meus Anúncios',
-  AppRoutes.profileFavorites: 'Favoritos',
-  AppRoutes.profilePurchases: 'Minhas Compras',
-  AppRoutes.profilePayment: 'Pagamento',
-  AppRoutes.profileFollowers: 'Seguidores',
-  AppRoutes.profileFollowing: 'Seguindo',
-  AppRoutes.chatNew: 'Novo Chat',
-  AppRoutes.chatArchived: 'Arquivados',
-  AppRoutes.chatConversation: 'Conversa',
-  AppRoutes.cart: 'Carrinho',
-  AppRoutes.checkoutCart: 'Checkout',
-  AppRoutes.orderDetail: 'Detalhes do Pedido',
-  AppRoutes.userReviews: 'Avaliações',
-  AppRoutes.createReview: 'Avaliar',
-  AppRoutes.disputes: 'Minhas Disputas',
-  AppRoutes.disputeDetail: 'Detalhes da Disputa',
-  AppRoutes.createDispute: 'Abrir Disputa',
-  AppRoutes.notifications: 'Notificações',
-  AppRoutes.faq: 'FAQ',
-};
+Map<String, String> _labels(BuildContext context) {
+  final strings = l10n(context);
+  return {
+    AppRoutes.feed: strings.feedTitle,
+    AppRoutes.explore: strings.navExplore,
+    AppRoutes.products: strings.productTitle,
+    AppRoutes.wallet: strings.walletTitle,
+    AppRoutes.chat: strings.chatTitle,
+    AppRoutes.profile: strings.navProfile,
+    AppRoutes.createPost: strings.feedCreatePost,
+    AppRoutes.postDetails: strings.feedPostTitle,
+    AppRoutes.commentDetails: strings.feedComments,
+    AppRoutes.postSearch: strings.commonSearch,
+    AppRoutes.createProduct: strings.productCreateListing,
+    AppRoutes.productDetail: strings.productTitle,
+    '${AppRoutes.productDetail}/edit': strings.productEditListing,
+    AppRoutes.profileEdit: strings.profileEdit,
+    AppRoutes.profileBlocked: strings.profileBlockedUsersTitle,
+    AppRoutes.profileSaved: strings.profileSaved,
+    AppRoutes.profilePosts: strings.feedMyPostsTitle,
+    AppRoutes.profileStories: strings.feedMyStoriesTitle,
+    AppRoutes.profileLiked: strings.feedLikedPostsTitle,
+    AppRoutes.profileProducts: strings.productMyListings,
+    AppRoutes.profileFavorites: strings.profileFavoritesTitle,
+    AppRoutes.profilePurchases: strings.profilePurchasesTitle,
+    AppRoutes.profilePayment: strings.paymentPageTitle,
+    AppRoutes.profileFollowers: strings.profileFollowers,
+    AppRoutes.profileFollowing: strings.profileFollowing,
+    AppRoutes.chatNew: strings.chatNewTitle,
+    AppRoutes.chatArchived: strings.chatArchivedTitle,
+    AppRoutes.chatConversation: strings.chatTitle,
+    AppRoutes.cart: strings.cartTitle,
+    AppRoutes.checkoutCart: strings.cartCheckoutTitle,
+    AppRoutes.orderDetail: strings.ordersDetails,
+    AppRoutes.userReviews: strings.reviewsTitle,
+    AppRoutes.createReview: strings.reviewsCreateTitle,
+    AppRoutes.disputes: strings.disputesMyTitle,
+    AppRoutes.disputeDetail: strings.disputeDetailTitle,
+    AppRoutes.createDispute: strings.ordersDispute,
+    AppRoutes.notifications: strings.notificationsTitle,
+    AppRoutes.faq: strings.chatFaqTitle,
+  };
+}
 
 bool _matches(String pattern, String location) {
   final p = pattern.split('/').where((s) => s.isNotEmpty).toList();
@@ -85,14 +90,14 @@ bool _matchesPrefix(String pattern, String location) {
   return true;
 }
 
-MapEntry<String, String>? _lookup(String location) {
+MapEntry<String, String>? _lookup(Map<String, String> labels, String location) {
   // First try exact match
-  if (_labels.containsKey(location)) {
-    return MapEntry(location, _labels[location]!);
+  if (labels.containsKey(location)) {
+    return MapEntry(location, labels[location]!);
   }
 
   // Then try pattern matching
-  for (final e in _labels.entries) {
+  for (final e in labels.entries) {
     if (_matches(e.key, location)) return e;
   }
 
@@ -100,14 +105,17 @@ MapEntry<String, String>? _lookup(String location) {
 }
 
 /// Look up a breadcrumb label for a path segment, handling nested routes.
-MapEntry<String, String>? _lookupBreadcrumb(String location) {
+MapEntry<String, String>? _lookupBreadcrumb(
+  Map<String, String> labels,
+  String location,
+) {
   // First try exact match
-  if (_labels.containsKey(location)) {
-    return MapEntry(location, _labels[location]!);
+  if (labels.containsKey(location)) {
+    return MapEntry(location, labels[location]!);
   }
 
   // Try pattern matching (exact segment count)
-  for (final e in _labels.entries) {
+  for (final e in labels.entries) {
     if (_matches(e.key, location)) return e;
   }
 
@@ -115,7 +123,7 @@ MapEntry<String, String>? _lookupBreadcrumb(String location) {
   MapEntry<String, String>? bestMatch;
   int bestLength = 0;
 
-  for (final e in _labels.entries) {
+  for (final e in labels.entries) {
     if (_matchesPrefix(e.key, location)) {
       final segments = e.key.split('/').where((s) => s.isNotEmpty).length;
       if (segments > bestLength) {
@@ -134,21 +142,12 @@ String _concretize(String pattern, String location) {
   return '/${[for (var i = 0; i < p.length; i++) p[i].startsWith(':') && i < l.length ? l[i] : p[i]].join('/')}';
 }
 
-String _fallbackLabel(String path) {
-  final seg = path
-      .split('/')
-      .lastWhere((s) => s.isNotEmpty && !s.startsWith(':'), orElse: () => '');
-  if (seg.isEmpty) return '';
-  return seg
-      .split('-')
-      .where((w) => w.isNotEmpty)
-      .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')
-      .join(' ');
-}
-
 extension BreadcrumbX on BuildContext {
   List<BreadcrumbItem> get breadcrumbs {
-    final location = _currentLocation;
+    final location = GoRouter.maybeOf(this) == null
+        ? Uri.parse(_currentLocation).path
+        : GoRouterState.of(this).uri.path;
+    final labels = _labels(this);
     final segs = location.split('/').where((s) => s.isNotEmpty).toList();
     final items = <BreadcrumbItem>[];
     final ctx = this;
@@ -156,7 +155,7 @@ extension BreadcrumbX on BuildContext {
     // Build breadcrumb items from path segments
     for (var i = 1; i <= segs.length; i++) {
       final prefix = '/${segs.sublist(0, i).join('/')}';
-      final entry = _lookupBreadcrumb(prefix);
+      final entry = _lookupBreadcrumb(labels, prefix);
 
       if (entry != null) {
         // Concretize the path (replace :id with actual value)
@@ -177,12 +176,11 @@ extension BreadcrumbX on BuildContext {
     if (items.isEmpty) return [];
 
     // Add current page as last item (non-clickable)
-    final current = _lookup(location);
-    final currentLabel = current?.value ?? _fallbackLabel(location);
+    final current = _lookup(labels, location);
 
     // Avoid duplicate last item
-    if (items.last.label != currentLabel) {
-      items.add(BreadcrumbItem(label: currentLabel));
+    if (current != null && items.last.label != current.value) {
+      items.add(BreadcrumbItem(label: current.value));
     }
 
     return items;

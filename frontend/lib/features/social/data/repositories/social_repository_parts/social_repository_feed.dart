@@ -239,6 +239,24 @@ mixin SocialRepositoryFeed {
         decoder: (_) => const Right(null),
       );
 
+  Future<Either<Failure, void>> deleteComment(String commentId) =>
+      requestEither<void>(
+        () => client.patch('/social/comments/$commentId/delete'),
+        decoder: (_) => const Right(null),
+      );
+
+  Future<Either<Failure, void>> reportContent({
+    required String targetType,
+    required String targetId,
+    required String reason,
+  }) => requestEither<void>(
+    () => client.post(
+      '/reports',
+      data: {'targetType': targetType, 'targetId': targetId, 'reason': reason},
+    ),
+    decoder: (_) => const Right(null),
+  );
+
   Future<Either<Failure, void>> likeComment(String commentId) async {
     final result = await requestEither<void>(
       () => client.post('/social/comments/$commentId/like', data: {'_': true}),

@@ -14,10 +14,12 @@ class ChatConversationHeader extends StatelessWidget {
     required this.loadError,
     required this.name,
     this.avatarUrl,
+    this.peerId,
     required this.chatType,
     required this.accentColor,
     required this.isOnline,
     required this.onBack,
+    required this.onAvatarTap,
     required this.onConfig,
     required this.onInfo,
     required this.onRetry,
@@ -36,10 +38,12 @@ class ChatConversationHeader extends StatelessWidget {
   final String? loadError;
   final String name;
   final String? avatarUrl;
+  final String? peerId;
   final ChatThreadType chatType;
   final Color accentColor;
   final bool isOnline;
   final VoidCallback onBack;
+  final VoidCallback onAvatarTap;
   final VoidCallback onConfig;
   final VoidCallback onInfo;
   final VoidCallback onRetry;
@@ -53,6 +57,7 @@ class ChatConversationHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final peerId = this.peerId;
     if (isSelecting) {
       return MultiSelectToolbar(
         selectedCount: selectedCount,
@@ -89,6 +94,10 @@ class ChatConversationHeader extends StatelessWidget {
     return ChatHeader(
       name: name,
       avatarUrl: avatarUrl,
+      onAvatarTap:
+          chatType != ChatThreadType.direct || peerId == null || peerId.isEmpty
+          ? null
+          : onAvatarTap,
       chatType: chatType,
       accentColor: accentColor,
       isOnline: isOnline,

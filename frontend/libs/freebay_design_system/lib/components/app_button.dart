@@ -113,6 +113,7 @@ class _AppButtonState extends State<AppButton> {
                     vertical: Spacing.sm,
                   ),
                   child: Center(
+                    heightFactor: 1,
                     child: widget.isLoading
                         ? SizedBox(
                             width: 20,

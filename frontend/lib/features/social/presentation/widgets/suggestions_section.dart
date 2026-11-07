@@ -8,6 +8,7 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class SuggestionsSection extends ConsumerWidget {
   final bool asSliver;
@@ -18,17 +19,29 @@ class SuggestionsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(suggestionsProvider);
 
-    if (state.isLoading) {
+    if (state.isLoading && state.users.isEmpty) {
       return _wrapWidget(const ShimmerBlock(height: 72));
     }
 
-    if (state.error != null) {
+    if (state.error != null && state.users.isEmpty) {
       return _wrapWidget(
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            state.error!,
-            style: TextStyle(fontSize: 13, color: context.textSecondary),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n(context).commonError,
+                  style: TextStyle(fontSize: 13, color: context.textSecondary),
+                ),
+              ),
+              AppButton(
+                label: l10n(context).commonRetry,
+                size: AppButtonSize.compact,
+                onPressed: () =>
+                    ref.read(suggestionsProvider.notifier).refresh(),
+              ),
+            ],
           ),
         ),
       );
@@ -49,7 +62,7 @@ class SuggestionsSection extends ConsumerWidget {
             parent: AlwaysScrollableScrollPhysics(),
           ),
           padding: const EdgeInsets.only(left: 16, right: 16),
-          itemCount: state.users.length + 1, // +1 for "Ver mais"
+          itemCount: state.users.length + (state.hasMore ? 1 : 0),
           itemBuilder: (ctx, i) {
             if (i == state.users.length) {
               return _buildSeeMoreCard(context, ref, state.isLoading);

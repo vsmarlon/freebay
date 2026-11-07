@@ -70,7 +70,8 @@ class ConversationDetailsMediaTab extends StatelessWidget {
   final List<MessageEntity> messages;
   final ConversationMediaFilter filter;
   final ValueChanged<ConversationMediaFilter> onFilterChanged;
-  final Future<List<MessageEntity>> Function(String? cursor) onLoadMore;
+  final Future<ConversationMediaPage> Function(String? cursor) onLoadMore;
+  final ValueChanged<MessageEntity> onReply;
 
   const ConversationDetailsMediaTab({
     super.key,
@@ -79,6 +80,7 @@ class ConversationDetailsMediaTab extends StatelessWidget {
     required this.filter,
     required this.onFilterChanged,
     required this.onLoadMore,
+    required this.onReply,
   });
 
   @override
@@ -106,9 +108,11 @@ class ConversationDetailsMediaTab extends StatelessWidget {
                   ],
                 )
               : MediaGrid(
+                  key: ValueKey(filter),
                   conversationId: conversationId,
                   initialMessages: messages,
                   onLoadMore: onLoadMore,
+                  onReply: onReply,
                 ),
         ),
       ],
@@ -209,6 +213,7 @@ class ConversationDetailsActionsTab extends StatelessWidget {
   final bool isMuted;
   final VoidCallback onToggleMute;
   final VoidCallback onTheme;
+  final VoidCallback onReport;
   final VoidCallback onBlock;
   final VoidCallback onDelete;
 
@@ -217,6 +222,7 @@ class ConversationDetailsActionsTab extends StatelessWidget {
     required this.isMuted,
     required this.onToggleMute,
     required this.onTheme,
+    required this.onReport,
     required this.onBlock,
     required this.onDelete,
   });
@@ -237,6 +243,11 @@ class ConversationDetailsActionsTab extends StatelessWidget {
           icon: Icons.color_lens,
           title: strings.chatConversationTheme,
           onTap: onTheme,
+        ),
+        _ActionTile(
+          icon: Icons.flag_outlined,
+          title: strings.chatReport,
+          onTap: onReport,
         ),
         _ActionTile(
           icon: Icons.block,

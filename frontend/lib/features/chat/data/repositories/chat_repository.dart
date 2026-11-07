@@ -139,6 +139,7 @@ class ChatRepository {
     String? replyToId,
     bool viewOnce = false,
     String? clientMessageId,
+    CancelToken? cancelToken,
   }) => requestEither(
     () => client.post(
       '/chat/conversations/$chatId/messages',
@@ -148,6 +149,7 @@ class ChatRepository {
         'clientMessageId': ?clientMessageId,
         if (viewOnce) 'viewOnce': true,
       },
+      cancelToken: cancelToken,
     ),
     decoder: (response) => Right(MessageEntity.fromJson(response.data['data'])),
   );
@@ -267,6 +269,7 @@ class ChatRepository {
     Map<String, dynamic>? metadata,
     bool viewOnce = false,
     int? durationMs,
+    CancelToken? cancelToken,
   }) => requestEither(
     () => client.post(
       '/chat/conversations/$conversationId/messages',
@@ -280,6 +283,7 @@ class ChatRepository {
         'durationMs': ?durationMs,
         if (viewOnce) 'viewOnce': true,
       },
+      cancelToken: cancelToken,
     ),
     decoder: (response) => Right(MessageEntity.fromJson(response.data['data'])),
   );
@@ -302,6 +306,18 @@ class ChatRepository {
       '/chat/conversations/$conversationId/messages/$messageId/star',
     ),
     decoder: (response) => Right(response.data['data']['starred'] == true),
+  );
+
+  Future<Either<Failure, bool>> setMessagePinned(
+    String conversationId,
+    String messageId,
+    bool pinned,
+  ) => requestEither(
+    () => client.patch(
+      '/chat/conversations/$conversationId/messages/$messageId/pin',
+      data: {'pinned': pinned},
+    ),
+    decoder: (response) => Right(response.data['data']['pinned'] == true),
   );
 
   Future<Either<Failure, List<MessageEntity>>> getStarredMessages(

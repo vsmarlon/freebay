@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/router/app_router.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
@@ -33,7 +33,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _rememberMe = false;
+  late final TapGestureRecognizer _registerTap = TapGestureRecognizer()
+    ..onTap = () => context.push(AppRoutes.register);
+  bool _rememberMe = StorageService.getRememberMeSync();
 
   @override
   void initState() {
@@ -57,6 +59,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
     _anim.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _registerTap.dispose();
     super.dispose();
   }
 
@@ -66,7 +69,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
           .read(authControllerProvider.notifier)
           .login(
             _emailController.text.trim(),
-            _passwordController.text.trim(),
+            _passwordController.text,
             rememberMe: _rememberMe,
           );
     }
@@ -79,20 +82,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
     ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (_, next) {
       next.whenOrNull(
-        data: (user) async {
-          if (user == null || !mounted) return;
-          // ponytail: GoRouter redirect owns → /complete-profile; a second
-          // context.go here races with the redirect into the error screen.
-          if (ref
-              .read(authControllerProvider.notifier)
-              .needsProfileCompletion(user)) {
-            return;
-          }
-          if (context.mounted) {
-            final from = GoRouterState.of(context).uri.queryParameters['from'];
-            context.go(resolvePostAuthDestination(from));
-          }
-        },
         error: (err, _) {
           HapticFeedback.vibrate();
           AppSnackbar.handleFailure(context, err);
@@ -112,6 +101,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
               ),
               Expanded(
                 child: CenteredFormWrapper(
+                  center: false,
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -122,10 +112,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           animation: _anim,
                           begin: 0.0,
                           end: 0.3,
-                          child: const BrutalistLogo(
-                            fontSize: 46,
-                            showTagline: false,
-                          ),
+                          child: const FreeBayLogo(),
                         ),
                         Spacing.vXl,
                         AuthStagger(
@@ -134,16 +121,30 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           end: 0.43,
                           child: AppTextField(
                             controller: _emailController,
-                            label: strings.authEmail,
+                            label: strings.authLoginIdentifier,
                             hint: strings.authEmailExample,
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             prefixIcon: Icons.email_outlined,
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? strings.authEmailRequired
-                                : (!ValueUtils.validateEmail(v)
-                                      ? strings.authEmailInvalid
-                                      : null),
+                            validator: (v) {
+                              final id = (v ?? '').trim();
+                              if (id.isEmpty) return strings.authLoginRequired;
+                              final isHandle =
+                                  id.startsWith('@') || !id.contains('@');
+                              if (isHandle) {
+                                final handle =
+                                    (id.startsWith('@') ? id.substring(1) : id)
+                                        .toLowerCase();
+                                return RegExp(
+                                      r'^[a-z0-9_]{3,20}$',
+                                    ).hasMatch(handle)
+                                    ? null
+                                    : strings.authUsernameInvalid;
+                              }
+                              return ValueUtils.validateEmail(id)
+                                  ? null
+                                  : strings.authEmailInvalid;
+                            },
                           ),
                         ),
                         Spacing.vMd,
@@ -263,38 +264,31 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           animation: _anim,
                           begin: 0.6,
                           end: 0.86,
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            children: [
-                              Text(
-                                strings.authNoAccountQuestion.toUpperCase(),
-                                style: TextStyle(
-                                  fontFamily: AppTypography.fontFamily,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: context.textSecondary,
-                                ),
+                          child: Text.rich(
+                            TextSpan(
+                              text:
+                                  '${strings.authNoAccountQuestion.toUpperCase()} ',
+                              style: TextStyle(
+                                fontFamily: AppTypography.fontFamily,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: context.textSecondary,
                               ),
-                              InkWell(
-                                onTap: () => context.push(AppRoutes.register),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 4,
+                              children: [
+                                TextSpan(
+                                  text: strings.authSignUp.toUpperCase(),
+                                  style: const TextStyle(
+                                    fontFamily:
+                                        AppTypography.headlineFontFamily,
+                                    color: AppColors.primaryContainer,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
                                   ),
-                                  child: Text(
-                                    strings.authSignUp.toUpperCase(),
-                                    style: const TextStyle(
-                                      fontFamily:
-                                          AppTypography.headlineFontFamily,
-                                      color: AppColors.primaryContainer,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
+                                  recognizer: _registerTap,
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                         Spacing.vLg,

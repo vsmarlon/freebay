@@ -4,13 +4,16 @@ import 'package:freebay/core/router/app_routes.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:freebay/features/profile/presentation/pages/blocked_users_page.dart';
 import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
 import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
+import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/features/profile/data/repositories/profile_repository.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
@@ -22,6 +25,7 @@ class UserProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profileFutureProvider(userId));
+    final profileName = profileAsync.value?.displayNameOrDefault;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -30,7 +34,7 @@ class UserProfilePage extends ConsumerWidget {
           children: [
             ShellScrollHeader(
               child: PageHeader(
-                text: l10n(context).navProfile,
+                text: profileName ?? l10n(context).navProfile,
                 leading: BrutalistIconButton(
                   icon: Icons.arrow_back,
                   semanticLabel: l10n(context).commonBack,
@@ -40,39 +44,21 @@ class UserProfilePage extends ConsumerWidget {
             ),
             Expanded(
               child: profileAsync.when(
-                data: (profileUser) =>
-                    _buildProfileContent(context, ref, profileUser),
+                data: (profileUser) => AppRefreshIndicator(
+                  notificationPredicate: (notification) =>
+                      notification.depth == 0 &&
+                      notification.metrics.axis == Axis.vertical,
+                  onRefresh: () => _refreshProfile(ref),
+                  child: _buildProfileContent(context, ref, profileUser),
+                ),
                 loading: () => const Center(
                   child: ShimmerScope(
                     child: ShimmerBlock(width: 60, height: 60),
                   ),
                 ),
-                error: (error, _) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: AppColors.error,
-                      ),
-                      Spacing.vMd,
-                      Text(
-                        l10n(context).profileLoadFailed,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: context.textPrimary,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      Text(
-                        l10n(context).commonTryAgainLater,
-                        style: TextStyle(color: context.textSecondary),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+                error: (error, _) => EmptyState.error(
+                  message: l10n(context).profileLoadFailed,
+                  onRetry: () => ref.invalidate(profileFutureProvider(userId)),
                 ),
               ),
             ),
@@ -80,6 +66,27 @@ class UserProfilePage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _refreshProfile(WidgetRef ref) async {
+    ref.invalidate(profileFutureProvider(userId));
+    final viewerId = ref.read(authControllerProvider).asData?.value?.id;
+    final refreshes = <Future<void>>[
+      ref
+          .read(profileFutureProvider(userId).future)
+          .then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+      for (final kind in ['posts', 'reposts', 'products'])
+        ref
+            .read(
+              profileTimelineProvider(
+                userId,
+                kind: kind,
+                viewerId: viewerId,
+              ).notifier,
+            )
+            .refresh(),
+    ];
+    await Future.wait(refreshes);
   }
 
   Widget _buildProfileContent(
@@ -160,6 +167,28 @@ class UserProfilePage extends ConsumerWidget {
                     child: _buildFollowPrompt(context),
                   ),
                 if (!isOwnProfile && currentUser != null) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppButton(
+                          label: l10n(context).chatNewConversation,
+                          variant: AppButtonVariant.secondary,
+                          icon: Icons.chat_bubble_outline,
+                          onPressed: () => _messageUser(context, ref),
+                        ),
+                      ),
+                      Spacing.hSm,
+                      Expanded(
+                        child: AppButton(
+                          label: l10n(context).chatBlockUser,
+                          variant: AppButtonVariant.danger,
+                          icon: Icons.block,
+                          onPressed: () => _blockUser(context, ref, user),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Spacing.vMd,
                   AppButton(
                     label: l10n(context).profileReportUser,
                     variant: AppButtonVariant.secondary,
@@ -231,6 +260,71 @@ class UserProfilePage extends ConsumerWidget {
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 8)),
       ],
+    );
+  }
+
+  Future<void> _messageUser(BuildContext context, WidgetRef ref) async {
+    final result = await ref
+        .read(chatRepositoryProvider)
+        .startDirectConversation(userId);
+    if (!context.mounted) return;
+    final conversationId = result.rightOrNull;
+    if (conversationId == null) {
+      AppSnackbar.handleFailure(context, result.leftOrNull);
+      return;
+    }
+    context.push(AppRoutes.chatPath(conversationId));
+  }
+
+  Future<void> _blockUser(
+    BuildContext context,
+    WidgetRef ref,
+    UserEntity user,
+  ) async {
+    await showBrutalistSheet(
+      context: context,
+      title: l10n(context).chatBlockTitle,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n(
+                sheetContext,
+              ).chatBlockConfirmation(user.displayNameOrDefault),
+              style: TextStyle(color: sheetContext.textPrimary),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.block, color: AppColors.error),
+              title: Text(
+                l10n(sheetContext).chatConfirmBlock,
+                style: const TextStyle(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final result = await ref
+                    .read(blockServiceProvider)
+                    .block(user.id);
+                if (!context.mounted) return;
+                result.fold(
+                  (failure) => AppSnackbar.handleFailure(context, failure),
+                  (_) {
+                    ref.invalidate(blockedUsersProvider);
+                    ref.invalidate(profileFutureProvider(user.id));
+                    AppSnackbar.success(context, l10n(context).chatUserBlocked);
+                    if (context.canPop()) context.pop();
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

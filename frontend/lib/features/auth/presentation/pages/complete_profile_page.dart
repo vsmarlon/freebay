@@ -121,6 +121,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                 ),
                 Expanded(
                   child: CenteredFormWrapper(
+                    center: false,
                     child: Form(
                       key: _formKey,
                       child: Column(

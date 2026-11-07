@@ -6,6 +6,7 @@ import 'package:freebay/core/components/social_post/post_content.dart';
 import 'package:freebay/core/components/social_post/post_header.dart';
 import 'package:freebay/core/components/social_post/post_labels.dart';
 import 'package:freebay/core/components/social_post/post_media.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 
 class SocialPost extends StatefulWidget {
@@ -28,6 +29,7 @@ class SocialPost extends StatefulWidget {
   final VoidCallback? onComment;
   final VoidCallback? onShare;
   final VoidCallback? onQuote;
+  final VoidCallback? onMore;
   final Widget? quotePreview;
   final VoidCallback? onTap;
   final VoidCallback? onUserTap;
@@ -61,6 +63,7 @@ class SocialPost extends StatefulWidget {
     this.onComment,
     this.onShare,
     this.onQuote,
+    this.onMore,
     this.quotePreview,
     this.onTap,
     this.onUserTap,
@@ -125,6 +128,7 @@ class _SocialPostState extends State<SocialPost> {
     onRepost: _handleRepost,
     onComment: widget.onComment,
     onQuote: widget.onQuote,
+    onMore: widget.onMore,
   );
 
   @override
@@ -135,6 +139,9 @@ class _SocialPostState extends State<SocialPost> {
       blurHash: widget.isCloseFriends ? null : widget.imageBlurHash,
       showHeartBurst: _showHeartBurst,
       isPressed: _isImagePressed,
+      // ponytail: portraits beat squares for listings; drop the frame and measure
+      // the image once the backend ships dimensions.
+      aspectRatio: widget.isSelling || (widget.price ?? 0) > 0 ? 4 / 5 : 1,
       onTap: () => showAppImageViewer(context, widget.imageUrl!),
       onDoubleTap: _triggerDoubleTapLike,
       onPressedChanged: (pressed) => setState(() => _isImagePressed = pressed),
@@ -182,7 +189,8 @@ class _SocialPostState extends State<SocialPost> {
                     const Icon(Icons.group, size: 16, color: AppColors.success),
                     const SizedBox(width: 6),
                     Text(
-                      widget.closeFriendsLabel ?? 'AMIGOS PRÓXIMOS',
+                      widget.closeFriendsLabel ??
+                          l10n(context).feedAudienceCloseFriends,
                       style: AppTypography.brutalistTag,
                     ),
                   ],
@@ -203,6 +211,7 @@ class _SocialPostState extends State<SocialPost> {
               )
             else
               Container(
+                width: double.infinity,
                 decoration: BoxDecoration(
                   color: context.surfaceMidColor,
                   border: const Border(

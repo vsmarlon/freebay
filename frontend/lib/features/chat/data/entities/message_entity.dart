@@ -30,8 +30,24 @@ abstract class MessageEntity with _$MessageEntity {
 
   const MessageEntity._();
 
-  factory MessageEntity.fromJson(Map<String, dynamic> json) =>
-      _$MessageEntityFromJson(json);
+  factory MessageEntity.fromJson(Map<String, dynamic> json) {
+    // Backend has no OFFER MessageType; offers ride a TEXT envelope with
+    // structured metadata. Normalize at the mapping boundary so every
+    // inbound path (REST, socket, confirmSent) carries the offer shape.
+    final rawMetadata = json['metadata'];
+    final isOffer =
+        rawMetadata is Map &&
+        (rawMetadata['offerPrice'] is num ||
+            (rawMetadata['status'] is String &&
+                rawMetadata['title'] is String));
+    final normalized = isOffer ? {...json, 'type': 'OFFER'} : json;
+    return _$MessageEntityFromJson(normalized);
+  }
+
+  static bool isOfferMetadata(Map<String, dynamic>? metadata) =>
+      metadata != null && metadata['offerPrice'] is num;
+
+  bool get isOffer => isOfferMetadata(metadata);
 
   String get previewText {
     final body = content ?? '';

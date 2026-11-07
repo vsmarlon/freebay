@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
@@ -163,8 +164,19 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
       },
       (data) {
         _cursor = data.nextCursor;
+        final uncertain = state.messages.where((message) {
+          if (message.metadata?['_deliveryUncertain'] != true) return false;
+          return !data.messages.any(
+            (canonical) =>
+                canonical.id == message.id ||
+                canonical.clientMessageId == message.clientMessageId,
+          );
+        });
         state = state.copyWith(
-          messages: _retainOpenViewOnceMessages(data.messages),
+          messages: [
+            ..._retainOpenViewOnceMessages(data.messages),
+            ...uncertain,
+          ],
           preference: data.preference,
           hasMore: data.hasMore,
           isLoading: showLoadingError ? false : null,
@@ -291,6 +303,7 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
     required Map<String, dynamic> metadata,
     String? replyToId,
     String? clientMessageId,
+    CancelToken? cancelToken,
   }) async {
     final operationId =
         clientMessageId ??
@@ -303,6 +316,7 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
           type: MessageType.location,
           replyToId: replyToId,
           metadata: metadata,
+          cancelToken: cancelToken,
         );
     if (!ref.mounted) return result;
     result.fold((_) {}, (message) => confirmSent(operationId, message));
@@ -374,7 +388,31 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
   }
 
   void addOptimistic(MessageEntity message) {
-    state = state.copyWith(messages: [...state.messages, message]);
+    state = state.copyWith(
+      messages: [
+        ...state.messages.where(
+          (current) =>
+              current.id != message.id &&
+              (message.clientMessageId == null ||
+                  current.clientMessageId != message.clientMessageId),
+        ),
+        message,
+      ],
+    );
+  }
+
+  void markDeliveryUncertain(String messageId) {
+    state = state.copyWith(
+      messages: [
+        for (final message in state.messages)
+          if (message.id == messageId)
+            message.copyWith(
+              metadata: {...?message.metadata, '_deliveryUncertain': true},
+            )
+          else
+            message,
+      ],
+    );
   }
 
   void confirmSent(String tempId, MessageEntity sent) {

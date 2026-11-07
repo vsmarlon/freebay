@@ -6,3 +6,4 @@ export 'presentation/controllers/auth_controller.dart'
         biometryAvailableProvider,
         biometryEnabledProvider;
 export 'presentation/step_up_authenticator.dart';
+export 'presentation/widgets/session_lock_gate.dart';

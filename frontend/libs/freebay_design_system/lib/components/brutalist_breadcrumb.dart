@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../tokens/app_colors.dart';
 import '../tokens/app_typography.dart';
 import '../tokens/theme_extension.dart';
 
@@ -17,7 +16,6 @@ class BrutalistBreadcrumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     if (items.isEmpty) return const SizedBox.shrink();
 
     return SingleChildScrollView(
@@ -30,9 +28,7 @@ class BrutalistBreadcrumb extends StatelessWidget {
               child: Icon(
                 Icons.chevron_right,
                 size: 18,
-                color: isDark
-                    ? AppColors.outlineVariant
-                    : AppColors.onSurfaceVariant,
+                color: context.textSecondary,
               ),
             );
           }
@@ -47,9 +43,7 @@ class BrutalistBreadcrumb extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.2,
-                color: isDark
-                    ? AppColors.primaryContainer
-                    : AppColors.onSurface,
+                color: context.colors.primary,
                 height: 1.4,
               ),
               overflow: TextOverflow.ellipsis,
@@ -66,9 +60,7 @@ class BrutalistBreadcrumb extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.2,
-                  color: isDark
-                      ? AppColors.outlineVariant
-                      : AppColors.onSurfaceVariant,
+                  color: context.textSecondary,
                   height: 1.4,
                 ),
               ),

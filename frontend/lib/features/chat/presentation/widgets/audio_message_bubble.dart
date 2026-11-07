@@ -38,6 +38,7 @@ class _AudioMessageBubbleState extends State<AudioMessageBubble> {
   File? _viewOnceTemporaryFile;
   Duration _position = Duration.zero;
   Duration? _total;
+  double? _dragPositionMs;
 
   @override
   void initState() {
@@ -47,13 +48,20 @@ class _AudioMessageBubbleState extends State<AudioMessageBubble> {
     _positionSub = _player.positionStream.listen((pos) {
       if (mounted) setState(() => _position = pos);
     });
-    if (widget.viewOnceOpeningKey != null) {
-      _playerStateSub = _player.playerStateStream.listen((state) {
-        if (state.processingState == ProcessingState.completed) {
+    _playerStateSub = _player.playerStateStream.listen((state) {
+      if (mounted) {
+        setState(
+          () => _playing =
+              state.playing &&
+              state.processingState != ProcessingState.completed,
+        );
+      }
+      if (state.processingState == ProcessingState.completed) {
+        if (widget.viewOnceOpeningKey != null) {
           widget.onViewOnceClose?.call();
         }
-      });
-    }
+      }
+    });
   }
 
   String? get _url {
@@ -107,7 +115,14 @@ class _AudioMessageBubbleState extends State<AudioMessageBubble> {
       if (_total != null && _position >= _total!) {
         await _player.seek(Duration.zero);
       }
-      await _player.play();
+      unawaited(
+        _player.play().then<void>(
+          (_) {},
+          onError: (Object _) {
+            if (mounted) setState(() => _playing = false);
+          },
+        ),
+      );
     }
     if (mounted) {
       setState(() {
@@ -140,9 +155,9 @@ class _AudioMessageBubbleState extends State<AudioMessageBubble> {
     if (_url == null) return const SizedBox.shrink();
 
     final total = _total;
-    final progress = total != null && total.inMilliseconds > 0
-        ? (_position.inMilliseconds / total.inMilliseconds).clamp(0.0, 1.0)
-        : 0.0;
+    final totalMs = total?.inMilliseconds ?? 0;
+    final positionMs = (_dragPositionMs ?? _position.inMilliseconds.toDouble())
+        .clamp(0.0, totalMs.toDouble());
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 240, minWidth: 180),
@@ -176,28 +191,26 @@ class _AudioMessageBubbleState extends State<AudioMessageBubble> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(
-                    height: 4,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: context.textSecondary.withAlpha(60),
-                      ),
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: progress,
-                        child: const DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryContainer,
-                          ),
-                        ),
-                      ),
-                    ),
+                  Slider(
+                    value: positionMs,
+                    max: totalMs > 0 ? totalMs.toDouble() : 1,
+                    semanticFormatterCallback: (value) =>
+                        '${_label(Duration(milliseconds: value.round()))} / ${_label(total ?? Duration.zero)}',
+                    onChanged: _ready && totalMs > 0
+                        ? (value) => setState(() => _dragPositionMs = value)
+                        : null,
+                    onChangeEnd: (value) {
+                      setState(() {
+                        _position = Duration(milliseconds: value.round());
+                        _dragPositionMs = null;
+                      });
+                      unawaited(_player.seek(_position));
+                    },
                   ),
-                  const SizedBox(height: 4),
                   Text(
                     total == null
                         ? '--:--'
-                        : '${_label(_position)} / ${_label(total)}',
+                        : '${_label(Duration(milliseconds: positionMs.round()))} / ${_label(total)}',
                     style: TextStyle(
                       fontFamily: AppTypography.fontFamily,
                       fontSize: 11,

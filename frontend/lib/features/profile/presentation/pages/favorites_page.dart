@@ -24,7 +24,6 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   @override
   Widget build(BuildContext context) {
     final strings = l10n(context);
-    final isDark = context.isDark;
     final state = ref.watch(favoritesProvider);
 
     return Scaffold(
@@ -57,6 +56,16 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                         itemCount: 6,
                         itemBuilder: (context, index) =>
                             const AppCard.skeleton(),
+                      )
+                    : state.loadFailure != null
+                    ? EmptyState.error(
+                        message: localizedFailureMessage(
+                          context,
+                          state.loadFailure,
+                        ),
+                        onRetry: () => ref
+                            .read(favoritesProvider.notifier)
+                            .loadFavorites(),
                       )
                     : state.products.isEmpty
                     ? EmptyState(
@@ -91,25 +100,37 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                                 ),
                               ),
                               Positioned(
-                                top: 8,
-                                right: 8,
-                                child: InkWell(
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    ref
-                                        .read(favoritesProvider.notifier)
-                                        .toggleFavorite(product.id);
-                                  },
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    color: isDark
-                                        ? AppColors.surfaceDark
-                                        : AppColors.white,
-                                    child: const Icon(
-                                      Icons.favorite,
-                                      size: 18,
-                                      color: AppColors.error,
+                                top: 0,
+                                right: 0,
+                                child: Semantics(
+                                  button: true,
+                                  label: strings.productFavoriteRemove,
+                                  excludeSemantics: true,
+                                  child: Tooltip(
+                                    message: strings.productFavoriteRemove,
+                                    child: InkWell(
+                                      onTap: () {
+                                        HapticFeedback.lightImpact();
+                                        ref
+                                            .read(favoritesProvider.notifier)
+                                            .toggleFavorite(product.id);
+                                      },
+                                      child: SizedBox(
+                                        width: 48,
+                                        height: 48,
+                                        child: Center(
+                                          child: Container(
+                                            width: 32,
+                                            height: 32,
+                                            color: context.surfaceColor,
+                                            child: const Icon(
+                                              Icons.favorite,
+                                              size: 18,
+                                              color: AppColors.error,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),

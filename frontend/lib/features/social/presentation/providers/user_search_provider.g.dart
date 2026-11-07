@@ -41,7 +41,7 @@ final class UserSearchProvider
   }
 }
 
-String _$userSearchHash() => r'3a216edf53b350e8031ab14b54db40cce524bf54';
+String _$userSearchHash() => r'ab77517978655329294d679e1944ccfff9ff85ad';
 
 abstract class _$UserSearch extends $Notifier<UserSearchState> {
   UserSearchState build();
@@ -100,7 +100,7 @@ final class SuggestionsProvider
   }
 }
 
-String _$suggestionsHash() => r'6a9423f8f3cf348a276240682168df3f9234ae04';
+String _$suggestionsHash() => r'485670282e596cc54e458eb894707300cdc97cdf';
 
 /// Kept alive for the entire app session — never disposed between tab switches.
 /// Only invalidated explicitly after a follow/unfollow action via [ref.invalidate].
@@ -182,7 +182,7 @@ final class QuoteMentionCandidatesProvider
 }
 
 String _$quoteMentionCandidatesHash() =>
-    r'a25bf8cb6a7b66c86168a27f02c2a68443a228b0';
+    r'05f40b9dafa2b0c45ac9c5fe995c95d35135b639';
 
 final class QuoteMentionCandidatesFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<UserSearchEntity>>, String> {

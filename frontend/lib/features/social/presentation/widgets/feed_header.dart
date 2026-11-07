@@ -14,7 +14,6 @@ class FeedHeader extends StatelessWidget {
       floating: true,
       snap: true,
       backgroundColor: context.appBarColor,
-      elevation: 0,
       scrolledUnderElevation: 0,
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1.5),
@@ -31,28 +30,7 @@ class FeedHeader extends StatelessWidget {
           ),
         ),
       ),
-      title: RichText(
-        text: TextSpan(
-          text: 'FREEBAY',
-          style: TextStyle(
-            fontFamily: AppTypography.headlineFontFamily,
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            fontStyle: FontStyle.italic,
-            letterSpacing: -0.5,
-            color: context.textPrimary,
-          ),
-          children: const [
-            TextSpan(
-              text: '!',
-              style: TextStyle(
-                color: AppColors.primaryContainer,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ],
-        ),
-      ),
+      title: const FreeBayLogo(width: 116),
       actions: [
         FeedHeaderIcon(
           icon: Icons.person_search_outlined,

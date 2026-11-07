@@ -35,6 +35,7 @@ class ProfileTabs extends ConsumerWidget {
     return DefaultTabController(
       length: _timelineKinds.length,
       child: NestedScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           ...headerSlivers,
           SliverPersistentHeader(
@@ -51,7 +52,7 @@ class ProfileTabs extends ConsumerWidget {
                       ),
                     ),
                 ],
-                labelColor: AppColors.primaryContainer,
+                labelColor: context.colors.primary,
                 unselectedLabelColor: context.textSecondary,
                 indicatorColor: AppColors.primaryContainer,
                 indicatorWeight: 3,

@@ -36,17 +36,10 @@ class _BiometrySettingTileState extends ConsumerState<BiometrySettingTile> {
   Future<void> _enable() async {
     if (widget.userId == null) return _fail();
     final userId = widget.userId!;
-    final stepUpToken = await StepUpAuthenticator.authorize(
-      context,
-      ref,
-      purpose: 'biometric_enroll',
-    );
-    if (stepUpToken == null || !mounted) return;
-
     try {
       final enrolled = await ref
           .read(authControllerProvider.notifier)
-          .enrollBiometrics(stepUpToken, expectedUserId: userId);
+          .enrollBiometrics(expectedUserId: userId);
       if (!enrolled) _fail();
     } catch (_) {
       _fail();

@@ -3,12 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
-import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/data/entities/conversation_media_filter.dart';
 import 'package:freebay/features/chat/data/entities/message_type.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/presentation/providers/conversation_messages_provider.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_theme_picker.dart';
 import 'package:freebay/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart';
+import 'package:freebay/features/profile/presentation/pages/blocked_users_page.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
@@ -47,12 +48,12 @@ class _ConversationDetailsPageState
   Widget build(BuildContext context) {
     final conversation = ref.watch(conversationMessagesProvider(widget.chatId));
     final mediaMessages = conversation.messages.where((message) {
-      if (message.viewOnce) return false;
+      if (message.viewOnce || message.deletedAt != null) return false;
       if (_mediaFilter == ConversationMediaFilter.link) {
         final metadata = message.metadata;
         return message.type == MessageType.text &&
             metadata != null &&
-            (metadata['url'] is String || metadata['title'] is String);
+            conversationMetadataHasHttpUrl(metadata);
       }
       return message.type.wireValue == _mediaFilter.wireValue;
     }).toList();
@@ -100,6 +101,7 @@ class _ConversationDetailsPageState
                     filter: _mediaFilter,
                     onFilterChanged: (filter) =>
                         setState(() => _mediaFilter = filter),
+                    onReply: (message) => context.pop(message),
                     onLoadMore: (cursor) async {
                       final result = await ref
                           .read(chatRepositoryProvider)
@@ -109,8 +111,8 @@ class _ConversationDetailsPageState
                             cursor: cursor,
                           );
                       return result.fold(
-                        (_) => <MessageEntity>[],
-                        (page) => page.messages,
+                        (failure) => throw StateError(failure.message),
+                        (page) => page,
                       );
                     },
                   ),
@@ -126,6 +128,7 @@ class _ConversationDetailsPageState
                         isMuted: conversation.preference?.muted ?? false,
                         onToggleMute: _toggleMute,
                         onTheme: _showThemeSheet,
+                        onReport: _reportConversation,
                         onBlock: _showBlockSheet,
                         onDelete: _showDeleteSheet,
                       ),
@@ -196,15 +199,26 @@ class _ConversationDetailsPageState
               ),
               onTap: () async {
                 Navigator.pop(ctx);
-                final targetId = ref
-                    .read(conversationMessagesProvider(widget.chatId))
-                    .otherUserId;
+                final conversation = ref.read(
+                  conversationMessagesProvider(widget.chatId),
+                );
+                final targetId = conversation.otherUserId;
                 if (targetId == null) return;
-                await ref.read(chatRepositoryProvider).blockUser(targetId);
-                if (mounted) {
-                  AppSnackbar.success(context, l10n(context).chatUserBlocked);
-                  context.pop();
-                }
+                final result = await ref
+                    .read(chatRepositoryProvider)
+                    .blockUser(targetId);
+                if (!mounted) return;
+                result.fold(
+                  (failure) => AppSnackbar.handleFailure(context, failure),
+                  (_) {
+                    ref.invalidate(chatsProvider);
+                    ref.invalidate(liveChatListProvider);
+                    ref.invalidate(archivedChatListProvider);
+                    ref.invalidate(blockedUsersProvider);
+                    AppSnackbar.success(context, l10n(context).chatUserBlocked);
+                    context.pop();
+                  },
+                );
               },
             ),
           ],
@@ -292,54 +306,69 @@ class _ConversationDetailsPageState
   }
 
   void _showThemeSheet() {
+    final conversation = ref.read(conversationMessagesProvider(widget.chatId));
     showBrutalistSheet(
       context: context,
-      title: l10n(context).chatConversationTheme.toUpperCase(),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _themeTile(
-              ctx,
-              Icons.circle,
-              AppColors.primaryContainer,
-              l10n(ctx).chatThemeDefault,
-              'DEFAULT',
-            ),
-            _themeTile(
-              ctx,
-              Icons.circle,
-              AppColors.info,
-              l10n(ctx).chatThemeOcean,
-              'OCEAN',
-            ),
-          ],
-        ),
+      title: l10n(context).chatThemeTitle,
+      builder: (_) => ChatThemePicker(
+        initialApiValue: conversation.preference?.theme ?? 'DEFAULT',
+        onSelected: (theme) async {
+          final result = await ref
+              .read(chatRepositoryProvider)
+              .setTheme(
+                widget.chatId,
+                _threadType(conversation),
+                theme.apiValue,
+              );
+          if (!mounted) return;
+          result.fold(
+            (failure) => AppSnackbar.handleFailure(context, failure),
+            (preference) => ref
+                .read(conversationMessagesProvider(widget.chatId).notifier)
+                .setPreference(preference),
+          );
+        },
       ),
     );
   }
 
-  Widget _themeTile(
-    BuildContext ctx,
-    IconData icon,
-    Color color,
-    String title,
-    String theme,
-  ) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(title),
-      onTap: () async {
-        Navigator.pop(ctx);
-        final conv = ref.read(conversationMessagesProvider(widget.chatId));
-        await ref
-            .read(chatRepositoryProvider)
-            .setTheme(widget.chatId, _threadType(conv), theme);
-        if (mounted) {
-          AppSnackbar.success(context, l10n(context).chatThemeUpdated);
-        }
-      },
+  Future<void> _reportConversation() async {
+    final strings = l10n(context);
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(strings.chatReport),
+        children: [
+          for (final (value, label) in [
+            ('SPAM', strings.profileReportSpam),
+            ('FRAUD', strings.profileReportFraud),
+            ('HARASSMENT', strings.profileReportHarassment),
+            ('FAKE_ACCOUNT', strings.profileReportFakeAccount),
+            ('IMPERSONATING', strings.profileReportImpersonation),
+            ('NUDITY', strings.profileReportNudity),
+            ('BLACKMAIL', strings.profileReportBlackmail),
+            ('FALSE_ADVERTISING', strings.profileReportFalseAdvertising),
+            ('OTHER', strings.profileReportOther),
+          ])
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, value),
+              child: Text(label),
+            ),
+        ],
+      ),
+    );
+    if (reason == null || !mounted) return;
+    final result = await ref
+        .read(reportChatUsecaseProvider)
+        .call(
+          targetId: widget.chatId,
+          targetType: 'CONVERSATION',
+          reason: reason,
+        );
+    if (!mounted) return;
+    result.fold(
+      (failure) => AppSnackbar.handleFailure(context, failure),
+      (_) => AppSnackbar.success(context, strings.profileReportSubmitted),
     );
   }
 
@@ -358,4 +387,13 @@ class _ConversationDetailsPageState
       await notifier.refresh();
     });
   }
+}
+
+bool conversationMetadataHasHttpUrl(Map<String, dynamic>? metadata) {
+  final url = metadata?['url'];
+  if (url is! String || url.trim().isEmpty) return false;
+  final uri = Uri.tryParse(url.trim());
+  return uri != null &&
+      (uri.scheme == 'http' || uri.scheme == 'https') &&
+      uri.host.isNotEmpty;
 }

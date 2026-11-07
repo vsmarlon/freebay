@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/create_composer_sheet.dart';
@@ -150,6 +152,11 @@ class _FeedPageState extends ConsumerState<FeedPage>
                         icon: Icons.article_outlined,
                         title: strings.feedNoPosts,
                         subtitle: strings.feedNoPostsBody,
+                        action: AppButton(
+                          label: strings.socialPeopleSearchTitle,
+                          size: AppButtonSize.compact,
+                          onPressed: () => context.push(AppRoutes.peopleSearch),
+                        ),
                       )
                     : EmptyState(
                         icon: Icons.search_off,

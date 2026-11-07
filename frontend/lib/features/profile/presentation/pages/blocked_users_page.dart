@@ -23,7 +23,6 @@ class BlockedUsersPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final strings = l10n(context);
-    final isDark = context.isDark;
     final blockedUsersAsync = ref.watch(blockedUsersProvider);
 
     return Scaffold(
@@ -44,29 +43,9 @@ class BlockedUsersPage extends ConsumerWidget {
               child: blockedUsersAsync.when(
                 data: (response) {
                   return response.users.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.block_outlined,
-                                size: 64,
-                                color: isDark
-                                    ? context.textSecondary
-                                    : context.textSecondary,
-                              ),
-                              Spacing.vMd,
-                              Text(
-                                strings.profileNoBlockedUsers,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: isDark
-                                      ? context.textSecondary
-                                      : context.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
+                      ? EmptyState(
+                          icon: Icons.block_outlined,
+                          title: strings.profileNoBlockedUsers,
                         )
                       : RefreshIndicator(
                           onRefresh: () async {
@@ -79,23 +58,17 @@ class BlockedUsersPage extends ConsumerWidget {
                               final user = response.users[index];
                               return _BlockedUserTile(
                                 user: user,
-                                isDark: isDark,
                                 onUnblock: () async {
                                   final service = ref.read(
                                     blockServiceProvider,
                                   );
                                   final result = await service.unblock(user.id);
+                                  if (!context.mounted) return;
                                   result.fold(
-                                    (failure) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(failure.message),
-                                          backgroundColor: AppColors.error,
-                                        ),
-                                      );
-                                    },
+                                    (failure) => AppSnackbar.handleFailure(
+                                      context,
+                                      failure,
+                                    ),
                                     (_) {
                                       ref.invalidate(blockedUsersProvider);
                                     },
@@ -123,14 +96,9 @@ class BlockedUsersPage extends ConsumerWidget {
 
 class _BlockedUserTile extends StatelessWidget {
   final BlockListUser user;
-  final bool isDark;
   final VoidCallback onUnblock;
 
-  const _BlockedUserTile({
-    required this.user,
-    required this.isDark,
-    required this.onUnblock,
-  });
+  const _BlockedUserTile({required this.user, required this.onUnblock});
 
   @override
   Widget build(BuildContext context) {
@@ -175,20 +143,22 @@ class _BlockedUserTile extends StatelessWidget {
               ],
             ),
           ),
-          InkWell(
-            onTap: onUnblock,
-            child: Container(
-              height: 36,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.primaryContainer),
-              ),
-              child: Center(
-                child: Text(
-                  l10n(context).profileUnblock,
-                  style: const TextStyle(
-                    color: AppColors.primaryContainer,
-                    fontWeight: FontWeight.w700,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            child: InkWell(
+              onTap: onUnblock,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.primaryContainer),
+                ),
+                child: Center(
+                  child: Text(
+                    l10n(context).profileUnblock,
+                    style: const TextStyle(
+                      color: AppColors.primaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),

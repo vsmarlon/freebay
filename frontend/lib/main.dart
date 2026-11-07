@@ -13,24 +13,22 @@ import 'shared/services/error_reporter.dart';
 import 'shared/services/notification_service.dart';
 import 'core/router/app_link.dart';
 import 'shared/services/storage_service.dart';
-import 'shared/services/session_timeout.dart';
 import 'shared/services/payment_sdk_service.dart';
 import 'shared/services/auth_session_coordinator.dart';
 import 'shared/l10n/generated/app_localizations.dart';
 import 'shared/l10n/app_locale_resolution.dart';
 import 'shared/l10n/app_localizations_context.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
+import 'features/auth/presentation/widgets/session_lock_gate.dart';
 import 'features/auth/data/entities/user_entity.dart';
 import 'features/notifications/presentation/providers/notifications_provider.dart';
+import 'shared/providers/app_locale_preference_provider.dart';
+import 'shared/providers/session_lock_preference_provider.dart';
 
 void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
-    ErrorWidget.builder = (details) => AppErrorWidget(
-      details: details,
-      action: _canPopRouter() ? AppErrorAction.back : AppErrorAction.home,
-      onRecover: _recoverFromError,
-    );
+    ErrorWidget.builder = (_) => const SizedBox.shrink();
 
     FlutterError.onError = (details) {
       if (!ErrorReporter.isEnabled) {
@@ -71,26 +69,6 @@ Future<void> _bootstrap() async {
   StorageService.enableCacheStore();
   runApp(const ProviderScope(child: FreeBayApp()));
 }
-
-Future<void> _recoverFromError() async {
-  final navigatorContext = appRouter.configuration.navigatorKey.currentContext;
-  if (navigatorContext?.mounted == true) {
-    try {
-      if (await appRouter.routerDelegate.popRoute()) return;
-    } catch (error, stack) {
-      ErrorReporter.report('error-navigation-recovery', error, stack);
-    }
-    runApp(ProviderScope(key: UniqueKey(), child: const FreeBayApp()));
-  } else {
-    await _bootstrap();
-  }
-  appRouter.go(AppRoutes.feed);
-}
-
-bool _canPopRouter() =>
-    appRouter.configuration.navigatorKey.currentContext?.mounted == true &&
-    appRouter.routerDelegate.currentConfiguration.matches.isNotEmpty &&
-    appRouter.canPop();
 
 void _showStartupFailure(Object error, StackTrace stack) {
   runApp(
@@ -135,8 +113,8 @@ class FreeBayApp extends ConsumerStatefulWidget {
 
 class _FreeBayAppState extends ConsumerState<FreeBayApp>
     with WidgetsBindingObserver {
-  late final SessionTimeout _sessionTimeout;
   bool _expiring = false;
+  bool _externalActivity = false;
   String? _pendingNotificationPath;
 
   @override
@@ -167,11 +145,6 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_initializeDeferredServices());
     });
-    _sessionTimeout = SessionTimeout(
-      onExpired: _expireSession,
-      isAuthenticated: () => ref.read(authControllerProvider).value != null,
-    )..start();
-
     HttpClient.onAuthLost = _expireSession;
 
     ref.listenManual(authControllerProvider, (previous, next) {
@@ -181,7 +154,6 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
         unawaited(StorageService.clearUserCache(userId: previousUser.id));
       }
       if (user == null || previous?.value?.id == user.id) return;
-      _sessionTimeout.touch();
       unawaited(_registerPushToken());
     });
   }
@@ -193,12 +165,16 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
     NotificationService().onNotificationTapped = null;
     NotificationService().onNotificationReceived = null;
     NotificationService().shouldShowNotification = null;
-    _sessionTimeout.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final externalActivity =
+        state == AppLifecycleState.paused || state == AppLifecycleState.hidden;
+    if (_externalActivity != externalActivity && mounted) {
+      setState(() => _externalActivity = externalActivity);
+    }
     if (state == AppLifecycleState.resumed) unawaited(_registerPushToken());
   }
 
@@ -224,49 +200,42 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
       await WidgetsBinding.instance.endOfFrame;
       final interrupted = appRouter.routeInformationProvider.value.uri
           .toString();
-      final biometricAvailable = await _biometricLoginAvailable();
+      final expired = ref.read(authControllerProvider.notifier).expireSession();
       final context = appRouter.configuration.navigatorKey.currentContext;
       if (context == null || !context.mounted) {
-        await ref.read(authControllerProvider.notifier).expireSession();
+        await expired;
         return;
       }
 
-      final dialog = AppDialog.showError<void>(
+      await AppDialog.showError<void>(
         context: context,
         title: l10n(context).authSessionExpired,
         subtitle: l10n(context).authSessionExpiredBody,
-        okText: biometricAvailable
-            ? l10n(context).authUseBiometrics
-            : l10n(context).authLogin,
-        onOk: () => _reauthenticateAfterExpiry(interrupted, biometricAvailable),
-        dismissText: l10n(context).authContinueAsGuest,
-        onDismiss: () => appRouter.go(AppRoutes.feed),
+        okText: l10n(context).authLogin,
+        onOk: () async {
+          await expired;
+          await _reauthenticateAfterExpiry(interrupted);
+        },
         barrierDismissible: false,
         preventBack: true,
       );
-
-      await ref.read(authControllerProvider.notifier).expireSession();
-      await StorageService.clearLastActiveAt();
-      await dialog;
+      await expired;
     } finally {
       _expiring = false;
     }
   }
 
-  Future<bool> _biometricLoginAvailable() async {
-    final service = ref.read(biometryServiceProvider);
-    return await service.isAvailable() &&
-        await service.isEnabled() &&
-        await service.hasCredentials();
-  }
-
-  Future<void> _reauthenticateAfterExpiry(
-    String interrupted,
-    bool biometricAvailable,
-  ) async {
-    if (biometricAvailable &&
+  /// The server refresh already failed, so the stored pair is dead: a biometric
+  /// login is the only silent recovery left.
+  Future<void> _reauthenticateAfterExpiry(String interrupted) async {
+    final biometry = ref.read(biometryServiceProvider);
+    final biometricLoginAvailable =
+        await biometry.isEnabled() &&
+        await biometry.isAvailable() &&
+        await biometry.hasCredentials();
+    if (biometricLoginAvailable &&
         await ref.read(authControllerProvider.notifier).loginWithBiometrics()) {
-      appRouter.go(resolvePostAuthDestination(interrupted));
+      navigatePostAuthDestination(interrupted);
       return;
     }
     final destination = resolvePostAuthDestination(interrupted);
@@ -282,19 +251,13 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
           final token = await NotificationService().getToken();
           if (token == null || token.isEmpty) return;
           final installationId = await StorageService.getPushInstallationId();
-          final authToken = await StorageService.getToken();
           if (!mounted ||
-              authToken == null ||
               ref.read(authControllerProvider).value?.id != userId) {
             return;
           }
           final result = await ref
               .read(notificationRepositoryProvider)
-              .updateFcmToken(
-                token,
-                installationId: installationId,
-                authToken: authToken,
-              );
+              .updateFcmToken(token, installationId: installationId);
           result.fold(
             (failure) => ErrorReporter.report('push-token', failure),
             (_) {},
@@ -310,6 +273,9 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
       routerRefreshNotifier.value++;
     });
     final themeMode = ref.watch(themeModeProvider);
+    final localePreference = ref.watch(appLocalePreferenceProvider);
+    final lockMinutes = ref.watch(sessionLockPreferenceProvider);
+    final accountId = ref.watch(authControllerProvider).value?.id;
     final isDark = themeMode == ThemeMode.system
         ? WidgetsBinding.instance.platformDispatcher.platformBrightness ==
               Brightness.dark
@@ -321,18 +287,59 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
+      locale: switch (localePreference) {
+        'pt_BR' => const Locale('pt', 'BR'),
+        'en' => const Locale('en'),
+        _ => null,
+      },
       routerConfig: appRouter,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       localeListResolutionCallback: (locales, _) => resolveAppLocale(locales),
       scrollBehavior: const _FreeBayScrollBehavior(),
-      builder: (context, child) => Listener(
-        onPointerDown: (_) => _sessionTimeout.touch(),
-        child: DarkModeInherited(
+      builder: (context, child) {
+        final location = appRouter.routeInformationProvider.value.uri;
+        final isPublicRoute = const {
+          AppRoutes.splash,
+          AppRoutes.login,
+          AppRoutes.register,
+          AppRoutes.recoverPassword,
+          AppRoutes.resetPassword,
+          AppRoutes.onboarding,
+          AppRoutes.welcome,
+          AppRoutes.completeProfile,
+        }.contains(location.path);
+        return DarkModeInherited(
           isDarkMode: isDark,
-          child: child ?? const SizedBox.shrink(),
-        ),
-      ),
+          child: SessionLockGate(
+            accountId: accountId,
+            lockAfter: lockMinutes == 0 ? null : Duration(minutes: lockMinutes),
+            isPublicRoute: isPublicRoute,
+            isExternalActivity: _externalActivity,
+            onReauthenticate: (id) => ref
+                .read(authControllerProvider.notifier)
+                .reauthenticateSessionWithBiometrics(id),
+            onUsePassword: () {
+              final interrupted = location.toString();
+              final destination = resolvePostAuthDestination(interrupted);
+              unawaited(
+                ref.read(authControllerProvider.notifier).expireSession().then((
+                  _,
+                ) {
+                  if (!mounted) return;
+                  appRouter.go(
+                    '${AppRoutes.login}?from=${Uri.encodeComponent(destination)}',
+                  );
+                }),
+              );
+            },
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
+        );
+      },
     );
   }
 }

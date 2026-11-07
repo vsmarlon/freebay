@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:freebay/shared/config/app_config.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/events/chat_event.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
@@ -97,6 +98,7 @@ class ChatSocketService {
   int _generation = 0;
   bool _desiredConnection = false;
   bool _disposed = false;
+  bool _recoveringAuth = false;
 
   Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
   Stream<ChatEvent> get events => _eventsController.stream;
@@ -185,16 +187,15 @@ class ChatSocketService {
       })
       ..onConnectError((error) {
         if (!_isCurrent(socket, generation)) return;
-        if (error is Map &&
-            error['message']?.toString().contains('jwt') == true) {
-          disconnect();
+        if (error.toString().toLowerCase().contains('jwt')) {
+          _recoverExpiredToken(socket, generation);
         }
       })
       ..onDisconnect((reason) {
         if (!_isCurrent(socket, generation)) return;
         if ((reason is String && reason.contains('jwt')) ||
             reason == 'io server disconnect') {
-          disconnect();
+          _recoverExpiredToken(socket, generation);
         }
       })
       ..on('new_message', (data) {
@@ -276,6 +277,24 @@ class ChatSocketService {
         final userId = data['userId'] as String?;
         if (userId != null) _eventsController.add(UserOfflineEvent(userId));
       });
+  }
+
+  Future<void> _recoverExpiredToken(
+    ChatSocketClient socket,
+    int generation,
+  ) async {
+    if (_recoveringAuth || !_isCurrent(socket, generation)) return;
+    _recoveringAuth = true;
+    try {
+      if (await HttpClient.refreshCurrentSession() &&
+          _isCurrent(socket, generation)) {
+        await reconnectWithFreshToken();
+      } else if (_isCurrent(socket, generation)) {
+        disconnect();
+      }
+    } finally {
+      _recoveringAuth = false;
+    }
   }
 
   void _onConnectivityChanged(List<ConnectivityResult> results) {

@@ -6,6 +6,7 @@ import 'package:freebay/features/auth/presentation/pages/login_page.dart';
 import 'package:freebay/features/auth/presentation/pages/register_page.dart';
 import 'package:freebay/features/auth/presentation/pages/complete_profile_page.dart';
 import 'package:freebay/features/auth/presentation/pages/password_recovery_page.dart';
+import 'package:freebay/features/auth/presentation/pages/recovery_code_page.dart';
 import 'package:freebay/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:freebay/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:freebay/features/onboarding/presentation/pages/welcome_setup_page.dart';
@@ -27,6 +28,11 @@ final List<RouteBase> authRoutes = [
   appCupertinoRoute(
     AppRoutes.recoverPassword,
     (context, state) => const PasswordRecoveryPage(),
+  ),
+  appCupertinoRoute(
+    AppRoutes.verifyResetCode,
+    (context, state) =>
+        RecoveryCodePage(email: state.uri.queryParameters['email'] ?? ''),
   ),
   appCupertinoRoute(
     AppRoutes.resetPassword,

@@ -180,6 +180,10 @@ class _AppShellState extends State<AppShell>
     if (!_pageController.hasClients) return;
     final width = MediaQuery.sizeOf(context).width;
     final delta = details.primaryDelta ?? 0;
+    final neighborIndex = _dragStartPage.round() + (delta < 0 ? 1 : -1);
+    if (neighborIndex >= 0 && neighborIndex < widget.branches.length) {
+      if (_visitedTabs.add(neighborIndex)) setState(() {});
+    }
     final pixels = _pageController.position.pixels;
     if (_drawer.value > 0 || (pixels <= 0 && delta > 0)) {
       _rememberDrawer();
@@ -220,10 +224,22 @@ class _AppShellState extends State<AppShell>
 
   BrutalistFab? _fabFor(BuildContext context, int selectedIndex) {
     switch (selectedIndex) {
+      case 0:
+        return BrutalistFab(
+          icon: Icons.edit_outlined,
+          semanticLabel: l10n(context).feedCreatePost,
+          onTap: () => context.push(AppRoutes.createPost),
+        );
       case 1:
-        return BrutalistFab(onTap: () => context.push(AppRoutes.createProduct));
+        return BrutalistFab(
+          semanticLabel: l10n(context).productCreateListing,
+          onTap: () => context.push(AppRoutes.createProduct),
+        );
       case 3:
-        return BrutalistFab(onTap: () => context.push(AppRoutes.chatNew));
+        return BrutalistFab(
+          semanticLabel: l10n(context).chatNewTitle,
+          onTap: () => context.push(AppRoutes.chatNew),
+        );
       default:
         return null;
     }

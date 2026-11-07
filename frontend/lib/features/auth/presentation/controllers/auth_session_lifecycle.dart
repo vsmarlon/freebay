@@ -15,6 +15,17 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
       if (!_isCurrentAuthAttempt(attempt)) return;
       ref.read(hasSeenOnboardingProvider.notifier).set(hasSeenOnboarding);
 
+      // Biometry wins over the rememberMe flag: registration used to store
+      // rememberMe=false, and a biometric user must still be asked to unlock.
+      final biometryEnabled = await ref
+          .read(biometryServiceProvider)
+          .isEnabled();
+      if (!_isCurrentAuthAttempt(attempt)) return;
+      if (biometryEnabled) {
+        await _tryBiometricLogin(attempt);
+        return;
+      }
+
       final rememberMe = await StorageService.getRememberMe();
       if (!_isCurrentAuthAttempt(attempt)) return;
       if (!rememberMe) {
@@ -24,16 +35,6 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
         return;
       }
 
-      final biometryEnabled = await ref
-          .read(biometryServiceProvider)
-          .isEnabled();
-      if (!_isCurrentAuthAttempt(attempt)) return;
-      if (biometryEnabled) {
-        await _clearTokensForAttempt(attempt);
-        if (!_isCurrentAuthAttempt(attempt)) return;
-        await _tryBiometricLogin(attempt);
-        return;
-      }
       final token = await StorageService.getToken();
       if (!_isCurrentAuthAttempt(attempt)) return;
       if (token == null) {
@@ -50,8 +51,10 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
       await result.fold(
         (failure) async {
           if (!_isCurrentAuthAttempt(attempt)) return;
-          await _clearTokensForAttempt(attempt);
-          if (!_isCurrentAuthAttempt(attempt)) return;
+          if (failure is UnauthorizedFailure || failure is NotFoundFailure) {
+            await _clearTokensForAttempt(attempt);
+            if (!_isCurrentAuthAttempt(attempt)) return;
+          }
           state = const AsyncValue.data(null);
         },
         (user) async {
@@ -60,8 +63,6 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
         },
       );
     } catch (_) {
-      if (!_isCurrentAuthAttempt(attempt)) return;
-      await _clearTokensForAttempt(attempt);
       if (!_isCurrentAuthAttempt(attempt)) return;
       state = const AsyncValue.data(null);
     } finally {
@@ -78,7 +79,12 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
     if (!_isCurrentAuthAttempt(attempt)) return;
     await result.fold<Future<void>>((failure) async {
       HttpClient.suspendRefresh();
-      await _clearTokensForAttempt(attempt);
+      // Only a definitive rejection invalidates the stored pair; an offline or
+      // transient failure must keep the refresh token so the next start can
+      // retry biometrics instead of falling back to a password login.
+      if (failure is UnauthorizedFailure) {
+        await _clearTokensForAttempt(attempt);
+      }
       if (_isCurrentAuthAttempt(attempt)) state = const AsyncValue.data(null);
     }, (user) => _establishAuthenticatedSession(user, attempt: attempt));
   }
@@ -163,10 +169,22 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
       if (!ref.mounted) return;
       final result = await ref.read(authRepositoryProvider).logout();
 
-      await result.fold((failure) async {
-        await _clearLocalAuthState(clearSavedEmail: !rememberMe);
-        ErrorReporter.report('logout', failure);
-      }, (_) async => _clearLocalAuthState(clearSavedEmail: !rememberMe));
+      await result.fold(
+        (failure) async {
+          // Biometria sobrevive ao logout: o próximo start volta a pedir biometria.
+          await _clearLocalAuthState(
+            clearSavedEmail: !rememberMe,
+            clearBiometric: false,
+          );
+          ErrorReporter.report('logout', failure);
+        },
+        (_) async {
+          await _clearLocalAuthState(
+            clearSavedEmail: !rememberMe,
+            clearBiometric: false,
+          );
+        },
+      );
     });
   }
 

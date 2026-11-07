@@ -2,6 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:freebay/shared/config/app_config.dart';
 
+String safeErrorSummary(String context, Object error) {
+  final label = context.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_');
+  final safeContext = label.substring(0, label.length > 40 ? 40 : label.length);
+  return '[$safeContext] ${error.runtimeType}';
+}
+
 class ErrorReporter {
   const ErrorReporter._();
 
@@ -18,12 +24,19 @@ class ErrorReporter {
   }
 
   static void report(String context, Object error, [StackTrace? stackTrace]) {
-    if (kDebugMode) debugPrint('[$context] $error');
+    final summary = safeErrorSummary(context, error);
+    if (kDebugMode) {
+      debugPrint('$summary: $error');
+      if (stackTrace != null) debugPrintStack(stackTrace: stackTrace);
+    }
     if (!isEnabled) return;
     Sentry.captureException(
-      error,
-      stackTrace: stackTrace,
-      withScope: (scope) => scope.setTag('boot_stage', context),
+      StateError(error.runtimeType.toString()),
+      // The original error and stack may contain request or account data.
+      withScope: (scope) => scope.setTag(
+        'boot_stage',
+        summary.substring(1, summary.indexOf(']')),
+      ),
     );
   }
 }
