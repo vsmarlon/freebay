@@ -58,15 +58,18 @@ const product = {
 const envelope = (data: unknown) => ({ data });
 const send = (route: Route, data: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(envelope(data)) });
 
+// Base URL of the app under test. Defaults to 5173; override with E2E_BASE_URL to run the suite against another instance (e.g. 5174) alongside a dev server.
+const baseUrl = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:5173';
+const baseOrigin = new URL(baseUrl).origin;
 export async function installBrowserFixture(page: Page, state = newBrowserFixture()) {
-  await page.context().addCookies([{ name: 'freebay_web_refresh', value: 'synthetic-refresh-cookie', url: 'http://127.0.0.1:5173', httpOnly: true, sameSite: 'Lax' }]);
+  await page.context().addCookies([{ name: 'freebay_web_refresh', value: 'synthetic-refresh-cookie', url: baseUrl, httpOnly: true, sameSite: 'Lax' }]);
   await page.route('**/*', async (route) => {
     const request = route.request(); const url = new URL(request.url());
     if (url.hostname === 'checkout.stripe.com') return route.fulfill({ status: 200, contentType: 'text/html', body: '<main>Synthetic hosted checkout fixture; no payment was attempted.</main>' });
-    if (url.origin !== 'http://127.0.0.1:5173') return route.abort();
+    if (url.origin !== baseOrigin) return route.abort();
     const path = url.pathname; const method = request.method();
     if (!path.startsWith('/auth/') && !path.startsWith('/users') && !path.startsWith('/products') && !path.startsWith('/categories') && !path.startsWith('/favorites') && !path.startsWith('/cart') && !path.startsWith('/social') && !path.startsWith('/stories') && !path.startsWith('/chat') && !path.startsWith('/notifications') && !path.startsWith('/media')) return route.continue();
-    let body: unknown;
+    let body: { targetUserId?: string; productId?: string } | unknown;
     if (request.postData()) { try { body = request.postDataJSON(); } catch { body = '[multipart]'; } }
     const safeBody = body && typeof body === 'object' ? Object.fromEntries(Object.entries(body).map(([key, value]) => [key, ['password', 'token', 'proof', 'openingKey'].includes(key) ? '[redacted]' : value])) : body;
     const stepUpBody = body && typeof body === 'object' && 'purpose' in body && typeof body.purpose === 'string' ? body.purpose : undefined;
@@ -108,7 +111,7 @@ export async function installBrowserFixture(page: Page, state = newBrowserFixtur
     if (path === '/social/posts/70000000-0000-4000-8000-000000000007/unsave' && method === 'PATCH') { state.savedPost = false; return send(route, { active: false }); }
     if (path === '/stories/user/20000000-0000-4000-8000-000000000002' && method === 'GET') return send(route, [1, 2].map((number) => ({ id: `story-fixture-${number}`, userId: '20000000-0000-4000-8000-000000000002', imageUrl: `/media/story/story-fixture-${number}.png`, mediaType: 'IMAGE', audience: 'EVERYONE', caption: `Story ${number} loaded`, textBlocks: [], createdAt: '2026-10-07T10:00:0${number}.000Z', expiresAt: '2026-10-08T10:00:00.000Z', user: { id: '20000000-0000-4000-8000-000000000002', displayName: 'Synthetic Story Author', avatarUrl: null } })));
     if (path.startsWith('/stories/story-fixture-') && path.endsWith('/view') && method === 'POST') { state.viewedStories.add(path.split('/')[2]); return send(route, { viewed: true }); }
-    if (path === '/chat/conversations' && method === 'POST') { state.productConversationStarts++; return send(route, { conversationId: '40000000-0000-4000-8000-000000000004', status: 'ACCEPTED' }); }
+    if (path === '/chat/conversations' && method === 'POST') { state.productConversationStarts++; const seller = (product && body && typeof body === 'object' && (body as { productId?: string }).productId === product.id) ? product.seller : null; return send(route, { conversationId: '40000000-0000-4000-8000-000000000004', status: 'ACCEPTED', threadType: 'DIRECT', otherUser: { id: (body && typeof body === 'object' ? (body as { targetUserId?: string }).targetUserId : undefined) ?? userIds[1], displayName: seller?.displayName ?? 'Synthetic Sender', avatarUrl: null }, product: seller ? { id: product.id, title: product.title, imageUrl: null, status: 'ACTIVE' } : null }); }
     if (path === '/chat/conversations' && method === 'GET') { const otherUser = { id: userIds[1], displayName: state.productConversationStarts ? 'Pessoa de teste' : 'Synthetic Sender' }; return send(route, { items: [{ id: '40000000-0000-4000-8000-000000000004', otherUser, threadType: 'DIRECT', status: 'ACCEPTED', lastMessage: state.messages.at(-1), ...(state.productConversationStarts ? { product: { id: productId, title: product.title } } : {}) }, { id: '40000000-0000-4000-8000-000000000008', otherUser: { id: userIds[1], displayName: 'Synthetic Forward Target' }, threadType: 'DIRECT', status: 'ACCEPTED', lastMessage: null }], nextCursor: null }); }
     if (path === '/chat/conversations/40000000-0000-4000-8000-000000000004' && method === 'GET') { const otherUser = { id: userIds[1], displayName: state.productConversationStarts ? 'Pessoa de teste' : 'Synthetic Sender' }; const messages = state.messages.map((message) => ({ attachmentUrl: null, metadata: null, replyToId: null, replyTo: null, deletedAt: null, readAt: null, deliveredAt: null, viewOnce: false, ...message })); return send(route, { messages, hasMore: false, nextCursor: null, threadType: 'DIRECT', otherUserId: otherUser.id, otherUser: { ...otherUser, avatarUrl: null }, preference: { isArchived: state.isArchived, theme: 'DEFAULT', backgroundUrl: null, muted: state.muted } }); }
     if (path === '/chat/conversations/40000000-0000-4000-8000-000000000004/messages/30000000-0000-4000-8000-000000000013/view-once/open' && method === 'POST') {

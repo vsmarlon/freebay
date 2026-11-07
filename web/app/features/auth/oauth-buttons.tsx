@@ -145,10 +145,13 @@ export function OAuthButtons({ returnTo }: { returnTo?: string }) {
       setPending(false);
     }
   }
+  const googleConfigured = Boolean(googleClientId);
+  const appleConfigured = Boolean(appleClientId && appleRedirectUri);
+  if (!googleConfigured && !appleConfigured) return null;
   return <div className="mt-6 grid gap-3">
     <div className="relative text-center text-xs text-muted"><span className="bg-surface px-3">{t('auth.or')}</span></div>
-    {googleClientId ? <><div id="google-signin-control" className="min-h-11 w-full" />{!googleReady ? <AuthButton type="button" disabled={pending} onClick={() => void google()}>{t('auth.google')}</AuthButton> : null}</> : <p className="text-sm text-muted">{t('auth.provider.unavailable')}</p>}
-    {appleClientId && appleRedirectUri ? <AuthButton type="button" disabled={pending} onClick={() => void apple()}>{t('auth.apple')}</AuthButton> : <p className="text-sm text-muted">{t('auth.provider.unavailable')}</p>}
+    {googleConfigured ? <><div id="google-signin-control" className="min-h-11 w-full" />{!googleReady ? <AuthButton type="button" disabled={pending} onClick={() => void google()}>{t('auth.google')}</AuthButton> : null}</> : null}
+    {appleConfigured ? <AuthButton type="button" disabled={pending} onClick={() => void apple()}>{t('auth.apple')}</AuthButton> : null}
     {error ? <AuthMessage error>{error}</AuthMessage> : null}
   </div>;
 }

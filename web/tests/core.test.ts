@@ -3,8 +3,21 @@ import { parseMoney, formatMoney } from '../app/core/money';
 import { appPath, pathsFor, safeLocalizedReturnTo } from '../app/core/routes';
 import { api, clearAccessToken } from '../app/core/api';
 import { localizedCallbackLocation } from '../app/routes/legacy-callback';
-import { completeOnboarding, completeWelcome, hasCompletedOnboarding, hasSeenWelcome } from '../app/core/session';
+import { completeWelcome, hasSeenWelcome } from '../app/core/session';
 import { boundedImageSize, editedImageFile, rotatedImageSize, supportedEditorFile } from '../app/components/image-editor';
+import { translator } from '../app/core/locale';
+
+describe('locale translation fallback', () => {
+  it('falls back from a feature catalog to the shared core catalog instead of rendering raw keys', () => {
+    const t = translator({ en: { 'feature.key': 'Feature text' }, 'pt-BR': { 'feature.key': 'Texto do recurso' } }, 'en');
+    expect(t('feature.key')).toBe('Feature text');
+    expect(t('common.search')).toBe('Search');
+  });
+  it('returns the raw key only when no catalog defines it', () => {
+    const t = translator({ en: {}, 'pt-BR': {} }, 'en');
+    expect(t('absent.key')).toBe('absent.key');
+  });
+});
 
 describe('money boundaries', () => {
   it('parses locale punctuation into exact integer cents', () => {
@@ -25,7 +38,6 @@ describe('money boundaries', () => {
 describe('locale routes', () => {
   it('prefixes routes and encodes dynamic identifiers', () => {
     expect(appPath('pt-BR', 'products/a b')).toBe('/pt-BR/products/a b');
-    expect(pathsFor.onboarding).toBe('onboarding');
     expect(pathsFor.welcome).toBe('welcome');
     expect(pathsFor.peopleSearch).toBe('search/people');
     expect(pathsFor.myPosts).toBe('posts/mine');
@@ -47,12 +59,9 @@ describe('auth return destinations and first-run preferences', () => {
       expect(safeLocalizedReturnTo(unsafe, 'en')).toBe('/en/feed');
     }
   });
-  it('persists onboarding once and remembers welcome completion independently per account', () => {
+  it('remembers welcome completion independently per account', () => {
     const saved = new Map<string, string>();
     vi.stubGlobal('localStorage', { getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => { saved.set(key, value); } });
-    expect(hasCompletedOnboarding()).toBe(false);
-    completeOnboarding();
-    expect(hasCompletedOnboarding()).toBe(true);
     expect(hasSeenWelcome('account-a')).toBe(false);
     completeWelcome('account-a');
     expect(hasSeenWelcome('account-a')).toBe(true);

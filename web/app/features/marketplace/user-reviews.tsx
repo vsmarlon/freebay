@@ -15,7 +15,7 @@ type ReviewPage = { reviews: Array<{ id: string; score: number; comment: string 
 
 export default function UserReviewsRoute() {
   const { id = '' } = useParams();
-  const { path } = useLocale(); const { t } = useI18n(catalogs);
+  const { locale, path } = useLocale(); const { t } = useI18n(catalogs);
   const [type, setType] = useState<ReviewType>(''); const [offset, setOffset] = useState(0);
   const query = useQuery({ queryKey: ['public', 'reviews', id, type, offset], enabled: Boolean(id), queryFn: () => {
     const params = new URLSearchParams({ offset: String(offset), limit: '20' }); if (type) params.set('type', type);
@@ -27,9 +27,9 @@ export default function UserReviewsRoute() {
       <option value="">{t('reviewList.all')}</option><option value="BUYER_REVIEWING_SELLER">{t('reviewList.seller')}</option><option value="SELLER_REVIEWING_BUYER">{t('reviewList.buyer')}</option>
     </Select>
     {query.isPending ? <Loading label={t('common.loading')} /> : query.isError ? <ErrorState error={query.error} onRetry={() => void query.refetch()} /> : query.data.reviews.length ? <div className="commerce-list">{query.data.reviews.map((review) => <Surface key={review.id}>
-      <p>{review.reviewer.displayName}{review.reviewer.isVerified ? ' ✓' : ''} · {review.score}/5 · {new Date(review.createdAt).toLocaleDateString()}</p>
+      <p>{review.reviewer.displayName}{review.reviewer.isVerified ? ' ✓' : ''} · {review.score}/5 · {new Date(review.createdAt).toLocaleDateString(locale)}</p>
       {review.comment && <p>{review.comment}</p>}
-      {review.images.map((image) => <img key={image.id} src={mediaUrl(image.url)} alt="" loading="lazy" />)}
+      {review.images?.map((image) => <img key={image.id} src={mediaUrl(image.url)} alt="" loading="lazy" />)}
       <small>{review.type === 'BUYER_REVIEWING_SELLER' ? t('reviewList.seller') : t('reviewList.buyer')}</small>
     </Surface>)}</div> : <Empty title={t('reviewList.empty')} />}
     {query.data && <div className="commerce-actions"><Button variant="secondary" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - query.data!.limit))}>{t('reviewList.previous')}</Button><Button variant="secondary" disabled={offset + query.data.reviews.length >= query.data.total} onClick={() => setOffset(offset + query.data!.limit)}>{t('reviewList.next')}</Button></div>}

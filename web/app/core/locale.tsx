@@ -9,4 +9,5 @@ const LocaleContext = createContext<LocaleValue>({ locale: 'pt-BR', path: (relat
 export function LocaleProvider({ locale, children }: React.PropsWithChildren<{ locale: Locale }>) { return <LocaleContext.Provider value={{ locale, path: (relative = '') => `/${locale}${relative ? `/${relative.replace(/^\/+/, '')}` : ''}` }}>{children}</LocaleContext.Provider>; }
 export function useLocale() { return useContext(LocaleContext); }
 const base: Catalogs = { en, 'pt-BR': pt };
-export function useI18n(catalogs: Catalogs = base) { const { locale, path } = useLocale(); return { locale, path, t: (key: string, values: Record<string, string | number> = {}) => { let text = catalogs[locale][key] ?? key; for (const [name, value] of Object.entries(values)) text = text.replaceAll(`{${name}}`, String(value)); return text; } }; }
+export function translator(catalogs: Catalogs, locale: Locale) { const t = (key: string, values: Record<string, string | number> = {}) => { let text = catalogs[locale][key] ?? base[locale][key] ?? key; for (const [name, value] of Object.entries(values)) text = text.replaceAll(`{${name}}`, String(value)); return text; }; return t; }
+export function useI18n(catalogs: Catalogs = base) { const { locale, path } = useLocale(); return { locale, path, t: translator(catalogs, locale) }; }

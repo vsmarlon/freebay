@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { api } from '../../core/api';
 import { useSession } from '../../core/session';
@@ -18,7 +18,8 @@ export default function CompleteProfilePage() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
   const returnTo = safeLocalizedReturnTo(new URLSearchParams(location.search).get('returnTo'), locale, path('feed'));
-  useEffect(() => {
+  const checkRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
     setUsernameCheck(null);
     if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) return;
     let active = true;
@@ -44,6 +45,7 @@ export default function CompleteProfilePage() {
     }
   }
   return <AuthFrame title={t('auth.profile.title')} description={t('auth.login.description')}>
+    <div ref={checkRef} className="sr-only" aria-hidden />
     <form className="grid gap-5" onSubmit={submit}>
       <AuthInput label={t('auth.username')} required minLength={3} maxLength={20} pattern="[A-Za-z0-9_]{3,20}" autoComplete="username" value={username} onChange={(event) => setUsername(event.currentTarget.value)} />
       {usernameCheck ? <p role="status" className="text-sm text-muted">{usernameCheck.available ? t('auth.username.available') : t('auth.username.unavailable')}{usernameCheck.suggestions.length ? ` ${t('auth.username.suggestions')}: ${usernameCheck.suggestions.join(', ')}` : ''}</p> : null}

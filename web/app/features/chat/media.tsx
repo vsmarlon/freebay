@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { api } from '../../core/api';
 import { useSession } from '../../core/session';
 import { useI18n } from '../../core/locale';
@@ -33,42 +33,58 @@ export function AuthenticatedMedia({ src, type, alt, enabled = true, conversatio
   const [openingKey, setOpeningKey] = useState<string | null>(null);
   const [mediaSrc, setMediaSrc] = useState(src);
   const active = useRef(true);
+  const pendingCloseRef = useRef<{ key: string; cancelled: boolean } | null>(null);
+  const detachFetchRef = useRef<(() => void) | undefined>(undefined);
 
-  useEffect(() => {
+  const mediaRef = useCallback((node: HTMLElement | null) => {
     active.current = true;
-    return () => { active.current = false; };
-  }, []);
-
-  useEffect(() => {
-    if (!enabled || !src) return;
-    const explicitlyOpenedForCurrentUser = openedForUser === user?.id;
-    if (!shouldFetchMedia(isViewOnce, explicitlyOpenedForCurrentUser)) {
-      setUrl(null);
-      if (isViewOnce && opened) { setOpened(false); setError(false); }
-      return;
+    let cleanupFetch: (() => void) | undefined;
+    if (pendingCloseRef.current && node) {
+      // Re-attach is not an unmount: cancel the pending close instead of firing it.
+      pendingCloseRef.current.cancelled = true;
+      pendingCloseRef.current = null;
     }
-    const path = mediaPath(isViewOnce ? mediaSrc : src);
-    if (!path) { setError(true); return; }
-    const controller = new AbortController();
-    let objectUrl: string | null = null;
-    setError(false);
-    void api.blob(path, { signal: controller.signal, ...(isViewOnce && openingKey ? { headers: { 'x-view-once-opening': openingKey } } : {}) }).then((blob) => {
-      if (controller.signal.aborted) return;
-      objectUrl = URL.createObjectURL(blob);
-      setUrl(objectUrl);
-    }).catch(() => { if (!controller.signal.aborted) setError(true); });
-    return () => {
-      controller.abort();
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-      setUrl(null);
-    };
-  }, [src, mediaSrc, enabled, opened, openedForUser, user?.id, isViewOnce, openingKey, loadAttempt]);
 
-  useEffect(() => {
-    if (!openingKey || !conversationId || !viewOnceMessage) return;
-    const key = openingKey;
-    return () => { void chatRepository.closeViewOnce(conversationId, viewOnceMessage.id, key).catch(() => {}); };
-  }, [openingKey, conversationId, viewOnceMessage?.id]);
+    if (enabled && src) {
+      const explicitlyOpenedForCurrentUser = openedForUser === user?.id;
+      if (!shouldFetchMedia(isViewOnce, explicitlyOpenedForCurrentUser)) {
+        setUrl(null);
+        if (isViewOnce && opened) { setOpened(false); setError(false); }
+      } else {
+        const path = mediaPath(isViewOnce ? mediaSrc : src);
+        if (!path) { setError(true); }
+        else {
+          const controller = new AbortController();
+          let objectUrl: string | null = null;
+          setError(false);
+          void api.blob(path, { signal: controller.signal, ...(isViewOnce && openingKey ? { headers: { 'x-view-once-opening': openingKey } } : {}) }).then((blob) => {
+            if (controller.signal.aborted) return;
+            objectUrl = URL.createObjectURL(blob);
+            setUrl(objectUrl);
+          }).catch(() => { if (!controller.signal.aborted) setError(true); });
+          cleanupFetch = () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl); setUrl(null); };
+          detachFetchRef.current = cleanupFetch;
+        }
+      }
+    }
+    if (openingKey && conversationId && viewOnceMessage && isViewOnce) {
+      // Armed once per opening; intermediate re-attach cycles cancel it. Real unmount fires it (deferred).
+      pendingCloseRef.current = { key: openingKey, cancelled: false };
+    }
+    if (openedForUser && openedForUser !== user?.id) {
+      if (openingKey && conversationId && viewOnceMessage) void chatRepository.closeViewOnce(conversationId, viewOnceMessage.id, openingKey).catch(() => {});
+      setOpeningKey(null); setOpened(false); setOpenedForUser(null); setUrl(null); setMediaSrc(src); setError(false);
+    }
+    return () => {
+      active.current = false;
+      detachFetchRef.current?.();
+      const pending = pendingCloseRef.current;
+      if (pending) {
+        // The next ref body cancels this pending by flipping `cancelled`; a real unmount leaves it untouched.
+        Promise.resolve().then(() => { if (!pending.cancelled && conversationId && viewOnceMessage) void chatRepository.closeViewOnce(conversationId, viewOnceMessage.id, pending.key).catch(() => {}); });
+      }
+    };
+  }, [src, mediaSrc, enabled, opened, openedForUser, user?.id, isViewOnce, openingKey, loadAttempt, conversationId, viewOnceMessage?.id]);
 
   async function openOnce() {
     if (!conversationId || !viewOnceMessage || opening || viewOnceMessage.senderId === user?.id) return;
@@ -86,20 +102,19 @@ export function AuthenticatedMedia({ src, type, alt, enabled = true, conversatio
     finally { if (active.current) setOpening(false); }
   }
 
-  useEffect(() => {
-    if (!openedForUser || openedForUser === user?.id) return;
-    if (openingKey && conversationId && viewOnceMessage) void chatRepository.closeViewOnce(conversationId, viewOnceMessage.id, openingKey).catch(() => {});
-    setOpeningKey(null); setOpened(false); setOpenedForUser(null); setUrl(null); setMediaSrc(src); setError(false);
-  }, [openedForUser, user?.id, openingKey, conversationId, viewOnceMessage, src]);
-
   function closeOnce() {
+    const pending = pendingCloseRef.current;
+    pendingCloseRef.current = null;
+    if (pending) pending.cancelled = true;
     setOpeningKey(null); setOpened(false); setOpenedForUser(null); setUrl(null); setMediaSrc(src); setError(false);
+    if (openingKey && conversationId && viewOnceMessage) void chatRepository.closeViewOnce(conversationId, viewOnceMessage.id, openingKey).catch(() => {});
   }
 
-  if (viewOnceMessage && !src) return <p role="status" className="text-sm text-muted">{t('chat.mediaError')}</p>;
-  if (viewOnceMessage && viewOnceMessage.senderId === user?.id) return <p role="status" className="text-sm text-muted">{t('chat.viewOnceSenderDenied')}</p>;
-  if (viewOnceMessage && (!opened || error)) return <button className="ui-button ui-secondary" type="button" onClick={openOnce} disabled={opening}>{error ? t('common.retry') : opening ? t('common.loading') : t('chat.viewOnce')}</button>;
-  if (error) return <p role="alert" className="text-sm text-muted">{t('chat.mediaError')}</p>;
-  if (!url) return <span role="status" className="text-sm text-muted">{t('common.loading')}</span>;
-  return <>{type === 'video' ? <video className="max-h-96 max-w-full" src={url} controls preload="metadata" /> : type === 'audio' ? <audio src={url} controls preload="metadata" /> : <img className="max-h-96 max-w-full object-contain" src={url} alt={alt ?? ''} />}{viewOnceMessage ? <button type="button" className="ui-button ui-ghost" onClick={closeOnce}>{t('common.close')}</button> : null}</>;
+  const content = viewOnceMessage && !src ? <p role="status" className="text-sm text-muted">{t('chat.mediaError')}</p>
+    : viewOnceMessage && viewOnceMessage.senderId === user?.id ? <p role="status" className="text-sm text-muted">{t('chat.viewOnceSenderDenied')}</p>
+    : viewOnceMessage && (!opened || error) ? <button className="ui-button ui-secondary" type="button" onClick={openOnce} disabled={opening}>{error ? t('common.retry') : opening ? t('common.loading') : t('chat.viewOnce')}</button>
+    : error ? <p role="alert" className="text-sm text-muted">{t('chat.mediaError')}</p>
+    : !url ? <span role="status" className="text-sm text-muted">{t('common.loading')}</span>
+    : <>{type === 'video' ? <video className="max-h-96 max-w-full" src={url} controls preload="metadata" /> : type === 'audio' ? <audio src={url} controls preload="metadata" /> : <img className="max-h-96 max-w-full object-contain" src={url} alt={alt ?? ''} />}{viewOnceMessage ? <button type="button" className="ui-button ui-ghost" onClick={closeOnce}>{t('common.close')}</button> : null}</>;
+  return <span ref={mediaRef} style={{ display: 'contents' }}>{content}</span>;
 }

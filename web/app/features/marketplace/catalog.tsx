@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Form, Link, useFetcher, useLoaderData, useLocation, useNavigate, useNavigation, type LoaderFunctionArgs } from 'react-router';
 import { useLocale, useI18n } from '../../core/locale';
 import { paths } from '../../core/routes';
@@ -7,8 +7,8 @@ import { appendPage, catalogQuery, type CatalogFilters } from './queries';
 import { getCategories, getProducts } from './server.server';
 import { ProductGrid } from './product-card';
 import type { Category, ProductPage } from './types';
-import { Button, Empty, ErrorState, Input, Loading, PageHeader, Select, Surface } from '../../components';
-import en from './catalogs/en.json'; import pt from './catalogs/pt-BR.json';
+import { Button, Empty, ErrorState, IconButton, Input, Loading, PageHeader, Select, Surface } from '../../components';
+import en from './catalogs/en.json'; import pt from './catalogs/pt-BR.json'; import { Icon } from '../../components';
 import './marketplace.css';
 
 const catalogs = { en, 'pt-BR': pt };
@@ -26,14 +26,16 @@ export default function CatalogRoute() {
   const { page, categories, filters } = useLoaderData<LoaderData>();
   const { locale, path } = useLocale(); const { t } = useI18n(catalogs); const location = useLocation(); const navigate = useNavigate(); const navigation = useNavigation(); const fetcher = useFetcher<LoaderData>();
   const [products, setProducts] = useState(page);
+  const [prevPage, setPrevPage] = useState(page);
+  if (page !== prevPage) { setProducts(page); setPrevPage(page); }
   const [filterError, setFilterError] = useState('');
-  useEffect(() => setProducts(page), [page]);
-  useEffect(() => { if (fetcher.data?.page) setProducts((current) => appendPage(current, fetcher.data!.page)); }, [fetcher.data]);
+  const appendRef = useCallback((node: HTMLDivElement | null) => { if (node && fetcher.data?.page) setProducts((current) => appendPage(current, fetcher.data!.page)); }, [fetcher.data]);
   const options = useMemo(() => flatten(categories), [categories]);
   const loading = navigation.state !== 'idle';
   const isSearch = location.pathname.endsWith('/search');
   return <section className="marketplace">
-    <PageHeader title={t('catalog.title')} actions={<><Link className="ui-button ui-secondary" to={path(paths.myProducts)}>{t('myProducts.title')}</Link><Link className="ui-button ui-secondary" to={path(paths.favorites)}>{t('favorites.title')}</Link><Button onClick={() => navigate(path(paths.sell))}>{t('catalog.sell')}</Button></>} />
+    <div ref={appendRef} className="sr-only" aria-hidden />
+    <PageHeader title={t('catalog.title')} actions={<><Link className="icon-control" to={path(paths.myProducts)} aria-label={t('myProducts.title')} title={t('myProducts.title')}><Icon name="box" /></Link><Link className="icon-control" to={path(paths.favorites)} aria-label={t('favorites.title')} title={t('favorites.title')}><Icon name="heart" /></Link><IconButton aria-label={t('catalog.sell')} title={t('catalog.sell')} onClick={() => navigate(path(paths.sell))}><Icon name="sell" /></IconButton></>} />
     {isSearch && <nav className="market-search-tabs" aria-label={t('catalog.searchTabs')}><Link aria-current="page" to={`${path(paths.search)}${filters.q ? `?q=${encodeURIComponent(filters.q)}` : ''}`}>{t('catalog.productsTab')}</Link><Link to={`${path(`${paths.search}/posts`)}${filters.q ? `?q=${encodeURIComponent(filters.q)}` : ''}`}>{t('catalog.postsTab')}</Link><Link to={`${path(`${paths.search}/people`)}${filters.q ? `?q=${encodeURIComponent(filters.q)}` : ''}`}>{t('catalog.peopleTab')}</Link></nav>}
     <Surface tone="base"><Form className="market-filters" method="get" onSubmit={(event) => { event.preventDefault(); setFilterError(''); const form = new FormData(event.currentTarget); const params = new URLSearchParams(); for (const key of ['q', 'categoryId', 'condition', 'sort']) { const value = String(form.get(key) ?? ''); if (value) params.set(key, value); } try { for (const key of ['minPrice', 'maxPrice']) { const value = String(form.get(key) ?? '').trim(); if (value) { const cents = parseListingPrice(value, locale, true); params.set(key, String(cents)); } } navigate(`${location.pathname}?${params}`); } catch { setFilterError(t('catalog.priceInvalid')); } }}>
       <Input label={t('catalog.search')} type="search" name="q" maxLength={200} defaultValue={filters.q} />

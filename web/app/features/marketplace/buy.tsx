@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Link, useLoaderData, type LoaderFunctionArgs } from 'react-router';
 import { ApiError } from '../../core/api';
 import { Button, ErrorState, Loading, PageHeader, Surface } from '../../components';
@@ -28,7 +28,8 @@ export default function BuyProductRoute() {
   userIdRef.current = user?.id;
   const [orderId, setOrderId] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [restoring, setRestoring] = useState(true); const [storageUnavailable, setStorageUnavailable] = useState(false); const [error, setError] = useState<unknown>(null); const [uncertain, setUncertain] = useState(false); const [candidates, setCandidates] = useState<Order[]>([]);
   const attemptKey = user ? `freebay.direct-buy.${user.id}.${product.id}` : '';
-  useEffect(() => {
+  const mountRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
     if (isPending) return;
     if (!user) { setRestoring(false); return; }
     let active = true;
@@ -111,6 +112,7 @@ export default function BuyProductRoute() {
   if (isPending) return <section className="marketplace"><Loading label={t('common.loading')} /></section>;
   if (!user) return <section className="marketplace"><Surface><p>{t('auth.required')}</p><Link className="ui-button ui-primary" to={path(paths.login)}>{t('auth.signIn')}</Link></Surface></section>;
   return <section className="marketplace">
+    <div ref={mountRef} className="sr-only" aria-hidden />
     <PageHeader title={t('buy.title')} />
     <Surface><h2>{product.title}</h2><p>{t('buy.oneUnit')}</p><strong>{formatMoney(product.price, locale)}</strong>
       {orderId && <p>{t('buy.orderCreated')}: <Link to={path(pathsFor.order(orderId))}>{orderId}</Link></p>}

@@ -1,4 +1,5 @@
 import type { ProductPage, ProductSummary, Category } from './types';
+import { toProductSummary } from './types';
 import { ApiError } from '../../core/api';
 
 function backendOrigin() {
@@ -15,6 +16,12 @@ async function publicGet<T>(path: string): Promise<T> {
   return body as T;
 }
 
-export const getProducts = (query: URLSearchParams) => publicGet<ProductPage>(`/products?${query.toString()}`);
-export const getProduct = (id: string) => publicGet<{ product: ProductSummary }>(`/products/${encodeURIComponent(id)}`);
+export const getProducts = async (query: URLSearchParams): Promise<ProductPage> => {
+  const page = await publicGet<ProductPage>(`/products?${query.toString()}`);
+  return { products: page.products.map(toProductSummary), nextCursor: page.nextCursor };
+};
+export const getProduct = async (id: string): Promise<{ product: ProductSummary }> => {
+  const data = await publicGet<{ product: ProductSummary }>(`/products/${encodeURIComponent(id)}`);
+  return { product: toProductSummary(data.product) };
+};
 export const getCategories = () => publicGet<{ categories: Category[] }>('/categories');

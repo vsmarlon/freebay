@@ -1,7 +1,5 @@
 {
   "social.feed.title": "Your community, in motion.",
-  "social.feed.subtitle": "Ideas, people and finds worth sharing.",
-  "social.feed.eyebrow": "FREEBAY · COMMUNITY",
   "social.feed.explore": "Explore",
   "social.feed.following": "Following",
   "social.filter.all": "All posts",
@@ -11,8 +9,6 @@
   "social.create.placeholder": "What would you like to share?",
   "social.create.submit": "Publish",
   "social.create.image": "Add one image",
-  "social.create.mentionSearch": "Mention people",
-  "social.create.mentionSearchHint": "Search by name or username",
   "social.create.mentionEmpty": "No people found.",
   "social.create.audience": "Audience",
   "social.audience.everyone": "Everyone",
@@ -62,6 +58,7 @@
   "social.comments.placeholder": "Write a comment…",
   "social.comments.reply": "Reply",
   "social.comments.delete": "Delete comment",
+  "social.comments.confirmDelete": "Delete this comment? This cannot be undone.",
   "social.comments.approve": "Approve pending comment",
   "social.comments.empty": "Be the first to comment.",
   "social.comments.error": "Comments could not be loaded.",
@@ -85,5 +82,10 @@
   "social.signIn": "Sign in",
   "social.stories": "Stories",
   "social.report.error": "Report could not be sent.",
-  "social.loadMore": "Show more posts"
+  "social.loadMore": "Show more posts",
+  "social.post.playVideo": "Play video",
+  "social.post.pauseVideo": "Pause video",
+  "social.post.fullscreen": "Fullscreen video",
+  "social.post.muteFeed": "Mute video sound for this feed",
+  "social.post.unmuteFeed": "Unmute video sound for this feed"
 }

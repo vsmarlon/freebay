@@ -27,3 +27,11 @@ export type ProductSummary = {
 };
 export type ProductPage = { products: ProductSummary[]; nextCursor: string | null };
 export type Category = { id: string; name: string; parentId: string | null; children: Category[] };
+// ponytail: the backend ships product imagery as `media[]` while the web contract (and fixtures) use `images[]`; normalize at fetch boundaries.
+type ProductRaw = Omit<ProductSummary, 'images'> & { images?: unknown; media?: unknown };
+const isImage = (value: unknown): value is ProductImage => Boolean(value && typeof value === 'object' && typeof (value as ProductImage).url === 'string');
+export function toProductSummary(raw: ProductRaw): ProductSummary {
+  const { images, media, ...product } = raw;
+  const source = images ?? media;
+  return { ...product, images: (Array.isArray(source) ? source : []).filter(isImage) };
+}

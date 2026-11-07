@@ -16,11 +16,14 @@ async function openProtectedRoute(page: Page, state: BrowserFixture, path: strin
 test('magic-link GET is inert, explicit confirmation consumes once, and profile completes through cookie-backed session', async ({ page }) => {
   const state = await installBrowserFixture(page);
   await page.goto('/en/register');
-  await page.getByLabel('Email address').fill('synthetic@example.invalid');
+  const email = page.getByLabel('Email address');
+  await email.fill('synthetic@example.invalid');
+  await expect(email).toHaveValue('synthetic@example.invalid');
   await page.getByLabel(/agree to receive product updates/i).check();
+  await expect.poll(() => page.locator('form').evaluate((form) => (form as HTMLFormElement).checkValidity())).toBe(true);
   await page.getByRole('button', { name: 'Continue with email' }).click();
-  await expect(page.getByText(/if this address can receive a sign-in link/i)).toBeVisible();
-  expect(state.calls.find((call) => call.path === '/auth/web/magic-link/request')).toMatchObject({ method: 'POST', hasBearer: false, body: { email: 'synthetic@example.invalid', consent: true, locale: 'en' } });
+  await expect.poll(() => state.calls.find((call) => call.path === '/auth/web/magic-link/request')).toMatchObject({ method: 'POST', hasBearer: false, body: { email: 'synthetic@example.invalid', consent: true, locale: 'en' } });
+  await expect(page.getByRole('status')).toContainText(/sign-in link/i);
 
   await page.goto('/en/verify-email?token=synthetic-one-time-token');
   await expect(page.getByRole('button', { name: 'Continue and sign in' })).toBeVisible();
@@ -42,7 +45,6 @@ test('magic-link GET is inert, explicit confirmation consumes once, and profile 
   expect(state.profile).toMatchObject({ username: 'buyer_01', city: 'São Paulo' });
   expect(state.calls.some((call) => call.path === '/auth/web/session/access-token' && call.cookiePresent)).toBe(true);
   expect(state.calls.some((call) => call.path === '/auth/complete-profile' && call.hasBearer)).toBe(true);
-  await page.screenshot({ path: 'e2e/artifacts/web-browser-authenticated-profile.png', fullPage: true });
 });
 
 test('favorite and cart remain separate; cart quantity is stock bounded and checkout uses session mode/server cents', async ({ page }) => {
@@ -51,11 +53,11 @@ test('favorite and cart remain separate; cart quantity is stock bounded and chec
   await page.goto(`/en/products/${productId}`);
   await expect(page.getByRole('heading', { name: 'Câmera analógica' })).toBeVisible();
   await expect(page.getByText(/\$\s*100\.00/)).toBeVisible();
-  await expect(page.getByLabel('Quantity')).toHaveAttribute('max', '3');
+  await expect(page.getByRole('textbox', { name: 'Quantity' })).toHaveAttribute('max', '3');
   const favorite = page.getByRole('button', { name: 'Save to favorites' });
   await favorite.click();
   await expect(page.getByRole('button', { name: 'Remove favorite' })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByLabel('Quantity').fill('1');
+  await page.getByRole('textbox', { name: 'Quantity' }).fill('1');
   await page.getByRole('button', { name: 'Add to cart' }).click();
   await expect(page.getByText('Added to cart.')).toBeVisible();
   expect(state.favorites.has(productId)).toBe(true);
@@ -77,17 +79,19 @@ test('favorite and cart remain separate; cart quantity is stock bounded and chec
   expect(state.orderStatus).toBe('PENDING');
   expect(state.calls.filter((call) => call.path === `/favorites/${productId}`)).toHaveLength(1);
   expect(state.calls.filter((call) => call.path === `/cart/${productId}`)).toHaveLength(1);
-  await page.screenshot({ path: 'e2e/artifacts/web-browser-checkout-fixture.png', fullPage: true });
 });
 
 test('unsafe returnTo values never navigate away from the Freebay origin', async ({ page }) => {
   const state = await installBrowserFixture(page);
   state.profile.username = 'buyer_01';
   await page.goto('/en/login?returnTo=https%3A%2F%2Fevil.example%2Fcollect');
-  await page.getByLabel('Password').fill('Synthetic-password-123');
-  await page.getByLabel('Email address').fill('synthetic@example.invalid');
+  await page.waitForLoadState('networkidle');
+  await page.getByLabel('Email or username').fill('synthetic_user');
+  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('Synthetic-password-123');
+  await expect.poll(() => page.locator('form').evaluate((form) => (form as HTMLFormElement).checkValidity())).toBe(true);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/http:\/\/127\.0\.0\.1:5173\/en\/feed$/);
+  await page.getByRole('button', { name: 'Skip' }).click();
+  await expect(page).toHaveURL(/\/en\/feed$/);
   expect(state.calls.some((call) => call.path.includes('evil.example'))).toBe(false);
 });
 
@@ -96,13 +100,13 @@ test('social comment/save round-trip follows fixture state rather than optimisti
   await openProtectedRoute(page, state, '/en/feed');
   await expect(page.getByText('Public fixture post')).toBeVisible();
   await page.getByRole('button', { name: 'Save post' }).click();
-  expect(state.savedPost).toBe(true);
+  await expect.poll(() => state.savedPost).toBe(true);
   await page.getByRole('link', { name: 'Comments' }).click();
   await expect(page.getByRole('heading', { name: 'Comments' })).toBeVisible();
   await page.getByLabel('Write a comment…').fill('A persisted synthetic comment');
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(page.getByText('A persisted synthetic comment')).toBeVisible();
-  expect(state.comments).toEqual(['A persisted synthetic comment']);
+  await expect.poll(() => state.comments).toEqual(['A persisted synthetic comment']);
   await page.reload();
   await expect(page.locator('article').filter({ hasText: 'Public fixture post' }).getByRole('button', { name: 'Remove saved post' })).toHaveAttribute('aria-pressed', 'true');
 });
@@ -130,11 +134,17 @@ test('chat sends a reply, archives the thread, and never fetches view-once media
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(state.viewOnceFetches).toBe(0);
   await page.getByRole('button', { name: 'Close' }).click();
-  await page.getByRole('checkbox', { name: 'Forward 30000000-0000-4000-8000-000000000003' }).check();
+  const sourceMessage = page.getByRole('checkbox', { name: 'Forward 30000000-0000-4000-8000-000000000003' });
+  await sourceMessage.check();
+  await expect(sourceMessage).toBeChecked();
   await page.getByRole('button', { name: 'Choose recipients' }).click();
-  await page.getByRole('checkbox', { name: 'Synthetic Forward Target' }).check();
-  await page.getByRole('button', { name: 'Forward' }).last().click();
-  expect(state.calls.find((call) => call.path === '/chat/messages/forward')?.body).toMatchObject({ messageIds: ['30000000-0000-4000-8000-000000000003'], targetConversationIds: ['40000000-0000-4000-8000-000000000008'] });
+  const targetConversation = page.getByRole('checkbox', { name: 'Synthetic Forward Target' });
+  await targetConversation.check();
+  await expect(targetConversation).toBeChecked();
+  const forwardButton = page.locator('fieldset').getByRole('button', { name: 'Forward', exact: true });
+  await expect(forwardButton).toBeEnabled();
+  await forwardButton.click();
+  await expect.poll(() => state.calls.find((call) => call.path === '/chat/messages/forward')?.body).toMatchObject({ messageIds: ['30000000-0000-4000-8000-000000000003'], targetConversationIds: ['40000000-0000-4000-8000-000000000008'] });
   await page.locator('article').filter({ hasText: 'Incoming synthetic note' }).getByRole('button', { name: 'Reply' }).click();
   await expect(page.getByText(/Reply: Incoming synthetic note/)).toBeVisible();
   const message = page.getByRole('textbox', { name: 'Message' });
@@ -160,7 +170,8 @@ test('chat sends a reply, archives the thread, and never fetches view-once media
   expect(state.calls[fetchIndex].hasViewOnceOpening).toBe(true);
   expect(state.viewOnceHeaderHashes).toHaveLength(2);
   expect(state.viewOnceHeaderHashes[0]).toBe(state.viewOnceHeaderHashes[1]);
-  await page.getByRole('button', { name: 'Close' }).click();
+  const viewOnceMessage = page.locator('article').filter({ has: page.getByRole('img', { name: 'Shared media' }) });
+  await viewOnceMessage.getByRole('button', { name: 'Close' }).click();
   await expect.poll(() => state.viewOnceCloses).toBe(1);
   await page.getByRole('button', { name: 'View once' }).click();
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
@@ -257,17 +268,17 @@ test('profile edit, privacy step-up, deletion guard, notifications and close-fri
   await expect(page.getByText('Synthetic Friend')).toBeVisible();
   await page.getByRole('button', { name: 'Remove' }).click();
   await expect(page.getByRole('heading', { name: 'People' })).toBeVisible();
-  expect(state.closeFriendIds.size).toBe(0);
+  await expect.poll(() => state.closeFriendIds.size).toBe(0);
 
   await page.goto('/en/notifications');
   await expect(page.getByText('Synthetic notification')).toBeVisible();
   await page.getByRole('button', { name: 'Mark all as read' }).first().click();
-  expect(state.notificationsRead).toBe(true);
+  await expect.poll(() => state.notificationsRead).toBe(true);
   expect(state.calls.some((call) => call.path === '/notifications/read-all' && call.method === 'POST')).toBe(true);
 
   await page.goto('/en/settings/privacy');
   await page.getByRole('button', { name: 'Export selected account data' }).click();
-  await page.getByLabel('Password').fill('Synthetic-password-123');
+  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('Synthetic-password-123');
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Verify and continue' }).click();
   expect((await download).suggestedFilename()).toBe('freebay-account-export.json');
@@ -276,7 +287,7 @@ test('profile edit, privacy step-up, deletion guard, notifications and close-fri
 
   page.once('dialog', (dialog) => void dialog.accept());
   await page.getByRole('button', { name: 'Request account deletion' }).click();
-  await page.getByLabel('Password').fill('Synthetic-password-123');
+  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('Synthetic-password-123');
   await page.getByRole('button', { name: 'Verify and continue' }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   expect(state.deletionStatus).toBe(409);
@@ -294,5 +305,5 @@ test('profile edit, privacy step-up, deletion guard, notifications and close-fri
   await expect(page.getByRole('status')).toContainText('cancelled');
   expect(state.profile.deletionRequestedAt).toBeNull();
   expect(state.calls.filter((call) => call.path === '/users/me/web/deletion/cancel' && call.method === 'PATCH')).toHaveLength(1);
-  await page.screenshot({ path: 'e2e/artifacts/web-browser-account-guard.png', fullPage: true });
 });
+

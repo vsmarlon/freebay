@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router';
 import { api } from '../../core/api';
 import { useAuthText, AuthButton, AuthFrame, AuthInput, AuthMessage } from './auth-frame';
@@ -18,7 +18,8 @@ export default function ResetPasswordPage() {
   const [step, setStep] = useState<'verify' | 'reset' | 'done'>('verify');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
-  useEffect(() => {
+  const mountRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
     const fragment = new URLSearchParams(window.location.hash.slice(1));
     const linkToken = fragment.get('token');
     const currentQuery = new URLSearchParams(location.search);
@@ -55,6 +56,7 @@ export default function ResetPasswordPage() {
     }
   }
   return <AuthFrame title={t('auth.recovery.title')} description={t('auth.login.description')} footer={<Link className="font-bold text-brand underline" to={path('login')}>{t('common.back')}</Link>}>
+    <div ref={mountRef} className="sr-only" aria-hidden />
     <meta name="referrer" content="no-referrer" />
     {step === 'done' ? <AuthMessage>{t('auth.recovery.done')}</AuthMessage> : <form className="grid gap-5" onSubmit={submit}>
       {!token ? <><AuthInput label={t('auth.email')} type="email" autoComplete="email" required maxLength={254} value={email} onChange={(event) => setEmail(event.currentTarget.value)} />

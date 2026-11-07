@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useCallback, useMemo, useState } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components';
 import { api } from '../../core/api';
@@ -29,13 +29,8 @@ export default function VerifyActionPage() {
     ? typeof resourceId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(resourceId)
     : resourceId === undefined;
 
-  useEffect(() => {
-    if (!isPending && !sessionError && !user) {
-      navigate(`/${locale}/login?returnTo=${encodeURIComponent(location.pathname)}`, { replace: true });
-    }
-  }, [isPending, locale, location.pathname, navigate, sessionError, user]);
-
-  useLayoutEffect(() => {
+  const layoutRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
     window.history.replaceState(window.history.state, '', `${location.pathname}`);
     let meta = document.querySelector<HTMLMetaElement>('meta[name="referrer"]');
     if (!meta) { meta = document.createElement('meta'); meta.name = 'referrer'; document.head.append(meta); }
@@ -62,8 +57,9 @@ export default function VerifyActionPage() {
     : action === 'connect_dashboard' ? path(paths.wallet) : path(paths.privacy);
   if (isPending) return <p role="status">{t('common.loading')}</p>;
   if (sessionError) return <AuthFrame title={t('auth.stepup.verifyTitle')} description={t('auth.stepup.verifyDescription')}><AuthMessage error>{t('auth.error')}</AuthMessage><Button onClick={() => void reload()}>{t('common.retry')}</Button></AuthFrame>;
-  if (!user) return null;
+  if (!user) return <Navigate to={`/${locale}/login?returnTo=${encodeURIComponent(location.pathname)}`} replace />;
   return <AuthFrame title={t('auth.stepup.verifyTitle')} description={t('auth.stepup.verifyDescription')}>
+    <div ref={layoutRef} className="sr-only" aria-hidden />
     {action && validResource && token.startsWith('stepup.') && /^[0-9a-f]{64}$/.test(contextSignature)
       ? <p className="mb-4">{t('auth.stepup.verifyAction', { action: actionLabel })}{resourceId ? ` ${resourceId}` : ''}</p>
       : <AuthMessage error>{t('auth.stepup.invalid')}</AuthMessage>}

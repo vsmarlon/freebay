@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState, use, useMemo } from 'react';
+import { useLocation } from 'react-router';
 
 const maxFileBytes = 32 * 1024 * 1024;
 const maxDimension = 2048;
@@ -29,13 +30,46 @@ type ImageEditorProps = { file: File; onSave: (file: File) => void; onCancel: ()
 type Point = { x: number; y: number };
 type Stroke = { points: Point[]; color: string; width: number; style: 'marker' | 'highlighter' | 'eraser' };
 
+type LoadedSource = { source: CanvasImageSource; width: number; height: number } | { error: true };
+
+function loadImageResource(file: File): Promise<LoadedSource> {
+  return new Promise((resolve) => {
+    if (!supportedEditorFile(file)) { resolve({ error: true }); return; }
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = async () => {
+      try {
+        const dimensions = boundedImageSize(image.naturalWidth, image.naturalHeight);
+        if (typeof createImageBitmap === 'function') {
+          const bitmap = await createImageBitmap(image, { resizeWidth: dimensions.width, resizeHeight: dimensions.height, resizeQuality: 'high' });
+          URL.revokeObjectURL(url);
+          resolve({ source: bitmap, width: dimensions.width, height: dimensions.height });
+        } else {
+          URL.revokeObjectURL(url);
+          resolve({ source: image, width: dimensions.width, height: dimensions.height });
+        }
+      } catch { URL.revokeObjectURL(url); resolve({ error: true }); }
+    };
+    image.onerror = () => { URL.revokeObjectURL(url); resolve({ error: true }); };
+    image.src = url;
+  });
+}
+
 export function ImageEditor({ file, onSave, onCancel }: ImageEditorProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const location = useLocation();
+  const locale = location.pathname.split('/')[1] === 'en' ? 'en' : 'pt-BR';
+  const resource = useMemo(() => loadImageResource(file), [file]);
+  const loaded = use(resource);
+  const label = names[locale];
+  if ('error' in loaded) return <p role="alert">{label[9]}</p>;
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const strokesCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const imageRef = useRef<CanvasImageSource | null>(null);
+  imageRef.current = loaded.source;
   const startRef = useRef<Point | null>(null);
   const strokesRef = useRef<Stroke[]>([]);
-  const [size, setSize] = useState({ width: 1, height: 1 });
+  const [size, setSize] = useState({ width: loaded.width, height: loaded.height });
   const [error, setError] = useState('');
   const [angle, setAngle] = useState(0);
   const [filter, setFilter] = useState(0);
@@ -50,35 +84,10 @@ export function ImageEditor({ file, onSave, onCancel }: ImageEditorProps) {
   const [text, setText] = useState('');
   const [overlay, setOverlay] = useState('');
   const [drawingVersion, setDrawingVersion] = useState(0);
-  const [locale, setLocale] = useState<'en' | 'pt-BR'>('pt-BR');
-  const label = names[locale];
 
-  useEffect(() => { setLocale(location.pathname.split('/')[1] === 'en' ? 'en' : 'pt-BR'); }, []);
-  useEffect(() => {
-    if (!supportedEditorFile(file)) { setError(label[9]); return; }
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    let bitmap: ImageBitmap | null = null;
-    image.onload = async () => {
-      try {
-        const dimensions = boundedImageSize(image.naturalWidth, image.naturalHeight);
-        if (typeof createImageBitmap === 'function') {
-          bitmap = await createImageBitmap(image, { resizeWidth: dimensions.width, resizeHeight: dimensions.height, resizeQuality: 'high' });
-          if (controller.signal.aborted) { bitmap.close(); return; }
-          imageRef.current = bitmap;
-          image.src = '';
-        } else imageRef.current = image;
-        setSize(dimensions); setError('');
-      } catch { setError(label[9]); }
-    };
-    image.onerror = () => setError(label[9]);
-    image.src = url;
-    const controller = new AbortController();
-    return () => { controller.abort(); bitmap?.close(); image.src = ''; imageRef.current = null; URL.revokeObjectURL(url); };
-  }, [file, label]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current, image = imageRef.current;
+  const redraw = useCallback((canvas: HTMLCanvasElement | null) => {
+    canvasRef.current = canvas;
+    const image = imageRef.current;
     if (!canvas || !image) return;
     const outputSize = rotatedImageSize(size.width, size.height, angle);
     canvas.width = outputSize.width; canvas.height = outputSize.height;
@@ -130,7 +139,7 @@ export function ImageEditor({ file, onSave, onCancel }: ImageEditorProps) {
       {tool === 'draw' && <><label>{locale === 'en' ? 'Draw color' : 'Cor do traço'}<input aria-label={locale === 'en' ? 'Draw color' : 'Cor do traço'} type="color" value={drawColor} onChange={(event) => setDrawColor(event.currentTarget.value)} /></label><label>{locale === 'en' ? 'Pen style' : 'Estilo do traço'}<select aria-label={locale === 'en' ? 'Pen style' : 'Estilo do traço'} value={penStyle} onChange={(event) => setPenStyle(event.currentTarget.value as Stroke['style'])}><option value="marker">{locale === 'en' ? 'Marker' : 'Marcador'}</option><option value="highlighter">{locale === 'en' ? 'Highlighter' : 'Marca-texto'}</option><option value="eraser">{locale === 'en' ? 'Eraser' : 'Borracha'}</option></select></label><label>{locale === 'en' ? 'Draw width' : 'Espessura'}<input aria-label={locale === 'en' ? 'Draw width' : 'Espessura'} type="range" min="2" max="24" value={drawWidth} onChange={(event) => setDrawWidth(Number(event.currentTarget.value))} /></label><button type="button" disabled={!strokesRef.current.length} onClick={() => { strokesRef.current.pop(); setDrawingVersion((version) => version + 1); }}>{locale === 'en' ? 'Undo' : 'Desfazer'}</button><button type="button" disabled={!strokesRef.current.length} onClick={() => { strokesRef.current = []; setDrawingVersion((version) => version + 1); }}>{locale === 'en' ? 'Clear' : 'Limpar'}</button></>}
     </div>
     <p id="image-editor-hint" className="image-editor-hint">{label[10]}</p>
-    <canvas ref={canvasRef} tabIndex={0} aria-label={label[0]} aria-describedby="image-editor-hint" onKeyDown={moveCropWithKeyboard} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp} />
+    <canvas ref={redraw} tabIndex={0} aria-label={label[0]} aria-describedby="image-editor-hint" onKeyDown={moveCropWithKeyboard} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp} />
     {error && <p role="alert">{error}</p>}
     <footer><button type="button" onClick={onCancel}>{label[7]}</button><button type="button" className="button button-primary" onClick={() => void save()} disabled={Boolean(error) || !imageRef.current}>{label[6]}</button></footer>
   </section>;

@@ -3,9 +3,9 @@ import { Link } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { commerceApi } from './api';
 import { Button, CommercePage, Dialog, Empty, ErrorState, Loading, RequireAuth, Surface, useCommerce, useCommerceQuery } from './shared';
+import { QuantityStepper } from '../../components/quantity-stepper';
 import { userKey } from '../../core/query-client';
 import { paths } from '../../core/routes';
-import { Input } from '../../components';
 
 function CartContent() {
   const { money, t, path, user } = useCommerce();
@@ -32,7 +32,8 @@ function CartContent() {
         const max = Math.min(10, available ?? 10);
         return <Surface key={item.id} className="commerce-cart-item">
         <div><h2>{item.product.title}</h2><p>{t('commerce.cart.soldBy')} {item.product.seller.displayName}</p><strong>{money(item.subtotal)}</strong>{stockQuery.isSuccess && <p>{t('commerce.cart.available')}: {available}</p>}{available !== null && available < item.quantity && <p role="status">{t('commerce.cart.stockChanged')}</p>}</div>
-        <div className="commerce-cart-controls"><Input id={`cart-quantity-${item.productId}`} label={t('commerce.cart.quantity')} type="number" min={1} max={Math.max(1, max)} value={item.quantity} disabled={mutate.isPending || stockQuery.isPending || stockQuery.isError || available === 0} onChange={(event) => { const quantity = Number(event.currentTarget.value); if (Number.isInteger(quantity) && quantity >= 1 && quantity <= max && quantity !== item.quantity) mutate.mutate({ kind: 'quantity', productId: item.productId, quantity }); }}/>
+        <div className="commerce-cart-controls">
+          <QuantityStepper label={t('commerce.cart.quantity')} increase={t('commerce.cart.increase')} decrease={t('commerce.cart.decrease')} value={item.quantity} max={Math.max(1, max)} disabled={mutate.isPending || stockQuery.isPending || stockQuery.isError || available === 0} onCommit={(quantity) => mutate.mutate({ kind: 'quantity', productId: item.productId, quantity })}/>
           <Button variant="ghost" disabled={mutate.isPending} onClick={() => setConfirm(item.productId)}>{t('commerce.cart.remove')}</Button></div>
       </Surface>; })}<Button variant="danger" disabled={mutate.isPending} onClick={() => setConfirm('clear')}>{t('commerce.cart.clear')}</Button></div>
       <Surface tone="mid" className="commerce-summary"><h2>{t('commerce.cart.summary')}</h2><p>{t('commerce.cart.items')} ({cart.totalItems})</p><strong>{money(cart.totalPrice)}</strong><p>{t('commerce.cart.canonical')}</p><Link className="ui-button ui-primary" to={path(paths.checkout)}>{t('commerce.cart.checkout')}</Link></Surface>

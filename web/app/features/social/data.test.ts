@@ -3,7 +3,7 @@ import { searchPage, socialApi } from './data';
 import { api } from '../../core/api';
 import { canApproveComment, type Post } from './types';
 
-const post = (id: string): Post => ({ id, userId: 'owner', content: id, imageUrl: null, type: 'REGULAR', audience: 'EVERYONE', likesCount: 0, commentsCount: 0, sharesCount: 0, isLiked: false, isSaved: false, hasReposted: false, createdAt: '2026-01-01T00:00:00.000Z', user: { id: 'owner', displayName: 'Member' } });
+const post = (id: string): Post => ({ id, userId: 'owner', content: id, media: [], type: 'REGULAR', audience: 'EVERYONE', likesCount: 0, commentsCount: 0, sharesCount: 0, isLiked: false, isSaved: false, hasReposted: false, createdAt: '2026-01-01T00:00:00.000Z', user: { id: 'owner', displayName: 'Member' } });
 
 describe('post search cursor adapter', () => {
   it('uses the server array boundary to continue full pages and stops short pages', () => {

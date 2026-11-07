@@ -45,11 +45,12 @@ test('marketing preferences support explicit light/dark themes and mobile reflow
   await page.setViewportSize({ width: 320, height: 780 });
   await page.goto('/pt-BR');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Bons achados');
-  const theme = page.locator('select[aria-label="Tema"]');
-  await theme.selectOption('dark', { noWaitAfter: true });
+  const themeButton = page.getByRole('button', { name: 'Tema' });
+  await themeButton.click();
+  await page.getByRole('option', { name: 'Escuro' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 320);
-  await theme.selectOption('light', { noWaitAfter: true });
+  await themeButton.click();
+  await page.getByRole('option', { name: 'Claro' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.screenshot({ path: 'e2e/artifacts/web-browser-mobile.png', fullPage: true });
 });

@@ -1,7 +1,8 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, PropsWithChildren, ReactNode } from 'react';
-import { Link, useLocation } from 'react-router';
-import { useI18n, type Catalogs } from '../../core/locale';
-import { Button, Input, Status } from '../../components';
+import { Link, useLocation, useNavigate } from 'react-router';
+import { useI18n, type Catalogs, type Locale } from '../../core/locale';
+import { Button, Input, PasswordInput, SegmentedControl, Status, type IconName } from '../../components';
+import { BrandMark } from '../../components/brand-mark';
 import en from './catalogs/en.json';
 import ptBR from './catalogs/pt-BR.json';
 
@@ -18,19 +19,16 @@ export function useAuthText() {
 export function AuthFrame({ title, description, children, footer }: PropsWithChildren<{ title: string; description: string; footer?: ReactNode }>) {
   const { locale, path, t } = useAuthText();
   const location = useLocation();
+  const navigate = useNavigate();
   const localizedRoute = location.pathname.replace(/^\/(pt-BR|en)\/?/, '');
   return (
-    <main className="min-h-screen bg-surface text-ink">
+    <main className="min-h-screen text-ink">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 sm:px-8">
         <header className="flex items-center justify-between">
-          <Link to={path()} className="font-display text-xl font-black tracking-tight">{t('auth.brand')}</Link>
-          <nav aria-label={locale === 'en' ? 'Language' : 'Idioma'} className="flex gap-3 text-sm">
-            <Link to={`/pt-BR${localizedRoute ? `/${localizedRoute}` : ''}`} lang="pt-BR" hrefLang="pt-BR">PT</Link>
-            <Link to={`/en${localizedRoute ? `/${localizedRoute}` : ''}`} lang="en" hrefLang="en">EN</Link>
-          </nav>
+          <Link to={path()} className="flex items-center gap-2 font-display text-xl font-black tracking-tight"><BrandMark className="size-6 text-[#660062]" />{t('auth.brand')}</Link>
+          <div className="auth-locale"><SegmentedControl<Locale> label={locale === 'en' ? 'Language' : 'Idioma'} value={locale} onChange={(next) => { if (next !== locale) void navigate(`/${next}${localizedRoute ? `/${localizedRoute}` : ''}`); }} options={[{ value: 'en', label: 'EN' }, { value: 'pt-BR', label: 'PT-BR' }]} /></div>
         </header>
         <section className="mx-auto my-auto w-full max-w-md py-12" aria-labelledby="auth-title">
-          <p className="mb-3 text-sm font-bold tracking-widest text-brand">FREEBAY / ACCOUNT</p>
           <h1 id="auth-title" className="font-display text-4xl font-bold tracking-tight">{title}</h1>
           <p className="mt-3 text-muted">{description}</p>
           <div className="mt-8">{children}</div>
@@ -46,8 +44,12 @@ export function AuthMessage({ children, error = false }: PropsWithChildren<{ err
   return <p role={error ? 'alert' : 'status'} aria-live="polite" className="mt-4 text-sm"><Status tone={error ? 'error' : 'success'}>{children}</Status></p>;
 }
 
-export function AuthInput({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
-  return <Input label={label} {...props} />;
+export function AuthInput({ label, icon, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string; icon?: IconName }) {
+  return <Input label={label} icon={icon} {...props} />;
+}
+
+export function AuthPassword({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  return <PasswordInput label={label} {...props} />;
 }
 
 export function AuthButton({ children, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {

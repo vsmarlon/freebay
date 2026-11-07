@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Button, Dialog, Empty, ErrorState, Input, Loading, PageHeader, Select, Surface, Status, TextArea } from '../../components';
 import { useI18n } from '../../core/locale';
 import { userKey } from '../../core/query-client';
@@ -27,6 +27,18 @@ export function useCommerce() {
   return { id, user, locale, path, t, money, status };
 }
 
+export function useCommerceInfiniteQuery<T>(feature: string, parts: readonly unknown[], queryFn: (cursor: string | null, signal: AbortSignal) => Promise<CursorPage<T>>, enabled = true) {
+  const { user } = useSession();
+  // ponytail: cursor pages accumulate in one query; a cursor in the query key would replace the list on every "load more"
+  return useInfiniteQuery({
+    queryKey: userKey(user?.id ?? 'anonymous', 'commerce', feature, ...parts),
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam, signal }) => queryFn(pageParam, signal),
+    getNextPageParam: (page) => page.hasMore ? page.nextCursor ?? undefined : undefined,
+    enabled: enabled && Boolean(user?.id),
+  });
+}
+
 export function useCommerceQuery<T>(feature: string, parts: readonly unknown[], queryFn: (signal: AbortSignal) => Promise<T>, enabled = true) {
   const { user } = useSession();
   return useQuery({
@@ -49,8 +61,8 @@ export function OrderRow({ order }: { order: Order }) {
   </Link>;
 }
 
-export function useOrdersQuery(feature: 'purchases' | 'sales', cursor: string | null, status?: string) {
-  return useCommerceQuery<CursorPage<Order>>(feature, [cursor, status], (signal) => feature === 'purchases'
+export function useOrdersQuery(feature: 'purchases' | 'sales', status?: string) {
+  return useCommerceInfiniteQuery<Order>(feature, [status], (cursor, signal) => feature === 'purchases'
     ? commerceApi.purchases(cursor, signal, status)
     : commerceApi.sales(status, cursor, signal));
 }

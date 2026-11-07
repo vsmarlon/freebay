@@ -1,8 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { api } from '../../core/api';
 import { useSession } from '../../core/session';
-import { useAuthText, AuthButton, AuthFrame, AuthInput, AuthMessage } from './auth-frame';
+import { useAuthText, AuthButton, AuthFrame, AuthInput, AuthMessage, AuthPassword } from './auth-frame';
+import { Checkbox } from '../../components';
 import { OAuthButtons } from './oauth-buttons';
 
 export default function RegisterPage() {
@@ -19,7 +20,10 @@ export default function RegisterPage() {
   const [pending, setPending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState(false);
-  useEffect(() => {
+  const consentRef = useRef<HTMLInputElement>(null);
+  const consentMountRef = useCallback((node: HTMLDivElement | null) => { if (node && consentRef.current?.checked && !consent) setConsent(true); }, [consent]);
+  const usernameCheckRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
     setUsernameAvailable(null);
     if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) return;
     let active = true;
@@ -50,16 +54,16 @@ export default function RegisterPage() {
     }
   }
   return <AuthFrame title={t('auth.register.title')} description={t('auth.register.description')} footer={<>{t('auth.login.title')}? <Link className="font-bold text-brand underline" to={path('login')}>{t('auth.login.submit')}</Link></>}>
-    <form className="grid gap-5" onSubmit={submit}>
+    <div ref={consentMountRef} className="sr-only" aria-hidden /><div ref={usernameCheckRef} className="sr-only" aria-hidden /><form className="grid gap-5" onSubmit={submit}>
       {mode === 'password' ? <>
-        <AuthInput label={t('auth.displayName')} name="displayName" autoComplete="name" required minLength={2} maxLength={50} value={displayName} onChange={(event) => setDisplayName(event.currentTarget.value)} />
-        <AuthInput label={t('auth.username')} name="username" autoComplete="username" required minLength={3} maxLength={20} pattern="[A-Za-z0-9_]{3,20}" value={username} onChange={(event) => setUsername(event.currentTarget.value)} />
+        <AuthInput label={t('auth.displayName')} name="displayName" autoComplete="name" required minLength={2} maxLength={50} placeholder={t('auth.placeholder.name')} icon="user" value={displayName} onChange={(event) => setDisplayName(event.currentTarget.value)} />
+        <AuthInput label={t('auth.username')} name="username" autoComplete="username" required minLength={3} maxLength={20} pattern="[A-Za-z0-9_]{3,20}" placeholder={t('auth.placeholder.username')} icon="at" value={username} onChange={(event) => setUsername(event.currentTarget.value)} />
         {usernameAvailable !== null ? <p role="status" className="text-sm text-muted">{t(usernameAvailable ? 'auth.username.available' : 'auth.username.unavailable')}</p> : null}
-        <AuthInput label={t('auth.email')} name="email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={(event) => setEmail(event.currentTarget.value)} />
-        <AuthInput label={t('auth.password')} name="password" type="password" autoComplete="new-password" required minLength={8} maxLength={100} value={password} onChange={(event) => setPassword(event.currentTarget.value)} />
+        <AuthInput label={t('auth.email')} name="email" type="email" autoComplete="email" required maxLength={254} placeholder={t('auth.placeholder.email')} icon="mail" value={email} onChange={(event) => setEmail(event.currentTarget.value)} />
+        <AuthPassword label={t('auth.password')} name="password" autoComplete="new-password" required minLength={8} maxLength={100} placeholder={t('auth.placeholder.password')} value={password} onChange={(event) => setPassword(event.currentTarget.value)} />
       </> : <>
-        <AuthInput label={t('auth.email')} name="email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={(event) => setEmail(event.currentTarget.value)} />
-        <label className="flex items-start gap-3 text-sm leading-6"><input className="mt-1 size-5 accent-[var(--brand)]" type="checkbox" required checked={consent} onChange={(event) => setConsent(event.currentTarget.checked)} /><span>{t('auth.consent')}</span></label>
+        <AuthInput label={t('auth.email')} name="email" type="email" autoComplete="email" required maxLength={254} placeholder={t('auth.placeholder.email')} icon="mail" value={email} onChange={(event) => setEmail(event.currentTarget.value)} />
+        <Checkbox label={t('auth.consent')} ref={consentRef} required checked={consent} onChange={(event) => setConsent(event.currentTarget.checked)} />
       </>}
       <AuthButton type="submit" disabled={pending}>{pending ? t('common.loading') : t('auth.submit')}</AuthButton>
     </form>

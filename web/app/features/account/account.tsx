@@ -15,9 +15,9 @@ export function useAccountText() {
   return { locale, path, t };
 }
 
-export function Frame({ title, children, publicPage = false }: PropsWithChildren<{ title: string; publicPage?: boolean }>) {
+export function Frame({ title, children, publicPage = false, bare = false }: PropsWithChildren<{ title: string; publicPage?: boolean; bare?: boolean }>) {
   const { t, path } = useAccountText();
-  const content = <div className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 text-ink sm:px-8"><header className="mb-8 flex flex-wrap items-center justify-between gap-4"><Link to={path('feed')} className="font-display text-xl font-black">FREEBAY</Link><nav className="flex flex-wrap gap-4 text-sm"><Link to={path(paths.profile)}>{t('profile')}</Link><Link to={path(paths.search)}>{t('people')}</Link><Link to={path(paths.notifications)}>{t('notifications')}</Link><Link to={path(paths.settings)}>{t('settings')}</Link></nav></header><h1 className="mb-6 font-display text-3xl font-bold">{title}</h1>{children}</div>;
+  const content = <div className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 text-ink sm:px-8">{bare ? null : <header className="mb-8 flex flex-wrap items-center justify-between gap-4"><Link to={path('feed')} className="font-display text-xl font-black">FREEBAY</Link><nav className="flex flex-wrap gap-4 text-sm"><Link to={path(paths.profile)}>{t('profile')}</Link><Link to={path(paths.search)}>{t('people')}</Link><Link to={path(paths.notifications)}>{t('notifications')}</Link><Link to={path(paths.settings)}>{t('settings')}</Link></nav></header>}<h1 className="mb-6 font-display text-3xl font-bold">{title}</h1>{children}</div>;
   return publicPage ? content : <RequireAuth>{content}</RequireAuth>;
 }
 export function Panel({ children }: PropsWithChildren) { return <section className="bg-surface p-4 text-ink sm:p-6">{children}</section>; }

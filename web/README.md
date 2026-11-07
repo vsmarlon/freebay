@@ -18,7 +18,7 @@ Or from the repository root after installing `web/` dependencies:
 npm run web:dev
 ```
 
-Vite listens on port `5173` and proxies API and Socket.IO paths to `http://localhost:3000`. Start the backend on that address, or adjust `web/vite.config.ts` for a different local target. Public product/category server rendering requires server-only `BACKEND_URL` to point at the backend. Do not expose it as a `VITE_` variable.
+Vite listens on port `5173` and proxies API and Socket.IO paths to `http://localhost:3000`. Start the backend on that address, or set server-only `BACKEND_URL` in `web/.env.local` or your shell (`web/.env.example` lists every key; dev falls back to `http://localhost:3000` when unset). Public product/category server rendering requires server-only `BACKEND_URL` to point at the backend. Do not expose it as a `VITE_` variable.
 
 ## OAuth and email configuration
 
@@ -46,7 +46,7 @@ npm run test:e2e
 npm run build
 ```
 
-`npm run start` serves the production build on port `3001` by default and proxies the existing API and Socket.IO paths to server-only `BACKEND_URL` (default `http://localhost:3000`). Set `PORT` or `BACKEND_URL` as needed. This keeps browser API calls and the refresh cookie on the web origin without rewriting `/auth/web/session`; configure HTTPS and the backend's allowed/trusted origin for deployment.
+`npm run start` serves the production build on port `3001` by default and proxies the existing API and Socket.IO paths to server-only `BACKEND_URL` (default `http://localhost:3000`). Set `PORT` or `BACKEND_URL` as needed. This keeps browser API calls and the refresh cookie on the web origin without rewriting `/auth/web/session`; configure HTTPS and the backend's allowed/trusted origin for deployment. The same server serves `build/client` static assets with `Cache-Control: public, max-age=31536000, immutable` for hashed `/assets/*` files, gzip for compressible types, and `no-cache` for SSR documents and unhashed files. Font sources live in `fonts/` and the committed subsetted woff2 files in `app/fonts/`; regenerate after font or catalog changes with `node scripts/build-fonts.mjs` (requires the `subset-font` dev dependency).
 
 ## Current boundaries
 

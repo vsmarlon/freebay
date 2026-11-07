@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useRef, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, Input } from '../../components';
 import { api } from '../../core/api';
@@ -28,7 +28,8 @@ export function StepUpDialog({ open, onClose, action, resourceId, onVerified }: 
   const abortController = useRef<AbortController | null>(null);
   const googleTarget = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const mountRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
     abortController.current?.abort();
     abortController.current = open ? new AbortController() : null;
     operation.current++;
@@ -93,6 +94,7 @@ export function StepUpDialog({ open, onClose, action, resourceId, onVerified }: 
   }
 
   return <Dialog open={open} onClose={() => { operation.current++; abortController.current?.abort(); setPassword(''); setError(false); onClose(); }} title={t('auth.stepup.title')}>
+    <div ref={mountRef} className="sr-only" aria-hidden />
     <form className="mt-5 grid gap-4" onSubmit={submit}>
       <Input label={t('auth.stepup.password')} type="password" autoComplete="current-password" minLength={8} maxLength={100} value={password} onChange={(event) => setPassword(event.currentTarget.value)} />
       <AuthButton type="submit" disabled={pending || password.length < 8}>{pending ? t('common.loading') : t('auth.stepup.submit')}</AuthButton>

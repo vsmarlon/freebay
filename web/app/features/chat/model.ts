@@ -4,7 +4,7 @@ export type ChatMessage = {
   senderId: string;
   clientMessageId?: string | null;
   content: string | null;
-  type: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'GIF' | 'LOCATION' | 'PRODUCT_CARD';
+  type: 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'GIF' | 'LOCATION' | 'PRODUCT_CARD' | 'DOCUMENT';
   attachmentUrl: string | null;
   metadata: Record<string, unknown> | null;
   replyToId: string | null;
@@ -61,7 +61,7 @@ export function shouldRefreshReadState(event: { conversationId?: unknown; reader
 
 export const CHAT_REACTIONS = ['❤️', '😂', '😮', '😢', '😡', '👍'] as const;
 export const CHAT_THEMES = ['DEFAULT', 'CRIMSON', 'COBALT', 'FOREST', 'AMBER', 'SLATE'] as const;
-export type MediaKind = 'IMAGE' | 'VIDEO' | 'AUDIO';
+export type MediaKind = 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT';
 export type LocationMessageMetadata = { latitude: number; longitude: number; accuracyMeters: number; capturedAt: string; address?: string };
 export function hasValidCoordinates(latitude: unknown, longitude: unknown): latitude is number {
   return typeof latitude === 'number' && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 && typeof longitude === 'number' && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;

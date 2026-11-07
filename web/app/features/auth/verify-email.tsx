@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import type { MetaFunction } from 'react-router';
 import { useLocation, useNavigate } from 'react-router';
 import { Link } from 'react-router';
@@ -17,8 +17,8 @@ export default function VerifyEmailPage() {
   const [pending, setPending] = useState(false);
   const [complete, setComplete] = useState(false);
   const [error, setError] = useState(false);
-  useEffect(() => {
-    if (location.search) window.history.replaceState({}, document.title, location.pathname);
+  const mountRef = useCallback((node: HTMLDivElement | null) => {
+    if (node && location.search) window.history.replaceState({}, document.title, location.pathname);
   }, [location.pathname, location.search]);
   async function confirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,6 +37,7 @@ export default function VerifyEmailPage() {
     }
   }
   return <AuthFrame title={t('auth.magic.confirmTitle')} description={t('auth.magic.confirmNote')} footer={error ? <Link className="font-bold text-brand underline" to={path('register')}>{t('auth.magic.resend')}</Link> : undefined}>
+    <div ref={mountRef} className="sr-only" aria-hidden />
     {token ? <form onSubmit={confirm}><AuthButton type="submit" disabled={pending || complete}>{pending ? t('common.loading') : t('auth.magic.confirm')}</AuthButton></form> : <AuthMessage error>{t('auth.magic.invalid')}</AuthMessage>}
     {complete ? <AuthMessage>{t('auth.magic.done')}</AuthMessage> : null}
     {error ? <AuthMessage error>{t('auth.magic.invalid')}</AuthMessage> : null}

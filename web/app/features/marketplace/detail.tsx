@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useLoaderData, useNavigate, useRouteError, isRouteErrorResponse, type LoaderFunctionArgs, type MetaFunction } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, api } from '../../core/api';
-import { Avatar, Button, ErrorState, IconButton, Input, Loading, PageHeader, Status, Surface } from '../../components';
+import { Avatar, Button, ErrorState, Icon, Loading, PageHeader, Status, Surface } from '../../components';
+import { ImageCarousel } from './image-carousel';
+import { QuantityStepper } from '../../components/quantity-stepper';
 import { useSession } from '../../core/session';
 import { useLocale, useI18n } from '../../core/locale';
 import { paths, pathsFor } from '../../core/routes';
@@ -58,7 +60,7 @@ export default function ProductDetailRoute() {
   const seller = useQuery({ queryKey: ['public', 'seller', product.sellerId], queryFn: () => api.get<SellerProfile>(`/users/${product.sellerId}`, { auth: false }) });
   const reviews = useQuery({ queryKey: ['public', 'reviews', product.sellerId], queryFn: () => api.get<ReviewList>(`/reviews/users/${product.sellerId}?limit=5`, { auth: false }) });
   const saved = favorite.data?.isFavorited === true;
-  useEffect(() => { const failure = favorite.error ?? follow.error; if (failure instanceof ApiError && failure.status === 401) navigate(path(paths.login)); }, [favorite.error, follow.error, navigate, path]);
+  const redirectRef = useCallback((node: HTMLDivElement | null) => { if (!node) return; const failure = favorite.error ?? follow.error; if (failure instanceof ApiError && failure.status === 401) navigate(path(paths.login)); }, [favorite.error, follow.error, navigate, path]);
 
   function requireLogin() { navigate(path(paths.login)); }
   function handleMutationError(cause: unknown, fallback: string) {
@@ -74,7 +76,7 @@ export default function ProductDetailRoute() {
   async function addToCart() {
     if (!user) return requireLogin();
     setBusy(true); setMessage('');
-    try { await api.post(`/cart/${product.id}`, { quantity: selectedQuantity }); await cache.invalidateQueries({ queryKey: userKey(user.id, 'cart') }); setMessage(t('product.added')); }
+    try { await api.post(`/cart/${product.id}`, { quantity: selectedQuantity }); await cache.invalidateQueries({ queryKey: userKey(user.id, 'commerce', 'cart') }); setMessage(t('product.added')); }
     catch (cause) { handleMutationError(cause, t('common.error')); } finally { setBusy(false); }
   }
   async function contactSeller() {
@@ -90,27 +92,70 @@ export default function ProductDetailRoute() {
     catch (cause) { handleMutationError(cause, t('common.error')); } finally { setBusy(false); }
   }
 
-  return <section className="marketplace"><div className="market-detail">
-    <section aria-label={t('product.gallery')} className="market-gallery">{product.images.length ? product.images.map((image, index) => <img key={image.id ?? image.url} src={mediaUrl(image.url)} alt={t('product.imageAlt', { title: product.title, index: index + 1 })} fetchPriority={index === 0 ? 'high' : 'auto'} />) : <Surface tone="mid">{t('product.noImage')}</Surface>}</section>
-    <Surface tone="base" className="market-panel">
-      <PageHeader title={product.title} description={t(`condition.${product.condition}`)} actions={<Status tone={listingStatusTone(product.status)}>{t(`status.${product.status}`)}</Status>} />
-      <p className="market-price">{formatMoney(product.price, locale)}</p><p>{t('product.stock', { count: stock })}</p>
-      <h2>{t('product.description')}</h2><p>{product.description}</p>
-      <div className="market-owner"><Avatar src={product.seller.avatarUrl ? mediaUrl(product.seller.avatarUrl) : null} name={product.seller.displayName} /><div><strong>{t('product.seller')}</strong><br /><Link to={path(pathsFor.person(product.seller.id))}>{product.seller.displayName}{product.seller.isVerified ? ' ✓' : ''}</Link>{product.seller.city && <p>{product.seller.city}{product.seller.state ? `, ${product.seller.state}` : ''}</p>}</div></div>
-       <section aria-label={t('product.reviews')}><h2>{t('product.reviews')}</h2>{seller.isPending ? <Loading label={t('common.loading')} rows={1} /> : seller.isError ? <ErrorState error={new Error(t('product.statsError'))} /> : <p>{seller.data.reputationScore} / 5 · {t('product.reviewCount', { count: seller.data.totalReviews })}</p>}{reviews.isPending ? <Loading label={t('common.loading')} rows={1} /> : reviews.isError ? <ErrorState error={new Error(t('common.error'))} /> : reviews.data.reviews.map((review) => <p key={review.id}>★ {review.score} · {review.reviewer.displayName}{review.comment ? ` — ${review.comment}` : ''}</p>)}<Link to={path(pathsFor.userReviews(product.sellerId))}>{t('reviewList.title')}</Link></section>
-       {canBuy && <div className="market-actions"><Input label={t('product.quantity')} type="number" min={1} max={maxCartQuantity} step={1} value={quantity} onChange={(event) => setQuantity(event.currentTarget.value)} /><Button disabled={busy || isPending || !quantityValid} pending={busy} onClick={() => void addToCart()}>{t('product.addCart')}</Button><Link className="ui-button ui-primary" to={path(`${pathsFor.product(product.id)}/buy`)}>{t('buy.continue')}</Link></div>}
-      {!isOwner && <div className="market-actions">
-        {favorite.isError && user && <ErrorState error={new Error(t('common.error'))} />}
-        <IconButton className={`market-favorite${saved ? ' market-favorite-saved' : ''}`} aria-label={saved ? t('product.unfavorite') : t('product.favorite')} type="button" disabled={busy || isPending || Boolean(user && (favorite.isPending || favorite.isError))} aria-pressed={saved} onClick={() => void toggleFavorite()} />
-        {favorite.isError && user && <Button variant="ghost" onClick={() => void favorite.refetch()}>{t('common.retry')}</Button>}
-        <Button variant="secondary" disabled={busy || isPending} onClick={() => void contactSeller()}>{t('product.contact')}</Button>
-        {follow.isError && user && <><ErrorState error={new Error(t('common.error'))} /><Button variant="ghost" onClick={() => void follow.refetch()}>{t('common.retry')}</Button></>}
-        {user && <Button variant="secondary" disabled={busy || isPending || follow.isPending || follow.isError} aria-pressed={follow.data?.isFollowing === true} onClick={() => void toggleFollow()}>{follow.data?.isFollowing ? t('product.following') : t('product.follow')}</Button>}
-      </div>}
-      {isOwner && <Link to={path(pathsFor.editProduct(product.id))}>{t('editor.edit')}</Link>}
-      {message && <p role="status">{message}</p>}
-    </Surface>
-  </div></section>;
+  return (
+    <section className="marketplace">
+      <div ref={redirectRef} className="sr-only" aria-hidden />
+      <div className="market-detail">
+      <ImageCarousel images={product.images.map((image) => ({ id: image.id ?? image.url, url: mediaUrl(image.url) }))} alt={(index) => t('product.imageAlt', { title: product.title, index: index + 1 })} label={t('product.gallery')} noImage={t('product.noImage')} previousLabel={t('product.previousImage')} nextLabel={t('product.nextImage')} imageLabel={(index) => t('product.imageOf', { index: index + 1, total: product.images.length })} />
+      <Surface tone="base" className="market-panel">
+        <section className="market-block">
+          <PageHeader title={product.title} description={t(`condition.${product.condition}`)} actions={<Status tone={listingStatusTone(product.status)}>{t(`status.${product.status}`)}</Status>} />
+        </section>
+        <section className="market-block">
+          <p className="market-price">{formatMoney(product.price, locale)}</p>
+          <p className="market-stock">{t('product.stock', { count: stock })}</p>
+        </section>
+        <section className="market-block">
+          <h2 className="market-block-title">{t('product.description')}</h2>
+          <p>{product.description}</p>
+        </section>
+        <section className="market-block">
+          <h2 className="market-block-title">{t('product.seller')}</h2>
+          <div className="market-owner">
+            <Avatar src={product.seller.avatarUrl ? mediaUrl(product.seller.avatarUrl) : null} name={product.seller.displayName} />
+            <div>
+              <Link to={path(pathsFor.person(product.seller.id))}>{product.seller.displayName}{product.seller.isVerified ? ' ✓' : ''}</Link>
+              {product.seller.city && <p className="market-location">{product.seller.city}{product.seller.state ? `, ${product.seller.state}` : ''}</p>}
+            </div>
+          </div>
+        </section>
+        <section aria-label={t('product.reviews')} className="market-block">
+          <h2 className="market-block-title">{t('product.reviews')}</h2>
+          {seller.isPending ? <Loading label={t('common.loading')} rows={1} /> : seller.isError ? <ErrorState error={new Error(t('product.statsError'))} /> : <p className="market-reviews-summary">{seller.data.reputationScore} / 5 · {t('product.reviewCount', { count: seller.data.totalReviews })}</p>}
+          {reviews.isPending ? <Loading label={t('common.loading')} rows={1} /> : reviews.isError ? <ErrorState error={new Error(t('common.error'))} /> : reviews.data.reviews.map((review) => <p key={review.id}>★ {review.score} · {review.reviewer.displayName}{review.comment ? ` — ${review.comment}` : ''}</p>)}
+          <Link to={path(pathsFor.userReviews(product.sellerId))}>{t('reviewList.title')}</Link>
+        </section>
+        {canBuy && (
+          <section className="market-block market-buy">
+            <div className="market-quantity-row">
+              <QuantityStepper label={t('product.quantity')} increase={t('product.increase')} decrease={t('product.decrease')} value={Math.max(1, Math.min(maxCartQuantity, Number(quantity) || 1))} max={maxCartQuantity} disabled={busy || isPending} onCommit={(next) => setQuantity(String(next))} />
+            </div>
+            <div className="market-icon-actions">
+              <button type="button" className="market-icon-button" disabled={busy || isPending || !quantityValid} onClick={() => void addToCart()} aria-label={t('product.addCart')} title={t('product.addCart')}>
+                <Icon name="cart" size={20} />
+              </button>
+              <button type="button" className={`market-icon-button${saved ? ' market-icon-button-active' : ''}`} aria-label={saved ? t('product.unfavorite') : t('product.favorite')} aria-pressed={saved} disabled={busy || isPending || Boolean(user && (favorite.isPending || favorite.isError))} onClick={() => void toggleFavorite()}>
+                <Icon name="heart" size={20} />
+              </button>
+              <button type="button" className="market-icon-button" disabled={busy || isPending} onClick={() => void contactSeller()} aria-label={t('product.contact')} title={t('product.contact')}>
+                <Icon name="comment" size={20} />
+              </button>
+              <button type="button" className={`market-icon-button${follow.data?.isFollowing ? ' market-icon-button-active' : ''}`} disabled={busy || isPending || follow.isPending || follow.isError} aria-pressed={follow.data?.isFollowing === true} onClick={() => void toggleFollow()} aria-label={follow.data?.isFollowing ? t('product.following') : t('product.follow')} title={follow.data?.isFollowing ? t('product.following') : t('product.follow')}>
+                <Icon name={follow.data?.isFollowing ? 'unfollow' : 'follow'} size={20} />
+              </button>
+            </div>
+            <Link className="ui-button ui-primary" to={path(`${pathsFor.product(product.id)}/buy`)}>{t('buy.continue')}</Link>
+            {favorite.isError && user && <ErrorState error={new Error(t('common.error'))} />}
+            {favorite.isError && user && <Button variant="ghost" onClick={() => void favorite.refetch()}>{t('common.retry')}</Button>}
+            {follow.isError && user && <><ErrorState error={new Error(t('common.error'))} /><Button variant="ghost" onClick={() => void follow.refetch()}>{t('common.retry')}</Button></>}
+          </section>
+        )}
+        {isOwner && <Link to={path(pathsFor.editProduct(product.id))}>{t('editor.edit')}</Link>}
+        {message && <p role="status" className="market-message">{message}</p>}
+      </Surface>
+    </div>
+  </section>
+);
 }
 
 export function ErrorBoundary() {

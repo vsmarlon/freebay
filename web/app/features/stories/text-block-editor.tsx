@@ -1,4 +1,4 @@
-import { useEffect, useState, type PointerEvent } from 'react';
+import { useCallback, useState, type PointerEvent } from 'react';
 
 export type StoryTextBlock = { id: string; text: string; x: number; y: number; scale: number; rotation: number; color: number; style: 'classic' | 'strong' | 'editorial' | 'compact'; zIndex: number };
 const colors = [{ label: 'White', value: 0xffffffff }, { label: 'Black', value: 0xff000000 }, { label: 'Brand', value: 0xff8a1083 }, { label: 'Warning', value: 0xfff59e0b }];
@@ -18,7 +18,7 @@ export function StoryTextBlockEditor({ file, caption = '', blocks, onChange, cop
   const [url, setUrl] = useState('');
   const [selectedId, setSelectedId] = useState<string>();
   const selected = blocks.find((block) => block.id === selectedId);
-  useEffect(() => { const next = URL.createObjectURL(file); setUrl(next); return () => URL.revokeObjectURL(next); }, [file]);
+  const urlRef = useCallback((node: HTMLElement | null) => { if (!node) return; const next = URL.createObjectURL(file); setUrl(next); return () => URL.revokeObjectURL(next); }, [file]);
   const update = (patch: Partial<StoryTextBlock>) => { if (selected) onChange(blocks.map((block) => block.id === selected.id ? { ...block, ...patch } : block)); };
   const dragStart = (event: PointerEvent<HTMLSpanElement>) => { if (!selected) return; event.currentTarget.setPointerCapture(event.pointerId); };
   const drag = (event: PointerEvent<HTMLSpanElement>) => { if (!selected || !event.currentTarget.hasPointerCapture(event.pointerId)) return; const bounds = event.currentTarget.parentElement?.getBoundingClientRect(); if (!bounds) return; update({ x: Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width)), y: Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height)) }); };
@@ -26,7 +26,7 @@ export function StoryTextBlockEditor({ file, caption = '', blocks, onChange, cop
   const remove = () => { if (!selected) return; onChange(blocks.filter((block) => block.id !== selected.id)); setSelectedId(undefined); };
   const moveForward = () => { if (!selected) return; const ordered = [...blocks].sort((a, b) => a.zIndex - b.zIndex); const index = ordered.findIndex((block) => block.id === selected.id); if (index < 0 || index === ordered.length - 1) return; [ordered[index], ordered[index + 1]] = [ordered[index + 1], ordered[index]]; onChange(ordered.map((block, zIndex) => ({ ...block, zIndex }))); };
 
-  return <section className="grid gap-3" aria-label={copy.text}>
+  return <section ref={urlRef} className="grid gap-3" aria-label={copy.text}>
     <div className="relative aspect-[9/16] max-h-[65vh] overflow-hidden bg-black" aria-label={copy.videoPreview}>
       {file.type.startsWith('video/') ? <video className="h-full w-full object-cover" src={url} controls playsInline preload="metadata" /> : <img className="h-full w-full object-cover" src={url} alt="" />}
       <div className="absolute inset-0 touch-none">

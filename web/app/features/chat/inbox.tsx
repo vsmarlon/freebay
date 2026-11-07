@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { RequireAuth, useSession } from '../../core/session';
 import { useI18n } from '../../core/locale';
 import { pathsFor } from '../../core/routes';
+import { Input } from '../../components';
 import en from './catalogs/en.json';
 import ptBR from './catalogs/pt-BR.json';
 import { chatRepository } from './repository';
@@ -30,23 +31,6 @@ function Inbox() {
   const [threadType, setThreadType] = useState<'ALL' | 'DIRECT' | 'ORDER'>('ALL');
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [creating, setCreating] = useState(false);
-  useEffect(() => {
-    if (!creating || newQuery.trim().length < 2) { setNewUsers([]); setNewUserOffset(null); setNewUserHasMore(false); return; }
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => { void chatRepository.searchUsers(newQuery.trim(), 0, controller.signal).then((result) => { setNewUsers(result.users); setNewUserOffset(result.nextOffset); setNewUserHasMore(result.hasMore); }).catch(() => { if (!controller.signal.aborted) setError(true); }); }, 180);
-    return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [creating, newQuery]);
-  useEffect(() => {
-    if (!creating || !user?.id) return;
-    const controller = new AbortController();
-    void Promise.all([chatRepository.blockedUsers(controller.signal), chatRepository.suggestions(controller.signal), chatRepository.following(user.id, controller.signal)]).then(([blocked, suggestions, following]) => {
-      if (controller.signal.aborted) return;
-      setBlockedIds(new Set(blocked.users.map((person) => person.id)));
-      setSuggestedUsers(suggestions.users);
-      setFollowingUsers(following.users);
-    }).catch(() => { if (!controller.signal.aborted) setError(true); });
-    return () => controller.abort();
-  }, [creating, user?.id]);
   async function loadMoreUsers() {
     if (newUserOffset === null) return;
     try { const result = await chatRepository.searchUsers(newQuery.trim(), newUserOffset); setNewUsers((users) => [...users, ...result.users]); setNewUserOffset(result.nextOffset); setNewUserHasMore(result.hasMore); }
@@ -54,16 +38,36 @@ function Inbox() {
   }
   const visibleConversations = filterConversations(page?.items ?? [], threadType, unreadOnly);
   const conversationGroups = groupConversationsByCounterparty(visibleConversations);
-  useEffect(() => {
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => {
+  const prevUserRef = useRef<string | undefined>(undefined);
+  const inboxRef = useCallback((node: HTMLElement | null) => {
+    if (!node) return;
+    const cleanups: Array<() => void> = [];
+    if (creating && newQuery.trim().length >= 2) {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => { void chatRepository.searchUsers(newQuery.trim(), 0, controller.signal).then((result) => { setNewUsers(result.users); setNewUserOffset(result.nextOffset); setNewUserHasMore(result.hasMore); }).catch(() => { if (!controller.signal.aborted) setError(true); }); }, 180);
+      cleanups.push(() => { window.clearTimeout(timer); controller.abort(); });
+    } else if (creating) {
+      setNewUsers([]); setNewUserOffset(null); setNewUserHasMore(false);
+    }
+    if (creating && user?.id) {
+      const controller = new AbortController();
+      void Promise.all([chatRepository.blockedUsers(controller.signal), chatRepository.suggestions(controller.signal), chatRepository.following(user.id, controller.signal)]).then(([blocked, suggestions, following]) => {
+        if (controller.signal.aborted) return;
+        setBlockedIds(new Set(blocked.users.map((person) => person.id)));
+        setSuggestedUsers(suggestions.users);
+        setFollowingUsers(following.users);
+      }).catch(() => { if (!controller.signal.aborted) setError(true); });
+      cleanups.push(() => controller.abort());
+    }
+    if (prevUserRef.current !== user?.id) { setPage(null); setNewUsers([]); setError(false); prevUserRef.current = user?.id; }
+    const controller2 = new AbortController();
+    const timer2 = window.setTimeout(() => {
       setPending(true); setError(false);
-      void chatRepository.conversations({ q: archived ? undefined : query, archived, signal: controller.signal }).then(setPage).catch(() => { if (!controller.signal.aborted) setError(true); }).finally(() => { if (!controller.signal.aborted) setPending(false); });
+      void chatRepository.conversations({ q: archived ? undefined : query, archived, signal: controller2.signal }).then(setPage).catch(() => { if (!controller2.signal.aborted) setError(true); }).finally(() => { if (!controller2.signal.aborted) setPending(false); });
     }, 180);
-    return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [query, archived, retry, user?.id]);
-
-  useEffect(() => { setPage(null); setNewUsers([]); setError(false); }, [user?.id]);
+    cleanups.push(() => { window.clearTimeout(timer2); controller2.abort(); });
+    return () => { for (const cleanup of cleanups) cleanup(); };
+  }, [creating, newQuery, user?.id, query, archived, retry]);
 
   async function loadMore() {
     if (!page?.nextCursor || pending) return;
@@ -74,13 +78,13 @@ function Inbox() {
     } catch { setError(true); }
     finally { setPending(false); }
   }
-  return <main className="mx-auto min-h-screen max-w-6xl px-4 py-8 text-ink sm:px-8">
+  return <main ref={inboxRef} className="mx-auto min-h-screen max-w-6xl px-4 py-8 text-ink sm:px-8">
     <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div><p className="text-xs font-bold uppercase tracking-widest text-brand">FREEBAY / CHAT</p><h1 className="font-display text-4xl font-bold">{t('chat.title')}</h1></div>
       <button className="ui-button ui-primary" type="button" onClick={() => setCreating((value) => !value)}>{t('chat.new')}</button>
       <button className="ui-button ui-secondary" type="button" aria-pressed={archived} onClick={() => { setArchived((value) => !value); setPage(null); }}>{archived ? t('chat.inbox') : t('chat.archived')}</button>
     </header>
-    {creating ? <section className="surface mb-5 grid gap-2" aria-label={t('chat.new')}><label className="grid gap-2">{t('chat.searchPeople')}<input className="min-h-12 border-2 border-ink bg-surface-high px-3" type="search" value={newQuery} onChange={(event) => setNewQuery(event.currentTarget.value)} /></label>{(newQuery.trim().length >= 2 ? newUsers : [...followingUsers, ...suggestedUsers.filter((suggestion) => !followingUsers.some((follow) => follow.id === suggestion.id))]).filter((person) => !blockedIds.has(person.id)).map((person) => <button key={person.id} type="button" className="min-h-12 bg-surface-mid p-3 text-left" onClick={async () => { try { const result = await chatRepository.start(person.id); navigate(path(pathsFor.conversation(result.conversationId))); } catch { setError(true); } }}>{person.displayName}</button>)}{newQuery.trim().length >= 2 && newUserHasMore ? <button type="button" className="ui-button ui-secondary" onClick={() => void loadMoreUsers()}>{t('common.loadMore')}</button> : null}</section> : null}
+    {creating ? <section className="surface mb-5 grid gap-2" aria-label={t('chat.new')}><Input label={t('chat.searchPeople')} type="search" value={newQuery} onChange={(event) => setNewQuery(event.currentTarget.value)} />{(newQuery.trim().length >= 2 ? newUsers : [...followingUsers, ...suggestedUsers.filter((suggestion) => !followingUsers.some((follow) => follow.id === suggestion.id))]).filter((person) => !blockedIds.has(person.id)).map((person) => <button key={person.id} type="button" className="min-h-12 bg-surface-mid p-3 text-left" onClick={async () => { try { const result = await chatRepository.start(person.id); navigate(path(pathsFor.conversation(result.conversationId))); } catch { setError(true); } }}>{person.displayName}</button>)}{newQuery.trim().length >= 2 && newUserHasMore ? <button type="button" className="ui-button ui-secondary" onClick={() => void loadMoreUsers()}>{t('common.loadMore')}</button> : null}</section> : null}
     <nav className="mb-4 flex flex-wrap gap-2" aria-label={t('chat.title')}>
       {(['ALL', 'DIRECT', 'ORDER'] as const).map((kind) => <button key={kind} type="button" className="ui-button ui-secondary" aria-pressed={threadType === kind} onClick={() => setThreadType(kind)}>{t(`chat.filter.${kind}`)}</button>)}
       <button type="button" className="ui-button ui-secondary" aria-pressed={unreadOnly} onClick={() => setUnreadOnly((value) => !value)}>{t('chat.unreadFilter')}</button>

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import en from './catalogs/en.json';
 import pt from './catalogs/pt-BR.json';
 import { Button } from '../../components';
+import { BrandMark } from '../../components/brand-mark';
 import { useI18n, type Catalogs } from '../../core/locale';
 import { appPath, paths, safeLocalizedReturnTo } from '../../core/routes';
 import { completeWelcome, RequireAuth, useSession } from '../../core/session';
@@ -24,9 +25,9 @@ function WelcomeSetup() {
   const titles = ['welcome.title.1', 'welcome.title.2', 'welcome.title.3'] as const;
   const bodies = ['welcome.body.1', 'welcome.body.2', 'welcome.body.3'] as const;
   return <main className="onboarding" aria-labelledby="welcome-title">
-    <header><Link className="brand" to={appPath(locale)}><span className="brand-mark">f</span>freebay</Link><button type="button" className="onboarding-skip" onClick={() => finish()}>{t('skip')}</button></header>
+    <header><Link className="brand" to={appPath(locale)}><BrandMark className="brand-mark" />freebay</Link><button type="button" className="onboarding-skip" onClick={() => finish()}>{t('skip')}</button></header>
     <section className="onboarding-slide" aria-live="polite">
-      <div className="onboarding-mark" aria-hidden="true">{['✓', '⚙', 'f'][step]}</div>
+      <div className="onboarding-mark" aria-hidden="true">{step === 2 ? <BrandMark className="onboarding-mark-icon" /> : ['✓', '⚙'][step]}</div>
       <p className="onboarding-step">{t('welcome.step', { current: step + 1, total: 3 })}</p>
       <h1 id="welcome-title">{t(titles[step])}</h1><p>{t(bodies[step])}</p>
       {step === 1 ? <Link className="button button-secondary" to={appPath(locale, paths.settings)} onClick={() => completeWelcome(user!.id)}>{t('welcome.settings')}</Link> : null}

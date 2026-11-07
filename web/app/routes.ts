@@ -23,7 +23,6 @@ export default [
     index('routes/marketing.tsx', { id: 'marketing-home' }),
     route('about', 'routes/marketing.tsx', { id: 'marketing-about' }),
     route('how-it-works', 'routes/marketing.tsx', { id: 'marketing-how-it-works' }),
-    route('onboarding', 'features/onboarding/index.tsx'),
     route('welcome', 'features/onboarding/welcome.tsx', { id: 'welcome-setup' }),
     ...uniqueIds(authRoutes, 'auth'),
     layout('routes/app-layout.tsx', [

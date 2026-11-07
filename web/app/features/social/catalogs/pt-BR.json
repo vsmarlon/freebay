@@ -1,7 +1,5 @@
 {
   "social.feed.title": "Sua comunidade em movimento.",
-  "social.feed.subtitle": "Ideias, pessoas e descobertas para compartilhar.",
-  "social.feed.eyebrow": "FREEBAY · COMUNIDADE",
   "social.feed.explore": "Explorar",
   "social.feed.following": "Seguindo",
   "social.filter.all": "Todas as publicações",
@@ -11,8 +9,6 @@
   "social.create.placeholder": "O que você gostaria de compartilhar?",
   "social.create.submit": "Publicar",
   "social.create.image": "Adicionar uma imagem",
-  "social.create.mentionSearch": "Mencionar pessoas",
-  "social.create.mentionSearchHint": "Busque por nome ou usuário",
   "social.create.mentionEmpty": "Nenhuma pessoa encontrada.",
   "social.create.audience": "Público",
   "social.audience.everyone": "Todos",
@@ -62,6 +58,7 @@
   "social.comments.placeholder": "Escreva um comentário…",
   "social.comments.reply": "Responder",
   "social.comments.delete": "Excluir comentário",
+  "social.comments.confirmDelete": "Excluir este comentário? Esta ação não pode ser desfeita.",
   "social.comments.approve": "Aprovar comentário pendente",
   "social.comments.empty": "Seja a primeira pessoa a comentar.",
   "social.comments.error": "Não foi possível carregar os comentários.",
@@ -85,5 +82,10 @@
   "social.signIn": "Entrar",
   "social.stories": "Stories",
   "social.report.error": "Não foi possível enviar a denúncia.",
-  "social.loadMore": "Mostrar mais publicações"
+  "social.loadMore": "Mostrar mais publicações",
+  "social.post.playVideo": "Reproduzir vídeo",
+  "social.post.pauseVideo": "Pausar vídeo",
+  "social.post.fullscreen": "Vídeo em tela cheia",
+  "social.post.muteFeed": "Silenciar som dos vídeos neste feed",
+  "social.post.unmuteFeed": "Ativar som dos vídeos neste feed"
 }

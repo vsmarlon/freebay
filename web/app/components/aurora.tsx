@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useCallback } from 'react';
+import auroraNoiseUrl from './aurora-noise.webp';
 
 const fragment = `precision mediump float;
 uniform vec2 uSize;
@@ -23,18 +24,19 @@ void main() {
     col = mix(col, vec3(0.541, 0.063, 0.514), smoothstep(0.55, 0.9, q1));
     col += vec3(1.000, 0.616, 0.933) * step(0.86, q1) * 0.28;
   } else {
-    col = mix(vec3(0.988, 0.976, 0.933), vec3(0.541, 0.063, 0.514), q1 * 0.32);
-    col = mix(col, vec3(0.400, 0.000, 0.384), step(0.72, q1) * 0.08);
-    col += vec3(1.000, 0.616, 0.933) * step(0.88, q1) * 0.035;
+    col = mix(vec3(0.937, 0.900, 0.773), vec3(0.541, 0.063, 0.514), q1 * 0.58);
+    col = mix(col, vec3(0.400, 0.000, 0.384), step(0.62, q1) * 0.22);
+    col += vec3(1.000, 0.616, 0.933) * step(0.78, q1) * 0.09;
   }
   gl_FragColor = vec4(col, 1.0);
 }`;
 
 export function Aurora() {
-  const canvas = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const element = canvas.current;
-    const gl = element?.getContext('webgl');
+  const bind = useCallback((element: HTMLCanvasElement | null) => {
+    if (!element) return;
+    // ponytail: the aurora is an ambient wash — low-power GPU slice, no antialias; visual quality is insensitive to these.
+    // preserveDrawingBuffer: without it the compositor may hand screenshots/Playwright a blank canvas; the buffer is 1x-DPR and 24fps, so the copy cost is negligible.
+    const gl = element?.getContext('webgl', { powerPreference: 'low-power', antialias: false, alpha: false, preserveDrawingBuffer: true });
     if (!element || !gl) return;
     const compile = (type: number, source: string) => {
       const shader = gl.createShader(type);
@@ -75,25 +77,30 @@ export function Aurora() {
     let textureReady = false;
     let frame = 0;
     const started = performance.now();
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    // ponytail: 1x canvas + 24fps cap — ambient wash, measured starving the main thread at 39fps full-DPR; the user asked the animation to run regardless of browser motion prefs.
+    const FRAME_MS = 1000 / 24;
+    let last = 0;
     const render = (now: number) => {
-      const ratio = Math.min(devicePixelRatio || 1, 2);
-      const width = Math.round(innerWidth * ratio);
-      const height = Math.round(innerHeight * ratio);
-      if (element.width !== width || element.height !== height) {
-        element.width = width;
-        element.height = height;
-        gl.viewport(0, 0, width, height);
+      if (now - last >= FRAME_MS) {
+        last = now;
+        const ratio = Math.min(devicePixelRatio || 1, 1);
+        const width = Math.round(innerWidth * ratio);
+        const height = Math.round(innerHeight * ratio);
+        if (element.width !== width || element.height !== height) {
+          element.width = width;
+          element.height = height;
+          gl.viewport(0, 0, width, height);
+        }
+        if (textureReady) {
+          gl.uniform2f(size, width, height);
+          gl.uniform1f(time, document.documentElement.dataset.aurora === 'off' ? 0 : (now - started) / 1000);
+          gl.uniform1f(dark, document.documentElement.dataset.theme === 'dark' ? 1 : 0);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        }
       }
-      if (textureReady) {
-        gl.uniform2f(size, width, height);
-        gl.uniform1f(time, reduced.matches || document.documentElement.dataset.aurora === 'off' ? 0 : (now - started) / 1000);
-        gl.uniform1f(dark, document.documentElement.dataset.theme === 'dark' ? 1 : 0);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      }
-      if (!reduced.matches && document.documentElement.dataset.aurora !== 'off') frame = requestAnimationFrame(render);
+      if (document.documentElement.dataset.aurora !== 'off') frame = requestAnimationFrame(render);
     };
-    const start = () => { cancelAnimationFrame(frame); render(performance.now()); };
+    const start = () => { cancelAnimationFrame(frame); last = 0; render(performance.now()); };
     const image = new Image();
     image.onload = () => {
       gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -101,22 +108,20 @@ export function Aurora() {
       textureReady = true;
       start();
     };
-    image.src = '/images/aurora_noise.png';
+    image.src = auroraNoiseUrl;
     start();
     window.addEventListener('resize', start);
-    reduced.addEventListener('change', start);
     const observer = new MutationObserver(start);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-aurora'] });
     return () => {
       cancelAnimationFrame(frame);
       image.onload = null;
       window.removeEventListener('resize', start);
-      reduced.removeEventListener('change', start);
       observer.disconnect();
       gl.deleteTexture(texture);
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
     };
   }, []);
-  return <><div className="aurora-static" aria-hidden="true" /><canvas className="aurora-canvas" ref={canvas} aria-hidden="true" /></>;
+  return <><div className="aurora-static" aria-hidden="true" /><canvas className="aurora-canvas" ref={bind} aria-hidden="true" /></>;
 }

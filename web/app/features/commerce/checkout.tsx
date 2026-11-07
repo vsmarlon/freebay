@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../../core/api';
@@ -22,7 +22,8 @@ function CheckoutContent() {
   const [paidRecovery, setPaidRecovery] = useState(false);
   const attemptKey = user ? `freebay.cart-checkout.${user.id}` : '';
   function clearAttempt(key = attemptKey): boolean { try { localStorage.removeItem(key); return true; } catch { setStorageUnavailable(true); setAmbiguous(true); return false; } }
-  useEffect(() => {
+  const mountRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
     if (!user) { setRestoring(false); return; }
     let active = true;
     const controller = new AbortController();
@@ -136,7 +137,7 @@ function CheckoutContent() {
     window.location.assign(target);
   } });
   const group = checkout.data ? canonicalCheckoutGroup(checkout.data) : undefined;
-  return <CommercePage title={t('commerce.checkout.title')}>
+  return <CommercePage title={t('commerce.checkout.title')}><div ref={mountRef} className="sr-only" aria-hidden />
     <Surface className="commerce-checkout">
       <p>{t('commerce.checkout.explainer')}</p>
       {preflightError && <ErrorState error={preflightError} />}

@@ -8,6 +8,7 @@ import { paths, pathsFor } from '../../core/routes';
 import { mediaUrl } from '../../core/media';
 import { userKey } from '../../core/query-client';
 import type { ProductSummary } from './types';
+import { toProductSummary } from './types';
 import en from './catalogs/en.json'; import pt from './catalogs/pt-BR.json';
 import './marketplace.css';
 
@@ -20,7 +21,10 @@ export default function MyProductsRoute() {
   const query = useQuery({
     queryKey: userKey(user?.id ?? 'anonymous', 'products', 'mine'),
     enabled: Boolean(user),
-    queryFn: () => api.get<{ products: ProductSummary[] }>('/products/mine/all'),
+    queryFn: async () => {
+      const data = await api.get<{ products: ProductSummary[] }>('/products/mine/all');
+      return { products: data.products.map(toProductSummary) };
+    },
   });
   if (isPending) return <section className="marketplace"><Loading label={t('common.loading')} /></section>;
   if (!user) return <section className="marketplace"><Surface><p>{t('auth.required')}</p><Button onClick={() => window.location.assign(path(paths.login))}>{t('auth.signIn')}</Button></Surface></section>;

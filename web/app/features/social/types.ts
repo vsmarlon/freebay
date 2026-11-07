@@ -1,5 +1,7 @@
 export type PostType = 'REGULAR' | 'PRODUCT';
 export type PostAudience = 'EVERYONE' | 'CLOSE_FRIENDS';
+export type PostMediaType = 'IMAGE' | 'VIDEO';
+export type PostMediaItem = { id: string; url: string; thumbnailUrl: string | null; type: PostMediaType; altText: string | null; blurHash?: string; order: number };
 export type FeedType = 'explore' | 'following';
 export type ContentFilter = 'all' | 'social' | 'selling';
 export type TimelineKind = 'post' | 'repost' | 'product' | 'all';
@@ -10,7 +12,7 @@ export type ReportReason = 'FALSE_ADVERTISING' | 'SPAM' | 'FRAUD' | 'NUDITY' | '
 export type SocialUser = { id: string; displayName: string; username?: string | null; avatarUrl?: string | null; isVerified?: boolean };
 export type ProductInfo = { id: string; title: string; description: string; price: number; condition: string; images?: { url: string }[] };
 export type Post = {
-  id: string; userId: string; content: string | null; imageUrl: string | null; imageBlurHash?: string;
+  id: string; userId: string; content: string | null; media: PostMediaItem[];
   type: PostType; audience: PostAudience; likesCount: number; commentsCount: number; sharesCount: number;
   isLiked: boolean; isSaved: boolean; hasReposted: boolean; createdAt: string; user: SocialUser;
   product?: ProductInfo | null; repostId?: string | null; repostedAt?: string | null;

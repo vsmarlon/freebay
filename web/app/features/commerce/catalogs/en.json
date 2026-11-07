@@ -5,6 +5,8 @@
   "commerce.cart.loading": "Loading cart…",
   "commerce.cart.soldBy": "Sold by",
   "commerce.cart.quantity": "Quantity",
+  "commerce.cart.increase": "Increase quantity",
+  "commerce.cart.decrease": "Decrease quantity",
   "commerce.cart.remove": "Remove",
   "commerce.cart.confirmRemove": "Remove this item?",
   "commerce.cart.clear": "Clear cart",
