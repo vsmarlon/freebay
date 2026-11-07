@@ -49,7 +49,7 @@ The following UX work is present in the integrated working tree. “Focused veri
 
 | Area | Code-verified behavior | Focused evidence and remaining boundary |
 |---|---|---|
-| Stories and media editor boundaries | Stories owns its Dart entity, repository, read providers, submission coordinator and public presentation API; media editor owns its Dart page/models/paint/toolbar and compositor adapter. Native Kotlin/Swift implementations and registrations remain in platform locations. | Source extraction and final gates are recorded in `features.md` and the master report. No Android/iOS pixel parity or physical editor journey is claimed. |
+| Stories and media editor boundaries | Stories owns its Dart entity, repository, read providers, submission coordinator and public presentation API; media editor owns its Dart page/models/paint/toolbar and compositor adapter. Native Kotlin/Swift implementations and registrations remain in platform locations. | Source extraction and final gates are recorded in `features.md` and the master report. On 2026-10-28, a Galaxy A30 physical-device run verified gallery selection, filter and export back to story preview for one image and one 21-second MP4; runtime errors and crashes were empty after the video flow. No publish/upload, iOS, or Android/iOS pixel-parity claim. See [`error-media`](device-runs/2026-10-28/error-media/REPORT.md). |
 | Sheets and profile social privacy | Shared design-system sheets use native vertical drag dismissal. Close-friend eligibility accepts either following direction; only the owner manages the list. Removing the last qualifying edge or blocking revokes access and deleting a block does not restore membership. Post/story private media remains authorized at read time. | UX1 sheet regression and UX2 backend HTTP/database privacy suite passed (4/4); the suite includes 3 connection-transition/privacy scenarios. Candidate-search outsider exclusion, both-direction eligibility and pagination also passed a focused HTTP/Prisma E2E case and the 5-case story suite; see [`close-friends-search`](test-runs/2026-10-01/close-friends-search/REPORT.md). No production DB/device claim. |
 | Profile timeline | Posts, reposts, and products are filtered before pagination. Mixed timeline remains the backwards-compatible default; scoped cursors remain independent by kind. Client paging tracks the asynchronous state and cancels/replaces stale requests when scope changes. | UX2 selected backend timeline cases passed (3/3), including mixed default, kind filtering, cursor pagination, and invalid-kind rejection. UX3 profile/shell focused suite passed 14 tests. |
 | Feed, cache and navigation | Posts/Reposts/Anúncios use inner horizontal paging without changing the outer shell. Five shell indexes remain stable. Cache purge/write lifecycle, pending social-action reconciliation and pagination in-flight protection have source and focused-test evidence of differing status. | See `features.md`, `state-native.md` and the master report. Current format, analyze and test gates failed; a fresh debug APK build passed after concurrent WIP removed a compile blocker. Device gestures, IME behavior and comparable post-change performance remain unverified. |
@@ -89,7 +89,41 @@ The current working tree contains a React Router web client under `web/` with lo
 
 At the recorded revision `235b5ce8d270a7e03e8988985e369616c3ce9721` plus dirty concurrent changes, overall web typecheck, lint, test and release readiness are **not established**; see each dated report for its exact command and exit/result. Do not infer full-route correctness, authentication provider readiness, real email delivery, backend authorization, payment completion, or production deployment from source presence or isolated tests. Unsupported browser push, native biometric, admin console, carrier tracking, message editing and backend-absent operations remain unsupported/not claimed. Existing preceding rows and historical gate results above are intentionally left unchanged by this dated web update.
 
-## Local runtime schema repair — 2026-10-08
+## Web performance and journey repair — 2026-10-28
+
+Supplements the 2026-10-07 snapshot; full command/evidence record: [`2026-10-28 web-perf-and-journeys`](test-runs/2026-10-28/web-perf-and-journeys/REPORT.md).
+
+| Area | Current source boundary and evidence |
+|---|---|
+| Production delivery | `web/server.mjs` now serves `build/client` statics (previously asset URLs 302'd into the SPA and nothing was compressed): content-typed responses, gzip with in-memory caching, `immutable` cache for hashed `/assets/*`, `no-cache` for SSR HTML, traversal-safe, HEAD supported. Verified over real HTTP without a backend. |
+| Payload | First visit `/pt-BR`: 1,420 kB raw / 659 kB gzip → 542 kB raw / **249.7 kB gzip wire** (−82% effective). Fonts are subsetted variable WOFF2 (990 kB TTF → 111 kB, weight axes verified intact); aurora texture 53 kB PNG → 4.6 kB WebP. `@react-router/serve` removed. Revisits fetch ~0 asset bytes. |
+| Pre-hydration input loss | Fixed in shared `Input`/`TextArea` and register consent: values typed or autofilled before React hydration are adopted on mount instead of being wiped by the first re-render (verified RED→GREEN through the fixture journey that previously flaked on this). |
+| Journeys | Fixture Playwright journeys **12/12 passed on three consecutive runs** (was 1/8 at 2026-10-07). Includes a 320 px mobile-reflow assertion. Still fixture-contract evidence, not live-backend proof. |
+| Gates | typecheck/lint/vitest 73/build green at the recorded tree. The untracked `real-backend` E2E lane and the `post.tsx` comment-limit WIP present in the tree predate this work and are unchanged. Owner-gated items (providers, email delivery, payments, deletion-page legal review, deployment origins) are unchanged and remain unclaimed. |
+
+## Web product parity — 2026-10-30
+
+Supplements the 2026-10-28 snapshot; full command/evidence record: [`2026-10-30 web-product-parity`](test-runs/2026-10-30/web-product-parity/REPORT.md).
+
+| Area | Current source boundary and evidence |
+|---|---|
+| Identity | Facebook-style "f square" replaced by a price-tag/"F" mark (`app/components/brand-mark.tsx`) used in marketing header/footer, hero art, auth top bar and post-login welcome; `public/favicon.svg` + `rel=icon` added |
+| Sign-in | Login accepts **email or unique @username** (backend contract already allowed both; web form previously blocked it — verified through the fixture login journey). Google web sign-in is code-complete and config-gated: it activates when the owner sets `VITE_GOOGLE_WEB_CLIENT_ID` (web) and `GOOGLE_WEB_CLIENT_ID` (backend); Apple stays "not configured" until its own IDs |
+| Onboarding order | Anonymous visits to protected routes redirect to `/login` with `returnTo`; the pre-signup `/onboarding` page was deleted; marketing "Get started" → `/register`. The post-login welcome (3 slides, no biometry in any web UI) is the only onboarding |
+| Theme + motion | Theme switching proven working (system/dark/light flip, SSR pre-paint script keeps choice; login page respects it) — the actual defect was GPU starvation: aurora capped to 1x-DPR canvas, 24fps, `low-power` context; main-thread rAF budget measured **39fps → 61fps**, zero long tasks |
+| Env / dev correctness | Five RR v8 future flags enabled (no warnings in dev or build). `vite.config.ts` seeds server-only `BACKEND_URL` from `.env*` with a dev fallback; `web/.env.example` documents all web keys; dev no longer crashes marketplace SSR with "BACKEND_URL is not configured" |
+| Header alignment | Marketing header cluster unified to a single 38px control height (icon, select, locale link, CTA) |
+| Gates | typecheck 0, lint 0, vitest **73/73**, build clean, fixture journeys **12/12 ×2 consecutive runs**, prod smoke 200/gzip/immutable/no-cache, first-load **250.1 kB gzip** |
+
+## Web real-backend validation — 2026-10-30
+
+**Login + product journeys against the live backend, plus a real shape-contract fix, dev environment only.** Backend booted on :3000 with local Postgres after `prisma db push` + `db:seed` (dev DB was empty/drifted); `nest-backend/.env` gained `ALLOWED_ORIGINS` for the web dev/prod origins to pass `OriginGuard` and an (empty) `GOOGLE_WEB_CLIENT_ID=` placeholder. Seed credentials (`Freebay@2026` for seeded users) proved login by **username and email**, session-cookie → bearer-token chain, and `/users/me`.
+
+**Contract fix (root cause, tracked source):** the web declared `ProductSummary.images[]` while the backend ships `media[]` — only fixtures (which match the web's assumed shape) exercised these pages before, so real data 500'd every listing (`meta()` and gallery). `marketplace/types.ts` now exports `toProductSummary()` (accepts `media` or `images`, filters non-images); applied at the `server.server.ts` loaders, `favorites.tsx` and `my-products.tsx` boundaries; review images guarded optional in `user-reviews.tsx`. Fixture journeys keep their shape unchanged.
+
+**Evidence:** real-browser Playwright probe 16/16 ×2 (login username, welcome gate → feed, session survives reload, SSR explore/detail, favorites toggle 201/201, add-to-cart 201, cart page, wallet, orders, chat list, logout through `/auth/web/session/logout`); backend request logs recorded 01s across the chain; prod `server.mjs` with real SSR: marketing TTFB 16 ms, explore TTFB 136 ms (wire 652 kB ≈ 310 kB of `w=800` Unsplash seed photos), zero long tasks idle; `tsc` 0 / vitest 73/73 / fixture e2e 12/12 after the fix. Temp probe scripts deleted. Report: [`2026-10-30 web-real-backend`](test-runs/2026-10-30/web-real-backend/REPORT.md). Limits: seed-DB dev instance only; Stripe/payments/email still owner-gated; Google web sign-in still waits on the owner's Web OAuth client ID; real-backend E2E lane stays with its owner.
+
+
 
 **Accounts and payment recovery, local development only:** the configured `localhost:5432/postgres/public` database lacked `User.sessionsInvalidBefore` and four `Transaction.refund*` columns. After explicit owner approval, the five nullable columns and three refund unique indexes were synchronized without reset, seed, migrations, or production-code changes. The real read-only Google lookup, transfer reconciliation, and refund recovery queries went RED → GREEN (3/3), and the runtime schema diff is empty. Backend typecheck/lint/build, unit and guarded test-DB integration checks passed; HTTP E2E remained blocked before journeys by test JWT-secret validation. This does not establish running-cron execution, live Stripe settlement, production deployment, or security rollout/backfill. Exact commands, environment, dirty-source fingerprints and limits: [runtime DB report](test-runs/2026-10-08/prisma-runtime-drift/REPORT.md).
 
@@ -98,3 +132,75 @@ At the recorded revision `235b5ce8d270a7e03e8988985e369616c3ce9721` plus dirty c
 ## Edit Profile save/navigation — 2026-10-08
 
 **Fixed in working tree, widget boundary only:** a same-owner profile update unnecessarily refreshed GoRouter immediately before the editor popped, restoring the edit route. `AuthController.setUser` now refreshes only for authentication/profile-completion changes; user updates and the same-owner guard remain intact. The original save/auth-update/page-absence assertions went RED → GREEN unchanged; 47 focused tests passed, including complete/incomplete-profile and cleared-session redirects. Post-fix Flutter **366/366**, format and analyze passed; the later `make test` also passed (**backend 816, Flutter 366, guarded test-DB integration 125**) with zero source drift. Earlier integration/process failures remain recorded separately. The identical isolated debug APK retry passed with zero source drift; E2E remains Stripe-configuration-blocked. Physical Save/persistence, provider, production-schema and biometric evidence remain unverified. Exact commands, historical full-suite RED, APK hash and post-fix gates: [security resume report](test-runs/2026-10-08/security-resume/REPORT.md).
+
+## Chat composer and audio — 2026-10-27
+
+**Source and build evidence only:** the chat composer now limits visible entry to two lines; the audio bubble has an interactive position slider backed by `AudioPlayer.seek`; the recording bar exposes the view-once toggle and the audio send passes that flag through the existing HTTP contract. The backend already persists `viewOnce` for audio messages. Scoped Flutter analysis, full format check and debug APK build passed. The full analyzer and design gate failed on files outside this change; the real-device chat journey was blocked before an authenticated conversation. Playback seeking, upload, one-view behavior and visual layout are not device-verified. See [chat audio run](test-runs/2026-10-27/chat-audio/REPORT.md).
+## Web overhaul and chat-start contract — 2026-11-06
+
+**Shared web foundation primitives + seven reported issues; real-backend verification for multi-image listing upload and product->chat start.** Web-only round. Ponytail mode full; no useEffect introduced; no new web dependencies.
+
+- **Catalog insertions:** product.increase/decrease/previousImage/nextImage/imageOf and editor.images/imagesHint/addImages/removeImage/cover/imagesReadOnly/preview/previewNote/tooManyImages/imageTypes keys added to marketplace/catalogs/{en,pt-BR}.json.
+- **Shared primitives (already created, verified this round):** core/api-hooks.ts (useApiQuery/useApiMutation), components/toast.tsx (ToastProvider/useToast, role status 6s), components/quantity-stepper.tsx, marketplace/image-carousel.tsx, chat/chat-composer.tsx (auto-grow 160px cap). components/index.tsx gained mail/lock/at/minus/viewOnce/reply/eyeOff/chevronRight/globe/shield icons, rewritten Input (<div className="ui-field"> + inner label; icon/trailing), PasswordInput (eye reveal), Toggle (role switch), SegmentedControl (sliding track via --segment-index/--segment-count), Checkbox ref (React 19), TextArea autoGrow, Avatar initials-on-theme-tokens.
+- **Marketplace:** detail.tsx now uses ImageCarousel (arrows, dots, counter, keyboard, empty state) and shared QuantityStepper; editor.tsx rewritten — two-column desktop + sticky live preview, mobile preview-above-fields via CSS grid rows, files[] + mediaMetadata JSON contract (<=10, first=cover, JPEG/PNG/WebP/GIF <=5MB); edit mode images read-only (PATCH metadata only). .market-gallery/.editor-* styles appended to marketplace.css.
+- **Chat:** thread.tsx header/composer/per-message/bulk-select bar converted to icon-only controls (Icon + aria-label/title equal to the prior visible English strings); ChatComposer replaces the raw textarea; theme + background-URL row moved into the Details Dialog; block/archive became snackbar-Undo (PATCH /users/:id/unblock; archive(id, !archived)); Report/Delete-conversation/Delete-message became confirmation dialogs; mute/hide-presence stay toggles; empty-state copy fixed (chat.emptyThread); inbox.tsx new-conversation search uses shared Input. media.tsx view-once close reworked so exactly one close fires per opening (re-attach cancels pending; explicit Close fires it; unmount fires it).
+- **Settings:** full rewrite — Appearance (3-way SegmentedControl light/dark/system + aurora Toggle), Language SegmentedControl, 4 notification Toggles with optimistic override + rollback, More rows (icon+label+chevron), danger sign-out row; removed dev copy.
+- **Marketing:** account/faq-sections.tsx extracted from help.tsx; /how-it-works = marketing frame + shared FAQ; /about = genuinely different sections (what FreeBay is, buying with escrow, selling, safety & privacy) reusing catalog copy; new marketing.* keys in core/catalogs. Sidebar brand: shared BrandMark SVG in both states + mobile topbar.
+- **Root:** ToastProvider mounted around <Outlet/>; styles.css gained .ui-input-shell/glyph/toggle, segmented, quantity, avatar-fallback, toast, settings, chat-composer rules plus sidebar fixes (toggle can never overlap brand). app-shell.tsx brand mark. edit-profile.tsx invalidates ['session','user'] after profile/avatar/banner save.
+- **Removed dead CSS:** .settings-select (styles.css), .commerce-quantity block (commerce.css). public/avatar-placeholder.svg deleted (no references).
+- **Gates:** typecheck 0, lint 0, vitest 75/75, build clean (client + SSR), mocked fixture e2e 12/12.
+- **Real backend (dev only — localhost:5432/postgres/public):** product with 2 images uploaded (201) and buyer opened the detail page (1 / 2 carousel counter). Contact seller previously returned 500 "Erro ao criar conversa"; reproduced and root-caused to an untracked CHECK constraint DirectConversation_scope_product_check enforcing legacy scopeKey IN ('DIRECT','PRODUCT'), while the code writes PRODUCT:<uuid>. After owner approval, the constraint was replaced in one transaction with the contract the code writes; the table held 0 product conversations and 0 legacy PRODUCT rows, zero violating rows verified before COMMIT; POST /chat/conversations then 201 and the full product->chat journey (greeting "Hi, is this still available?") passes. Evidence: test-runs/2026-11-06/REPORT.md; screenshots: test-runs/2026-11-06/screenshots/* (gitignored, local). A reusable real-dev lane was added as web/e2e/real-dev.config.ts.
+- **Limits:** full-app visual polish and the ~25-file useCallback(node) -> useApiQuery sweep remain parked (owner decision); no production/HML database or migration was touched; no commits or staging were made.
+
+## Launch campaign — 2026-11-06/07 (multi-lane, code-verified)
+
+Owner-approved 9-phase launch plan (see `plano.md`; decisions in ADR 0006–0008 and the
+grilling record). Rule: the code is the truth; every claim below was diff-reviewed by the
+orchestrator, not taken from lane reports. Device evidence intentionally deferred (owner:
+web visual proof first; visual-evidence rule added to `AGENTS.md`).
+
+- **Backend security:** unpaid orders without a transaction now expire after 30 min and
+  release the listing (claim is conditional on PENDING + transaction-null, in one
+  transaction with inventory restore); per-buyer cap of 10 unpaid orders; throttle on
+  `POST /orders`. Indexes added: `Transaction[chargeId]`, `Transaction[externalId]`,
+  `Dispute[status,expiresAt]`, `Order[status,deliveryConfirmedAt]` (no migration yet —
+  owner P10). Review-image upload now requires order-review eligibility. Throttles added
+  with the registered `short` bucket (the `{limit,ttl}` shorthand normalizes to an inert
+  `default` bucket — pre-existing no-op throttles swept later). Verified: tsc, prisma
+  validate, focused suites, 76 suites/518 tests after encoding repair.
+- **Email verification (ADR 0007):** `POST /auth/verify-email/request|confirm`; Redis
+  challenge (SHA-256 at rest, timing-safe compare, 10-min TTL, 5 attempts, 60s cooldown,
+  3/h silent saturation); register triggers the verification email; Google/Apple sign-in
+  refuses to link an unverified local account (`EMAIL_VERIFICATION_REQUIRED` 403) and no
+  longer auto-marks it verified; create-product gated on verified email. Orders/Connect
+  gates and client UI remain pending. Provider-link behavior proven by focused specs.
+- **Frontend auth (16 audited defects fixed):** business 401s no longer log the user out
+  (auth-loss only when `/auth/refresh` itself 401s); logout retries with the refresh
+  token so server-side revocation works with an expired access token; register persists
+  remember-me; biometric unlock failure no longer permanently suspends refresh; session
+  lock treats login as fresh activity; token pair survives transient biometric startup
+  failures; FCM registration lets the interceptor refresh; recovery reads
+  `sent`/`verified`; biometric enrollment now drives the session-bound signature
+  challenge end-to-end. Repo-wide `flutter analyze --fatal-infos lib` clean.
+- **Flutter product fixes:** chat offers render (TEXT envelope + metadata normalized to
+  OFFER at the entity boundary); block/report/theme consistency; composer labels;
+  feed empty-state CTA + compose FAB; post "…" menu (report/delete); stories open by ID;
+  profile settings sections + logout confirm + segmented theme; Blocked/Saved/Favorites/
+  Purchases screens reachable; buy-now respects quantity (disabled >1 with hint — backend
+  has no order quantity); cart guards; guest favorite auth-gated.
+- **Web fixes:** follow/block state reads `isFollowing`/`isBlocked`; orders/sales/wallet
+  pagination accumulates (`useCommerceInfiniteQuery`); story viewer closes on the last
+  slide; destructive dialogs standardized; marketing mobile nav; language segmented
+  control; aurora visible on auth pages (opaque `main` background was covering it;
+  `preserveDrawingBuffer` added for capture fidelity); explore/profile mobile overflow
+  fixed (measured 401px/455px → 390px clean). Gates: tsc/lint/vitest 75/build 0, fixture
+  e2e 12/12, 22-route screenshot sweep with overflow assertions.
+- **Repo hygiene:** systemic cp1252 mojibake in the backend (pre-existing, mtimes 02/11)
+  repaired via dry-run-first script (47 lines, 9 files) and verified with tsc + 518
+  tests; `frontend/lib`, design-system lib, `web/`, `docs/`, `db/` scanned clean. Dead
+  code removed: `PostShareBottomSheet`, `FeedTypeDropdown`, `post_details_comment_tree.dart`.
+- **Still open (do not claim):** device evidence for all Flutter fixes; APK build gate;
+  verify-email UI; deferred auth UX (biometry step-up, lock gating, revocation retry);
+  inert `{limit,ttl}` throttle sweep; `ReviewsService.tempImages` owner-less map;
+  PENDING orders with a transaction but null `checkoutExpiresAt`; l10n key consolidation;
+  web polish batch (reaction hover, textareas, profile/collections) at review time.
