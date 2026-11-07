@@ -83,3 +83,5 @@ e2e/artifacts/
 # Runtime uploads (saveUpload writes under the process cwd; nest-backend/.gitignore covers its own roots)
 /uploads/
 /private-uploads/
+
+web/.e2e-real-artifacts/
