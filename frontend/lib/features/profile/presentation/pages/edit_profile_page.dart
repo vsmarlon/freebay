@@ -261,7 +261,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         child: Column(
           children: [
             PageHeader(
-              text: strings.profileEdit.toUpperCase(),
+              text: strings.profileEdit,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
                 semanticLabel: strings.accessibilityBack,

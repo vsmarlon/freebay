@@ -25,7 +25,7 @@ class MyProductsPage extends ConsumerWidget {
       body: Column(
         children: [
           PageHeader(
-            text: strings.productMyListings.toUpperCase(),
+            text: strings.productMyListings,
             leading: BrutalistIconButton(
               icon: Icons.arrow_back,
               semanticLabel: strings.accessibilityBack,

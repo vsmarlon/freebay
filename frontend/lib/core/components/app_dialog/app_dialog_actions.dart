@@ -102,7 +102,7 @@ class _DialogButton extends StatelessWidget {
           ),
         ),
         child: Text(
-          text.toUpperCase(),
+          text,
           style: TextStyle(
             fontFamily: AppTypography.fontFamily,
             fontSize: 14,

@@ -73,7 +73,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
           child: Column(
             children: [
               AuthHeader(
-                title: strings.authResetPassword.toUpperCase(),
+                title: strings.authResetPassword,
                 onBack: () => context.pop(),
               ),
               Expanded(

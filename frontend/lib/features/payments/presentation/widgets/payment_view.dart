@@ -82,7 +82,7 @@ class PaymentView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                strings.paymentGenerated.toUpperCase(),
+                strings.paymentGenerated,
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
@@ -117,7 +117,7 @@ class PaymentView extends StatelessWidget {
         ),
         Spacing.vLg,
         if (payment != null) ...[
-          PaymentSectionLabel(strings.paymentStripeCheckout.toUpperCase()),
+          PaymentSectionLabel(strings.paymentStripeCheckout),
           const SizedBox(height: 12),
           Container(
             color: isDark

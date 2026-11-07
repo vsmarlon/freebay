@@ -77,7 +77,7 @@ class _CloseFriendsPageState extends ConsumerState<CloseFriendsPage> {
         child: Column(
           children: [
             PageHeader(
-              text: strings.closeFriendsTitle.toUpperCase(),
+              text: strings.closeFriendsTitle,
               breadcrumbs: context.breadcrumbs,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
@@ -108,7 +108,7 @@ class _CloseFriendsPageState extends ConsumerState<CloseFriendsPage> {
                     children: [
                       Expanded(
                         child: AppButton(
-                          label: strings.profileFollowers.toUpperCase(),
+                          label: strings.profileFollowers,
                           variant: _selected
                               ? AppButtonVariant.secondary
                               : AppButtonVariant.primary,

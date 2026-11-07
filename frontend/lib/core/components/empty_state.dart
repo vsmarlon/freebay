@@ -79,7 +79,7 @@ class EmptyState extends StatelessWidget {
             : TextButton(
                 onPressed: _onRetry,
                 child: Text(
-                  l10n(context).commonRetry.toUpperCase(),
+                  l10n(context).commonRetry,
                   style: const TextStyle(
                     fontFamily: AppTypography.fontFamily,
                     fontSize: 12,

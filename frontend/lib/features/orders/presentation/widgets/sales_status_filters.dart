@@ -29,7 +29,7 @@ class SalesStatusFilters extends StatelessWidget {
               selected: selected == null,
               label: strings.ordersAllStatuses,
               child: BrutalistFilterChip(
-                label: strings.commonAll.toUpperCase(),
+                label: strings.commonAll,
                 selected: selected == null,
                 onTap: () => onChanged(null),
               ),
@@ -58,7 +58,7 @@ class SalesStatusFilters extends StatelessWidget {
                     OrderStatus.completed => strings.orderStatusCompleted,
                     OrderStatus.cancelled => strings.orderStatusCancelled,
                     OrderStatus.disputed => strings.orderStatusDisputed,
-                  }.toUpperCase(),
+                  },
                   selected: selected == status,
                   onTap: () => onChanged(status),
                 ),

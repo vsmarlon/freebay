@@ -48,7 +48,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
       body: AppBackground(
         child: Column(
           children: [
-            PageHeader(text: strings.productEditListing.toUpperCase()),
+            PageHeader(text: strings.productEditListing),
             Expanded(
               child: productAsync.when(
                 loading: () => const SkeletonPage(

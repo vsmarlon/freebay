@@ -66,7 +66,7 @@ class RegisterPage extends HookConsumerWidget {
             children: [
               // Top Bar with centered massive header (100% larger)
               AuthHeader(
-                title: strings.authSignUp.toUpperCase(),
+                title: strings.authSignUp,
                 onBack: () => context.pop(),
               ),
 
@@ -200,8 +200,7 @@ class RegisterPage extends HookConsumerWidget {
                           Spacing.vLg,
                           AuthStagger(
                             child: AppButton(
-                              label: strings.authFinishRegistration
-                                  .toUpperCase(),
+                              label: strings.authFinishRegistration,
                               size: AppButtonSize.large,
                               isLoading: authState.isLoading,
                               onPressed: () {
@@ -226,7 +225,7 @@ class RegisterPage extends HookConsumerWidget {
                           Spacing.vMd,
                           AuthStagger(
                             child: GoogleAuthButton(
-                              label: strings.authSignUpGoogle.toUpperCase(),
+                              label: strings.authSignUpGoogle,
                               loading: authState.isLoading,
                               onTap: () => ref
                                   .read(authControllerProvider.notifier)

@@ -139,7 +139,7 @@ class _TimelineTabState extends ConsumerState<_TimelineTab>
                       child: Semantics(
                         label: label,
                         button: true,
-                        child: Text(label.toUpperCase()),
+                        child: Text(label),
                       ),
                     ),
                 ],

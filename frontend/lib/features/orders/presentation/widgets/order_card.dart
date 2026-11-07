@@ -113,7 +113,7 @@ class OrderCard extends StatelessWidget {
                             OrderStatus.cancelled =>
                               strings.orderStatusCancelled,
                             OrderStatus.disputed => strings.orderStatusDisputed,
-                          }.toUpperCase(),
+                          },
                           style: TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontSize: 9,

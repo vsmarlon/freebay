@@ -23,10 +23,7 @@ class WalletErrorState extends StatelessWidget {
           children: [
             Text(message, textAlign: TextAlign.center),
             Spacing.vMd,
-            AppButton(
-              label: strings.commonRetry.toUpperCase(),
-              onPressed: onRetry,
-            ),
+            AppButton(label: strings.commonRetry, onPressed: onRetry),
           ],
         ),
       ),
@@ -53,7 +50,7 @@ class WalletHistoryError extends StatelessWidget {
         Text(message, style: TextStyle(color: context.textSecondary)),
         Spacing.vSm,
         AppButton(
-          label: strings.commonRetry.toUpperCase(),
+          label: strings.commonRetry,
           variant: AppButtonVariant.secondary,
           onPressed: onRetry,
         ),

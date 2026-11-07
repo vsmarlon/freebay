@@ -173,7 +173,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Status: ${order.status.name.toUpperCase()}',
+                    'Status: ${order.status.name}',
                     style: TextStyle(
                       color: context.textSecondary,
                       fontSize: 11,

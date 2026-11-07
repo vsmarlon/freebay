@@ -64,7 +64,7 @@ class AppDialog extends StatelessWidget {
       if (dismissText != null) {
         actions.add(
           BrutalistDialogAction(
-            text: dismissText.toUpperCase(),
+            text: dismissText,
             onPressed: () {
               onDismiss?.call();
               Navigator.of(context).pop();
@@ -76,7 +76,7 @@ class AppDialog extends StatelessWidget {
       if (okText != null || dismissText == null) {
         actions.add(
           BrutalistDialogAction(
-            text: (okText ?? l10n(context).commonOkay).toUpperCase(),
+            text: okText ?? l10n(context).commonOkay,
             isDefaultAction: true,
             isDestructiveAction: isError,
             onPressed: () {

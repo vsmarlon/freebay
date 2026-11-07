@@ -80,7 +80,7 @@ class _WalletCardState extends State<WalletCard> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      l10n(context).walletTotalBalance.toUpperCase(),
+                      l10n(context).walletTotalBalance,
                       style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         color: AppColors.onPrimary.withValues(alpha: 0.70),
@@ -117,7 +117,7 @@ class _WalletCardState extends State<WalletCard> {
                   children: [
                     Expanded(
                       child: _buildBalanceItem(
-                        l10n(context).walletAvailable.toUpperCase(),
+                        l10n(context).walletAvailable,
                         _masked(available),
                         solid: true,
                       ),
@@ -125,7 +125,7 @@ class _WalletCardState extends State<WalletCard> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildBalanceItem(
-                        l10n(context).walletPending.toUpperCase(),
+                        l10n(context).walletPending,
                         _masked(pending),
                         solid: false,
                       ),

@@ -61,7 +61,7 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
           child: Column(
             children: [
               AuthHeader(
-                title: strings.authForgotPassword.toUpperCase(),
+                title: strings.authForgotPassword,
                 onBack: () => context.pop(),
               ),
               Expanded(

@@ -64,7 +64,7 @@ class _RecoveryCodePageState extends ConsumerState<RecoveryCodePage> {
           child: Column(
             children: [
               AuthHeader(
-                title: strings.authVerificationCode.toUpperCase(),
+                title: strings.authVerificationCode,
                 onBack: () => context.pop(),
               ),
               Expanded(

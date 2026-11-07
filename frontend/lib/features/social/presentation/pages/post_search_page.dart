@@ -63,7 +63,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
       body: AppBackground(
         child: Column(
           children: [
-            PageHeader(text: strings.feedSearchHint.toUpperCase()),
+            PageHeader(text: strings.feedSearchHint),
             BrutalistBreadcrumb(
               items: [
                 BreadcrumbItem(

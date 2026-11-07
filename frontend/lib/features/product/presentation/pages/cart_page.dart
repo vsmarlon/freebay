@@ -32,11 +32,11 @@ class _CartPageState extends ConsumerState<CartPage> {
       subtitle: strings.cartTitleCount(ref.read(cartProvider).cart.totalItems),
       customActions: [
         BrutalistDialogAction(
-          text: strings.commonCancel.toUpperCase(),
+          text: strings.commonCancel,
           onPressed: () => Navigator.of(context).pop(false),
         ),
         BrutalistDialogAction(
-          text: strings.commonClear.toUpperCase(),
+          text: strings.commonClear,
           isDestructiveAction: true,
           isDefaultAction: true,
           onPressed: () => Navigator.of(context).pop(true),
@@ -69,7 +69,7 @@ class _CartPageState extends ConsumerState<CartPage> {
         child: Column(
           children: [
             PageHeader(
-              text: strings.cartTitleCount(cart.totalItems).toUpperCase(),
+              text: strings.cartTitleCount(cart.totalItems),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
                 semanticLabel: strings.accessibilityBack,
@@ -137,7 +137,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                   : cart.items.isEmpty
                   ? EmptyState(
                       icon: Icons.shopping_cart_outlined,
-                      title: strings.cartEmptyTitle.toUpperCase(),
+                      title: strings.cartEmptyTitle,
                       subtitle: strings.cartEmptyBody,
                     )
                   : RefreshIndicator(

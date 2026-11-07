@@ -9,7 +9,7 @@ class EyebrowLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      text.toUpperCase(),
+      text,
       style: TextStyle(
         fontFamily: AppTypography.fontFamily,
         fontSize: 12,

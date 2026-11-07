@@ -238,7 +238,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            l10n(context).ordersInformation.toUpperCase(),
+            l10n(context).ordersInformation,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
@@ -332,7 +332,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   Future<void> _handleCancel() async {
     await showBrutalistSheet<void>(
       context: context,
-      title: l10n(context).ordersCancel.toUpperCase(),
+      title: l10n(context).ordersCancel,
       scrollable: false,
       builder: (_) => OrderCancellationSheet(onConfirm: _cancelOrder),
     );

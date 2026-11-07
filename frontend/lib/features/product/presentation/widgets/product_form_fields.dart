@@ -78,7 +78,7 @@ class ProductConditionSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          (label ?? strings.productConditionLabel).toUpperCase(),
+          (label ?? strings.productConditionLabel),
           style:
               labelStyle ??
               TextStyle(
@@ -92,7 +92,7 @@ class ProductConditionSelector extends StatelessWidget {
           children: [
             Expanded(
               child: AppButton(
-                label: (newLabel ?? strings.productNew).toUpperCase(),
+                label: (newLabel ?? strings.productNew),
                 variant: isNew
                     ? AppButtonVariant.primary
                     : AppButtonVariant.ghost,
@@ -102,7 +102,7 @@ class ProductConditionSelector extends StatelessWidget {
             Spacing.hSm,
             Expanded(
               child: AppButton(
-                label: (usedLabel ?? strings.productUsed).toUpperCase(),
+                label: (usedLabel ?? strings.productUsed),
                 variant: isNew
                     ? AppButtonVariant.ghost
                     : AppButtonVariant.primary,

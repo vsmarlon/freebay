@@ -152,7 +152,7 @@ class _PrivacyPageState extends ConsumerState<PrivacyPage> {
           child: Column(
             children: [
               PageHeader(
-                text: strings.privacyTitle.toUpperCase(),
+                text: strings.privacyTitle,
                 leading: BrutalistIconButton(
                   icon: Icons.arrow_back,
                   semanticLabel: strings.accessibilityBack,

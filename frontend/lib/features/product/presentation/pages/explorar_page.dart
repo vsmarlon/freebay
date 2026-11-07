@@ -94,7 +94,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
         children: [
           ShellScrollHeader(
             child: PageHeader(
-              text: strings.navExplore.toUpperCase(),
+              text: strings.navExplore,
               actions: [
                 Stack(
                   children: [
@@ -291,7 +291,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                 ),
                 Spacing.hSm,
                 AppButton(
-                  label: l10n(context).commonRetry.toUpperCase(),
+                  label: l10n(context).commonRetry,
                   size: AppButtonSize.compact,
                   variant: AppButtonVariant.secondary,
                   onPressed: () => ref

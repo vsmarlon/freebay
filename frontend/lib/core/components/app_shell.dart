@@ -170,6 +170,12 @@ class _AppShellState extends State<AppShell>
   }
 
   void _startDrag(DragStartDetails details) {
+    // ponytail: page swiping now belongs to inner pagers (profile tabs);
+    // the shell only keeps the left-edge drawer gesture.
+    if (details.globalPosition.dx > 24) {
+      _dragging = false;
+      return;
+    }
     _dragging = true;
     _drawer.stop();
     _dragStartPage =
@@ -177,7 +183,7 @@ class _AppShellState extends State<AppShell>
   }
 
   void _updateDrag(DragUpdateDetails details) {
-    if (!_pageController.hasClients) return;
+    if (!_dragging || !_pageController.hasClients) return;
     final width = MediaQuery.sizeOf(context).width;
     final delta = details.primaryDelta ?? 0;
     final neighborIndex = _dragStartPage.round() + (delta < 0 ? 1 : -1);
@@ -347,7 +353,7 @@ class _AppShellState extends State<AppShell>
                           padding: const EdgeInsets.all(8),
                           child: ExcludeSemantics(
                             child: Text(
-                              l10n(context).commonOffline.toUpperCase(),
+                              l10n(context).commonOffline,
                               textAlign: TextAlign.center,
                               style: AppTypography.labelSmall.copyWith(
                                 color: context.textPrimary,

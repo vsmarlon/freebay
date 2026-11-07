@@ -120,7 +120,7 @@ class CreateProductPage extends HookConsumerWidget {
         child: Column(
           children: [
             PageHeader(
-              text: strings.productCreateListing.toUpperCase(),
+              text: strings.productCreateListing,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
                 semanticLabel: strings.accessibilityBack,

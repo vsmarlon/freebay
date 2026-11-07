@@ -26,8 +26,8 @@ class StoryHighlightsSection extends HookConsumerWidget {
     showBrutalistSheet(
       context: context,
       title: highlight == null
-          ? strings.feedNewHighlight.toUpperCase()
-          : strings.feedEditHighlight.toUpperCase(),
+          ? strings.feedNewHighlight
+          : strings.feedEditHighlight,
       builder: (_) =>
           StoryHighlightEditor(userId: userId, highlight: highlight),
     );
@@ -49,7 +49,7 @@ class StoryHighlightsSection extends HookConsumerWidget {
       builder: (sheetContext) => Column(
         children: [
           AppButton(
-            label: strings.commonEdit.toUpperCase(),
+            label: strings.commonEdit,
             onPressed: () {
               Navigator.of(sheetContext, rootNavigator: true).pop();
               _openEditor(context, highlight);
@@ -58,7 +58,7 @@ class StoryHighlightsSection extends HookConsumerWidget {
           ),
           Spacing.vSm,
           AppButton(
-            label: strings.feedDeleteHighlight.toUpperCase(),
+            label: strings.feedDeleteHighlight,
             variant: AppButtonVariant.danger,
             onPressed: () {
               Navigator.of(sheetContext, rootNavigator: true).pop();

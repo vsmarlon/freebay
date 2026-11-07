@@ -307,7 +307,7 @@ class ProductDetailPage extends ConsumerWidget {
                   ),
                   Spacing.vMd,
                   Text(
-                    strings.productDescription.toUpperCase(),
+                    strings.productDescription,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,

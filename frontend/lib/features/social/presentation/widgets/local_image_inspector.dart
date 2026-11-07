@@ -108,7 +108,7 @@ class _LocalImageFullScreenState extends State<LocalImageFullScreen> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              strings.commonEdit.toUpperCase(),
+                              strings.commonEdit,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,

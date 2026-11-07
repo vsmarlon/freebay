@@ -82,7 +82,8 @@ class _SettingsSheetBodyState extends ConsumerState<_SettingsSheetBody> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _ThemeOption(
-                label: 'S',
+                icon: Icons.brightness_auto,
+                tooltip: strings.profileThemeSystem,
                 isSelected: themeMode == ThemeMode.system,
                 onTap: () => ref
                     .read(themeModeProvider.notifier)
@@ -90,7 +91,8 @@ class _SettingsSheetBodyState extends ConsumerState<_SettingsSheetBody> {
               ),
               Spacing.hXs,
               _ThemeOption(
-                label: 'L',
+                icon: Icons.light_mode,
+                tooltip: strings.profileThemeLight,
                 isSelected: themeMode == ThemeMode.light,
                 onTap: () => ref
                     .read(themeModeProvider.notifier)
@@ -98,7 +100,8 @@ class _SettingsSheetBodyState extends ConsumerState<_SettingsSheetBody> {
               ),
               Spacing.hXs,
               _ThemeOption(
-                label: 'D',
+                icon: Icons.dark_mode,
+                tooltip: strings.profileThemeDark,
                 isSelected: themeMode == ThemeMode.dark,
                 onTap: () => ref
                     .read(themeModeProvider.notifier)
@@ -376,39 +379,40 @@ class _SettingsSheetBodyState extends ConsumerState<_SettingsSheetBody> {
 }
 
 class _ThemeOption extends StatelessWidget {
-  final String label;
+  final IconData icon;
+  final String tooltip;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _ThemeOption({
-    required this.label,
+    required this.icon,
+    required this.tooltip,
     required this.isSelected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryContainer : Colors.transparent,
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primaryContainer
-                : context.borderColor,
-            width: 2,
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primaryContainer : Colors.transparent,
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primaryContainer
+                  : context.borderColor,
+              width: 2,
+            ),
           ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+          child: Center(
+            child: Icon(
+              icon,
+              size: 18,
               color: isSelected ? AppColors.onPrimary : context.textPrimary,
             ),
           ),
