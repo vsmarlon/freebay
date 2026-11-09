@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useSession } from '../../core/session';
 import {
@@ -12,6 +12,7 @@ import {
 import { OAuthButtons } from './oauth-buttons';
 import { safeLocalizedReturnTo } from '../../core/routes';
 import { authApi } from './auth.api';
+import { useSubmit } from './use-submit';
 
 export default function LoginPage() {
   const { t, path, locale } = useAuthText();
@@ -20,32 +21,21 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState(false);
   const returnTo = safeLocalizedReturnTo(
     new URLSearchParams(location.search).get('returnTo'),
     locale,
     path('feed'),
   );
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
-    setError(false);
-    try {
-      // ponytail: backend LoginDTO field stays `email` but accepts a unique @username too.
-      const result = await authApi.login(identifier, password);
-      await session.reload();
-      await navigate(
-        result.user?.username
-          ? returnTo
-          : `${path('complete-profile')}?returnTo=${encodeURIComponent(returnTo)}`,
-      );
-    } catch {
-      setError(true);
-    } finally {
-      setPending(false);
-    }
-  }
+  const { submit, pending, error } = useSubmit(async () => {
+    // ponytail: backend LoginDTO field stays `email` but accepts a unique @username too.
+    const result = await authApi.login(identifier, password);
+    await session.reload();
+    await navigate(
+      result.user?.username
+        ? returnTo
+        : `${path('complete-profile')}?returnTo=${encodeURIComponent(returnTo)}`,
+    );
+  });
   return (
     <AuthFrame
       title={t('auth.login.title')}

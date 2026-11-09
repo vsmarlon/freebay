@@ -1,29 +1,19 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { useAuthText, AuthButton, AuthFrame, AuthInput, AuthMessage } from './auth-frame';
 import { authApi } from './auth.api';
+import { useSubmit } from './use-submit';
 
 export default function ForgotPasswordPage() {
   const { t, path, locale } = useAuthText();
   const [email, setEmail] = useState('');
   const [step, setStep] = useState<'request' | 'done'>('request');
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState(false);
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
-    setError(false);
-    try {
-      if (step === 'request') {
-        await authApi.requestPasswordReset(email, locale);
-        setStep('done');
-      }
-    } catch {
-      setError(true);
-    } finally {
-      setPending(false);
+  const { submit, pending, error } = useSubmit(async () => {
+    if (step === 'request') {
+      await authApi.requestPasswordReset(email, locale);
+      setStep('done');
     }
-  }
+  });
   return (
     <AuthFrame
       title={t('auth.recovery.title')}

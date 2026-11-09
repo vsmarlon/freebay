@@ -1,9 +1,10 @@
-import { useCallback, useState, type FormEvent } from 'react';
+import { useCallback, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useSession } from '../../core/session';
 import { useAuthText, AuthButton, AuthFrame, AuthInput, AuthMessage } from './auth-frame';
 import { safeLocalizedReturnTo } from '../../core/routes';
 import { authApi } from './auth.api';
+import { useSubmit } from './use-submit';
 
 export default function CompleteProfilePage() {
   const { t, path, locale } = useAuthText();
@@ -18,8 +19,6 @@ export default function CompleteProfilePage() {
     available: boolean;
     suggestions: string[];
   } | null>(null);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState(false);
   const returnTo = safeLocalizedReturnTo(
     new URLSearchParams(location.search).get('returnTo'),
     locale,
@@ -48,25 +47,16 @@ export default function CompleteProfilePage() {
     },
     [username],
   );
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
-    setError(false);
-    try {
-      await authApi.completeProfile({
-        username,
-        ...(displayName ? { displayName } : {}),
-        ...(city ? { city } : {}),
-        ...(state ? { state } : {}),
-      });
-      await session.reload();
-      await navigate(returnTo);
-    } catch {
-      setError(true);
-    } finally {
-      setPending(false);
-    }
-  }
+  const { submit, pending, error } = useSubmit(async () => {
+    await authApi.completeProfile({
+      username,
+      ...(displayName ? { displayName } : {}),
+      ...(city ? { city } : {}),
+      ...(state ? { state } : {}),
+    });
+    await session.reload();
+    await navigate(returnTo);
+  });
   return (
     <AuthFrame title={t('auth.profile.title')} description={t('auth.login.description')}>
       <div ref={checkRef} className="sr-only" aria-hidden />

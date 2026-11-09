@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useSession } from '../../core/session';
 import {
@@ -12,6 +12,7 @@ import {
 import { Checkbox } from '../../components';
 import { OAuthButtons } from './oauth-buttons';
 import { authApi } from './auth.api';
+import { useSubmit } from './use-submit';
 
 export default function RegisterPage() {
   const { t, locale, path } = useAuthText();
@@ -24,9 +25,7 @@ export default function RegisterPage() {
   const [consent, setConsent] = useState(false);
   const [mode, setMode] = useState<'magic' | 'password'>('magic');
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
-  const [pending, setPending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState(false);
   const consentRef = useRef<HTMLInputElement>(null);
   const consentMountRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -57,25 +56,16 @@ export default function RegisterPage() {
     },
     [username],
   );
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
-    setError(false);
-    try {
-      if (mode === 'magic') {
-        await authApi.requestMagicLink({ email, consent, locale });
-        setSent(true);
-      } else {
-        await authApi.register({ displayName, username, email, password });
-        await session.reload();
-        await navigate(path('feed'));
-      }
-    } catch {
-      setError(true);
-    } finally {
-      setPending(false);
+  const { submit, pending, error } = useSubmit(async () => {
+    if (mode === 'magic') {
+      await authApi.requestMagicLink({ email, consent, locale });
+      setSent(true);
+    } else {
+      await authApi.register({ displayName, username, email, password });
+      await session.reload();
+      await navigate(path('feed'));
     }
-  }
+  });
   return (
     <AuthFrame
       title={t('auth.register.title')}

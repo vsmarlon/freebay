@@ -1,7 +1,8 @@
-import { useCallback, useState, type FormEvent } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useAuthText, AuthButton, AuthFrame, AuthInput, AuthMessage } from './auth-frame';
 import { authApi } from './auth.api';
+import { useSubmit } from './use-submit';
 
 export function headers() {
   return { 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' };
@@ -16,8 +17,6 @@ export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [step, setStep] = useState<'verify' | 'reset' | 'done'>('verify');
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState(false);
   const mountRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (!node) return;
@@ -37,28 +36,19 @@ export default function ResetPasswordPage() {
     },
     [location.pathname, location.search],
   );
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
-    setError(false);
-    try {
-      if (token) {
-        if (newPassword !== confirmPassword) throw new Error('password mismatch');
-        await authApi.consumePasswordReset(token, newPassword);
-        setStep('done');
-      } else if (step === 'verify') {
-        await authApi.verifyResetCode(email, code);
-        setStep('reset');
-      } else {
-        await authApi.resetPassword({ email, code, newPassword });
-        setStep('done');
-      }
-    } catch {
-      setError(true);
-    } finally {
-      setPending(false);
+  const { submit, pending, error } = useSubmit(async () => {
+    if (token) {
+      if (newPassword !== confirmPassword) throw new Error('password mismatch');
+      await authApi.consumePasswordReset(token, newPassword);
+      setStep('done');
+    } else if (step === 'verify') {
+      await authApi.verifyResetCode(email, code);
+      setStep('reset');
+    } else {
+      await authApi.resetPassword({ email, code, newPassword });
+      setStep('done');
     }
-  }
+  });
   return (
     <AuthFrame
       title={t('auth.recovery.title')}
