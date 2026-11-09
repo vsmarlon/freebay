@@ -24,6 +24,13 @@
     ],
     "frontend/lib/**/*.dart": [
       "dart format"
+    ],
+    "web/{app,tests,e2e}/**/*.{ts,tsx,mjs}": [
+      "node web/node_modules/prettier/bin/prettier.cjs --write",
+      "node web/node_modules/eslint/bin/eslint.js --config web/eslint.config.js --fix"
+    ],
+    "web/app/**/*.json": [
+      "node web/node_modules/prettier/bin/prettier.cjs --write"
     ]
   }
 }

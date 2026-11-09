@@ -13,7 +13,8 @@ describe('listing input boundaries', () => {
     expect(parseListingPrice('R$ 1.234,50', 'pt-BR')).toBe(123450);
     expect(parseListingPrice('1,234.50', 'en')).toBe(123450);
     expect(parseListingPrice('0', 'pt-BR', true)).toBe(0);
-    for (const value of ['0', '-1,00', '1,001', 'not money']) expect(() => parseListingPrice(value, 'pt-BR')).toThrow(TypeError);
+    for (const value of ['0', '-1,00', '1,001', 'not money'])
+      expect(() => parseListingPrice(value, 'pt-BR')).toThrow(TypeError);
   });
 
   it('seeds an edit price in the selected locale and round-trips the stored cents', () => {

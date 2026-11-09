@@ -16,26 +16,46 @@ export function ThemeControl() {
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const dismiss = (event: FocusEvent<HTMLDivElement>) => {
-    if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+    if (
+      !(event.relatedTarget instanceof Node) ||
+      !event.currentTarget.contains(event.relatedTarget)
+    )
+      setOpen(false);
   };
   const escape = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') { setOpen(false); buttonRef.current?.focus(); }
+    if (event.key === 'Escape') {
+      setOpen(false);
+      buttonRef.current?.focus();
+    }
   };
   const listKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Home' && event.key !== 'End') return;
-    const options = optionRefs.current.filter((option): option is HTMLButtonElement => option !== null);
+    if (
+      event.key !== 'ArrowDown' &&
+      event.key !== 'ArrowUp' &&
+      event.key !== 'Home' &&
+      event.key !== 'End'
+    )
+      return;
+    const options = optionRefs.current.filter(
+      (option): option is HTMLButtonElement => option !== null,
+    );
     if (options.length === 0) return;
     const active = document.activeElement;
     const index = active instanceof HTMLButtonElement ? options.indexOf(active) : -1;
     event.preventDefault();
     let next = index;
     if (event.key === 'ArrowDown') next = index < 0 ? 0 : (index + 1) % options.length;
-    else if (event.key === 'ArrowUp') next = index < 0 ? options.length - 1 : (index - 1 + options.length) % options.length;
+    else if (event.key === 'ArrowUp')
+      next = index < 0 ? options.length - 1 : (index - 1 + options.length) % options.length;
     else if (event.key === 'Home') next = 0;
     else next = options.length - 1;
     options[next]?.focus();
   };
-  const choose = (value: Theme) => { setTheme(value); setOpen(false); buttonRef.current?.focus(); };
+  const choose = (value: Theme) => {
+    setTheme(value);
+    setOpen(false);
+    buttonRef.current?.focus();
+  };
 
   return (
     <div className="relative inline-flex" onBlur={dismiss} onKeyDown={escape}>
@@ -47,16 +67,38 @@ export function ThemeControl() {
         aria-expanded={open}
         aria-label={t('marketing.theme')}
         onClick={() => setOpen((current) => !current)}
-        onKeyDown={(event) => { if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); setOpen(true); } }}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            setOpen(true);
+          }
+        }}
       >
         <Icon name={theme} size={18} />
         <Icon name="chevron" size={14} />
       </button>
       {open ? (
-        <div className="absolute top-[calc(100%+6px)] right-0 z-6 grid min-w-44 gap-0.5 border-[1.5px] border-ink bg-surface p-2 shadow-[4px_4px_var(--edge)]" role="listbox" aria-label={t('marketing.theme')} onKeyDown={listKeyDown}>
+        <div
+          className="absolute top-[calc(100%+6px)] right-0 z-6 grid min-w-44 gap-0.5 border-[1.5px] border-ink bg-surface p-2 shadow-[4px_4px_var(--edge)]"
+          role="listbox"
+          aria-label={t('marketing.theme')}
+          onKeyDown={listKeyDown}
+        >
           {order.map((value, index) => (
-            <button key={value} ref={(node) => { optionRefs.current[index] = node; }} type="button" role="option" aria-selected={theme === value} className="flex w-full items-center gap-2.5 border-0 bg-transparent px-3 py-2.5 text-left font-display text-[13px] font-semibold text-ink hover:bg-surface-mid aria-selected:bg-surface-mid aria-selected:shadow-[2px_2px_var(--edge)] [&_svg:last-child]:ml-auto" onClick={() => choose(value)}>
-              <Icon name={value} size={16} />{t(`marketing.theme.${value}`)}{theme === value ? <Icon name="check" size={14} /> : null}
+            <button
+              key={value}
+              ref={(node) => {
+                optionRefs.current[index] = node;
+              }}
+              type="button"
+              role="option"
+              aria-selected={theme === value}
+              className="flex w-full items-center gap-2.5 border-0 bg-transparent px-3 py-2.5 text-left font-display text-[13px] font-semibold text-ink hover:bg-surface-mid aria-selected:bg-surface-mid aria-selected:shadow-[2px_2px_var(--edge)] [&_svg:last-child]:ml-auto"
+              onClick={() => choose(value)}
+            >
+              <Icon name={value} size={16} />
+              {t(`marketing.theme.${value}`)}
+              {theme === value ? <Icon name="check" size={14} /> : null}
             </button>
           ))}
         </div>

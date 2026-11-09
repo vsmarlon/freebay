@@ -15,13 +15,20 @@ const conversation = (id: string, counterpart: string, unreadCount = 0): Convers
 
 describe('inbox counterpart folders', () => {
   it('groups by counterpart identity and keeps product threads as separate ordered rows', () => {
-    const items = [conversation('first', 'seller-a', 2), conversation('second', 'seller-a'), conversation('third', 'seller-b')];
+    const items = [
+      conversation('first', 'seller-a', 2),
+      conversation('second', 'seller-a'),
+      conversation('third', 'seller-b'),
+    ];
 
     const groups = groupConversationsByCounterparty(items);
 
     expect([...groups.keys()]).toEqual(['seller-a', 'seller-b']);
     expect(groups.get('seller-a')?.map((item) => item.id)).toEqual(['first', 'second']);
-    expect(groups.get('seller-a')?.map((item) => item.product?.id)).toEqual(['product-first', 'product-second']);
+    expect(groups.get('seller-a')?.map((item) => item.product?.id)).toEqual([
+      'product-first',
+      'product-second',
+    ]);
     expect(groups.get('seller-a')?.[0].unreadCount).toBe(2);
     expect(groups.get('seller-b')?.map((item) => item.id)).toEqual(['third']);
   });

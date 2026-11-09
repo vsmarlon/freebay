@@ -4,12 +4,20 @@ import { appPath, pathsFor, safeLocalizedReturnTo } from '../app/core/routes';
 import { api, clearAccessToken } from '../app/core/api';
 import { localizedCallbackLocation } from '../app/routes/legacy-callback';
 import { completeWelcome, hasSeenWelcome } from '../app/core/session';
-import { boundedImageSize, editedImageFile, rotatedImageSize, supportedEditorFile } from '../app/components/image-editor';
+import {
+  boundedImageSize,
+  editedImageFile,
+  rotatedImageSize,
+  supportedEditorFile,
+} from '../app/components/image-editor';
 import { translator } from '../app/core/locale';
 
 describe('locale translation fallback', () => {
   it('falls back from a feature catalog to the shared core catalog instead of rendering raw keys', () => {
-    const t = translator({ en: { 'feature.key': 'Feature text' }, 'pt-BR': { 'feature.key': 'Texto do recurso' } }, 'en');
+    const t = translator(
+      { en: { 'feature.key': 'Feature text' }, 'pt-BR': { 'feature.key': 'Texto do recurso' } },
+      'en',
+    );
     expect(t('feature.key')).toBe('Feature text');
     expect(t('common.search')).toBe('Search');
   });
@@ -46,22 +54,48 @@ describe('locale routes', () => {
     expect(pathsFor.highlights('person')).toBe('highlights/person');
   });
   it('localizes only configured provider callbacks and preserves their query', () => {
-    expect(localizedCallbackLocation(new Request('https://freebay.example/payments/success?paymentGroupId=g', { headers: { 'accept-language': 'en-US,en;q=0.9' } }))).toBe('/en/payments/success?paymentGroupId=g');
-    expect(localizedCallbackLocation(new Request('https://freebay.example/wallet/connect/return?state=opaque'))).toBe('/pt-BR/wallet?state=opaque');
-    expect(() => localizedCallbackLocation(new Request('https://freebay.example/payment-success'))).toThrow(Response);
+    expect(
+      localizedCallbackLocation(
+        new Request('https://freebay.example/payments/success?paymentGroupId=g', {
+          headers: { 'accept-language': 'en-US,en;q=0.9' },
+        }),
+      ),
+    ).toBe('/en/payments/success?paymentGroupId=g');
+    expect(
+      localizedCallbackLocation(
+        new Request('https://freebay.example/wallet/connect/return?state=opaque'),
+      ),
+    ).toBe('/pt-BR/wallet?state=opaque');
+    expect(() =>
+      localizedCallbackLocation(new Request('https://freebay.example/payment-success')),
+    ).toThrow(Response);
   });
 });
 
 describe('auth return destinations and first-run preferences', () => {
   it('keeps return destinations inside the current locale and avoids auth-route loops', () => {
-    expect(safeLocalizedReturnTo('/en/orders/123?tab=active#detail', 'en')).toBe('/en/orders/123?tab=active#detail');
-    for (const unsafe of ['https://attacker.example', '//attacker.example', '/pt-BR/feed', '/en/login', '/en/complete-profile', '/en/\\\\attacker']) {
+    expect(safeLocalizedReturnTo('/en/orders/123?tab=active#detail', 'en')).toBe(
+      '/en/orders/123?tab=active#detail',
+    );
+    for (const unsafe of [
+      'https://attacker.example',
+      '//attacker.example',
+      '/pt-BR/feed',
+      '/en/login',
+      '/en/complete-profile',
+      '/en/\\\\attacker',
+    ]) {
       expect(safeLocalizedReturnTo(unsafe, 'en')).toBe('/en/feed');
     }
   });
   it('remembers welcome completion independently per account', () => {
     const saved = new Map<string, string>();
-    vi.stubGlobal('localStorage', { getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => { saved.set(key, value); } });
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => saved.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        saved.set(key, value);
+      },
+    });
     expect(hasSeenWelcome('account-a')).toBe(false);
     completeWelcome('account-a');
     expect(hasSeenWelcome('account-a')).toBe(true);
@@ -85,7 +119,9 @@ describe('browser image editor bounds', () => {
     expect(rotatedImageSize(800, 400, 180)).toEqual({ width: 800, height: 400 });
     expect(rotatedImageSize(800, 400, -90)).toEqual({ width: 400, height: 800 });
     expect(rotatedImageSize(800, 400, 45)).toEqual({ width: 849, height: 849 });
-    expect(Math.max(rotatedImageSize(2048, 2048, 45).width, rotatedImageSize(2048, 2048, 45).height)).toBeLessThanOrEqual(2048);
+    expect(
+      Math.max(rotatedImageSize(2048, 2048, 45).width, rotatedImageSize(2048, 2048, 45).height),
+    ).toBeLessThanOrEqual(2048);
   });
   it('accepts bounded raster files and rejects empty, oversized, and SVG inputs', () => {
     expect(supportedEditorFile({ type: 'image/jpeg', size: 1000 })).toBe(true);
@@ -95,64 +131,130 @@ describe('browser image editor bounds', () => {
     expect(supportedEditorFile({ type: 'application/pdf', size: 1000 })).toBe(false);
   });
   it('returns the flattened PNG File shape for a successful canvas export and rejects failed exports', async () => {
-    const output = editedImageFile(new Blob(['pixels'], { type: 'image/png' }), 'listing.jpg', 1234);
+    const output = editedImageFile(
+      new Blob(['pixels'], { type: 'image/png' }),
+      'listing.jpg',
+      1234,
+    );
     expect(output).toBeInstanceOf(File);
-    expect(output).toMatchObject({ name: 'listing-edited.png', type: 'image/png', lastModified: 1234, size: 6 });
+    expect(output).toMatchObject({
+      name: 'listing-edited.png',
+      type: 'image/png',
+      lastModified: 1234,
+      size: 6,
+    });
     await expect(async () => editedImageFile(null, 'listing.png')).rejects.toThrow(TypeError);
   });
 });
 
 describe('browser API boundary', () => {
   it('refuses off-origin paths before exposing credentials', async () => {
-    const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher); vi.stubGlobal('window', {}); vi.stubGlobal('location', { origin: 'http://localhost' });
+    const fetcher = vi.fn();
+    vi.stubGlobal('fetch', fetcher);
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('location', { origin: 'http://localhost' });
     await expect(api.get('https://attacker.example/collect')).rejects.toThrow(TypeError);
     expect(fetcher).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
   it('does not retry an ambiguous write after authorization failure', async () => {
     clearAccessToken();
-    const fetcher = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ data: { token: 'access' } }), { status: 200 })).mockResolvedValueOnce(new Response(JSON.stringify({ message: 'expired' }), { status: 401 }));
-    vi.stubGlobal('fetch', fetcher); vi.stubGlobal('window', {}); vi.stubGlobal('location', { origin: 'http://localhost' });
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: { token: 'access' } }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: 'expired' }), { status: 401 }));
+    vi.stubGlobal('fetch', fetcher);
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('location', { origin: 'http://localhost' });
     await expect(api.post('/cart/items', { quantity: 1 })).rejects.toMatchObject({ status: 401 });
     expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({ method: 'POST', credentials: 'include', cache: 'no-store' });
+    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+    });
     expect(fetcher.mock.calls[0]?.[1]).toMatchObject({ headers: { 'X-Freebay-API': '1' } });
-    vi.unstubAllGlobals(); clearAccessToken();
+    vi.unstubAllGlobals();
+    clearAccessToken();
   });
   it('preserves nested backend error messages and codes', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: false, error: { code: 'ACCOUNT_LOCKED', message: 'Try later' } }), { status: 423 }))); vi.stubGlobal('window', {}); vi.stubGlobal('location', { origin: 'http://localhost' });
-    await expect(api.get('/health', { auth: false })).rejects.toMatchObject({ status: 423, code: 'ACCOUNT_LOCKED', message: 'Try later' });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            success: false,
+            error: { code: 'ACCOUNT_LOCKED', message: 'Try later' },
+          }),
+          { status: 423 },
+        ),
+      ),
+    );
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('location', { origin: 'http://localhost' });
+    await expect(api.get('/health', { auth: false })).rejects.toMatchObject({
+      status: 423,
+      code: 'ACCOUNT_LOCKED',
+      message: 'Try later',
+    });
     vi.unstubAllGlobals();
   });
   it('rejects an in-flight response after the session is cleared', async () => {
     clearAccessToken();
     let finish!: (response: Response) => void;
-    const fetcher = vi.fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ token: 'old-session' }), { status: 200 }))
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ token: 'old-session' }), { status: 200 }),
+      )
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: { ok: true } }), { status: 200 }))
-      .mockImplementationOnce(() => new Promise<Response>((resolve) => { finish = resolve; }));
-    vi.stubGlobal('fetch', fetcher); vi.stubGlobal('window', {}); vi.stubGlobal('location', { origin: 'http://localhost' });
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((resolve) => {
+            finish = resolve;
+          }),
+      );
+    vi.stubGlobal('fetch', fetcher);
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('location', { origin: 'http://localhost' });
     await api.get('/warm');
     const request = api.get('/users/me');
     await Promise.resolve();
-    clearAccessToken(); finish(new Response(JSON.stringify({ id: 'old-user', displayName: 'Old user' }), { status: 200 }));
+    clearAccessToken();
+    finish(
+      new Response(JSON.stringify({ id: 'old-user', displayName: 'Old user' }), { status: 200 }),
+    );
     await expect(request).rejects.toMatchObject({ status: 401 });
-    vi.unstubAllGlobals(); clearAccessToken();
+    vi.unstubAllGlobals();
+    clearAccessToken();
   });
   it('refreshes cookies before exchanging an expired access cookie for a bearer', async () => {
     clearAccessToken();
-    const fetcher = vi.fn()
+    const fetcher = vi
+      .fn()
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
       .mockResolvedValueOnce(new Response('refresh response is ignored', { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ token: 'fresh-access' }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ token: 'fresh-access' }), { status: 200 }),
+      )
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: { ok: true } }), { status: 200 }));
-    vi.stubGlobal('fetch', fetcher); vi.stubGlobal('window', {}); vi.stubGlobal('location', { origin: 'http://localhost' });
+    vi.stubGlobal('fetch', fetcher);
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('location', { origin: 'http://localhost' });
     await expect(api.get('/users/me')).resolves.toEqual({ ok: true });
-    expect(fetcher.mock.calls.map(([url]) => url)).toEqual(['/auth/web/session/access-token', '/auth/web/session/refresh', '/auth/web/session/access-token', '/users/me']);
+    expect(fetcher.mock.calls.map(([url]) => url)).toEqual([
+      '/auth/web/session/access-token',
+      '/auth/web/session/refresh',
+      '/auth/web/session/access-token',
+      '/users/me',
+    ]);
     expect(fetcher.mock.calls[0]?.[1]).toMatchObject({ method: 'POST', credentials: 'include' });
     expect(fetcher.mock.calls[0]?.[1]).toMatchObject({ headers: { 'X-Freebay-API': '1' } });
     expect(fetcher.mock.calls[1]?.[1]).toMatchObject({ method: 'POST', credentials: 'include' });
     expect(fetcher.mock.calls[2]?.[1]).toMatchObject({ method: 'POST', credentials: 'include' });
-    vi.unstubAllGlobals(); clearAccessToken();
+    vi.unstubAllGlobals();
+    clearAccessToken();
   });
 });

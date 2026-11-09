@@ -1,4 +1,9 @@
-import { type KeyboardEvent, type Ref, type SyntheticEvent, type TextareaHTMLAttributes } from 'react';
+import {
+  type KeyboardEvent,
+  type Ref,
+  type SyntheticEvent,
+  type TextareaHTMLAttributes,
+} from 'react';
 
 export type ComposerInputProps = {
   label: string;
@@ -22,7 +27,21 @@ export type ComposerInputProps = {
   onSubmitOverride?: () => boolean;
 };
 
-export function ComposerInput({ label, placeholder, value, disabled, maxLength, id, submitOnEnter = true, autoGrow = true, ref, textareaProps, onChange, onSubmit, onSubmitOverride }: ComposerInputProps) {
+export function ComposerInput({
+  label,
+  placeholder,
+  value,
+  disabled,
+  maxLength,
+  id,
+  submitOnEnter = true,
+  autoGrow = true,
+  ref,
+  textareaProps,
+  onChange,
+  onSubmit,
+  onSubmitOverride,
+}: ComposerInputProps) {
   const resize = (field: HTMLTextAreaElement) => {
     if (!autoGrow) return;
     field.style.height = 'auto';
@@ -33,28 +52,34 @@ export function ComposerInput({ label, placeholder, value, disabled, maxLength, 
     else if (ref) ref.current = node;
     if (node) resize(node);
   };
-  const sync = (event: SyntheticEvent<HTMLTextAreaElement>) => onChange(event.currentTarget.value, event.currentTarget.selectionStart ?? undefined);
+  const sync = (event: SyntheticEvent<HTMLTextAreaElement>) =>
+    onChange(event.currentTarget.value, event.currentTarget.selectionStart ?? undefined);
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key !== 'Enter' || event.shiftKey || !submitOnEnter) return;
     if (onSubmitOverride?.()) return;
     event.preventDefault();
     if (value.trim()) onSubmit?.();
   };
-  return <div className="composer-field">
-    <textarea
-      {...textareaProps}
-      ref={attach}
-      id={id}
-      aria-label={label}
-      placeholder={placeholder}
-      rows={1}
-      maxLength={maxLength}
-      value={value}
-      disabled={disabled}
-      onChange={(event) => { sync(event); resize(event.currentTarget); }}
-      onKeyUp={sync}
-      onClick={sync}
-      onKeyDown={onKeyDown}
-    />
-  </div>;
+  return (
+    <div className="composer-field">
+      <textarea
+        {...textareaProps}
+        ref={attach}
+        id={id}
+        aria-label={label}
+        placeholder={placeholder}
+        rows={1}
+        maxLength={maxLength}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => {
+          sync(event);
+          resize(event.currentTarget);
+        }}
+        onKeyUp={sync}
+        onClick={sync}
+        onKeyDown={onKeyDown}
+      />
+    </div>
+  );
 }

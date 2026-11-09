@@ -43,34 +43,56 @@ export function useAudioRecorder(onReady: (file: File, durationMs: number) => vo
     tickTimer.current = null;
   };
 
-  useEffect(() => () => {
-    // Unmount mid-take: drop the recording and release the microphone.
-    cancelled.current = true;
-    teardownTimers();
-    if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-  }, []);
+  useEffect(
+    () => () => {
+      // Unmount mid-take: drop the recording and release the microphone.
+      cancelled.current = true;
+      teardownTimers();
+      if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    },
+    [],
+  );
 
   const start = useCallback(async () => {
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') { setUnsupported(true); return; }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setUnsupported(true);
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       const mimeType = mimeTypes.find((type) => MediaRecorder.isTypeSupported(type));
-      if (!mimeType) { stream.getTracks().forEach((track) => track.stop()); streamRef.current = null; setUnsupported(true); return; }
+      if (!mimeType) {
+        stream.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+        setUnsupported(true);
+        return;
+      }
       const recorder = new MediaRecorder(stream, { mimeType });
       recorderRef.current = recorder;
       chunksRef.current = [];
       cancelled.current = false;
-      recorder.ondataavailable = (event) => { if (event.data.size) chunksRef.current.push(event.data); };
+      recorder.ondataavailable = (event) => {
+        if (event.data.size) chunksRef.current.push(event.data);
+      };
       recorder.onstop = () => {
         stream.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
-        const tookMs = Math.min(recordingLimitMs, Math.max(1, Math.round(performance.now() - startedAt.current)));
+        const tookMs = Math.min(
+          recordingLimitMs,
+          Math.max(1, Math.round(performance.now() - startedAt.current)),
+        );
         const blob = new Blob(chunksRef.current, { type: mimeType });
         const takeDropped = cancelled.current || !blob.size;
-        if (!takeDropped) onReadyRef.current(new File([blob], `voice-${Date.now()}.${extensionByMime[mimeType] ?? 'weba'}`, { type: mimeType }), tookMs);
+        if (!takeDropped)
+          onReadyRef.current(
+            new File([blob], `voice-${Date.now()}.${extensionByMime[mimeType] ?? 'weba'}`, {
+              type: mimeType,
+            }),
+            tookMs,
+          );
         teardownTimers();
         chunksRef.current = [];
         setRecording(false);
@@ -80,13 +102,22 @@ export function useAudioRecorder(onReady: (file: File, durationMs: number) => vo
       recorder.start();
       setRecording(true);
       setElapsedSeconds(0);
-      tickTimer.current = window.setInterval(() => setElapsedSeconds(Math.floor((performance.now() - startedAt.current) / 1000)), 500);
-      limitTimer.current = window.setTimeout(() => { if (recorder.state === 'recording') recorder.stop(); }, recordingLimitMs);
+      tickTimer.current = window.setInterval(
+        () => setElapsedSeconds(Math.floor((performance.now() - startedAt.current) / 1000)),
+        500,
+      );
+      limitTimer.current = window.setTimeout(() => {
+        if (recorder.state === 'recording') recorder.stop();
+      }, recordingLimitMs);
     } catch (cause) {
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
       setUnsupported(true);
-      setFailure(cause instanceof DOMException && cause.name === 'NotAllowedError' ? 'permission' : 'recorder');
+      setFailure(
+        cause instanceof DOMException && cause.name === 'NotAllowedError'
+          ? 'permission'
+          : 'recorder',
+      );
     }
   }, []);
 

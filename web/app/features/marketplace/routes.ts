@@ -7,7 +7,9 @@ export default [
   route('products/:id', 'features/marketplace/detail.tsx', { id: 'marketplace-product' }),
   route('products/:id/buy', 'features/marketplace/buy.tsx', { id: 'marketplace-buy' }),
   route('products/mine', 'features/marketplace/my-products.tsx', { id: 'marketplace-my-products' }),
-  route('people/:id/reviews', 'features/marketplace/user-reviews.tsx', { id: 'marketplace-user-reviews' }),
+  route('people/:id/reviews', 'features/marketplace/user-reviews.tsx', {
+    id: 'marketplace-user-reviews',
+  }),
   route('sell', 'features/marketplace/editor.tsx', { id: 'marketplace-sell' }),
   route('products/:id/edit', 'features/marketplace/editor.tsx', { id: 'marketplace-product-edit' }),
   route('favorites', 'features/marketplace/favorites.tsx', { id: 'marketplace-favorites' }),

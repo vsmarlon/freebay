@@ -1,10 +1,17 @@
 import { expect, test } from '@playwright/test';
 
-test('public catalog and product metadata render in PT-BR without forwarding browser credentials', async ({ page, request }) => {
+test('public catalog and product metadata render in PT-BR without forwarding browser credentials', async ({
+  page,
+  request,
+}) => {
   const mutations: string[] = [];
   page.on('request', (outgoing) => {
     const path = new URL(outgoing.url()).pathname;
-    if (['POST', 'PATCH', 'DELETE'].includes(outgoing.method()) && (path.startsWith('/favorites/') || path.startsWith('/cart/'))) mutations.push(`${outgoing.method()} ${path}`);
+    if (
+      ['POST', 'PATCH', 'DELETE'].includes(outgoing.method()) &&
+      (path.startsWith('/favorites/') || path.startsWith('/cart/'))
+    )
+      mutations.push(`${outgoing.method()} ${path}`);
   });
   await request.get('http://127.0.0.1:3333/__test/ssr-observations');
   const response = await request.get('/pt-BR/explore');
@@ -24,12 +31,20 @@ test('public catalog and product metadata render in PT-BR without forwarding bro
   expect(productHtml).toContain('R$ 100,00');
   const observations = await request.get('http://127.0.0.1:3333/__test/ssr-observations');
   const observationEnvelope = await observations.json();
-  const ssrRequests = observationEnvelope.data as Array<{ path: string; hasAuthorization: boolean; hasCookie: boolean }>;
+  const ssrRequests = observationEnvelope.data as Array<{
+    path: string;
+    hasAuthorization: boolean;
+    hasCookie: boolean;
+  }>;
   expect(ssrRequests).toHaveLength(3);
   expect(ssrRequests.map(({ path }) => path).sort()).toEqual([
-    '/categories', '/products', '/products/web-fixture-camera',
+    '/categories',
+    '/products',
+    '/products/web-fixture-camera',
   ]);
-  expect(ssrRequests.every(({ hasAuthorization, hasCookie }) => !hasAuthorization && !hasCookie)).toBe(true);
+  expect(
+    ssrRequests.every(({ hasAuthorization, hasCookie }) => !hasAuthorization && !hasCookie),
+  ).toBe(true);
   await page.goto('/pt-BR/products/web-fixture-camera');
   await expect(page.getByRole('heading', { name: 'Câmera analógica' })).toBeVisible();
   await page.getByRole('button', { name: 'Salvar nos favoritos' }).click();
@@ -41,7 +56,9 @@ test('public catalog and product metadata render in PT-BR without forwarding bro
   expect(mutations).toEqual([]);
 });
 
-test('marketing preferences support explicit light/dark themes and mobile reflow', async ({ page }) => {
+test('marketing preferences support explicit light/dark themes and mobile reflow', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 320, height: 780 });
   await page.goto('/pt-BR');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Bons achados');

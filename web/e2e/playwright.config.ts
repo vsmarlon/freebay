@@ -4,7 +4,9 @@ import path from 'node:path';
 
 export default defineConfig({
   testDir: './journeys',
-  outputDir: path.resolve(process.env.PLAYWRIGHT_OUTPUT_DIR ?? path.join(tmpdir(), 'freebay-playwright-fixture-output')),
+  outputDir: path.resolve(
+    process.env.PLAYWRIGHT_OUTPUT_DIR ?? path.join(tmpdir(), 'freebay-playwright-fixture-output'),
+  ),
   fullyParallel: false,
   workers: 1,
   retries: 0,

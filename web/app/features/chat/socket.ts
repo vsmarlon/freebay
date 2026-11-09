@@ -12,18 +12,26 @@ export function createChatSocket(): ChatSocket {
     reconnection: true,
     reconnectionAttempts: 8,
     auth: (callback) => {
-      void session.socketToken().then((token) => callback({ token })).catch(() => callback({ token: '' }));
+      void session
+        .socketToken()
+        .then((token) => callback({ token }))
+        .catch(() => callback({ token: '' }));
     },
   });
   let refreshed = false;
   socket.on('connect_error', (error) => {
     if (refreshed || !/unauthorized|jwt/i.test(error.message)) return;
     refreshed = true;
-    void session.refresh().then(() => {
-      refreshed = false;
-      socket.connect();
-    }).catch(() => socket.disconnect());
+    void session
+      .refresh()
+      .then(() => {
+        refreshed = false;
+        socket.connect();
+      })
+      .catch(() => socket.disconnect());
   });
-  socket.on('connect', () => { refreshed = false; });
+  socket.on('connect', () => {
+    refreshed = false;
+  });
   return socket;
 }

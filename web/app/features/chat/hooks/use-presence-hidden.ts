@@ -16,7 +16,10 @@ function subscribe(listener: () => void) {
   listeners.add(listener);
   // Re-read on cross-tab writes; our own writes notify explicitly.
   window.addEventListener('storage', invalidate);
-  return () => { listeners.delete(listener); window.removeEventListener('storage', invalidate); };
+  return () => {
+    listeners.delete(listener);
+    window.removeEventListener('storage', invalidate);
+  };
 }
 
 function hiddenFor(userId: string, conversationId: string): boolean {
@@ -30,30 +33,46 @@ function hiddenFor(userId: string, conversationId: string): boolean {
     const legacy = saved === null ? localStorage.getItem(`freebay.chat.muted.${userId}`) : null;
     const parsed: unknown = JSON.parse(saved ?? legacy ?? '[]');
     hidden = Array.isArray(parsed) && parsed.includes(conversationId);
-  } catch { hidden = false; /* fallback to hidden=false */ }
+  } catch {
+    hidden = false; /* fallback to hidden=false */
+  }
   snapshots.set(key, hidden);
   return hidden;
 }
 
 function storedIds(key: string, fallbackKey: string | null): string[] {
   try {
-    const saved: unknown = JSON.parse(localStorage.getItem(key) ?? (fallbackKey ? localStorage.getItem(fallbackKey) : null) ?? '[]');
-    return Array.isArray(saved) ? saved.filter((value): value is string => typeof value === 'string') : [];
-  } catch { return []; }
+    const saved: unknown = JSON.parse(
+      localStorage.getItem(key) ?? (fallbackKey ? localStorage.getItem(fallbackKey) : null) ?? '[]',
+    );
+    return Array.isArray(saved)
+      ? saved.filter((value): value is string => typeof value === 'string')
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 export function usePresenceHidden(userId: string | undefined, conversationId: string) {
-  const hidden = useSyncExternalStore(subscribe, () => (userId ? hiddenFor(userId, conversationId) : false), () => false);
+  const hidden = useSyncExternalStore(
+    subscribe,
+    () => (userId ? hiddenFor(userId, conversationId) : false),
+    () => false,
+  );
   // Returns null when storage rejects the write; the caller surfaces the toast.
   const toggle = (): boolean | null => {
     if (!userId) return null;
     const key = `freebay.chat.presence-hidden.${userId}`;
     const current = hiddenFor(userId, conversationId);
     const ids = storedIds(key, `freebay.chat.muted.${userId}`);
-    const next = current ? ids.filter((chatId) => chatId !== conversationId) : [...new Set([...ids, conversationId])];
+    const next = current
+      ? ids.filter((chatId) => chatId !== conversationId)
+      : [...new Set([...ids, conversationId])];
     try {
       localStorage.setItem(key, JSON.stringify(next));
-    } catch { return null; }
+    } catch {
+      return null;
+    }
     invalidate();
     return !current;
   };
