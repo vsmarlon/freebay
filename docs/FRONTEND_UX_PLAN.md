@@ -42,10 +42,6 @@ Use Flutter SDK `flutter_localizations` and generated `gen-l10n` output from com
 - Run focused checks after each coherent slice. Run the full verification gates only after all parallel work is integrated and dependencies/code generation are settled. Capture exact commands, working-tree identity, environment without secrets, statuses, logs, and evidence in the report. Unknown or blocked means blocked, not passed.
 - Update `FEATURE_TRUTH.md` only when implementation evidence changes and name the exact boundary and verification. This plan alone is not evidence.
 
-## Deferred / explicitly authorized in this UX track
-
-The owner authorized English + pt-BR localization using SDK `flutter_localizations` / ARB generation, `flutter_blurhash: ^0.9.1`, and scoped native accessibility/image-compositor work. The integrated source also includes the approved cross-cutting cache, interaction-guard, feature-boundary, and design-token work tracked in the linked finalization report. This does not authorize broad feature redesign, API/payment behavior changes, new locale preference persistence, or media storage redesign. Native source alignment is not pixel-validation evidence; Android and iOS execution remain device gates. Anything beyond the recorded UX scope remains deferred until separately approved.
-
 ## Completion report contract
 
 Use `docs/test-runs/2026-10-01/frontend-ux-finalization/REPORT.md`. Distinguish implementation status from verification status; list exact commands and exit results; identify integrated work and remaining device/performance evidence; report deviations and blockers. Do not mark U0–U8 complete based solely on code edits.

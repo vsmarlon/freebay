@@ -43,14 +43,6 @@ Existing hold-to-pause and lifecycle pause remain required. D1's progress preser
 
 **D6 — Full feature implementation scope (owner approved):** scoped Flutter, backend/API, Prisma model, and test changes are included. Existing comment identities and clients remain compatible. Database verification uses the guarded test target; production migrations remain owner-run. See C6 in the comment design.
 
-## Environment check
-
-- Inspected revision: `235b5ce8d270a7e03e8988985e369616c3ce9721` plus extensive inherited dirty changes; HEAD alone does not identify the running app.
-- Latest environment check: Galaxy A30 `RX8M70JDTQV` (`SM_A305GT`) is connected and showing the launcher. API `:3000` health returns HTTP 200; database identity and runtime schema compatibility are unverified.
-- No Dart Tooling Daemon app or profile VM is connected, and no representative authenticated feed/story fixture is established.
-- Drawer reproduction, frame capture, causal diagnosis, and before/after comparison have not run. No performance result is claimed.
-- Before implementation, a SHA-256 manifest captured 1,252 source/test/schema/runner files under `C:/Users/Qiyana/AppData/Local/Temp/opencode/freebay-native-ux-2026-10-13/before-source-manifest.json`; manifest SHA-256: `4A876FDFD35AA10DE05519D0E3A0D1BEA6D37F5B99150D781809C4632D8E20A0`. The same directory contains `before-git-status.txt` for inherited working-tree state.
-- Flutter, Dart, and adb commands are available. Local ports 3000, 5432, and 6379 have listeners; this establishes neither database identity nor permission to reuse the running API for tests.
 
 ## Implementation sequence — under technical review
 

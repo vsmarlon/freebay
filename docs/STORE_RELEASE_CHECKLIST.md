@@ -5,7 +5,6 @@ Checklist operacional para preparar submissões; **não é certificação legal,
 ## Escopo decidido
 
 - Stripe continua como processador; Connect e SDKs nativos de carteira permanecem no escopo técnico.
-- Apple Pay e Google Pay são para pagamento de bens físicos. Não são In-App Purchase: a Apple permite outros meios para bens físicos (§3.1.3(e)); bens/funcionalidades digitais vendidos no app seguem as regras de IAP (§3.1.1). Não remover Stripe por uma suposta proibição geral.
 - Remover a UI mobile PaymentSheet para cartão; não confundir isso com remoção de Stripe do backend ou dos fluxos técnicos de carteira.
 - Login Apple aprovado com `sign_in_with_apple: 8.2.0`. Persistência aprovada: somente `User.appleId` e `User.appleRefreshTokenEncrypted`; nenhuma migração foi autorizada. Não inferir rollout de schema nem acesso a banco live.
 - Identidade do controlador e contato legal público continuam **PENDENTES**. Não publicar declarações de privacidade finais sem decisão do responsável.

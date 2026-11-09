@@ -45,10 +45,10 @@ brittle across screen sizes. Once `Semantics(identifier:)` lands (Q20) prefer st
 
 ## Current production-hardening checkpoint
 
-No device result is claimed yet. Run the matrix below on a fresh authenticated
-session where required, using package `com.freebay.app`. For every scenario, capture
+Run the matrix below on a fresh authenticated session where required, using package
+`com.freebay.app`. For every scenario, capture
 a screenshot where safe, logs/request counts, a crash check, pass/fail, and the
-artifact path. Store artifacts under `docs/device-runs/<date>/`; redact personal
+artifact path. Store artifacts under `docs/test-runs/<date>/`; redact personal
 data. Never capture email, token, precise location, Stripe secrets, or other
 personal data in screenshots or logs.
 
@@ -101,7 +101,7 @@ There is no in-app withdraw form — Stripe pays the seller out on its own sched
 (foreground / background / terminated). Cold-start a `freebay://` (later https) link → same target.
 
 ## 6. Evidence
-- `mobile_take_screenshot` at each `expected`; name `flow<A-F>_<step>_<pass|fail>.png` under `docs/device-runs/<date>/`.
+- `mobile_take_screenshot` at each `expected`; name `flow<A-F>_<step>_<pass|fail>.png` under `docs/test-runs/<date>/`.
 - Run `mobile_list_crashes` after every flow; a non-empty result fails the flow.
 - Pass = every step's expected observed AND crashes empty.
 
