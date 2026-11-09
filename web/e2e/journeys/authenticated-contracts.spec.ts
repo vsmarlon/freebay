@@ -225,7 +225,7 @@ test('chat sends a reply, archives the thread, and never fetches view-once media
   const message = page.getByRole('textbox', { name: 'Message' });
   await message.fill('Synthetic reply body');
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page.getByText('Synthetic reply body')).toBeVisible();
+  await expect(page.locator('article').filter({ hasText: 'Synthetic reply body' })).toBeVisible();
   expect(
     state.calls.find((call) => call.path.endsWith('/messages') && call.method === 'POST')?.body,
   ).toMatchObject({

@@ -172,7 +172,7 @@ export function PostCard({ post, onChanged }: { post: Post; onChanged?: () => vo
             className={postActionClass}
             aria-pressed={post.isLiked}
             onClick={() =>
-              void act(() => actions.like.mutateAsync({ id: post.id, active: !post.isLiked }))
+              void act(() => actions.like.mutateAsync({ id: post.id, active: post.isLiked }))
             }
             aria-label={post.isLiked ? t('social.post.unlike') : t('social.post.like')}
           >
@@ -200,7 +200,7 @@ export function PostCard({ post, onChanged }: { post: Post; onChanged?: () => vo
               aria-pressed={post.hasReposted}
               onClick={() =>
                 void act(() =>
-                  actions.repost.mutateAsync({ id: post.id, active: !post.hasReposted }),
+                  actions.repost.mutateAsync({ id: post.id, active: post.hasReposted }),
                 )
               }
               aria-label={post.hasReposted ? t('social.post.unrepost') : t('social.post.repost')}
@@ -220,7 +220,7 @@ export function PostCard({ post, onChanged }: { post: Post; onChanged?: () => vo
             className={`${postActionClass} ml-auto`}
             aria-pressed={post.isSaved}
             onClick={() =>
-              void act(() => actions.save.mutateAsync({ id: post.id, active: !post.isSaved }))
+              void act(() => actions.save.mutateAsync({ id: post.id, active: post.isSaved }))
             }
             aria-label={post.isSaved ? t('social.post.unsave') : t('social.post.save')}
           >

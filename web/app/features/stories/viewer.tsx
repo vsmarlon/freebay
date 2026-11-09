@@ -28,3 +28,5 @@ export function StoryViewerRoute() {
     </RequireAuth>
   );
 }
+
+export default StoryViewerRoute;

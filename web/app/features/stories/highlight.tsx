@@ -28,3 +28,5 @@ export function HighlightViewerRoute() {
     </RequireAuth>
   );
 }
+
+export default HighlightViewerRoute;

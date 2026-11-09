@@ -426,7 +426,9 @@ export default function EditProfilePage() {
               </label>
             </FormSection>
             <div className="flex flex-wrap items-center gap-3">
-              <Button disabled={busy}>{busy ? t('loading') : t('save')}</Button>
+              <Button type="submit" disabled={busy}>
+                {busy ? t('loading') : t('save')}
+              </Button>
               <Link className="ui-button ui-secondary" to={path(paths.profile)}>
                 {t('cancel')}
               </Link>

@@ -174,3 +174,5 @@ export function CreateStoryRoute() {
     </RequireAuth>
   );
 }
+
+export default CreateStoryRoute;
