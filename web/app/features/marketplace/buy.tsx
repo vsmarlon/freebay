@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLoaderData, type LoaderFunctionArgs } from 'react-router';
 import { ApiError } from '../../core/api';
 import { Button, ErrorState, Icon, Loading, PageHeader, Surface, buttonClass } from '../../components';
@@ -15,6 +15,7 @@ import en from './catalogs/en.json'; import pt from './catalogs/pt-BR.json';
 import commerceEn from '../commerce/catalogs/en.json'; import commercePt from '../commerce/catalogs/pt-BR.json';
 
 const catalogs = { en: { ...commerceEn, ...en }, 'pt-BR': { ...commercePt, ...pt } };
+function attemptTimestamp() { return Date.now(); }
 type LoaderData = { product: ProductSummary };
 export async function loader({ params }: LoaderFunctionArgs): Promise<LoaderData> {
   if (!params.id) throw new Response('Not found', { status: 404 });
@@ -24,14 +25,15 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<LoaderData
 export default function BuyProductRoute() {
   const { product } = useLoaderData<LoaderData>();
   const { user, isPending } = useSession(); const { locale, path } = useLocale(); const { t } = useI18n(catalogs);
-  const userIdRef = useRef(user?.id);
-  userIdRef.current = user?.id;
+  const userId = user?.id ?? null;
+  const userIdRef = useRef(userId);
+  useEffect(() => { userIdRef.current = userId; }, [userId]);
   const [orderId, setOrderId] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [restoring, setRestoring] = useState(true); const [storageUnavailable, setStorageUnavailable] = useState(false); const [error, setError] = useState<unknown>(null); const [uncertain, setUncertain] = useState(false); const [candidates, setCandidates] = useState<Order[]>([]);
   const attemptKey = user ? `freebay.direct-buy.${user.id}.${product.id}` : '';
   const mountRef = useCallback((node: HTMLDivElement | null) => {
     if (!node) return;
     if (isPending) return;
-    if (!user) { setRestoring(false); return; }
+    if (!userId) { setRestoring(false); return; }
     let active = true;
     const controller = new AbortController();
     setRestoring(true); setOrderId(null); setUncertain(false); setCandidates([]); setStorageUnavailable(false);
@@ -41,7 +43,7 @@ export default function BuyProductRoute() {
       const savedId = attempt.orderId;
       void commerceApi.order(savedId, controller.signal).then((order) => {
         if (!active) return;
-        if (order.buyerId !== user.id || order.productId !== product.id) { setUncertain(true); return; }
+        if (order.buyerId !== userId || order.productId !== product.id) { setUncertain(true); return; }
         if (order.status === 'PENDING') setOrderId(order.id);
         else if (order.status === 'CANCELLED' || order.status === 'COMPLETED') localStorage.removeItem(attemptKey);
         else setUncertain(true);
@@ -50,19 +52,19 @@ export default function BuyProductRoute() {
       setUncertain(true); setRestoring(false);
     } else setRestoring(false);
     return () => { active = false; controller.abort(); };
-  }, [attemptKey, isPending, product.id, user?.id]);
+  }, [attemptKey, isPending, product.id, userId]);
   const isOwner = user?.id === product.sellerId;
   async function begin() {
     if (!user || busy || uncertain || storageUnavailable || isOwner || product.status !== 'ACTIVE' || product.quantity <= product.soldCount) return;
     setBusy(true); setError(null);
     if (!orderId) {
-      try { localStorage.setItem(attemptKey, JSON.stringify({ state: 'creating', productId: product.id, createdAt: Date.now() })); }
+      try { localStorage.setItem(attemptKey, JSON.stringify({ state: 'creating', productId: product.id, createdAt: attemptTimestamp() })); }
       catch (cause) { setStorageUnavailable(true); setError(cause); setBusy(false); return; }
     }
     try {
       let currentOrderId = orderId;
       if (!currentOrderId) {
-        try { const order = await commerceApi.createOrder(product.id); currentOrderId = order.id; localStorage.setItem(attemptKey, JSON.stringify({ state: 'order', orderId: order.id, productId: product.id, createdAt: Date.now() })); }
+        try { const order = await commerceApi.createOrder(product.id); currentOrderId = order.id; localStorage.setItem(attemptKey, JSON.stringify({ state: 'order', orderId: order.id, productId: product.id, createdAt: attemptTimestamp() })); }
         catch (cause) {
           if (cause instanceof ApiError && cause.status === 400 && cause.code === 'BAD_REQUEST' && ['Cannot buy your own product', 'Produto sem estoque', 'Produto não está mais disponível'].includes(cause.message)) {
             try { localStorage.removeItem(attemptKey); } catch { setStorageUnavailable(true); setUncertain(true); }
@@ -104,7 +106,7 @@ export default function BuyProductRoute() {
     try {
       const canonical = await commerceApi.order(candidate.id);
       if (canonical.buyerId !== user.id || canonical.productId !== product.id || canonical.status !== 'PENDING') return;
-      localStorage.setItem(attemptKey, JSON.stringify({ state: 'order', orderId: canonical.id, productId: product.id, createdAt: Date.now() }));
+      localStorage.setItem(attemptKey, JSON.stringify({ state: 'order', orderId: canonical.id, productId: product.id, createdAt: attemptTimestamp() }));
       setOrderId(canonical.id); setUncertain(false); setCandidates([]);
     } catch (cause) { setError(cause); }
     finally { setRestoring(false); }

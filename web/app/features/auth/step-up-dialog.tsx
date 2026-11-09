@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, Input } from '../../components';
 import { api } from '../../core/api';
@@ -27,6 +27,10 @@ export function StepUpDialog({ open, onClose, action, resourceId, onVerified }: 
   const operation = useRef(0);
   const abortController = useRef<AbortController | null>(null);
   const googleTarget = useRef<HTMLDivElement>(null);
+  // Latest callbacks via ref: the mount callback stays stable so the dialog does not
+  // re-run its cache check (and reset the form) on every parent render.
+  const actions = useRef({ onClose, onVerified });
+  useEffect(() => { actions.current = { onClose, onVerified }; });
 
   const mountRef = useCallback((node: HTMLDivElement | null) => {
     if (!node) return;
@@ -39,11 +43,11 @@ export function StepUpDialog({ open, onClose, action, resourceId, onVerified }: 
     const cached = queryClient.getQueryData<CachedProof>(key);
     if (cached && Date.parse(cached.expiresAt) > Date.now()) {
       queryClient.removeQueries({ queryKey: key, exact: true });
-      onVerified(cached.token);
-      onClose();
+      actions.current.onVerified(cached.token);
+      actions.current.onClose();
     } else if (cached) queryClient.removeQueries({ queryKey: key, exact: true });
     return () => abortController.current?.abort();
-  }, [open, action, resourceId, user?.id]);
+  }, [open, action, resourceId, queryClient, user]);
 
   async function verify(proof: object) {
     if (!user) return;

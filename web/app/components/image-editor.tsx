@@ -65,12 +65,11 @@ export function ImageEditor({ file, onSave, onCancel }: ImageEditorProps) {
   // "async Client Component" — seen live as a full Application Error when
   // attaching any photo on web.
   const [loaded, setLoaded] = useState<LoadedSource | null>(null);
+  const [image, setImage] = useState<CanvasImageSource | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const strokesCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const imageRef = useRef<CanvasImageSource | null>(null);
-  if (loaded && !('error' in loaded)) imageRef.current = loaded.source;
   const startRef = useRef<Point | null>(null);
-  const strokesRef = useRef<Stroke[]>([]);
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [size, setSize] = useState({ width: loaded && !('error' in loaded) ? loaded.width : 0, height: loaded && !('error' in loaded) ? loaded.height : 0 });
   const [error, setError] = useState('');
   const [angle, setAngle] = useState(0);
@@ -85,21 +84,19 @@ export function ImageEditor({ file, onSave, onCancel }: ImageEditorProps) {
   const [selection, setSelection] = useState<{ start: Point; end: Point } | null>(null);
   const [text, setText] = useState('');
   const [overlay, setOverlay] = useState('');
-  const [drawingVersion, setDrawingVersion] = useState(0);
   const sourceRef = useCallback((node: HTMLElement | null) => {
     if (!node) return;
     let alive = true;
     void loadImageResource(file).then((result) => {
       if (!alive) return;
       setLoaded(result);
-      if (!('error' in result)) setSize({ width: result.width, height: result.height });
+      if (!('error' in result)) { setImage(result.source); setSize({ width: result.width, height: result.height }); }
     });
     return () => { alive = false; };
   }, [file]);
 
   const redraw = useCallback((canvas: HTMLCanvasElement | null) => {
     canvasRef.current = canvas;
-    const image = imageRef.current;
     if (!canvas || !image) return;
     const outputSize = rotatedImageSize(size.width, size.height, angle);
     canvas.width = outputSize.width; canvas.height = outputSize.height;
@@ -116,17 +113,17 @@ export function ImageEditor({ file, onSave, onCancel }: ImageEditorProps) {
     strokesCanvasRef.current = strokesCanvas;
     if (strokesCanvas.width !== outputSize.width || strokesCanvas.height !== outputSize.height) { strokesCanvas.width = outputSize.width; strokesCanvas.height = outputSize.height; }
     const strokesContext = strokesCanvas.getContext('2d');
-    if (strokesContext) for (const stroke of strokesRef.current) { strokesContext.save(); strokesContext.globalCompositeOperation = stroke.style === 'eraser' ? 'destination-out' : 'source-over'; strokesContext.globalAlpha = stroke.style === 'highlighter' ? .31 : 1; strokesContext.beginPath(); strokesContext.strokeStyle = stroke.color; strokesContext.lineWidth = stroke.width * size.width / 400; strokesContext.lineCap = stroke.style === 'marker' ? 'round' : 'square'; stroke.points.forEach((point, index) => index ? strokesContext.lineTo(point.x, point.y) : strokesContext.moveTo(point.x, point.y)); strokesContext.stroke(); strokesContext.restore(); }
+    if (strokesContext) for (const stroke of strokes) { strokesContext.save(); strokesContext.globalCompositeOperation = stroke.style === 'eraser' ? 'destination-out' : 'source-over'; strokesContext.globalAlpha = stroke.style === 'highlighter' ? .31 : 1; strokesContext.beginPath(); strokesContext.strokeStyle = stroke.color; strokesContext.lineWidth = stroke.width * size.width / 400; strokesContext.lineCap = stroke.style === 'marker' ? 'round' : 'square'; stroke.points.forEach((point, index) => index ? strokesContext.lineTo(point.x, point.y) : strokesContext.moveTo(point.x, point.y)); strokesContext.stroke(); strokesContext.restore(); }
     if (strokesContext) context.drawImage(strokesCanvas, 0, 0);
     if (overlay) { context.font = `bold ${Math.max(18, size.width / 18)}px sans-serif`; context.fillStyle = '#ffffff'; context.strokeStyle = '#11100e'; context.lineWidth = 3; context.strokeText(overlay, size.width * .08, size.height * .14); context.fillText(overlay, size.width * .08, size.height * .14); }
     if (selection && tool === 'crop') { context.fillStyle = '#0006'; context.fillRect(0, 0, size.width, size.height); context.clearRect(Math.min(selection.start.x, selection.end.x), Math.min(selection.start.y, selection.end.y), Math.abs(selection.end.x - selection.start.x), Math.abs(selection.end.y - selection.start.y)); context.strokeStyle = '#fff'; context.strokeRect(Math.min(selection.start.x, selection.end.x), Math.min(selection.start.y, selection.end.y), Math.abs(selection.end.x - selection.start.x), Math.abs(selection.end.y - selection.start.y)); }
-  }, [angle, brightness, contrast, drawingVersion, drawColor, drawWidth, filter, overlay, saturation, selection, size, tool, label]);
+  }, [angle, brightness, contrast, filter, image, overlay, saturation, selection, size, strokes, tool, label]);
 
   const point = (event: React.PointerEvent<HTMLCanvasElement>): Point => { const rect = event.currentTarget.getBoundingClientRect(); return { x: (event.clientX - rect.left) * event.currentTarget.width / rect.width, y: (event.clientY - rect.top) * event.currentTarget.height / rect.height }; };
-  const pointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => { event.currentTarget.setPointerCapture(event.pointerId); const p = point(event); startRef.current = p; if (tool === 'draw') strokesRef.current = [...strokesRef.current, { points: [p], color: drawColor, width: drawWidth, style: penStyle }]; else setSelection({ start: p, end: p }); };
-  const pointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => { if (!startRef.current) return; const p = point(event); if (tool === 'draw') { const strokes = strokesRef.current; strokes[strokes.length - 1].points.push(p); setDrawingVersion((version) => version + 1); } else setSelection((selection) => selection ? { ...selection, end: p } : null); };
+  const pointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => { event.currentTarget.setPointerCapture(event.pointerId); const p = point(event); startRef.current = p; if (tool === 'draw') setStrokes((current) => [...current, { points: [p], color: drawColor, width: drawWidth, style: penStyle }]); else setSelection({ start: p, end: p }); };
+  const pointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => { if (!startRef.current) return; const p = point(event); if (tool === 'draw') setStrokes((current) => current.map((stroke, index) => index === current.length - 1 ? { ...stroke, points: [...stroke.points, p] } : stroke)); else setSelection((selection) => selection ? { ...selection, end: p } : null); };
   const pointerUp = () => { startRef.current = null; };
-  const applyCrop = () => { if (!selection) return; const x = Math.min(selection.start.x, selection.end.x), y = Math.min(selection.start.y, selection.end.y); const width = Math.abs(selection.end.x - selection.start.x), height = Math.abs(selection.end.y - selection.start.y); if (width < 2 || height < 2) return; const canvas = canvasRef.current; if (!canvas) return; const crop = document.createElement('canvas'); crop.width = Math.round(width); crop.height = Math.round(height); crop.getContext('2d')?.drawImage(canvas, x, y, width, height, 0, 0, crop.width, crop.height); const cropped = new Image(); cropped.onload = () => setSize({ width: crop.width, height: crop.height }); cropped.src = crop.toDataURL('image/png'); if (imageRef.current instanceof ImageBitmap) imageRef.current.close(); imageRef.current = cropped; setSelection(null); setAngle(0); setFilter(0); strokesRef.current = []; setOverlay(''); };
+  const applyCrop = () => { if (!selection) return; const x = Math.min(selection.start.x, selection.end.x), y = Math.min(selection.start.y, selection.end.y); const width = Math.abs(selection.end.x - selection.start.x), height = Math.abs(selection.end.y - selection.start.y); if (width < 2 || height < 2) return; const canvas = canvasRef.current; if (!canvas) return; const crop = document.createElement('canvas'); crop.width = Math.round(width); crop.height = Math.round(height); crop.getContext('2d')?.drawImage(canvas, x, y, width, height, 0, 0, crop.width, crop.height); const cropped = new Image(); cropped.onload = () => setSize({ width: crop.width, height: crop.height }); cropped.src = crop.toDataURL('image/png'); if (image instanceof ImageBitmap) image.close(); setImage(cropped); setSelection(null); setAngle(0); setFilter(0); setStrokes([]); setOverlay(''); };
   const moveCropWithKeyboard = (event: React.KeyboardEvent<HTMLCanvasElement>) => {
     if (tool !== 'crop' || !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
     event.preventDefault();
@@ -150,12 +147,12 @@ export function ImageEditor({ file, onSave, onCancel }: ImageEditorProps) {
       <label>{locale === 'en' ? 'Rotation' : 'Rotação'}<input aria-label={locale === 'en' ? 'Rotation' : 'Rotação'} type="range" min="-180" max="180" step="1" value={((angle + 180) % 360 + 360) % 360 - 180} onChange={(event) => setAngle(Number(event.currentTarget.value))} /></label>
       <button type="button" onClick={() => { const value = window.prompt(label[8], text || (locale === 'en' ? 'NEW TEXT' : 'NOVO TEXTO')); if (value !== null) { setText(value.slice(0, 2000)); setOverlay(value.slice(0, 2000)); } }}>{label[4]}</button>
       <button type="button" aria-pressed={tool === 'draw'} onClick={() => setTool(tool === 'draw' ? 'crop' : 'draw')}>{label[5]}</button>
-      {tool === 'draw' && <><label>{locale === 'en' ? 'Draw color' : 'Cor do traço'}<input aria-label={locale === 'en' ? 'Draw color' : 'Cor do traço'} type="color" value={drawColor} onChange={(event) => setDrawColor(event.currentTarget.value)} /></label><label>{locale === 'en' ? 'Pen style' : 'Estilo do traço'}<select aria-label={locale === 'en' ? 'Pen style' : 'Estilo do traço'} value={penStyle} onChange={(event) => setPenStyle(event.currentTarget.value as Stroke['style'])}><option value="marker">{locale === 'en' ? 'Marker' : 'Marcador'}</option><option value="highlighter">{locale === 'en' ? 'Highlighter' : 'Marca-texto'}</option><option value="eraser">{locale === 'en' ? 'Eraser' : 'Borracha'}</option></select></label><label>{locale === 'en' ? 'Draw width' : 'Espessura'}<input aria-label={locale === 'en' ? 'Draw width' : 'Espessura'} type="range" min="2" max="24" value={drawWidth} onChange={(event) => setDrawWidth(Number(event.currentTarget.value))} /></label><button type="button" disabled={!strokesRef.current.length} onClick={() => { strokesRef.current.pop(); setDrawingVersion((version) => version + 1); }}>{locale === 'en' ? 'Undo' : 'Desfazer'}</button><button type="button" disabled={!strokesRef.current.length} onClick={() => { strokesRef.current = []; setDrawingVersion((version) => version + 1); }}>{locale === 'en' ? 'Clear' : 'Limpar'}</button></>}
+      {tool === 'draw' && <><label>{locale === 'en' ? 'Draw color' : 'Cor do traço'}<input aria-label={locale === 'en' ? 'Draw color' : 'Cor do traço'} type="color" value={drawColor} onChange={(event) => setDrawColor(event.currentTarget.value)} /></label><label>{locale === 'en' ? 'Pen style' : 'Estilo do traço'}<select aria-label={locale === 'en' ? 'Pen style' : 'Estilo do traço'} value={penStyle} onChange={(event) => setPenStyle(event.currentTarget.value as Stroke['style'])}><option value="marker">{locale === 'en' ? 'Marker' : 'Marcador'}</option><option value="highlighter">{locale === 'en' ? 'Highlighter' : 'Marca-texto'}</option><option value="eraser">{locale === 'en' ? 'Eraser' : 'Borracha'}</option></select></label><label>{locale === 'en' ? 'Draw width' : 'Espessura'}<input aria-label={locale === 'en' ? 'Draw width' : 'Espessura'} type="range" min="2" max="24" value={drawWidth} onChange={(event) => setDrawWidth(Number(event.currentTarget.value))} /></label><button type="button" disabled={!strokes.length} onClick={() => setStrokes((current) => current.slice(0, -1))}>{locale === 'en' ? 'Undo' : 'Desfazer'}</button><button type="button" disabled={!strokes.length} onClick={() => setStrokes([])}>{locale === 'en' ? 'Clear' : 'Limpar'}</button></>}
     </div>
     <p id="image-editor-hint" className="text-muted">{label[10]}</p>
     <canvas className="m-auto block max-h-[60svh] max-w-full touch-none object-contain" ref={redraw} tabIndex={0} aria-label={label[0]} aria-describedby="image-editor-hint" onKeyDown={moveCropWithKeyboard} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp} />
     {error && <p role="alert">{error}</p>}
-    <footer className="flex justify-end gap-2.5"><button type="button" className="min-h-10 border border-ink bg-surface px-3 text-ink" onClick={onCancel}>{label[7]}</button><button type="button" className="min-h-10 border border-ink bg-brand px-3.5 font-display text-[13px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" onClick={() => void save()} disabled={Boolean(error) || !imageRef.current}>{label[6]}</button></footer>
+    <footer className="flex justify-end gap-2.5"><button type="button" className="min-h-10 border border-ink bg-surface px-3 text-ink" onClick={onCancel}>{label[7]}</button><button type="button" className="min-h-10 border border-ink bg-brand px-3.5 font-display text-[13px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" onClick={() => void save()} disabled={Boolean(error) || !image}>{label[6]}</button></footer>
     </>}
   </section>;
 }

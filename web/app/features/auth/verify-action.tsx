@@ -16,7 +16,7 @@ export default function VerifyActionPage() {
   const { user, isPending, error: sessionError, reload } = useSession();
   const queryClient = useQueryClient();
   const { locale, t, path } = useAuthText();
-  const params = useMemo(() => new URLSearchParams(location.search), []);
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const [token] = useState(() => params.get('token') ?? '');
   const [contextSignature] = useState(() => params.get('contextSignature') ?? '');
   const [purpose] = useState(() => params.get('purpose') ?? '');

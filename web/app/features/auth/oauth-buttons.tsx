@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { api } from '../../core/api';
 import { useSession } from '../../core/session';
@@ -87,8 +87,6 @@ export function OAuthButtons({ returnTo }: { returnTo?: string }) {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
-  const unavailable = useRef(t('auth.provider.unavailable'));
-  unavailable.current = t('auth.provider.unavailable');
   // ponytail: GIS redirect flow, rendered on mount so Google owns the click (no popup, no double click).
   const googleMount = useCallback((node: HTMLDivElement | null) => {
     if (!node || !googleClientId) return;
@@ -103,9 +101,9 @@ export function OAuthButtons({ returnTo }: { returnTo?: string }) {
         callback: () => {},
       });
       window.google.accounts.id.renderButton(node, { theme: 'outline', size: 'large', shape: 'rectangular', width: Math.max(240, Math.floor(node.getBoundingClientRect().width)) });
-    }).catch(() => { if (!cancelled) setError(unavailable.current); });
+    }).catch(() => { if (!cancelled) setError(t('auth.provider.unavailable')); });
     return () => { cancelled = true; node.replaceChildren(); };
-  }, []);
+  }, [t]);
   async function finish(pathname: string, credential: object) {
     setPending(true);
     setError('');

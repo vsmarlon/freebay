@@ -114,12 +114,12 @@ export default function MarketingRoute() {
   const { locale, path, t } = useI18n();
   const { pathname } = useLocation();
   const { locale: routeLocale } = useParams();
+  const navigate = useNavigate();
   if (routeLocale !== 'en' && routeLocale !== 'pt-BR') return <main id="main-content" className="p-[10vh] text-center"><h1>404</h1><p>{t('marketing.notFound')}</p><a href="/pt-BR">Freebay</a></main>;
   const page: Page = pathname.endsWith('/about') ? 'about' : pathname.endsWith('/how-it-works') ? 'how' : 'home';
   const title = page === 'home' ? t('marketing.title.home') : page === 'about' ? t('marketing.title.about') : t('marketing.title.how');
   const description = page === 'about' ? t('marketing.description.about') : page === 'how' ? t('marketing.description.how') : t('marketing.description.home');
   const pagePath = page === 'home' ? '' : page === 'how' ? 'how-it-works' : 'about';
-  const navigate = useNavigate();
 
   return <>
     <Header locale={locale} path={path} t={t} onLanguage={(next) => { if (next !== locale) navigate(appPath(next, pagePath)); }} />

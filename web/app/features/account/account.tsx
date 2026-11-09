@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type PropsWithChildren } from 'react';
+import { useMemo, useState, type FormEvent, type PropsWithChildren } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
 import { ApiError } from '../../core/api';
 import { paths, pathsFor } from '../../core/routes';
@@ -11,7 +11,8 @@ export type User = { id: string; displayName: string; username: string | null; a
 export function useAccountText() {
   const { locale, path } = useLocale();
   const isEnglish = locale === 'en';
-  const t = (key: string, values: Record<string, string | number> = {}) => Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), (isEnglish ? enCatalog : ptBR)[key as keyof typeof enCatalog] ?? key);
+  const catalog = isEnglish ? enCatalog : ptBR;
+  const t = useMemo(() => (key: string, values: Record<string, string | number> = {}) => Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), catalog[key as keyof typeof enCatalog] ?? key), [catalog]);
   return { locale, path, t };
 }
 

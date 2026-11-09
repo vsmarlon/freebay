@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { api } from '../../core/api';
 import { accessTokenForSocket } from '../../core/api';
@@ -29,7 +29,7 @@ export class NotificationRequestScope {
 }
 
 export default function NotificationsPage() {
-  const { t, path, locale } = useAccountText(); const navigate = useNavigate(); const { user } = useSession(); const userId = user?.id; const currentUserId = useRef(userId); currentUserId.current = userId; const requestScope = useRef<NotificationRequestScope | null>(null); const [items, setItems] = useState<Notice[]>([]); const [cursor, setCursor] = useState<string | null>(null); const [more, setMore] = useState(false); const [error, setError] = useState(false); const [unreadCount, setUnreadCount] = useState<number | null>(null); const [countError, setCountError] = useState(false); const [busy, setBusy] = useState<string | null>(null);
+  const { t, path, locale } = useAccountText(); const navigate = useNavigate(); const { user } = useSession(); const userId = user?.id; const currentUserId = useRef(userId); useEffect(() => { currentUserId.current = userId; }, [userId]); const requestScope = useRef<NotificationRequestScope | null>(null); const [items, setItems] = useState<Notice[]>([]); const [cursor, setCursor] = useState<string | null>(null); const [more, setMore] = useState(false); const [error, setError] = useState(false); const [unreadCount, setUnreadCount] = useState<number | null>(null); const [countError, setCountError] = useState(false); const [busy, setBusy] = useState<string | null>(null);
   function refreshUnread(scope = requestScope.current) {
     if (!scope?.isCurrent()) return;
     setCountError(false);
@@ -48,15 +48,18 @@ export default function NotificationsPage() {
       if (!Array.isArray(result)) { setCursor(result.nextCursor ?? null); setMore(result.hasMore ?? Boolean(result.nextCursor)); }
     }, () => setError(true));
   }
+  const loadRef = useRef(load);
+  const refreshUnreadRef = useRef(refreshUnread);
+  useEffect(() => { loadRef.current = load; refreshUnreadRef.current = refreshUnread; });
   const mountRef = useCallback((node: HTMLDivElement | null) => {
     if (!node || !userId) return;
     let active = true;
     const scope: NotificationRequestScope = new NotificationRequestScope(() => currentUserId.current === userId && requestScope.current === scope);
     requestScope.current = scope;
     setItems([]); setCursor(null); setMore(false); setError(false); setUnreadCount(null); setCountError(false); setBusy(null);
-    load(false, scope); refreshUnread(scope);
+    loadRef.current(false, scope); refreshUnreadRef.current(scope);
     const socket: ReturnType<typeof io> = io(`${location.origin}/notifications`, { auth: (callback) => { void accessTokenForSocket().then((token) => callback({ token })).catch(() => callback({ token: '' })); }, transports: ['websocket'] });
-    const refresh = () => { if (active) { load(); refreshUnread(); } };
+    const refresh = () => { if (active) { loadRef.current(); refreshUnreadRef.current(); } };
     socket.on('notification', refresh); socket.on('connect', refresh);
     return () => { active = false; scope.cancel(); if (requestScope.current === scope) requestScope.current = null; socket?.disconnect(); };
   }, [userId]);

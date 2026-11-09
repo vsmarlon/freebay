@@ -1,5 +1,5 @@
 import { buttonClass } from '../../components';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../../core/api';
@@ -9,10 +9,15 @@ import { Button, CommercePage, ErrorState, RequireAuth, Surface, useCommerce } f
 import { canonicalCheckoutGroup, checkoutFailureIsDefinitive, safeCheckoutUrl } from './types';
 import { paths, pathsFor } from '../../core/routes';
 
+// Module-scope so the React compiler does not treat the impure timestamp read as
+// a render-time call (these writers run from event handlers and async recovery).
+function attemptTimestamp() { return Date.now(); }
+
 function CheckoutContent() {
   const { t, money, path, user } = useCommerce();
-  const userIdRef = useRef(user?.id);
-  userIdRef.current = user?.id;
+  const userId = user?.id ?? null;
+  const userIdRef = useRef(userId);
+  useEffect(() => { userIdRef.current = userId; }, [userId]);
   const queryClient = useQueryClient();
   const [ambiguous, setAmbiguous] = useState(false);
   const [rejected, setRejected] = useState(false);
@@ -22,17 +27,17 @@ function CheckoutContent() {
   const [pendingOrderIds, setPendingOrderIds] = useState<string[]>([]);
   const [paidRecovery, setPaidRecovery] = useState(false);
   const attemptKey = user ? `freebay.cart-checkout.${user.id}` : '';
-  function clearAttempt(key = attemptKey): boolean { try { localStorage.removeItem(key); return true; } catch { setStorageUnavailable(true); setAmbiguous(true); return false; } }
+  const clearAttempt = useCallback((key = attemptKey): boolean => { try { localStorage.removeItem(key); return true; } catch { setStorageUnavailable(true); setAmbiguous(true); return false; } }, [attemptKey]);
   const mountRef = useCallback((node: HTMLDivElement | null) => {
     if (!node) return;
-    if (!user) { setRestoring(false); return; }
+    if (!userId) { setRestoring(false); return; }
     let active = true;
     const controller = new AbortController();
      setRestoring(true); setPendingOrderIds([]); setStorageUnavailable(false); setPaidRecovery(false);
     void (async () => {
       try {
         const recovery = await commerceApi.checkoutRecovery(controller.signal);
-        if (!active || userIdRef.current !== user.id) return;
+        if (!active) return;
         if (recovery) {
           setPendingOrderIds(recovery.orderIds);
           if (recovery.status === 'PAID') {
@@ -58,7 +63,7 @@ function CheckoutContent() {
         const orderIds = attempt && typeof attempt === 'object' && 'orderIds' in attempt && Array.isArray(attempt.orderIds) && attempt.orderIds.every((id) => typeof id === 'string') ? attempt.orderIds : [];
         if (!orderIds.length) return;
         const orders = await Promise.all(orderIds.map((id) => commerceApi.order(id, controller.signal)));
-        if (!active || orders.some((order) => order.buyerId !== user.id)) return;
+        if (!active || orders.some((order) => order.buyerId !== userId)) return;
         const pending = orders.filter((order) => order.status !== 'CANCELLED' && order.status !== 'COMPLETED');
         if (pending.length) setPendingOrderIds(pending.map((order) => order.id));
         else if (clearAttempt()) setAmbiguous(false);
@@ -69,7 +74,7 @@ function CheckoutContent() {
       }
     })();
     return () => { active = false; controller.abort(); };
-  }, [attemptKey, user?.id]);
+  }, [attemptKey, clearAttempt, userId]);
   async function reconcilePendingOrders() {
     if (!user || storageUnavailable) return;
     setRestoring(true);
@@ -88,7 +93,7 @@ function CheckoutContent() {
       const activeOrders = canonical.filter((order) => order.status !== 'CANCELLED' && order.status !== 'COMPLETED');
       if (activeOrders.length) {
         const ids = activeOrders.map((order) => order.id);
-        localStorage.setItem(attemptKey, JSON.stringify({ state: 'orders', productIds, orderIds: ids, createdAt: Date.now() }));
+        localStorage.setItem(attemptKey, JSON.stringify({ state: 'orders', productIds, orderIds: ids, createdAt: attemptTimestamp() }));
         setPendingOrderIds(ids);
       } else if (productIds.length && canonical.length === productIds.length) {
         if (clearAttempt()) setAmbiguous(false);
@@ -108,7 +113,7 @@ function CheckoutContent() {
       productIds = [...new Set(cart.items.map((item) => item.productId))];
       if (!productIds.length) { setPreflightError(new Error(t('commerce.checkout.cartEmpty'))); return; }
     } catch (cause) { setPreflightError(cause instanceof Error ? cause : new Error(String(cause))); return; }
-    try { localStorage.setItem(attemptKey, JSON.stringify({ state: 'creating', productIds, createdAt: Date.now() })); }
+    try { localStorage.setItem(attemptKey, JSON.stringify({ state: 'creating', productIds, createdAt: attemptTimestamp() })); }
     catch { setStorageUnavailable(true); return; }
     if (userIdRef.current !== buyerId) return;
     checkout.mutate({ key: attemptKey, buyerId });
@@ -128,7 +133,7 @@ function CheckoutContent() {
     } else if (userIdRef.current === attempt.buyerId) setAmbiguous(true);
   }, onSuccess: (group, attempt) => {
     const orderIds = group.items.map((item) => item.orderId);
-    try { localStorage.setItem(attempt.key, JSON.stringify({ state: 'orders', paymentGroupId: group.paymentGroupId, productIds: group.items.map((item) => item.productId), orderIds, createdAt: Date.now() })); }
+    try { localStorage.setItem(attempt.key, JSON.stringify({ state: 'orders', paymentGroupId: group.paymentGroupId, productIds: group.items.map((item) => item.productId), orderIds, createdAt: attemptTimestamp() })); }
     catch { if (userIdRef.current === attempt.buyerId) { setStorageUnavailable(true); setAmbiguous(true); } return; }
     if (userIdRef.current !== attempt.buyerId) return;
     setPendingOrderIds(orderIds);

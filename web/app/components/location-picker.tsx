@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Icon } from './index';
@@ -21,7 +21,7 @@ export function LocationPicker({ latitude, longitude, onPick, onGeolocationError
 }) {
   // Latest props via ref: the mount callback stays stable so the Leaflet map is created once (remount only via key).
   const latest = useRef({ latitude, longitude, onPick });
-  latest.current = { latitude, longitude, onPick };
+  useEffect(() => { latest.current = { latitude, longitude, onPick }; }, [latitude, longitude, onPick]);
 
   const mount = useCallback((node: HTMLDivElement | null) => {
     if (!node) return;

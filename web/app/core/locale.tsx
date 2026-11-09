@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import en from './catalogs/en.json';
 import pt from './catalogs/pt-BR.json';
 
@@ -10,4 +10,4 @@ export function LocaleProvider({ locale, children }: React.PropsWithChildren<{ l
 export function useLocale() { return useContext(LocaleContext); }
 const base: Catalogs = { en, 'pt-BR': pt };
 export function translator(catalogs: Catalogs, locale: Locale) { const t = (key: string, values: Record<string, string | number> = {}) => { let text = catalogs[locale][key] ?? base[locale][key] ?? key; for (const [name, value] of Object.entries(values)) text = text.replaceAll(`{${name}}`, String(value)); return text; }; return t; }
-export function useI18n(catalogs: Catalogs = base) { const { locale, path } = useLocale(); return { locale, path, t: translator(catalogs, locale) }; }
+export function useI18n(catalogs: Catalogs = base) { const { locale, path } = useLocale(); const t = useMemo(() => translator(catalogs, locale), [catalogs, locale]); return { locale, path, t }; }

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, PropsWithChildren, ReactNode } from 'react';
+import { useMemo, type ButtonHTMLAttributes, type InputHTMLAttributes, type PropsWithChildren, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useI18n, type Catalogs, type Locale } from '../../core/locale';
 import { Button, Input, PasswordInput, SegmentedControl, Status, type IconName } from '../../components';
@@ -9,11 +9,9 @@ import ptBR from './catalogs/pt-BR.json';
 const catalogs: Catalogs = { en, 'pt-BR': ptBR };
 
 export function useAuthText() {
-  const shared = useI18n();
-  return {
-    ...shared,
-    t: (key: string, values?: Record<string, string | number>) => catalogs[shared.locale][key] ?? shared.t(key, values),
-  };
+  const { locale, path, t: sharedT } = useI18n();
+  const t = useMemo(() => (key: string, values?: Record<string, string | number>) => catalogs[locale][key] ?? sharedT(key, values), [locale, sharedT]);
+  return { locale, path, t };
 }
 
 export function AuthFrame({ title, description, children, footer }: PropsWithChildren<{ title: string; description: string; footer?: ReactNode }>) {
