@@ -1,3 +1,4 @@
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -11,6 +12,7 @@ import 'package:freebay/features/profile/presentation/widgets/profile_identity.d
 import 'package:freebay/features/profile/presentation/widgets/profile_media_actions.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_stats.dart';
 import 'package:freebay/features/stories/stories.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ProfileHeader extends ConsumerWidget {
   final UserEntity user;
@@ -61,28 +63,10 @@ class ProfileHeader extends ConsumerWidget {
               if (isOwnProfile)
                 SizedBox(
                   width: double.infinity,
-                  child: InkWell(
-                    onTap: () => context.push(AppRoutes.profileEdit),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: context.borderSoftColor,
-                          width: 2,
-                        ),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Editar perfil',
-                          style: TextStyle(
-                            fontFamily: AppTypography.headlineFontFamily,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            color: AppColors.primaryContainer,
-                          ),
-                        ),
-                      ),
-                    ),
+                  child: AppButton(
+                    label: l10n(context).profileEdit,
+                    variant: AppButtonVariant.secondary,
+                    onPressed: () => context.push(AppRoutes.profileEdit),
                   ),
                 ),
               Spacing.vMd,

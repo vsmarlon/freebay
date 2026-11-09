@@ -3136,10 +3136,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileFollowingTitle => 'FOLLOWING';
 
   @override
-  String get profileSavedPostsTitle => 'SAVED POSTS';
+  String get profileSavedPostsTitle => 'Saved Posts';
 
   @override
-  String get profileBlockedUsersTitle => 'BLOCKED USERS';
+  String get profileBlockedUsersTitle => 'Blocked Users';
 
   @override
   String get profileNoBlockedUsers => 'You haven\'t blocked anyone';
@@ -3236,7 +3236,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatFaqTitle => 'FAQ / HELP';
 
   @override
-  String get faqAccountProfile => 'ACCOUNT AND PROFILE';
+  String get faqAccountProfile => 'Account and profile';
 
   @override
   String get faqPurchasesPayments => 'PURCHASES AND PAYMENTS';
@@ -3579,10 +3579,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get imageAddFromCamera => 'Add from camera';
 
   @override
-  String get profileFavoritesTitle => 'FAVORITES';
+  String get profileFavoritesTitle => 'Favorites';
 
   @override
-  String get profilePurchasesTitle => 'PURCHASES';
+  String get profilePurchasesTitle => 'Purchases';
 
   @override
   String get paymentWalletUnavailable =>

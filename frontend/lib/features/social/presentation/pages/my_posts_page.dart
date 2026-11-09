@@ -311,7 +311,7 @@ class MyPostsPage extends HookConsumerWidget {
     bool isOwner,
   ) {
     final content = post.content ?? '';
-    final imageUrl = post.imageUrl;
+    final imageUrl = post.firstMedia?.previewUrl;
     final isReposted = post.repostedAt != null;
 
     return GestureDetector(

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:freebay/core/ui.dart';
 
 class VideoTrimBar extends StatefulWidget {
   const VideoTrimBar({
@@ -95,13 +96,14 @@ class _VideoTrimBarState extends State<VideoTrimBar> {
                                   f,
                                   fit: BoxFit.cover,
                                   height: 56,
-                                  errorBuilder: (_, _, _) =>
-                                      const ColoredBox(color: Colors.black26),
+                                  errorBuilder: (_, _, _) => ColoredBox(
+                                    color: context.surfaceHighColor,
+                                  ),
                                 ),
                               ),
                           ],
                         )
-                      : Container(color: Colors.black45),
+                      : Container(color: context.surfaceHighColor),
                 ),
                 // Áreas descartadas escurecidas
                 Positioned(
@@ -126,8 +128,10 @@ class _VideoTrimBarState extends State<VideoTrimBar> {
                   bottom: 0,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white, width: 3),
-                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: context.colors.primary,
+                        width: AppDepth.borderThick,
+                      ),
                     ),
                   ),
                 ),
@@ -137,7 +141,7 @@ class _VideoTrimBarState extends State<VideoTrimBar> {
                   width: 2,
                   top: -4,
                   bottom: -4,
-                  child: const ColoredBox(color: Colors.white),
+                  child: ColoredBox(color: context.colors.primary),
                 ),
               ],
             ),

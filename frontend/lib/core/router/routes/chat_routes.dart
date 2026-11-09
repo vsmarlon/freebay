@@ -14,7 +14,9 @@ final List<RouteBase> chatRoutes = [
   appCupertinoRoute(AppRoutes.imageEditor, (context, state) {
     final request = ImageEditorRouteRequest.resolve(state);
     if (request == null || !request.isValid) {
-      debugPrint('image-editor-route diagnostic: request=$request uri=${state.uri} extra=${state.extra.runtimeType}');
+      debugPrint(
+        'image-editor-route diagnostic: request=$request uri=${state.uri} extra=${state.extra.runtimeType}',
+      );
       return AppErrorWidget(
         details: FlutterErrorDetails(
           exception: StateError('Image editor request unavailable'),

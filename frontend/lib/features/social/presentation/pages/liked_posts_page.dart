@@ -115,7 +115,7 @@ class LikedPostsPage extends ConsumerWidget {
   }
 
   Widget _buildPostTile(BuildContext context, PostEntity post, bool isDark) {
-    final imageUrl = post.imageUrl;
+    final imageUrl = post.firstMedia?.previewUrl;
 
     return GestureDetector(
       onTap: () => context.push(AppRoutes.postPath(post.id)),

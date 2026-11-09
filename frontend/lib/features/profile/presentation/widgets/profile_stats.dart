@@ -33,23 +33,26 @@ class ProfileStats extends ConsumerWidget {
         : null;
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         StatColumn(
           value: '${user.postsCount}',
           label: strings.profilePosts.toLowerCase(),
-          size: 18,
+          size: 16,
+          icon: Icons.article_outlined,
         ),
         StatColumn(
           value: '${stats?.followersCount ?? followersCount}',
           label: strings.profileFollowers.toLowerCase(),
-          size: 18,
+          size: 16,
+          icon: Icons.group_outlined,
           onTap: () => context.push(AppRoutes.followersWith(user.id)),
         ),
         StatColumn(
           value: '${stats?.followingCount ?? followingCount}',
           label: strings.profileFollowing.toLowerCase(),
-          size: 18,
+          size: 16,
+          icon: Icons.person_outline,
           onTap: () => context.push(AppRoutes.followingWith(user.id)),
         ),
       ],

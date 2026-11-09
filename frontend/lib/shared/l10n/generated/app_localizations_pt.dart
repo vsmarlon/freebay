@@ -3148,10 +3148,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get profileFollowingTitle => 'SEGUINDO';
 
   @override
-  String get profileSavedPostsTitle => 'POSTS SALVOS';
+  String get profileSavedPostsTitle => 'Posts Salvos';
 
   @override
-  String get profileBlockedUsersTitle => 'USUÁRIOS BLOQUEADOS';
+  String get profileBlockedUsersTitle => 'Usuários Bloqueados';
 
   @override
   String get profileNoBlockedUsers => 'Você não bloqueou nenhum usuário';
@@ -3592,10 +3592,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get imageAddFromCamera => 'Adicionar pela câmera';
 
   @override
-  String get profileFavoritesTitle => 'FAVORITOS';
+  String get profileFavoritesTitle => 'Favoritos';
 
   @override
-  String get profilePurchasesTitle => 'COMPRAS';
+  String get profilePurchasesTitle => 'Compras';
 
   @override
   String get paymentWalletUnavailable =>
@@ -6946,10 +6946,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get profileFollowingTitle => 'SEGUINDO';
 
   @override
-  String get profileSavedPostsTitle => 'POSTS SALVOS';
+  String get profileSavedPostsTitle => 'Posts Salvos';
 
   @override
-  String get profileBlockedUsersTitle => 'USUÁRIOS BLOQUEADOS';
+  String get profileBlockedUsersTitle => 'Usuários Bloqueados';
 
   @override
   String get profileNoBlockedUsers => 'Você não bloqueou nenhum usuário';
@@ -7046,7 +7046,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get chatFaqTitle => 'FAQ / AJUDA';
 
   @override
-  String get faqAccountProfile => 'CONTA E PERFIL';
+  String get faqAccountProfile => 'Conta e perfil';
 
   @override
   String get faqPurchasesPayments => 'COMPRAS E PAGAMENTOS';
@@ -7390,10 +7390,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get imageAddFromCamera => 'Adicionar pela câmera';
 
   @override
-  String get profileFavoritesTitle => 'FAVORITOS';
+  String get profileFavoritesTitle => 'Favoritos';
 
   @override
-  String get profilePurchasesTitle => 'COMPRAS';
+  String get profilePurchasesTitle => 'Compras';
 
   @override
   String get paymentWalletUnavailable =>

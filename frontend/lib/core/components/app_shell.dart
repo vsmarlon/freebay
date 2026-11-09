@@ -39,7 +39,6 @@ class _AppShellState extends State<AppShell>
   late final PageController _pageController;
   late final AnimationController _drawer;
   LocalHistoryEntry? _drawerHistory;
-  double _dragStartPage = 0;
   bool _dragging = false;
   final Set<int> _visitedTabs = {0};
 
@@ -170,34 +169,21 @@ class _AppShellState extends State<AppShell>
   }
 
   void _startDrag(DragStartDetails details) {
-    // ponytail: page swiping moved to inner pagers; only the left edge opens the drawer.
-    if (details.globalPosition.dx > 24) {
-      _dragging = false;
-      return;
-    }
-    _dragging = true;
-    _drawer.stop();
-    _dragStartPage =
-        _pageController.page ?? widget.navigationShell.currentIndex.toDouble();
+    // ponytail: the shell gesture only opens the drawer from the left edge;
+    // horizontal swiping between bottom-nav branches belongs to no one, and
+    // inner pagers (profile tabs) own their own drags.
+    _dragging = details.globalPosition.dx <= 24;
+    if (_dragging) _drawer.stop();
   }
 
   void _updateDrag(DragUpdateDetails details) {
-    if (!_dragging || !_pageController.hasClients) return;
+    if (!_dragging) return;
     final width = MediaQuery.sizeOf(context).width;
     final delta = details.primaryDelta ?? 0;
-    final neighborIndex = _dragStartPage.round() + (delta < 0 ? 1 : -1);
-    if (neighborIndex >= 0 && neighborIndex < widget.branches.length) {
-      if (_visitedTabs.add(neighborIndex)) setState(() {});
-    }
-    final pixels = _pageController.position.pixels;
-    if (_drawer.value > 0 || (pixels <= 0 && delta > 0)) {
+    if (_drawer.value > 0 || delta > 0) {
       _rememberDrawer();
       _drawer.value = (_drawer.value + delta / (width * 0.78)).clamp(0, 1);
-      return;
     }
-    _pageController.jumpTo(
-      (pixels - delta).clamp(0, _pageController.position.maxScrollExtent),
-    );
   }
 
   void _endDrag([DragEndDetails? details]) {
@@ -211,20 +197,7 @@ class _AppShellState extends State<AppShell>
                 ? velocity > 0
                 : _drawer.value >= 0.5),
       );
-      return;
     }
-    if (!_pageController.hasClients) return;
-    final page = _pageController.page ?? _dragStartPage;
-    final target =
-        (velocity.abs() >= kMinFlingVelocity
-                ? _dragStartPage.round() + (velocity < 0 ? 1 : -1)
-                : page.round())
-            .clamp(0, widget.branches.length - 1);
-    _pageController.animateToPage(
-      target,
-      duration: AppMotion.forContext(context, AppMotion.base),
-      curve: AppMotion.baseCurve,
-    );
   }
 
   BrutalistFab? _fabFor(BuildContext context, int selectedIndex) {

@@ -5724,13 +5724,13 @@ abstract class AppLocalizations {
   /// No description provided for @profileSavedPostsTitle.
   ///
   /// In en, this message translates to:
-  /// **'SAVED POSTS'**
+  /// **'Saved Posts'**
   String get profileSavedPostsTitle;
 
   /// No description provided for @profileBlockedUsersTitle.
   ///
   /// In en, this message translates to:
-  /// **'BLOCKED USERS'**
+  /// **'Blocked Users'**
   String get profileBlockedUsersTitle;
 
   /// No description provided for @profileNoBlockedUsers.
@@ -5910,7 +5910,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqAccountProfile.
   ///
   /// In en, this message translates to:
-  /// **'ACCOUNT AND PROFILE'**
+  /// **'Account and profile'**
   String get faqAccountProfile;
 
   /// No description provided for @faqPurchasesPayments.
@@ -6528,13 +6528,13 @@ abstract class AppLocalizations {
   /// No description provided for @profileFavoritesTitle.
   ///
   /// In en, this message translates to:
-  /// **'FAVORITES'**
+  /// **'Favorites'**
   String get profileFavoritesTitle;
 
   /// No description provided for @profilePurchasesTitle.
   ///
   /// In en, this message translates to:
-  /// **'PURCHASES'**
+  /// **'Purchases'**
   String get profilePurchasesTitle;
 
   /// No description provided for @paymentWalletUnavailable.

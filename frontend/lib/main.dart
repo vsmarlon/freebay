@@ -267,10 +267,49 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
         }
       });
 
+  /// A conta lembra que o usuário quer biometria (`biometryLoginEnabled` do
+  /// servidor); em um device que ainda não tem a chave local, oferecemos a
+  /// ativação uma única vez. O flag `biometry_prompted` (local) guarda a
+  /// decisão — aceite ou recusada — até uma troca de conta limpar o estado.
+  Future<void> _maybeOfferBiometryEnrollment(UserEntity user) async {
+    final biometry = ref.read(biometryServiceProvider);
+    if (!user.biometryLoginEnabled) return;
+    if (await biometry.isEnabled()) return;
+    if (!await biometry.isAvailable()) return;
+    if (await biometry.hasPrompted()) return;
+    final context = appRouter.configuration.navigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+    final strings = l10n(context);
+    await AppDialog.show<void>(
+      context: context,
+      icon: Icons.fingerprint,
+      title: strings.authPermissionBiometry,
+      subtitle: strings.onboardingBiometryBody,
+      dismissText: strings.commonCancel,
+      okText: strings.authUseBiometrics,
+      onOk: () async {
+        final enrolled = await ref
+            .read(authControllerProvider.notifier)
+            .enrollBiometrics(expectedUserId: user.id);
+        if (enrolled || !context.mounted) return;
+        AppSnackbar.error(context, strings.profileBiometryUpdateFailed);
+      },
+      onDismiss: () => biometry.setHasPrompted(true),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (_, _) {
+    ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (
+      previous,
+      next,
+    ) {
       routerRefreshNotifier.value++;
+      final user = next.value;
+      final previousId = previous?.value?.id;
+      if (user != null && user.id != previousId) {
+        unawaited(_maybeOfferBiometryEnrollment(user));
+      }
     });
     final themeMode = ref.watch(themeModeProvider);
     final localePreference = ref.watch(appLocalePreferenceProvider);

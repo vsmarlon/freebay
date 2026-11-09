@@ -133,7 +133,8 @@ class BlurStrokesPainter extends CustomPainter {
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round
           ..strokeWidth = size.width * s.widthFactor * 3
-          ..color = Colors.black,
+          // The export mask needs opaque black, not a themed surface.
+          ..color = const Color(0xFF000000),
       );
     }
     canvas.saveLayer(
@@ -173,7 +174,8 @@ class VignetteOverlay extends StatelessWidget {
         radius: .95,
         colors: [
           Colors.transparent,
-          Colors.black.withAlpha((0.65 * strength * 255).round()),
+          // Vignette black is image content and must not adapt to the theme.
+          const Color(0xFF000000).withAlpha((0.65 * strength * 255).round()),
         ],
         stops: const [.55, 1],
       ),

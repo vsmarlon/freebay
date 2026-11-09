@@ -29,6 +29,7 @@ _UserEntity _$UserEntityFromJson(Map<String, dynamic> json) => _UserEntity(
   postsCount: (json['postsCount'] as num?)?.toInt() ?? 0,
   productsCount: (json['productsCount'] as num?)?.toInt() ?? 0,
   hasActiveStory: json['hasActiveStory'] as bool? ?? false,
+  biometryLoginEnabled: json['biometryLoginEnabled'] as bool? ?? false,
   deletionRequestedAt: json['deletionRequestedAt'] == null
       ? null
       : DateTime.parse(json['deletionRequestedAt'] as String),
@@ -58,5 +59,6 @@ Map<String, dynamic> _$UserEntityToJson(_UserEntity instance) =>
       'postsCount': instance.postsCount,
       'productsCount': instance.productsCount,
       'hasActiveStory': instance.hasActiveStory,
+      'biometryLoginEnabled': instance.biometryLoginEnabled,
       'deletionRequestedAt': instance.deletionRequestedAt?.toIso8601String(),
     };

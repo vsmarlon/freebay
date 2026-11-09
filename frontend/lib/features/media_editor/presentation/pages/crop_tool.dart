@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:freebay/core/ui.dart';
 
 import '../../domain/crop_geometry.dart';
 import '../../domain/editor_models.dart';
@@ -48,7 +49,7 @@ class _CropCanvasState extends State<CropCanvas> {
       final frame = applyBoxFit(
         BoxFit.contain,
         geometry.framePx,
-        const EdgeInsets.all(24).deflateSize(box.biggest),
+        const EdgeInsets.all(Spacing.lg).deflateSize(box.biggest),
       ).destination;
       // px de tela por px da imagem (com zoom do straighten)
       final screenPerImage =
@@ -146,7 +147,7 @@ class _ScrimGridPainter extends CustomPainter {
     canvas.drawPath(scrim, Paint()..color = const Color(0xB3000000));
     if (!circular) {
       final grid = Paint()
-        ..color = Colors.white54
+        ..color = AppColors.white.withAlpha(138)
         ..strokeWidth = .8;
       for (var i = 1; i < 3; i++) {
         canvas.drawLine(
@@ -164,7 +165,7 @@ class _ScrimGridPainter extends CustomPainter {
         frame,
         Paint()
           ..style = PaintingStyle.stroke
-          ..color = Colors.white
+          ..color = AppColors.white
           ..strokeWidth = 2,
       );
     } else {
@@ -172,7 +173,7 @@ class _ScrimGridPainter extends CustomPainter {
         frame,
         Paint()
           ..style = PaintingStyle.stroke
-          ..color = Colors.white
+          ..color = AppColors.white
           ..strokeWidth = 2,
       );
     }

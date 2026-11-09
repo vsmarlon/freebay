@@ -11,6 +11,124 @@ import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 const _timelineKinds = <String>['posts', 'reposts', 'products'];
 
+/// Notifications that may complete the profile's pull-to-refresh.
+///
+/// The inner timelines report at depth 1 and the collapsing header at depth 0,
+/// so both are accepted; the trigger itself is pointer-driven via
+/// [ProfileRefresh]. Ballistic notifications that merely cross the top from a
+/// scroll started below must not re-arm the indicator: [RefreshIndicator]
+/// armed by any [OverscrollNotification] makes every fling to the top spin.
+bool _isProfileRefreshNotification(ScrollNotification notification) =>
+    notification.metrics.axis == Axis.vertical && notification.depth <= 2;
+
+/// Pull-to-refresh for the profile tabs.
+///
+/// [RefreshIndicator] only arms after a pull proportional to the scroll
+/// viewport (25% of it). The profile header fills most of that viewport, so a
+/// pull started on the visible timeline cannot reach the threshold. This keeps
+/// the same indicator and also arms it from pointer travel when the gesture
+/// starts at the top.
+class ProfileRefresh extends StatefulWidget {
+  const ProfileRefresh({
+    super.key,
+    required this.onRefresh,
+    required this.child,
+  });
+
+  final Future<void> Function() onRefresh;
+  final Widget child;
+
+  @override
+  State<ProfileRefresh> createState() => _ProfileRefreshState();
+}
+
+class _ProfileRefreshState extends State<ProfileRefresh> {
+  static const double _pullThreshold = 80;
+
+  final GlobalKey<RefreshIndicatorState> _indicator =
+      GlobalKey<RefreshIndicatorState>();
+  bool _atTop = true;
+  bool _startedAtTop = false;
+  bool _triggered = false;
+  double _startX = 0;
+  double _startY = 0;
+
+  bool _handleScroll(ScrollNotification notification) {
+    final metrics = notification.metrics;
+    if (metrics.axis == Axis.vertical) {
+      // Depth 0 is the collapsing header; it only ever sits at min while the
+      // timelines are at top too, so it alone decides "at top".
+      if (notification.depth == 0 && metrics.hasContentDimensions) {
+        _atTop = metrics.pixels <= metrics.minScrollExtent;
+      }
+    }
+    return false;
+  }
+
+  void _handlePointerDown(PointerDownEvent event) {
+    _startX = event.position.dx;
+    _startY = event.position.dy;
+    _startedAtTop = _atTop;
+    _triggered = false;
+  }
+
+  void _handlePointerMove(PointerMoveEvent event) {
+    if (_triggered || !_startedAtTop) return;
+    final dy = event.position.dy - _startY;
+    if (dy < _pullThreshold || dy < (event.position.dx - _startX).abs()) {
+      return;
+    }
+    _triggered = true;
+    _indicator.currentState?.show();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      key: _indicator,
+      color: AppColors.primaryContainer,
+      notificationPredicate: (notification) =>
+          // Own and ballistic scroll-end notifications may complete a show();
+          // drags must not arm the indicator itself (the Listener above does).
+          notification is! ScrollUpdateNotification &&
+          _isProfileRefreshNotification(notification),
+      onRefresh: widget.onRefresh,
+      child: Listener(
+        onPointerDown: _handlePointerDown,
+        onPointerMove: _handlePointerMove,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: _handleScroll,
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Refreshes posts, reposts and products, keeping each timeline alive while it
+/// loads. Without the listeners, auto-dispose cancels the request of a tab that
+/// is not currently built (only the visible and adjacent tabs exist).
+Future<void> refreshProfileTimelines(WidgetRef ref, String userId) async {
+  final viewerId = ref.read(authControllerProvider).asData?.value?.id;
+  final providers = [
+    for (final kind in _timelineKinds)
+      profileTimelineProvider(userId, kind: kind, viewerId: viewerId),
+  ];
+  final subscriptions = [
+    for (final provider in providers)
+      ref.listenManual<ProfileTimelineState>(provider, (_, _) {}),
+  ];
+  try {
+    await Future.wait([
+      for (final provider in providers) ref.read(provider.notifier).refresh(),
+    ]);
+  } finally {
+    for (final subscription in subscriptions) {
+      subscription.close();
+    }
+  }
+}
+
 class ProfileTabs extends ConsumerWidget {
   const ProfileTabs({
     super.key,
@@ -40,38 +158,16 @@ class ProfileTabs extends ConsumerWidget {
           ...headerSlivers,
           SliverPersistentHeader(
             pinned: true,
-            delegate: _ProfileTabHeader(
-              TabBar(
-                tabs: [
-                  for (final label in labels)
-                    Tab(
-                      child: Semantics(
-                        label: label,
-                        button: true,
-                        child: Text(label.toUpperCase()),
-                      ),
-                    ),
-                ],
-                labelColor: context.colors.primary,
-                unselectedLabelColor: context.textSecondary,
-                indicatorColor: AppColors.primaryContainer,
-                indicatorWeight: 3,
-                labelStyle: AppTypography.brutalistTag,
-                unselectedLabelStyle: AppTypography.brutalistTag,
-                dividerColor: Colors.transparent,
-              ),
-            ),
+            delegate: _ProfileTabHeader(_ProfileTabBar(labels: labels)),
           ),
         ],
         body: TabBarView(
           children: [
-            for (var index = 0; index < _timelineKinds.length; index++)
+            for (final kind in _timelineKinds)
               _TimelineTab(
-                key: ValueKey(
-                  '${user.id}:${_timelineKinds[index]}:${viewerId ?? 'anonymous'}',
-                ),
+                key: ValueKey('${user.id}:$kind:${viewerId ?? 'anonymous'}'),
                 user: user,
-                kind: _timelineKinds[index],
+                kind: kind,
                 viewerId: viewerId,
               ),
           ],
@@ -81,10 +177,39 @@ class ProfileTabs extends ConsumerWidget {
   }
 }
 
+class _ProfileTabBar extends StatelessWidget {
+  const _ProfileTabBar({required this.labels});
+
+  final List<String> labels;
+
+  @override
+  Widget build(BuildContext context) {
+    return TabBar(
+      tabs: [
+        for (final label in labels)
+          Tab(
+            child: Semantics(
+              label: label,
+              button: true,
+              child: Text(label.toUpperCase()),
+            ),
+          ),
+      ],
+      labelColor: context.colors.primary,
+      unselectedLabelColor: context.textSecondary,
+      indicatorColor: AppColors.primaryContainer,
+      indicatorWeight: 3,
+      labelStyle: AppTypography.brutalistTag,
+      unselectedLabelStyle: AppTypography.brutalistTag,
+      dividerColor: Colors.transparent,
+    );
+  }
+}
+
 class _ProfileTabHeader extends SliverPersistentHeaderDelegate {
   const _ProfileTabHeader(this.tabBar);
 
-  final TabBar tabBar;
+  final Widget tabBar;
 
   @override
   double get minExtent => 48;

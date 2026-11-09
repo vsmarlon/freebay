@@ -152,7 +152,13 @@ class Feed extends _$Feed {
         if (canCache && cursor == null && replacePage) {
           final publicPosts = page.posts
               .where((post) => post.audience == PostAudience.everyone)
-              .where((post) => !_hasPrivateMediaUrl(post.imageUrl))
+              .where(
+                (post) => !post.media.any(
+                  (item) =>
+                      _hasPrivateMediaUrl(item.url) ||
+                      _hasPrivateMediaUrl(item.thumbnailUrl),
+                ),
+              )
               .toList();
           unawaited(
             StorageService.writeCachedJson(

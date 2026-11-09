@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:video_player/video_player.dart';
 
 import '../application/editor_controller.dart';
@@ -74,8 +75,8 @@ class _EditorCanvasState extends ConsumerState<EditorCanvas> {
     final history = ref.watch(editorControllerProvider(widget.sessionId));
     final state = history.present;
     if (widget.image == null && widget.video == null) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      return Center(
+        child: CircularProgressIndicator(color: context.colors.primary),
       );
     }
     final geometry = CropGeometry(state.crop, state.sourceSize);
@@ -168,12 +169,12 @@ class _EditorCanvasState extends ConsumerState<EditorCanvas> {
             canvas,
             // lixeira fica FORA do boundary de export
             Positioned(
-              bottom: 24 + MediaQuery.viewPaddingOf(context).bottom,
+              bottom: Spacing.lg + MediaQuery.viewPaddingOf(context).bottom,
               child: ValueListenableBuilder<bool>(
                 valueListenable: _showTrash,
                 builder: (_, show, _) => AnimatedOpacity(
                   opacity: show ? 1 : 0,
-                  duration: const Duration(milliseconds: 150),
+                  duration: AppMotion.tap,
                   child: ValueListenableBuilder<bool>(
                     valueListenable: _overTrash,
                     builder: (_, over, _) => Container(
@@ -181,12 +182,15 @@ class _EditorCanvasState extends ConsumerState<EditorCanvas> {
                       width: over ? 64 : 52,
                       height: over ? 64 : 52,
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: over ? Colors.red : Colors.black54,
+                        color: over
+                            ? context.colors.error
+                            : context.surfaceHighColor,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.delete_outline,
-                        color: Colors.white,
+                        color: over
+                            ? context.colors.onError
+                            : context.textPrimary,
                       ),
                     ),
                   ),

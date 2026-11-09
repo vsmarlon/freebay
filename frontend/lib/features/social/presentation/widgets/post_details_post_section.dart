@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/components/social_post.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/features/social/presentation/widgets/post_media_adapter.dart';
 import 'package:freebay/features/social/presentation/widgets/quote_source_preview.dart';
 
 class PostDetailsPostSection extends StatelessWidget {
@@ -49,10 +50,7 @@ class PostDetailsPostSection extends StatelessWidget {
       userAvatarUrl: post.user.avatarUrl,
       userAvatarBlurHash: post.user.avatarBlurHash,
       content: post.content,
-      imageUrl: post.imageUrl,
-      imageBlurHash: post.audience == PostAudience.everyone
-          ? post.imageBlurHash
-          : null,
+      media: post.socialMedia,
       isCloseFriends: post.audience == PostAudience.closeFriends,
       closeFriendsLabel: l10n(context).feedAudienceCloseFriends,
       likesCount: likesCount,

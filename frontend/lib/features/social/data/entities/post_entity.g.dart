@@ -6,6 +6,35 @@ part of 'post_entity.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+_PostMediaEntity _$PostMediaEntityFromJson(Map<String, dynamic> json) =>
+    _PostMediaEntity(
+      id: json['id'] as String,
+      url: json['url'] as String,
+      thumbnailUrl: json['thumbnailUrl'] as String?,
+      type:
+          $enumDecodeNullable(_$PostMediaTypeEnumMap, json['type']) ??
+          PostMediaType.image,
+      altText: json['altText'] as String?,
+      blurHash: json['blurHash'] as String?,
+      order: (json['order'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$PostMediaEntityToJson(_PostMediaEntity instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'url': instance.url,
+      'thumbnailUrl': instance.thumbnailUrl,
+      'type': _$PostMediaTypeEnumMap[instance.type]!,
+      'altText': instance.altText,
+      'blurHash': instance.blurHash,
+      'order': instance.order,
+    };
+
+const _$PostMediaTypeEnumMap = {
+  PostMediaType.image: 'IMAGE',
+  PostMediaType.video: 'VIDEO',
+};
+
 _PostProductInfo _$PostProductInfoFromJson(Map<String, dynamic> json) =>
     _PostProductInfo(
       id: json['id'] as String,
@@ -30,8 +59,11 @@ _PostEntity _$PostEntityFromJson(Map<String, dynamic> json) => _PostEntity(
   id: json['id'] as String,
   userId: json['userId'] as String,
   content: json['content'] as String?,
-  imageUrl: json['imageUrl'] as String?,
-  imageBlurHash: json['imageBlurHash'] as String?,
+  media:
+      (json['media'] as List<dynamic>?)
+          ?.map((e) => PostMediaEntity.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const <PostMediaEntity>[],
   type:
       $enumDecodeNullable(_$PostTypeEnumMap, json['type']) ?? PostType.regular,
   audience:
@@ -65,8 +97,7 @@ Map<String, dynamic> _$PostEntityToJson(_PostEntity instance) =>
       'id': instance.id,
       'userId': instance.userId,
       'content': instance.content,
-      'imageUrl': instance.imageUrl,
-      'imageBlurHash': instance.imageBlurHash,
+      'media': instance.media.map((e) => e.toJson()).toList(),
       'type': _$PostTypeEnumMap[instance.type]!,
       'audience': _$PostAudienceEnumMap[instance.audience]!,
       'likesCount': instance.likesCount,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:freebay/core/ui.dart';
 
 import '../domain/editor_models.dart';
 import 'widgets/layer_views.dart';
@@ -127,7 +128,7 @@ class _LayerItemState extends State<LayerItem> {
 
   Widget _layerContent() => Padding(
     // amplia a área tocável de textos pequenos
-    padding: const EdgeInsets.all(12),
+    padding: const EdgeInsets.all(Spacing.md),
     child: switch (widget.layer) {
       TextLayer l => TextLayerView(
         layer: l,
@@ -142,7 +143,7 @@ class _LayerItemState extends State<LayerItem> {
 
   Widget _selectionChrome(bool selected, Widget child) => selected
       ? DecoratedBox(
-          decoration: BoxDecoration(border: Border.all(color: Colors.white70)),
+          decoration: BoxDecoration(border: Border.all(color: AppColors.white)),
           child: child,
         )
       : child;

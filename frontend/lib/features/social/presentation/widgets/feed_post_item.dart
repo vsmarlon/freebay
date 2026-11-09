@@ -10,6 +10,7 @@ import 'package:freebay/features/social/presentation/providers/saves_provider.da
 import 'package:freebay/features/social/presentation/providers/reposts_provider.dart';
 import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/features/social/presentation/widgets/post_media_adapter.dart';
 import 'package:freebay/features/social/presentation/widgets/post_overflow.dart';
 import 'package:freebay/features/social/presentation/widgets/quote_source_preview.dart';
 
@@ -82,10 +83,7 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
               userAvatarUrl: post.user.avatarUrl,
               userAvatarBlurHash: post.user.avatarBlurHash,
               content: post.content,
-              imageUrl: post.imageUrl,
-              imageBlurHash: post.audience == PostAudience.everyone
-                  ? post.imageBlurHash
-                  : null,
+              media: post.socialMedia,
               likesCount: likesCount,
               commentsCount: post.commentsCount,
               sharesCount: sharesCount,

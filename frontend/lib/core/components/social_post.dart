@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay/core/components/app_image_viewer.dart';
+import 'package:freebay/core/components/app_video_viewer.dart';
 import 'package:freebay/core/components/social_post/post_action_chrome.dart';
 import 'package:freebay/core/components/social_post/post_content.dart';
 import 'package:freebay/core/components/social_post/post_header.dart';
 import 'package:freebay/core/components/social_post/post_labels.dart';
 import 'package:freebay/core/components/social_post/post_media.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 
 class SocialPost extends StatefulWidget {
@@ -15,8 +17,7 @@ class SocialPost extends StatefulWidget {
   final String? userAvatarUrl;
   final String? userAvatarBlurHash;
   final String? content;
-  final String? imageUrl;
-  final String? imageBlurHash;
+  final List<SocialPostMediaItem> media;
   final int likesCount;
   final int commentsCount;
   final int sharesCount;
@@ -49,8 +50,7 @@ class SocialPost extends StatefulWidget {
     this.userAvatarUrl,
     this.userAvatarBlurHash,
     this.content,
-    this.imageUrl,
-    this.imageBlurHash,
+    this.media = const [],
     this.likesCount = 0,
     this.commentsCount = 0,
     this.sharesCount = 0,
@@ -133,16 +133,25 @@ class _SocialPostState extends State<SocialPost> {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = widget.imageUrl != null && widget.imageUrl!.isNotEmpty;
+    final hasMedia = widget.media.isNotEmpty;
     final media = SocialPostMedia(
-      imageUrl: widget.imageUrl,
-      blurHash: widget.isCloseFriends ? null : widget.imageBlurHash,
+      media: widget.media,
       showHeartBurst: _showHeartBurst,
       isPressed: _isImagePressed,
       // ponytail: portraits beat squares for listings; drop the frame and measure
       // the image once the backend ships dimensions.
       aspectRatio: widget.isSelling || (widget.price ?? 0) > 0 ? 4 / 5 : 1,
-      onTap: () => showAppImageViewer(context, widget.imageUrl!),
+      onTap: (item) {
+        if (item.isVideo) {
+          showFullScreenVideo(
+            context,
+            item.url,
+            httpHeaders: mediaAuthHeaders(item.url),
+          );
+        } else {
+          showAppImageViewer(context, item.url);
+        }
+      },
       onDoubleTap: _triggerDoubleTapLike,
       onPressedChanged: (pressed) => setState(() => _isImagePressed = pressed),
       priceTag: widget.price != null && widget.price! > 0
@@ -196,7 +205,7 @@ class _SocialPostState extends State<SocialPost> {
                   ],
                 ),
               ),
-            if (hasImage || widget.isSelling)
+            if (hasMedia || widget.isSelling)
               Column(
                 children: [
                   widget.heroTag == null

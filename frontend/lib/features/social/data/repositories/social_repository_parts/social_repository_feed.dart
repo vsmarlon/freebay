@@ -44,16 +44,22 @@ mixin SocialRepositoryFeed {
     PostAudience audience = PostAudience.everyone,
   }) async {
     try {
+      final image = imagePath == null
+          ? null
+          : await ImageUploadService.compressedMultipartFile(
+              imagePath,
+              filename: 'post.jpg',
+            );
       final data = FormData.fromMap({
         'content': ?content,
         'type': type.wireValue,
         'audience': audience.wireValue,
-        if (imagePath != null)
-          'image': await ImageUploadService.compressedMultipartFile(
-            imagePath,
-            filename: 'post.jpg',
-          ),
-      });
+        if (image != null) 'files': [image],
+        if (image != null)
+          'mediaMetadata': jsonEncode([
+            {'fileIndex': 0, 'type': 'IMAGE', 'hotspots': <Object>[]},
+          ]),
+      }, ListFormat.multiCompatible);
       return requestEither(
         () => client.post(
           '/social/posts',

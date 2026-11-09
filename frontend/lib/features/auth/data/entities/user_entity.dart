@@ -30,6 +30,7 @@ abstract class UserEntity with _$UserEntity {
     @Default(0) int postsCount,
     @Default(0) int productsCount,
     @Default(false) bool hasActiveStory,
+    @Default(false) bool biometryLoginEnabled,
     DateTime? deletionRequestedAt,
   }) = _UserEntity;
 

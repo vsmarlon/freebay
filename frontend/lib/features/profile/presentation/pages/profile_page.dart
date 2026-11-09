@@ -11,7 +11,6 @@ import 'package:freebay/features/profile/presentation/controllers/profile_contro
 import 'package:freebay/features/profile/presentation/widgets/guest_profile_view.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
-import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/suggestions_section.dart';
@@ -122,11 +121,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
             child: profileAsync.when(
               data: (firstPaint) {
                 final u = firstPaint.user;
-                return AppRefreshIndicator(
-                  // NestedScrollView reports the inner list at depth 1.
-                  notificationPredicate: (notification) =>
-                      notification.depth <= 1 &&
-                      notification.metrics.axis == Axis.vertical,
+                return ProfileRefresh(
                   onRefresh: _refreshProfile,
                   child: ProfileTabs(
                     user: u,
@@ -264,17 +259,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         ref
             .read(profileStatsProvider.future)
             .then<void>((_) {}, onError: (Object _, StackTrace _) {}),
-        if (userId != null)
-          for (final kind in ['posts', 'reposts', 'products'])
-            ref
-                .read(
-                  profileTimelineProvider(
-                    userId,
-                    kind: kind,
-                    viewerId: userId,
-                  ).notifier,
-                )
-                .refresh(),
+        if (userId != null) refreshProfileTimelines(ref, userId),
       ]);
     } finally {
       subscription.close();

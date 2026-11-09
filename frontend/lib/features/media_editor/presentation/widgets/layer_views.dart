@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freebay/core/ui.dart';
 
 import '../../domain/editor_models.dart';
 
@@ -15,10 +16,11 @@ class TextLayerView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = canvasWidth * layer.sizeFactor;
+    // Exported artwork keeps its contrast independent of the app theme.
     final onSolid =
         ThemeData.estimateBrightnessForColor(layer.color) == Brightness.dark
-        ? Colors.white
-        : Colors.black;
+        ? AppColors.white
+        : const Color(0xFF000000);
     final foreground = layer.bg == TextBg.solid ? onSolid : layer.color;
     final background = switch (layer.bg) {
       TextBg.none => null,
@@ -31,24 +33,28 @@ class TextLayerView extends StatelessWidget {
       child: Container(
         padding: background == null
             ? EdgeInsets.zero
-            : EdgeInsets.symmetric(horizontal: size * .5, vertical: size * .25),
+            : const EdgeInsets.symmetric(
+                horizontal: Spacing.sm,
+                vertical: Spacing.xs,
+              ),
         decoration: background == null
             ? null
-            : BoxDecoration(
-                color: background,
-                borderRadius: BorderRadius.circular(size * .35),
-              ),
+            : BoxDecoration(color: background),
         child: Text(
           layer.text,
           textAlign: layer.align,
-          style: TextStyle(
+          style: AppTypography.h2.copyWith(
             fontFamily: layer.font,
             fontSize: size,
             height: 1.15,
             color: foreground,
-            fontWeight: FontWeight.w700,
             shadows: background == null
-                ? const [Shadow(blurRadius: 6, color: Color(0x66000000))]
+                ? const [
+                    Shadow(
+                      offset: AppDepth.shadowOffsetSmall,
+                      color: Color(0x66000000),
+                    ),
+                  ]
                 : null,
           ),
         ),
@@ -91,14 +97,14 @@ class StickerLayerView extends StatelessWidget {
       StickerKind.location => _pill(
         size,
         layer.payload,
-        Colors.white,
+        AppColors.white,
         Icons.place,
         dark: true,
       ),
       StickerKind.link => _pill(
         size,
         layer.payload,
-        Colors.white,
+        AppColors.white,
         Icons.link,
         dark: true,
       ),
@@ -112,11 +118,13 @@ class StickerLayerView extends StatelessWidget {
     IconData? icon, {
     bool dark = false,
   }) => Container(
-    padding: EdgeInsets.symmetric(horizontal: size * .35, vertical: size * .2),
+    padding: const EdgeInsets.symmetric(
+      horizontal: Spacing.sm,
+      vertical: Spacing.xs,
+    ),
     decoration: BoxDecoration(
       color: color,
-      borderRadius: BorderRadius.circular(size),
-      boxShadow: const [BoxShadow(blurRadius: 8, color: Color(0x33000000))],
+      boxShadow: AppDepth.hardSmall(const Color(0x33000000)),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -125,16 +133,15 @@ class StickerLayerView extends StatelessWidget {
           Icon(
             icon,
             size: size * .5,
-            color: dark ? Colors.black87 : Colors.white,
+            color: dark ? const Color(0xDD000000) : AppColors.white,
           ),
-          SizedBox(width: size * .15),
+          Spacing.hXs,
         ],
         Text(
           text,
-          style: TextStyle(
+          style: AppTypography.h2.weight(800).copyWith(
             fontSize: size * .45,
-            fontWeight: FontWeight.w800,
-            color: dark ? Colors.black87 : Colors.white,
+            color: dark ? const Color(0xDD000000) : AppColors.white,
           ),
         ),
       ],

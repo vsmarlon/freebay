@@ -373,7 +373,13 @@ class AuthRepository {
       missingDataFailure: const ServerFailure(
         'Falha ao autenticar com Google.',
       ),
-      afterTokens: (_) async {
+      afterTokens: (data) async {
+        // The remembered email must follow the last successful login, or the
+        // login form keeps pre-filling a previous password account.
+        final email = data?['user']?['email'];
+        if (email is String && email.isNotEmpty) {
+          await StorageService.saveEmail(email);
+        }
         await StorageService.saveRememberMe(true);
       },
     );
@@ -399,7 +405,13 @@ class AuthRepository {
       ),
       debugLabel: 'AUTH apple',
       missingDataFailure: const ServerFailure(),
-      afterTokens: (_) async {
+      afterTokens: (data) async {
+        // The remembered email must follow the last successful login, or the
+        // login form keeps pre-filling a previous password account.
+        final email = data?['user']?['email'];
+        if (email is String && email.isNotEmpty) {
+          await StorageService.saveEmail(email);
+        }
         await StorageService.saveRememberMe(true);
       },
     );

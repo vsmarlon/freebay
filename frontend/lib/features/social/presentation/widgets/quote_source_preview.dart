@@ -5,6 +5,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 class QuoteSourcePreview extends StatelessWidget {
   const QuoteSourcePreview({super.key, required this.source});
@@ -24,7 +25,7 @@ class QuoteSourcePreview extends StatelessWidget {
         context,
         post.user,
         post.content ?? '',
-        post.imageUrl,
+        post.firstMedia?.previewUrl,
         () => context.push(AppRoutes.postPath(id)),
       ),
       comment: (id, postId, comment) => _preview(
@@ -85,6 +86,7 @@ class QuoteSourcePreview extends StatelessWidget {
               if (imageUrl != null)
                 Image.network(
                   imageUrl,
+                  headers: mediaAuthHeaders(imageUrl),
                   height: 120,
                   fit: BoxFit.cover,
                   cacheWidth: 720,

@@ -26,13 +26,20 @@ class HideOnScrollController {
     }
 
     if (metrics.pixels <= metrics.minScrollExtent) {
-      _show();
+      // NestedScrollView's correction keeps reporting min-range pixels while
+      // the finger is still moving toward the collapsing header; only a settled
+      // position (any notification that is not a moving update) means top.
+      final stillPulling =
+          notification is ScrollUpdateNotification &&
+          (notification.scrollDelta ?? 0) != 0;
+      if (!stillPulling) {
+        _show();
+      }
       _accumulated = 0;
       return false;
     }
 
-    if (notification is ScrollUpdateNotification &&
-        notification.dragDetails != null) {
+    if (notification is ScrollUpdateNotification) {
       final delta = notification.scrollDelta ?? 0;
       if (delta == 0) return false;
 

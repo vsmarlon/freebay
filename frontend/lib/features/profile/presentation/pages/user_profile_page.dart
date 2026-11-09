@@ -13,7 +13,6 @@ import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
-import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/features/profile/data/repositories/profile_repository.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
@@ -44,10 +43,7 @@ class UserProfilePage extends ConsumerWidget {
             ),
             Expanded(
               child: profileAsync.when(
-                data: (profileUser) => AppRefreshIndicator(
-                  notificationPredicate: (notification) =>
-                      notification.depth == 0 &&
-                      notification.metrics.axis == Axis.vertical,
+                data: (profileUser) => ProfileRefresh(
                   onRefresh: () => _refreshProfile(ref),
                   child: _buildProfileContent(context, ref, profileUser),
                 ),
@@ -70,23 +66,12 @@ class UserProfilePage extends ConsumerWidget {
 
   Future<void> _refreshProfile(WidgetRef ref) async {
     ref.invalidate(profileFutureProvider(userId));
-    final viewerId = ref.read(authControllerProvider).asData?.value?.id;
-    final refreshes = <Future<void>>[
+    await Future.wait([
       ref
           .read(profileFutureProvider(userId).future)
           .then<void>((_) {}, onError: (Object _, StackTrace _) {}),
-      for (final kind in ['posts', 'reposts', 'products'])
-        ref
-            .read(
-              profileTimelineProvider(
-                userId,
-                kind: kind,
-                viewerId: viewerId,
-              ).notifier,
-            )
-            .refresh(),
-    ];
-    await Future.wait(refreshes);
+      refreshProfileTimelines(ref, userId),
+    ]);
   }
 
   Widget _buildProfileContent(

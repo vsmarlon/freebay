@@ -17,6 +17,7 @@ class StoryThumbnail extends StatefulWidget {
 
 class _StoryThumbnailState extends State<StoryThumbnail> {
   VideoPlayerController? _video;
+  String? _resolvedUrl;
 
   @override
   void initState() {
@@ -26,9 +27,12 @@ class _StoryThumbnailState extends State<StoryThumbnail> {
 
   Future<void> _loadVideo() async {
     if (widget.mediaType != StoryMediaType.video) return;
-    final url = widget.url;
+    // The API returns relative /media/... paths; they must be resolved
+    // against the API base or the player has nothing to fetch.
+    final url = mediaUrl(widget.url);
+    _resolvedUrl = url;
     final headers = await getMediaAuthHeadersAsync(url);
-    if (!mounted || widget.url != url) return;
+    if (!mounted || _resolvedUrl != url) return;
     final controller = VideoPlayerController.networkUrl(
       Uri.parse(url),
       httpHeaders: headers ?? const {},
@@ -60,41 +64,44 @@ class _StoryThumbnailState extends State<StoryThumbnail> {
   }
 
   @override
-  Widget build(BuildContext context) => ClipRect(
-    child: ColoredBox(
-      color: context.surfaceMidColor,
-      child: widget.mediaType == StoryMediaType.image
-          ? isPrivateMedia(widget.url)
-                ? Image.network(
-                    widget.url,
-                    headers: mediaAuthHeaders(widget.url),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) =>
-                        const Icon(Icons.broken_image_outlined),
-                  )
-                : CachedNetworkImage(
-                    imageUrl: widget.url,
-                    fit: BoxFit.cover,
-                    errorWidget: (_, _, _) =>
-                        const Icon(Icons.broken_image_outlined),
-                  )
-          : Stack(
-              fit: StackFit.expand,
-              children: [
-                if (_video?.value.isInitialized == true)
-                  FittedBox(
-                    fit: BoxFit.cover,
-                    child: SizedBox(
-                      width: _video!.value.size.width,
-                      height: _video!.value.size.height,
-                      child: VideoPlayer(_video!),
+  Widget build(BuildContext context) {
+    final url = mediaUrl(widget.url);
+    return ClipRect(
+      child: ColoredBox(
+        color: context.surfaceMidColor,
+        child: widget.mediaType == StoryMediaType.image
+            ? isPrivateMedia(url)
+                  ? Image.network(
+                      url,
+                      headers: mediaAuthHeaders(url),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) =>
+                          const Icon(Icons.broken_image_outlined),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: url,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, _, _) =>
+                          const Icon(Icons.broken_image_outlined),
+                    )
+            : Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (_video?.value.isInitialized == true)
+                    FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _video!.value.size.width,
+                        height: _video!.value.size.height,
+                        child: VideoPlayer(_video!),
+                      ),
                     ),
+                  const Center(
+                    child: Icon(Icons.play_arrow, color: AppColors.onPrimary),
                   ),
-                const Center(
-                  child: Icon(Icons.play_arrow, color: AppColors.onPrimary),
-                ),
-              ],
-            ),
-    ),
-  );
+                ],
+              ),
+      ),
+    );
+  }
 }

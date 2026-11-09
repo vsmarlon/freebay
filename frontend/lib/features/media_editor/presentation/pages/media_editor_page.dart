@@ -87,7 +87,7 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
   final _liveStroke = ValueNotifier<Stroke?>(null);
   List<Offset> _currentStrokePoints = [];
   StrokeKind _strokeKind = StrokeKind.pen;
-  Color _drawColor = Colors.white;
+  Color _drawColor = AppColors.white;
   double _drawWidthPx = 8.0;
 
   // Ajustes ao vivo
@@ -345,7 +345,7 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
     if (_initError != null) {
       // Regra do owner: nunca mostrar a exceção cru — cópia genérica + log.
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: context.bgColor,
         body: AppErrorWidget(
           details: _initError!,
           action: AppErrorAction.back,
@@ -355,9 +355,9 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
     }
 
     if (!_initialized) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      return Scaffold(
+        backgroundColor: context.bgColor,
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -373,7 +373,7 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: context.bgColor,
         resizeToAvoidBottomInset: false,
         body: SafeArea(
           child: Stack(
@@ -483,8 +483,8 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
                       Container(
                         color: context.surfaceHighColor,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                          horizontal: Spacing.md,
+                          vertical: Spacing.sm,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -551,18 +551,17 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
               if (_isExporting)
                 Positioned.fill(
                   child: Container(
-                    color: Colors.black54,
+                    color: context.colors.scrim.withAlpha(138),
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const CircularProgressIndicator(color: Colors.white),
-                          const SizedBox(height: 16),
+                          const CircularProgressIndicator(color: AppColors.white),
+                          Spacing.vMd,
                           Text(
                             l10n(context).mediaEditorProcessing,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                            style: AppTypography.bodyMedium.weight(700).copyWith(
+                              color: AppColors.white,
                             ),
                           ),
                         ],
@@ -587,12 +586,12 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
 
     return Container(
       height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      color: Colors.black45,
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.sm),
+      color: context.surfaceColor,
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
+            icon: Icon(Icons.close, color: context.textPrimary),
             onPressed: () async {
               if (await _handlePop() && mounted) Navigator.pop(context);
             },
@@ -601,50 +600,57 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
           IconButton(
             icon: Icon(
               Icons.undo,
-              color: history.canUndo ? Colors.white : Colors.white24,
+              color: history.canUndo
+                  ? context.textPrimary
+                  : context.textSecondary,
             ),
             onPressed: history.canUndo ? ctrl.undo : null,
           ),
           IconButton(
             icon: Icon(
               Icons.redo,
-              color: history.canRedo ? Colors.white : Colors.white24,
+              color: history.canRedo
+                  ? context.textPrimary
+                  : context.textSecondary,
             ),
             onPressed: history.canRedo ? ctrl.redo : null,
           ),
           if (widget.config.hdToggle) ...[
-            const SizedBox(width: 4),
+            Spacing.hXs,
             GestureDetector(
               onTap: () => ctrl.setHd(!state.hd),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.sm,
+                  vertical: Spacing.xs,
+                ),
                 decoration: BoxDecoration(
                   color: state.hd
-                      ? AppColors.primaryContainer
+                      ? context.colors.primaryContainer
                       : Colors.transparent,
                   border: Border.all(
                     color: state.hd
-                        ? AppColors.primaryContainer
-                        : Colors.white60,
+                        ? context.colors.primaryContainer
+                        : context.borderColor,
                   ),
                 ),
                 child: Text(
                   'HD',
-                  style: TextStyle(
-                    color: state.hd ? Colors.white : Colors.white70,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                  style: AppTypography.labelSmall.copyWith(
+                    color: state.hd
+                        ? context.colors.onPrimaryContainer
+                        : context.textPrimary,
                   ),
                 ),
               ),
             ),
           ],
           if (isVideo && state.video != null) ...[
-            const SizedBox(width: 4),
+            Spacing.hXs,
             IconButton(
               icon: Icon(
                 state.video!.muted ? Icons.volume_off : Icons.volume_up,
-                color: Colors.white,
+                color: context.textPrimary,
               ),
               onPressed: () {
                 final next = state.video!.copyWith(muted: !state.video!.muted);
@@ -661,10 +667,10 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
   Widget _buildSideToolbar(EditorState state) {
     final strings = l10n(context);
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+      padding: const EdgeInsets.all(Spacing.xs),
       decoration: BoxDecoration(
-        color: Colors.black54,
-        border: Border.all(color: Colors.white24),
+        color: context.surfaceHighColor,
+        border: Border.all(color: context.borderSoftColor),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -726,19 +732,19 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
     final strings = l10n(context);
 
     return Container(
-      color: Colors.black87,
+      color: context.surfaceColor,
       padding: EdgeInsets.only(
-        left: 12,
-        right: 12,
-        top: 8,
-        bottom: MediaQuery.viewPaddingOf(context).bottom + 8,
+        left: Spacing.md,
+        right: Spacing.md,
+        top: Spacing.sm,
+        bottom: MediaQuery.viewPaddingOf(context).bottom + Spacing.sm,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (isVideo && state.video != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: Spacing.sm),
               child: VideoTrimBar(
                 thumbs: _videoThumbs,
                 durationMs: state.video!.durationMs,
@@ -766,16 +772,20 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
                 Expanded(
                   child: Container(
                     constraints: const BoxConstraints(minHeight: 56),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    color: Colors.white12,
+                    padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+                    color: context.surfaceHighColor,
                     child: TextField(
                       controller: _captionController,
                       minLines: 1,
                       maxLines: 3,
-                      style: const TextStyle(color: Colors.white),
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: context.textPrimary,
+                      ),
                       decoration: InputDecoration(
                         hintText: strings.chatImageCaption,
-                        hintStyle: const TextStyle(color: Colors.white54),
+                        hintStyle: AppTypography.bodyMedium.copyWith(
+                          color: context.textSecondary,
+                        ),
                         border: InputBorder.none,
                       ),
                       onChanged: ctrl.setCaption,
@@ -783,7 +793,7 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
                   ),
                 ),
               if (widget.config.viewOnce) ...[
-                const SizedBox(width: 8),
+                Spacing.hSm,
                 Semantics(
                   button: true,
                   selected: state.viewOnce,
@@ -796,29 +806,31 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: state.viewOnce
-                            ? AppColors.primaryContainer
-                            : Colors.white12,
+                            ? context.colors.primaryContainer
+                            : context.surfaceHighColor,
                         border: Border.all(
                           color: state.viewOnce
-                              ? AppColors.primaryContainer
-                              : Colors.white30,
+                              ? context.colors.primaryContainer
+                              : context.borderColor,
                         ),
                       ),
                       child: Icon(
                         Icons.looks_one,
-                        color: state.viewOnce ? Colors.white : Colors.white70,
+                        color: state.viewOnce
+                            ? context.colors.onPrimaryContainer
+                            : context.textPrimary,
                         size: 20,
                       ),
                     ),
                   ),
                 ),
               ],
-              const SizedBox(width: 8),
+              Spacing.hSm,
               FloatingActionButton(
-                backgroundColor: AppColors.primaryContainer,
+                backgroundColor: context.colors.primaryContainer,
                 shape: const RoundedRectangleBorder(),
                 onPressed: _onExport,
-                child: const Icon(Icons.send, color: Colors.white),
+                child: Icon(Icons.send, color: context.colors.onPrimaryContainer),
               ),
             ],
           ),
@@ -842,7 +854,7 @@ class _ToolIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(icon, color: Colors.white, size: 22),
+      icon: Icon(icon, color: context.textPrimary, size: 22),
       tooltip: tooltip,
       onPressed: onTap,
     );

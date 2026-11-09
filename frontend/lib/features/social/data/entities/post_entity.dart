@@ -27,6 +27,37 @@ enum PostAudience {
   final String wireValue;
 }
 
+enum PostMediaType {
+  @JsonValue('IMAGE')
+  image('IMAGE'),
+  @JsonValue('VIDEO')
+  video('VIDEO');
+
+  const PostMediaType(this.wireValue);
+  final String wireValue;
+}
+
+@freezed
+abstract class PostMediaEntity with _$PostMediaEntity {
+  const PostMediaEntity._();
+
+  const factory PostMediaEntity({
+    required String id,
+    required String url,
+    String? thumbnailUrl,
+    @Default(PostMediaType.image) PostMediaType type,
+    String? altText,
+    String? blurHash,
+    @Default(0) int order,
+  }) = _PostMediaEntity;
+
+  factory PostMediaEntity.fromJson(Map<String, dynamic> json) =>
+      _$PostMediaEntityFromJson(json);
+
+  /// Videos render their required thumbnail; images render the full asset.
+  String? get previewUrl => type == PostMediaType.video ? thumbnailUrl : url;
+}
+
 ProductCondition _productConditionFromJson(Object? value) {
   return ProductCondition.values.firstWhere(
     (condition) => condition.wireValue == value,
@@ -59,12 +90,13 @@ abstract class PostProductInfo with _$PostProductInfo {
 
 @freezed
 abstract class PostEntity with _$PostEntity {
+  const PostEntity._();
+
   const factory PostEntity({
     required String id,
     required String userId,
     String? content,
-    String? imageUrl,
-    String? imageBlurHash,
+    @Default(<PostMediaEntity>[]) List<PostMediaEntity> media,
     @Default(PostType.regular) PostType type,
     @Default(PostAudience.everyone) PostAudience audience,
     @Default(0) int likesCount,
@@ -84,6 +116,11 @@ abstract class PostEntity with _$PostEntity {
 
   factory PostEntity.fromJson(Map<String, dynamic> json) =>
       _$PostEntityFromJson(json);
+
+  List<PostMediaEntity> get orderedMedia =>
+      [...media]..sort((first, second) => first.order.compareTo(second.order));
+
+  PostMediaEntity? get firstMedia => media.isEmpty ? null : orderedMedia.first;
 }
 
 @Freezed(unionKey: 'kind')

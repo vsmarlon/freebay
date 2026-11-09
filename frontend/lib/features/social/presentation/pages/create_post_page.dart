@@ -268,7 +268,15 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                       ),
                     if (widget.quoteSource != null) ...[
                       Spacing.vMd,
-                      QuoteSourcePreview(source: widget.quoteSource),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: context.borderColor,
+                            width: AppDepth.borderThick,
+                          ),
+                        ),
+                        child: QuoteSourcePreview(source: widget.quoteSource),
+                      ),
                     ],
                     if (widget.quoteSource == null &&
                         _audience == PostAudience.closeFriends) ...[
@@ -288,7 +296,13 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                     ],
                     Spacing.vMd,
                     Container(
-                      color: context.surfaceColor,
+                      decoration: BoxDecoration(
+                        color: context.surfaceColor,
+                        border: Border.all(
+                          color: context.borderColor,
+                          width: AppDepth.borderThick,
+                        ),
+                      ),
                       padding: const EdgeInsets.all(16),
                       child: TextField(
                         controller: _contentController,
@@ -364,7 +378,13 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                     if (widget.quoteSource == null &&
                         _audience == PostAudience.everyone)
                       Container(
-                        color: context.surfaceColor,
+                        decoration: BoxDecoration(
+                          color: context.surfaceColor,
+                          border: Border.all(
+                            color: context.borderColor,
+                            width: AppDepth.borderThick,
+                          ),
+                        ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 10,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/editor_models.dart';
@@ -67,7 +68,7 @@ class _TextEditorOverlayState extends State<TextEditorOverlay> {
   Widget build(BuildContext context) {
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     return Material(
-      color: Colors.black.withAlpha(191),
+      color: context.colors.scrim.withAlpha(191),
       child: SafeArea(
         child: Column(
           children: [
@@ -75,7 +76,7 @@ class _TextEditorOverlayState extends State<TextEditorOverlay> {
               children: [
                 IconButton(
                   tooltip: 'Concluir',
-                  icon: const Icon(Icons.check, color: Colors.white),
+                  icon: const Icon(Icons.check, color: AppColors.white),
                   onPressed: () => Navigator.pop(
                     context,
                     _controller.text.trim().isEmpty
@@ -87,12 +88,12 @@ class _TextEditorOverlayState extends State<TextEditorOverlay> {
                 IconButton(
                   icon: const Icon(
                     Icons.format_align_center,
-                    color: Colors.white,
+                    color: AppColors.white,
                   ),
                   onPressed: _cycleAlign,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.text_fields, color: Colors.white),
+                  icon: const Icon(Icons.text_fields, color: AppColors.white),
                   onPressed: _cycleBg,
                 ),
               ],
@@ -127,15 +128,14 @@ class _TextEditorOverlayState extends State<TextEditorOverlay> {
                             autofocus: true,
                             maxLines: null,
                             textAlign: _layer.align,
-                            cursorColor: Colors.white,
+                            cursorColor: AppColors.white,
                             decoration: const InputDecoration(
                               border: InputBorder.none,
                             ),
-                            style: TextStyle(
+                            style: AppTypography.h2.copyWith(
                               fontFamily: _layer.font,
                               fontSize: fontSize,
                               color: _layer.color,
-                              fontWeight: FontWeight.w700,
                             ),
                           );
                         },
@@ -155,9 +155,8 @@ class _TextEditorOverlayState extends State<TextEditorOverlay> {
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: ChoiceChip(
                         label: const Text('Aa'),
-                        labelStyle: TextStyle(
+                        labelStyle: AppTypography.labelLarge.weight(700).copyWith(
                           fontFamily: font,
-                          fontWeight: FontWeight.w700,
                         ),
                         selected: _layer.font == font,
                         onSelected: (_) => setState(
@@ -184,9 +183,8 @@ class _TextEditorOverlayState extends State<TextEditorOverlay> {
                         height: 28,
                         decoration: BoxDecoration(
                           color: color,
-                          shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.white,
+                            color: AppColors.white,
                             width: _layer.color == color ? 3 : 1,
                           ),
                         ),

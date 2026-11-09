@@ -81,17 +81,25 @@ class _BiometrySettingTileState extends ConsumerState<BiometrySettingTile> {
     final isAvailable = ref.watch(biometryAvailableProvider).value ?? false;
     final isEnabled = ref.watch(biometryEnabledProvider).value ?? false;
 
+    // Same ListTile metrics as MenuListTile so icon and text align with the
+    // rest of the settings list.
     return ListTile(
-      leading: Icon(Icons.fingerprint, color: context.textPrimary),
+      dense: true,
+      minLeadingWidth: 32,
+      horizontalTitleGap: 12,
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(Icons.fingerprint, color: context.textPrimary, size: 22),
       title: Text(
         l10n(context).profileBiometry,
-        style: TextStyle(color: context.textPrimary),
+        style: AppTypography.bodyMedium.weight(500).copyWith(
+          color: context.textPrimary,
+        ),
       ),
       subtitle: Text(
         isAvailable
             ? l10n(context).profileBiometryLogin
             : l10n(context).onboardingUnavailableOnDevice,
-        style: TextStyle(color: context.textSecondary),
+        style: AppTypography.bodySmall.copyWith(color: context.textSecondary),
       ),
       trailing: isAvailable
           ? BrutalistSwitch(value: isEnabled, onChanged: _onChanged)

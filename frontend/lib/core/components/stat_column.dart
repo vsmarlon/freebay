@@ -8,6 +8,7 @@ class StatColumn extends StatelessWidget {
   final bool usePrimaryColor;
   final bool uppercaseLabel;
   final double? size;
+  final IconData? icon;
 
   const StatColumn({
     super.key,
@@ -17,6 +18,7 @@ class StatColumn extends StatelessWidget {
     this.usePrimaryColor = false,
     this.uppercaseLabel = false,
     this.size,
+    this.icon,
   });
 
   @override
@@ -38,15 +40,26 @@ class StatColumn extends StatelessWidget {
           ),
         ),
         Spacing.vXs,
-        Text(
-          uppercaseLabel ? label.toUpperCase() : label,
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontSize: uppercaseLabel ? 10 : 12,
-            fontWeight: uppercaseLabel ? FontWeight.w600 : FontWeight.normal,
-            letterSpacing: uppercaseLabel ? 0.5 : 0,
-            color: context.textSecondary,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: context.textSecondary),
+              Spacing.hXs,
+            ],
+            Text(
+              uppercaseLabel ? label.toUpperCase() : label,
+              style: TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                fontSize: uppercaseLabel ? 10 : 12,
+                fontWeight: uppercaseLabel
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+                letterSpacing: uppercaseLabel ? 0.5 : 0,
+                color: context.textSecondary,
+              ),
+            ),
+          ],
         ),
       ],
     );
