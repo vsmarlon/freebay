@@ -11,28 +11,23 @@ export class LikeDatabaseRepository {
   constructor(private readonly prisma: PrismaService) {
   }
 
-  async findPostLike(userId: string, postId: string): RepositoryResponse<{ id: string } | null> {
-    return repositoryResponse(() => this.prisma.like.findUnique({
-      where: { userId_postId: { userId, postId } },
-      select: { id: true },
-    }), 'Erro ao buscar like');
-  }
-
-  async createLike(data: Prisma.LikeCreateInput): RepositoryResponse<{ id: string }> {
-    return repositoryResponse(() => this.prisma.like.create({
-      data,
-      select: { id: true },
-    }), 'Erro ao criar like');
-  }
-
-  async deletePostLikeByUser(userId: string, postId: string): RepositoryResponse<void> {
-    return repositoryResponse(async () => {
-      await this.prisma.like.delete({ where: { userId_postId: { userId, postId } } });
-    }, 'Erro ao remover like');
-  }
-
   async setPostLike(userId: string, postId: string, active: boolean): RepositoryResponse<MutationState> {
-    return repositoryResponse(() => this.prisma.$transaction(async (tx) => {
+    return repositoryResponse(async () => {
+      try {
+        return await this.applyPostLike(userId, postId, active);
+      } catch (error) {
+        // ponytail: unique-index race from a double click — one retry converges the
+        // loser to the idempotent no-op path instead of surfacing a 500.
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          return await this.applyPostLike(userId, postId, active);
+        }
+        throw error;
+      }
+    }, 'Erro ao atualizar like');
+  }
+
+  private async applyPostLike(userId: string, postId: string, active: boolean): Promise<MutationState> {
+    return this.prisma.$transaction(async (tx) => {
       const existing = await tx.like.findUnique({ where: { userId_postId: { userId, postId } } });
       if (active && !existing) {
         await tx.like.create({ data: { userId, postId } });
@@ -43,7 +38,7 @@ export class LikeDatabaseRepository {
       }
       const post = await tx.post.findUnique({ where: { id: postId }, select: { likesCount: true } });
       return { active: active ? true : false, count: post?.likesCount ?? 0 };
-    }), 'Erro ao atualizar like');
+    });
   }
 
   async findLikedByUserId(userId: string): RepositoryResponse<PostResponse[]> {
@@ -57,27 +52,5 @@ export class LikeDatabaseRepository {
       });
       return normalizePostsForViewer(likes.map((like) => like.post), userId, this.prisma);
     }, 'Erro ao buscar likes');
-  }
-
-  async findCommentLike(userId: string, commentId: string): RepositoryResponse<{ id: string } | null> {
-    return repositoryResponse(() => this.prisma.commentLike.findUnique({
-      where: { userId_commentId: { userId, commentId } },
-      select: { id: true },
-    }), 'Erro ao buscar like do comentário');
-  }
-
-  async createCommentLike(data: Prisma.CommentLikeCreateInput): RepositoryResponse<{ id: string }> {
-    return repositoryResponse(() => this.prisma.commentLike.create({
-      data,
-      select: { id: true },
-    }), 'Erro ao curtir comentário');
-  }
-
-  async deleteCommentLike(data: { userId: string; commentId: string }): RepositoryResponse<void> {
-    return repositoryResponse(async () => {
-      await this.prisma.commentLike.delete({
-        where: { userId_commentId: { userId: data.userId, commentId: data.commentId } },
-      });
-    }, 'Erro ao remover like do comentário');
   }
 }

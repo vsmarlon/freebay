@@ -51,6 +51,7 @@ export class CommentUseCase {
       userId: input.userId,
       content: result.value.comment.content,
       createdAt: result.value.comment.createdAt,
+      commentsCount: result.value.commentsCount,
       ...(result.value.comment.media?.length ? { media: result.value.comment.media } : {}),
     });
   }

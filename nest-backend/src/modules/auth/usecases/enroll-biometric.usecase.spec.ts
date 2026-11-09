@@ -5,6 +5,7 @@ import { StepUpService } from '@/shared/auth/step-up.service';
 import { BiometricCredentialService, StepUpPurpose, BiometricChallengePurpose } from '@/shared/auth/biometric-credential.service';
 import { SessionTokenService } from '../services/session-token.service';
 import { EnrollBiometricUseCase } from './enroll-biometric.usecase';
+import { UserDatabaseRepository } from '@/modules/users';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { AuthUser } from '@/shared/core/types';
@@ -29,10 +30,12 @@ describe('EnrollBiometricUseCase', () => {
       }),
     };
     const tokens = { generateBiometric: jest.fn().mockReturnValue('biometric') };
+    const users = { update: jest.fn().mockResolvedValue(undefined) };
     const module = await Test.createTestingModule({ imports: [JwtModule.register({ secret: ENROLLMENT_TEST_SECRET })], providers: [
       EnrollBiometricUseCase, CreateBiometricEnrollmentChallengeUseCase, BiometricCredentialService, StepUpService,
       { provide: RedisService, useValue: redis },
       { provide: SessionTokenService, useValue: tokens },
+      { provide: UserDatabaseRepository, useValue: users },
       { provide: ConfigService, useValue: { getOrThrow: () => ENROLLMENT_TEST_SECRET } },
     ] }).compile();
     const stepUp = module.get(StepUpService);
@@ -130,12 +133,14 @@ describe('EnrollBiometricUseCase', () => {
     const credentials = { register: jest.fn().mockResolvedValue(undefined) };
     const stepUp = { consume: jest.fn().mockResolvedValue(true) };
     const tokens = { generateBiometric: jest.fn().mockReturnValue('biometric') };
+    const users = { update: jest.fn().mockResolvedValue(undefined) };
     const module = await Test.createTestingModule({
       providers: [
         EnrollBiometricUseCase,
         { provide: BiometricCredentialService, useValue: credentials },
         { provide: StepUpService, useValue: stepUp },
         { provide: SessionTokenService, useValue: tokens },
+        { provide: UserDatabaseRepository, useValue: users },
       ],
     }).compile();
 
@@ -147,18 +152,21 @@ describe('EnrollBiometricUseCase', () => {
     expect(stepUp.consume).toHaveBeenCalledWith('step-up', 'u1', StepUpPurpose.BIOMETRIC_ENROLL);
     expect(credentials.register).toHaveBeenCalledWith('u1', 'family-1', 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE');
     expect(tokens.generateBiometric).toHaveBeenCalledWith('u1', UserRole.USER, 'family-1', 123456789);
+    expect(users.update).toHaveBeenCalledWith('u1', { biometryLoginEnabled: true });
   });
 
   it('does not generate or register a credential without consumed step-up proof', async () => {
     const credentials = { register: jest.fn() };
     const stepUp = { consume: jest.fn().mockResolvedValue(false) };
     const tokens = { generateBiometric: jest.fn() };
+    const users = { update: jest.fn().mockResolvedValue(undefined) };
     const module = await Test.createTestingModule({
       providers: [
         EnrollBiometricUseCase,
         { provide: BiometricCredentialService, useValue: credentials },
         { provide: StepUpService, useValue: stepUp },
         { provide: SessionTokenService, useValue: tokens },
+        { provide: UserDatabaseRepository, useValue: users },
       ],
     }).compile();
 
@@ -169,5 +177,6 @@ describe('EnrollBiometricUseCase', () => {
     expect(result.isLeft()).toBe(true);
     expect(credentials.register).not.toHaveBeenCalled();
     expect(tokens.generateBiometric).not.toHaveBeenCalled();
+    expect(users.update).not.toHaveBeenCalled();
   });
 });

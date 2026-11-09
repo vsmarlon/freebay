@@ -32,7 +32,22 @@ export class ShareDatabaseRepository {
   }
 
   async setPostShare(userId: string, postId: string, active: boolean): RepositoryResponse<MutationState> {
-    return repositoryResponse(() => this.prisma.$transaction(async (tx) => {
+    return repositoryResponse(async () => {
+      try {
+        return await this.applyPostShare(userId, postId, active);
+      } catch (error) {
+        // ponytail: unique-index race from a double tap — same one-retry idempotency
+        // as setPostLike.
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          return await this.applyPostShare(userId, postId, active);
+        }
+        throw error;
+      }
+    }, 'Erro ao atualizar compartilhamento');
+  }
+
+  private async applyPostShare(userId: string, postId: string, active: boolean): Promise<MutationState> {
+    return this.prisma.$transaction(async (tx) => {
       const existing = await tx.share.findUnique({ where: { userId_postId: { userId, postId } } });
       if (active && !existing) {
         await tx.share.create({ data: { userId, postId } });
@@ -43,7 +58,7 @@ export class ShareDatabaseRepository {
       }
       const post = await tx.post.findUnique({ where: { id: postId }, select: { sharesCount: true } });
       return { active, count: post?.sharesCount ?? 0 };
-    }), 'Erro ao atualizar compartilhamento');
+    });
   }
 
   async findPostsRepostedByUser(userId: string, params: { viewerId?: string; limit?: number; cursor?: string }): RepositoryResponse<ShareWithPost[]> {

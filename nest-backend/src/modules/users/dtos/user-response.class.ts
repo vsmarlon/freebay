@@ -72,6 +72,9 @@ export class UserResponse {
 
   @ApiPropertyOptional({ example: { orders: true, follows: true, messages: true, disputes: true } })
   notificationPrefs?: UserNotificationPreferences;
+
+  @ApiPropertyOptional({ example: false })
+  biometryLoginEnabled?: boolean;
 }
 
 export type UserNotificationPreferences = {
@@ -243,6 +246,7 @@ export const toUserResponse = (
   productsCount: extras?.productsCount ?? 0,
   hasActiveStory: extras?.hasActiveStory ?? false,
   notificationPrefs: isOwner ? effectiveNotificationPreferences(user.notificationPrefs) : undefined,
+  biometryLoginEnabled: isOwner ? user.biometryLoginEnabled : undefined,
 });
 
 function effectiveNotificationPreferences(value: Prisma.JsonValue | null): UserNotificationPreferences {

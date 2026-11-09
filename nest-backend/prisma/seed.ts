@@ -372,6 +372,52 @@ async function main() {
     });
   }
 
+  // 4b. Carousel posts (multiple images) + a repost with media, for feed/profile media flows.
+  console.log("🖼️ Seeding carousel posts...");
+  const carouselSeeds = [
+    {
+      user: carol,
+      content: "Três achados que acabaram de chegar na curadoria. Arrasta para ver cada peça — todas com história.",
+      images: [
+        "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
+        "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800",
+        "https://images.unsplash.com/photo-1520975916090-3105956dac38?w=800",
+      ],
+    },
+    {
+      user: lucas,
+      content: "Testando o carrossel do feed com duas fotos do mesmo item. Qual combina melhor?",
+      images: [
+        "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=800",
+        "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=800",
+      ],
+    },
+  ];
+  const carouselPostIds: string[] = [];
+  for (const entry of carouselSeeds) {
+    const existing = await prisma.post.findFirst({
+      where: { userId: entry.user.id, type: PostType.REGULAR, content: entry.content },
+      select: { id: true },
+    });
+    const post = existing
+      ? await prisma.post.update({ where: { id: existing.id }, data: { deletedAt: null } })
+      : await prisma.post.create({
+          data: { userId: entry.user.id, type: PostType.REGULAR, content: entry.content },
+        });
+    await prisma.postMedia.deleteMany({ where: { postId: post.id } });
+    await prisma.postMedia.createMany({
+      data: entry.images.map((url, order) => ({ postId: post.id, url, type: "IMAGE" as const, order, altText: `${entry.content} (${order + 1})` })),
+    });
+    carouselPostIds.push(post.id);
+  }
+  if (carouselPostIds[0]) {
+    await prisma.share.upsert({
+      where: { userId_postId: { userId: lucas.id, postId: carouselPostIds[0] } },
+      update: {},
+      create: { userId: lucas.id, postId: carouselPostIds[0] },
+    });
+  }
+
   // Stories
   const now = new Date();
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);

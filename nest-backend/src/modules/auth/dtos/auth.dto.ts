@@ -223,6 +223,16 @@ export class GoogleAuthDTO {
   readonly idToken: string;
 }
 
+export class GoogleRedirectDTO {
+  @ApiProperty({ description: 'Google ID token posted by the Sign In With Google redirect flow' })
+  @IsString()
+  readonly credential: string;
+
+  @ApiProperty({ description: 'CSRF token posted by Google; must match the g_csrf_token cookie' })
+  @IsString()
+  readonly g_csrf_token: string;
+}
+
 export class AppleAuthDTO {
   @ApiProperty({ description: 'Apple identity token' })
   @IsString()

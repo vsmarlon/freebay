@@ -33,7 +33,7 @@ import {
   RequestEmailVerificationDTO,
   ConfirmEmailVerificationDTO,
 } from './dtos/email-verification.dto';
-import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO, BiometricLoginDTO, BiometricTokenDTO, BiometricChallengeDTO, BiometricEnrollmentDTO, BiometricEnrollmentChallengeDTO, StepUpDTO, GoogleAuthDTO, AppleAuthDTO, CompleteProfileDTO } from './dtos/auth.dto';
+import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO, BiometricLoginDTO, BiometricTokenDTO, BiometricChallengeDTO, BiometricEnrollmentDTO, BiometricEnrollmentChallengeDTO, StepUpDTO, GoogleAuthDTO, GoogleRedirectDTO, AppleAuthDTO, CompleteProfileDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,
   VerifyPasswordRecoveryCodeDTO,
@@ -57,8 +57,7 @@ import {
 import { AuthUser, JwtTokenType } from '@/shared/core/types';
 import { JwtService } from '@nestjs/jwt';
 import { AllowTokenTypes } from './guards/token-types.decorator';
-import { ownedPayload } from './utils/web-session-cookies';
-import { THROTTLE_TTL_MINUTE_MS, THROTTLE_TTL_TEN_SECONDS_MS } from '@/shared/http/throttle.constants';
+import { getWebSessionCookie, ownedPayload } from './utils/web-session-cookies';import { THROTTLE_TTL_MINUTE_MS, THROTTLE_TTL_TEN_SECONDS_MS } from '@/shared/http/throttle.constants';
 import { unwrap } from '@/shared/http/unwrap';
 import { ConfigService } from '@nestjs/config';
 import { StrictOrigin } from '@/shared/decorators';
@@ -178,6 +177,26 @@ export class AuthController {
     const session = unwrap(await this.googleAuthUseCase.execute(body.idToken));
     setWebSessionCookies(response, this.configService.get('NODE_ENV') === 'production', session.token, session.refreshToken);
     return { user: session.user };
+  }
+
+  // Cross-site form POST from Google: no StrictOrigin, CSRF is the g_csrf_token cookie/param pair.
+  @PostPublic('web/google/redirect', {
+    summary: 'Sign in to the browser session with the Google redirect flow',
+    bodyType: GoogleRedirectDTO,
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 30, ttl: THROTTLE_TTL_MINUTE_MS } },
+  })
+  async webGoogleRedirect(
+    @Body() body: GoogleRedirectDTO,
+    @Request() request: { headers: { cookie?: string } },
+    @Res() response: Response,
+  ) {
+    const csrfCookie = getWebSessionCookie(request.headers.cookie, 'g_csrf_token');
+    if (!csrfCookie || csrfCookie !== body.g_csrf_token) {
+      throw new UnauthorizedException('Token CSRF inválido');
+    }
+    const session = unwrap(await this.googleAuthUseCase.execute(body.credential));
+    setWebSessionCookies(response, this.configService.get('NODE_ENV') === 'production', session.token, session.refreshToken);
+    response.redirect(302, '/');
   }
 
   @PostAuth('complete-profile', {
@@ -395,6 +414,6 @@ export class AuthController {
       throw new UnauthorizedException('Token biométrico inválido');
     }
     if (!payload.sid) throw new UnauthorizedException('Token biométrico inválido');
-    return unwrap(await this.revokeBiometricUseCase.execute({ jti: payload.jti, exp: payload.exp, sid: payload.sid }));
+    return unwrap(await this.revokeBiometricUseCase.execute(user.userId, { jti: payload.jti, exp: payload.exp, sid: payload.sid }));
   }
 }

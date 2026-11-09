@@ -680,7 +680,7 @@ describe('StripeProvider', () => {
       requirements: { entries: requirements },
     });
 
-    it('preserves recipient Express account creation and includes future requirements', async () => {
+    it('creates a recipient+merchant Express account and includes future requirements', async () => {
       mockStripe.v2.core.accounts.create.mockResolvedValue(account('pending'));
 
       await provider.createConnectAccount({
@@ -700,8 +700,15 @@ describe('StripeProvider', () => {
           },
           configuration: {
             recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } },
+            merchant: { capabilities: { card_payments: { requested: true } } },
           },
-          include: ['configuration.recipient', 'identity', 'requirements', 'future_requirements'],
+          include: [
+            'configuration.recipient',
+            'configuration.merchant',
+            'identity',
+            'requirements',
+            'future_requirements',
+          ],
         }),
       );
     });

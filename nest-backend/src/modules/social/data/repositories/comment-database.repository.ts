@@ -18,6 +18,7 @@ import { left, right } from '@/shared/core/either';
 import { ConflictError, ForbiddenError, BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { CommentReplyPermission, NotificationType } from '@prisma/client';
 import { deleteUpload, saveUpload } from '@/shared/utils/file.utils';
+import { MutationState } from "../../types/social.types";
 
 type CommentFlatRow = Prisma.CommentGetPayload<{ include: typeof COMMENT_FLAT_INCLUDE }>;
 
@@ -45,9 +46,12 @@ export class CommentDatabaseRepository {
         }
         const prior = await tx.comment.findUnique({ where: { userId_clientRequestId: { userId: options.userId, clientRequestId: options.requestId } }, include: COMMENT_INCLUDE });
         if (prior?.deletedAt) return { deleted: true as const };
-        if (prior) return prior.clientRequestHash === options.digest
-          ? { comment: prior, notifications: [], replayed: true }
-          : { conflict: true as const };
+        if (prior) {
+          const post = await tx.post.findUniqueOrThrow({ where: { id: options.postId }, select: { commentsCount: true } });
+          return prior.clientRequestHash === options.digest
+            ? { comment: prior, notifications: [], commentsCount: post.commentsCount, replayed: true }
+            : { conflict: true as const };
+        }
         const parentId = data.parent?.connect?.id;
         const parent = parentId ? await tx.comment.findFirst({
           where: { id: parentId, postId: options.postId, deletedAt: null, AND: [commentVisibilityWhere(options.userId), { post: { deletedAt: null, AND: [postVisibilityWhere(options.userId)] } }] },
@@ -89,9 +93,12 @@ export class CommentDatabaseRepository {
         const persistedComment = options.media?.length
           ? await tx.comment.findUniqueOrThrow({ where: { id: comment.id }, include: COMMENT_INCLUDE })
           : comment;
-        if (isHidden) return { comment: persistedComment, notifications: [], replayed: false };
+        if (isHidden) {
+          const unaffectedPost = await tx.post.findUniqueOrThrow({ where: { id: options.postId }, select: { commentsCount: true } });
+          return { comment: persistedComment, notifications: [], commentsCount: unaffectedPost.commentsCount, replayed: false };
+        }
 
-        await tx.post.update({ where: { id: options.postId }, data: { commentsCount: { increment: 1 } } });
+        const updatedPost = await tx.post.update({ where: { id: options.postId }, data: { commentsCount: { increment: 1 } }, select: { commentsCount: true } });
         const subscriptionRows = await tx.commentSubscription.findMany({ where: { postId: options.postId }, select: { userId: true } });
         const recipientIds = new Set([post.userId, ...(parent ? [parent.userId] : []), ...validMentionIds, ...subscriptionRows.map((row) => row.userId)]);
         recipientIds.delete(options.userId);
@@ -125,7 +132,7 @@ export class CommentDatabaseRepository {
           data: { type: 'MENTION', action: 'comment', postId: options.postId, commentId: comment.id },
           commentId: comment.id, dedupeKey: `comment:${comment.id}:reply:${userId}`,
         })), skipDuplicates: true }) : [];
-        return { comment: persistedComment, notifications: inserted, replayed: false };
+        return { comment: persistedComment, notifications: inserted, commentsCount: updatedPost.commentsCount, replayed: false };
       });
       if ('conflict' in value) return left(new ConflictError('Idempotency key was already used with a different payload'));
       if ('deleted' in value) return left(new BadRequestError('Comment is no longer available'));
@@ -139,9 +146,12 @@ export class CommentDatabaseRepository {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         const prior = await this.prisma.comment.findUnique({ where: { userId_clientRequestId: { userId: options.userId, clientRequestId: options.requestId } }, include: COMMENT_INCLUDE }).catch(() => null);
         if (prior?.deletedAt) return left(new BadRequestError('Comment is no longer available'));
-        if (prior) return prior.clientRequestHash === options.digest
-          ? right({ comment: prior, notifications: [], replayed: true })
-          : left(new ConflictError('Idempotency key was already used with a different payload'));
+        if (prior) {
+          const post = await this.prisma.post.findUnique({ where: { id: options.postId }, select: { commentsCount: true } }).catch(() => null);
+          return prior.clientRequestHash === options.digest
+            ? right({ comment: prior, notifications: [], commentsCount: post?.commentsCount ?? 0, replayed: true })
+            : left(new ConflictError('Idempotency key was already used with a different payload'));
+        }
       }
       return left(new DatabaseError('Unable to create comment'));
     }
@@ -407,7 +417,7 @@ export class CommentDatabaseRepository {
     userId: string,
     commentId: string,
     active: boolean,
-  ): RepositoryResponse<boolean> {
+  ): RepositoryResponse<MutationState | null> {
     return repositoryResponse(
       () =>
         this.prisma.$transaction(async (tx) => {
@@ -418,7 +428,7 @@ export class CommentDatabaseRepository {
               },
               select: { id: true },
             });
-            if (!visible) return false;
+            if (!visible) return null;
             const created = await tx.commentLike.createMany({
               data: { userId, commentId },
               skipDuplicates: true,
@@ -429,7 +439,8 @@ export class CommentDatabaseRepository {
                 data: { likesCount: { increment: 1 } },
               });
             }
-            return true;
+            const comment = await tx.comment.findUnique({ where: { id: commentId }, select: { likesCount: true } });
+            return { active: true, count: comment?.likesCount ?? 0 };
           }
 
           const deleted = await tx.commentLike.deleteMany({
@@ -441,7 +452,8 @@ export class CommentDatabaseRepository {
               data: { likesCount: { decrement: 1 } },
             });
           }
-          return true;
+          const comment = await tx.comment.findUnique({ where: { id: commentId }, select: { likesCount: true } });
+          return { active: false, count: comment?.likesCount ?? 0 };
         }),
       "Erro ao atualizar like do comentário",
     );

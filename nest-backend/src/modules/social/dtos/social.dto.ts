@@ -336,6 +336,8 @@ export interface CreateCommentOutput {
   userId: string;
   content: string;
   createdAt: Date;
+  /** Fresh post.commentsCount after the idempotent write (visible comments only). */
+  commentsCount: number;
   media?: Array<{ id: string; url: string; mimeType: string; size: number }>;
 }
 

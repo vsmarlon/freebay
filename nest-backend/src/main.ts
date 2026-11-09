@@ -1,6 +1,5 @@
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './shared/http/exception-filter';
@@ -36,8 +35,10 @@ async function bootstrap() {
       },
       credentials: true,
     },
-    // Stripe signature verification needs the exact raw payload, not the JSON-parsed body
+    // Stripe signature verification needs the exact raw payload, not the JSON-parsed body.
+    // Disable the default parsers so the rawBody-aware parsers below are the only ones.
     rawBody: true,
+    bodyParser: false,
     logger: new AppLogger(),
   });
   const trustedProxies = process.env.TRUST_PROXY_CIDRS?.split(',').map((value) => value.trim()).filter(Boolean);
@@ -46,8 +47,8 @@ async function bootstrap() {
   // Before helmet so guards, interceptors and the exception filter all see the request id
   app.use(requestContextMiddleware);
   app.use(helmet());
-  app.use(json({ limit: '5mb' }));
-  app.use(urlencoded({ extended: true, limit: '5mb' }));
+  app.useBodyParser('json', { limit: '5mb' });
+  app.useBodyParser('urlencoded', { extended: true, limit: '5mb' });
 
   app.useGlobalPipes(createValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter());

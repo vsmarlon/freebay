@@ -38,8 +38,17 @@ export class StripeConnectClient {
           recipient: {
             capabilities: { stripe_balance: { stripe_transfers: { requested: true } } },
           },
+          merchant: {
+            capabilities: { card_payments: { requested: true } },
+          },
         },
-        include: ['configuration.recipient', 'identity', 'requirements', 'future_requirements'],
+        include: [
+          'configuration.recipient',
+          'configuration.merchant',
+          'identity',
+          'requirements',
+          'future_requirements',
+        ],
       });
 
       return right(this.toSnapshot(account, params.country, params.currency));
@@ -53,7 +62,13 @@ export class StripeConnectClient {
   ): Promise<Either<AppError, ConnectAccountSnapshot>> {
     try {
       const account = await this.stripe.v2.core.accounts.retrieve(stripeAccountId, {
-        include: ['configuration.recipient', 'identity', 'requirements', 'future_requirements'],
+        include: [
+          'configuration.recipient',
+          'configuration.merchant',
+          'identity',
+          'requirements',
+          'future_requirements',
+        ],
       });
       return right(this.toSnapshot(account, '', ''));
     } catch (error) {
@@ -72,7 +87,7 @@ export class StripeConnectClient {
         use_case: {
           type: 'account_onboarding',
           account_onboarding: {
-            configurations: ['recipient'],
+            configurations: ['recipient', 'merchant'],
             refresh_url: refreshUrl,
             return_url: returnUrl,
           },

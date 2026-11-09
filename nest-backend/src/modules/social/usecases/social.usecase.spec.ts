@@ -6,9 +6,14 @@ import { NotificationService } from '@/modules/notifications/services/notificati
 import { CreatePostUseCase } from './create-post.usecase';
 import { LikePostUseCase } from './like-post.usecase';
 import { UnlikePostUseCase } from './unlike-post.usecase';
+import { SharePostUseCase } from './share-post.usecase';
+import { UnsharePostUseCase } from './unshare-post.usecase';
+import { LikeCommentUseCase } from './like-comment.usecase';
+import { UnlikeCommentUseCase } from './unlike-comment.usecase';
 import { CommentUseCase } from './comment.usecase';
 import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
 import { LikeDatabaseRepository } from '../data/repositories/like-database.repository';
+import { ShareDatabaseRepository } from '../data/repositories/share-database.repository';
 import { CommentDatabaseRepository } from '../data/repositories/comment-database.repository';
 import {
   createCommentInput,
@@ -139,17 +144,13 @@ describe('CreatePostUseCase', () => {
 
 describe('LikePostUseCase', () => {
   let sut: LikePostUseCase;
-  let mockPostRepository: { findById: jest.Mock; update: jest.Mock };
-  let mockLikeRepository: { findPostLike: jest.Mock; createLike: jest.Mock };
+  let mockPostRepository: { findById: jest.Mock };
+  let mockLikeRepository: { setPostLike: jest.Mock };
 
   beforeEach(async () => {
-    mockPostRepository = {
-      findById: jest.fn(),
-      update: jest.fn().mockResolvedValue(right({})),
-    };
+    mockPostRepository = { findById: jest.fn() };
     mockLikeRepository = {
-      findPostLike: jest.fn().mockResolvedValue(right(null)),
-      createLike: jest.fn().mockResolvedValue(right({})),
+      setPostLike: jest.fn().mockResolvedValue(right({ active: true, count: 7 })),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -163,15 +164,14 @@ describe('LikePostUseCase', () => {
     sut = module.get(LikePostUseCase);
   });
 
-  it('likes a post when it exists', async () => {
-    mockPostRepository.findById.mockResolvedValue(right({ id: 'post-123', content: 'Test', likesCount: 0 }));
+  it('likes a post when it exists and passes through the authoritative state', async () => {
+    mockPostRepository.findById.mockResolvedValue(right({ id: 'post-123', content: 'Test', likesCount: 6 }));
 
     const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
     const like = expectRight(result);
 
-    expect(like).toEqual({ active: true, count: 1 });
-    expect(mockLikeRepository.createLike).toHaveBeenCalled();
-    expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { likesCount: { increment: 1 } });
+    expect(like).toEqual({ active: true, count: 7 });
+    expect(mockLikeRepository.setPostLike).toHaveBeenCalledWith('user-123', 'post-123', true);
   });
 
   it('returns error if post not found', async () => {
@@ -185,20 +185,17 @@ describe('LikePostUseCase', () => {
 
 describe('UnlikePostUseCase', () => {
   let sut: UnlikePostUseCase;
-  let mockPostRepository: { update: jest.Mock };
-  let mockLikeRepository: { findPostLike: jest.Mock; deletePostLikeByUser: jest.Mock };
+  let mockLikeRepository: { setPostLike: jest.Mock };
 
   beforeEach(async () => {
-    mockPostRepository = { update: jest.fn().mockResolvedValue(right({})) };
     mockLikeRepository = {
-      findPostLike: jest.fn().mockResolvedValue(right({ id: 'like-123' })),
-      deletePostLikeByUser: jest.fn().mockResolvedValue(right(undefined)),
+      setPostLike: jest.fn().mockResolvedValue(right({ active: false, count: 2 })),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UnlikePostUseCase,
-        { provide: PostDatabaseRepository, useValue: mockPostRepository },
+        { provide: PostDatabaseRepository, useValue: { findById: jest.fn() } },
         { provide: LikeDatabaseRepository, useValue: mockLikeRepository },
       ],
     }).compile();
@@ -206,13 +203,155 @@ describe('UnlikePostUseCase', () => {
     sut = module.get(UnlikePostUseCase);
   });
 
-  it('unlikes a post', async () => {
+  it('unlikes a post and passes through the authoritative state', async () => {
     const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
     const unlike = expectRight(result);
 
-    expect(unlike).toEqual({ active: false, count: 0 });
-    expect(mockLikeRepository.deletePostLikeByUser).toHaveBeenCalledWith('user-123', 'post-123');
-    expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { likesCount: { decrement: 1 } });
+    expect(unlike).toEqual({ active: false, count: 2 });
+    expect(mockLikeRepository.setPostLike).toHaveBeenCalledWith('user-123', 'post-123', false);
+  });
+});
+
+describe('SharePostUseCase', () => {
+  let sut: SharePostUseCase;
+  let mockPostRepository: { findById: jest.Mock };
+  let mockShareRepository: { setPostShare: jest.Mock };
+
+  beforeEach(async () => {
+    mockPostRepository = { findById: jest.fn() };
+    mockShareRepository = {
+      setPostShare: jest.fn().mockResolvedValue(right({ active: true, count: 3 })),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        SharePostUseCase,
+        { provide: PostDatabaseRepository, useValue: mockPostRepository },
+        { provide: ShareDatabaseRepository, useValue: mockShareRepository },
+      ],
+    }).compile();
+
+    sut = module.get(SharePostUseCase);
+  });
+
+  it('reposts a post and passes through the authoritative state', async () => {
+    mockPostRepository.findById.mockResolvedValue(right({ id: 'post-123', audience: StoryAudience.EVERYONE }));
+
+    const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
+    const share = expectRight(result);
+
+    expect(share).toEqual({ active: true, count: 3 });
+    expect(mockShareRepository.setPostShare).toHaveBeenCalledWith('user-123', 'post-123', true);
+  });
+
+  it('rejects reposting a close-friends post', async () => {
+    mockPostRepository.findById.mockResolvedValue(right({ id: 'post-123', audience: StoryAudience.CLOSE_FRIENDS }));
+
+    const result = await sut.execute({ userId: 'other-user', postId: 'post-123' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockShareRepository.setPostShare).not.toHaveBeenCalled();
+  });
+
+  it('returns error if post not found', async () => {
+    mockPostRepository.findById.mockResolvedValue(right(null));
+
+    const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
+
+    expect(expectLeft(result)).toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe('UnsharePostUseCase', () => {
+  let sut: UnsharePostUseCase;
+  let mockShareRepository: { setPostShare: jest.Mock };
+
+  beforeEach(async () => {
+    mockShareRepository = {
+      setPostShare: jest.fn().mockResolvedValue(right({ active: false, count: 1 })),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UnsharePostUseCase,
+        { provide: PostDatabaseRepository, useValue: { findById: jest.fn() } },
+        { provide: ShareDatabaseRepository, useValue: mockShareRepository },
+      ],
+    }).compile();
+
+    sut = module.get(UnsharePostUseCase);
+  });
+
+  it('removes a repost and passes through the authoritative state', async () => {
+    const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
+    const unshare = expectRight(result);
+
+    expect(unshare).toEqual({ active: false, count: 1 });
+    expect(mockShareRepository.setPostShare).toHaveBeenCalledWith('user-123', 'post-123', false);
+  });
+});
+
+describe('LikeCommentUseCase', () => {
+  let sut: LikeCommentUseCase;
+  let mockCommentRepository: { setCommentLike: jest.Mock };
+
+  beforeEach(async () => {
+    mockCommentRepository = {
+      setCommentLike: jest.fn().mockResolvedValue(right({ active: true, count: 3 })),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        LikeCommentUseCase,
+        { provide: CommentDatabaseRepository, useValue: mockCommentRepository },
+      ],
+    }).compile();
+
+    sut = module.get(LikeCommentUseCase);
+  });
+
+  it('likes a comment and passes through the authoritative state', async () => {
+    const result = await sut.execute({ userId: 'user-1', commentId: 'comment-1' });
+    const like = expectRight(result);
+
+    expect(like).toEqual({ active: true, count: 3 });
+    expect(mockCommentRepository.setCommentLike).toHaveBeenCalledWith('user-1', 'comment-1', true);
+  });
+
+  it('returns not found when the comment is not eligible (no state written)', async () => {
+    mockCommentRepository.setCommentLike.mockResolvedValue(right(null));
+
+    const result = await sut.execute({ userId: 'user-1', commentId: 'comment-1' });
+
+    expect(expectLeft(result)).toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe('UnlikeCommentUseCase', () => {
+  let sut: UnlikeCommentUseCase;
+  let mockCommentRepository: { setCommentLike: jest.Mock };
+
+  beforeEach(async () => {
+    mockCommentRepository = {
+      setCommentLike: jest.fn().mockResolvedValue(right({ active: false, count: 1 })),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UnlikeCommentUseCase,
+        { provide: CommentDatabaseRepository, useValue: mockCommentRepository },
+      ],
+    }).compile();
+
+    sut = module.get(UnlikeCommentUseCase);
+  });
+
+  it('unlikes a comment and passes through the authoritative state', async () => {
+    const result = await sut.execute({ userId: 'user-1', commentId: 'comment-1' });
+    const unlike = expectRight(result);
+
+    expect(unlike).toEqual({ active: false, count: 1 });
+    expect(mockCommentRepository.setCommentLike).toHaveBeenCalledWith('user-1', 'comment-1', false);
   });
 });
 
@@ -280,5 +419,33 @@ describe('CommentUseCase', () => {
       expect.anything(),
       expect.objectContaining({ mentionIds: ['friend-user-id'] }),
     );
+  });
+
+  it('generates a random request id when the client omits one and reuses the provided key', async () => {
+    await sut.execute(createCommentInput());
+    expect(mockCommentRepository.createIdempotent).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ requestId: expect.stringMatching(/^[0-9a-f-]{36}$/) }),
+    );
+
+    await sut.execute(createCommentInput({ clientRequestId: 'client-key-1' }));
+    expect(mockCommentRepository.createIdempotent).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ requestId: 'client-key-1' }),
+    );
+  });
+
+  it('reports the post comment count after the write', async () => {
+    mockCommentRepository.createIdempotent.mockResolvedValue(right({
+      comment: { id: 'comment-123', content: 'Great post!', createdAt: new Date(), media: [] },
+      commentsCount: 9,
+      notifications: [],
+      replayed: false,
+    }));
+
+    const result = await sut.execute(createCommentInput());
+    const comment = expectRight(result);
+
+    expect(comment.commentsCount).toBe(9);
   });
 });
