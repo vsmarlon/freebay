@@ -271,13 +271,13 @@ export default function BuyProductRoute() {
   }
   if (isPending)
     return (
-      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection>
         <Loading label={t('common.loading')} />
       </PageSection>
     );
   if (!user)
     return (
-      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection>
         <Surface>
           <p>{t('auth.required')}</p>
           <Link className={buttonClass('primary')} to={path(paths.login)}>
@@ -287,7 +287,7 @@ export default function BuyProductRoute() {
       </PageSection>
     );
   return (
-    <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection>
       <div ref={mountRef} className="sr-only" aria-hidden />
       <PageHeader title={t('buy.title')} />
       <Surface>

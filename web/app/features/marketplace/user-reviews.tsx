@@ -54,7 +54,7 @@ export default function UserReviewsRoute() {
     },
   });
   return (
-    <PageSection className="py-8 pb-20 max-[639px]:w-[min(calc(100%-1.25rem),80rem)] max-[639px]:pt-5">
+    <PageSection>
       <PageHeader title={t('reviewList.title')} />
       <Select
         label={t('reviewList.filter')}

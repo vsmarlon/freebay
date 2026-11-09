@@ -41,7 +41,7 @@ export default function CategoriesRoute() {
   const { path } = useLocale();
   const { t } = useI18n({ en, 'pt-BR': pt });
   return (
-    <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection>
       <PageHeader title={t('catalog.category')} />
       <CategoryBranch categories={categories} path={path} />
     </PageSection>

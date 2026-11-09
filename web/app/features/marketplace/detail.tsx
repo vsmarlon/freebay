@@ -204,7 +204,7 @@ export default function ProductDetailRoute() {
   }
 
   return (
-    <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection>
       <div ref={redirectRef} className="sr-only" aria-hidden />
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,0.85fr)]">
         <ImageCarousel

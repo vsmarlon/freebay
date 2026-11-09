@@ -79,7 +79,7 @@ export default function CatalogRoute() {
   const loading = navigation.state !== 'idle';
   const isSearch = location.pathname.endsWith('/search');
   return (
-    <PageSection className="space-y-4 py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection className="space-y-4">
       <div ref={appendRef} className="sr-only" aria-hidden />
       <PageHeader
         title={t('catalog.title')}

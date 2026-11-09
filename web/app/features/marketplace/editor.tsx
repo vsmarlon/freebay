@@ -99,13 +99,13 @@ export default function ListingEditorRoute() {
   const cover = previewUrls[0];
   if (isPending)
     return (
-      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection>
         <Loading label={t('common.loading')} />
       </PageSection>
     );
   if (!user)
     return (
-      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection>
         <Surface>
           <p>{t('auth.required')}</p>
           <Button onClick={() => navigate(path(paths.login))}>{t('auth.signIn')}</Button>
@@ -114,13 +114,13 @@ export default function ListingEditorRoute() {
     );
   if (product && product.sellerId !== user.id)
     return (
-      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection>
         <ErrorState error={new Error(t('common.error'))} />
       </PageSection>
     );
   if (product?.status === 'SOLD')
     return (
-      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection>
         <ErrorState error={new Error(t('editor.soldReadOnly'))} />
       </PageSection>
     );
@@ -231,7 +231,7 @@ export default function ListingEditorRoute() {
   const quantityPreview = Math.max(1, Number(values.quantity) || 1);
 
   return (
-    <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection>
       <PageHeader title={t(isEdit ? 'editor.edit' : 'editor.create')} />
       <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)]">
         <aside

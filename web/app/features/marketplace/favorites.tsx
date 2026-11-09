@@ -45,13 +45,13 @@ export default function FavoritesRoute() {
   );
   if (isPending)
     return (
-      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection>
         <Loading label={t('common.loading')} />
       </PageSection>
     );
   if (!user)
     return (
-      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection>
         <Surface>
           <PageHeader title={t('favorites.title')} description={t('auth.required')} />
           <Button onClick={() => navigate(path(paths.login))}>{t('auth.signIn')}</Button>
@@ -73,7 +73,7 @@ export default function FavoritesRoute() {
     }
   }
   return (
-    <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection>
       <div ref={redirectRef} className="sr-only" aria-hidden />
       <PageHeader title={t('favorites.title')} />
       {query.isPending ? (

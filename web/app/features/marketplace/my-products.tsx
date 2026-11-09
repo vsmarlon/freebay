@@ -37,13 +37,13 @@ export default function MyProductsRoute() {
   });
   if (isPending)
     return (
-      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection>
         <Loading label={t('common.loading')} />
       </PageSection>
     );
   if (!user)
     return (
-      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection>
         <Surface>
           <p>{t('auth.required')}</p>
           <Button onClick={() => window.location.assign(path(paths.login))}>
@@ -53,7 +53,7 @@ export default function MyProductsRoute() {
       </PageSection>
     );
   return (
-    <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection>
       <PageHeader
         title={t('myProducts.title')}
         actions={
