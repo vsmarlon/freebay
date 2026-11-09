@@ -258,26 +258,9 @@ jobs:
     needs: [backend-ci, web-ci]
     runs-on: ubuntu-24.04
     timeout-minutes: 35
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: ci-only-disposable-password
-          POSTGRES_DB: freebay_test_db
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U test_user -d freebay_test_db"
-          --health-interval 10s --health-timeout 5s --health-retries 10
-      redis:
-        image: redis:7
-        ports: ['6379:6379']
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s --health-timeout 5s --health-retries 10
     env:
       NODE_ENV: test
-      DATABASE_URL: postgresql://test_user:ci-only-disposable-password@127.0.0.1:5432/freebay_test_db?schema=public
+      DATABASE_URL: postgresql://test_user:test_password@127.0.0.1:5432/freebay_test_db?schema=public
       REDIS_URL: redis://127.0.0.1:6379/15
       JWT_SECRET: FreeBay CI isolated runtime session key ${{ github.run_id }} attempt ${{ github.run_attempt }}
       GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
@@ -292,6 +275,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Start native PostgreSQL and Redis
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-16 redis-server
+          sudo systemctl start postgresql redis-server
+          sudo -u postgres psql --set=ON_ERROR_STOP=1 --command="CREATE ROLE test_user WITH LOGIN PASSWORD 'test_password';"
+          sudo -u postgres createdb --owner=test_user freebay_test_db
+          pg_isready --host=127.0.0.1 --port=5432
+          redis-cli ping
 
       - name: Set up Node.js 24.10.0
         uses: actions/setup-node@v4
@@ -351,13 +344,121 @@ jobs:
           retention-days: 1
 
   mobile-ui:
-    name: Mobile UI (BLOCKED — real app/backend journey unavailable)
+    name: Real mobile journey (Android emulator / Nest / PostgreSQL / Redis)
+    needs: [backend-ci]
     runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test_user:test_password@127.0.0.1:5432/freebay_test_db?schema=public
+      REDIS_URL: redis://127.0.0.1:6379/15
+      JWT_SECRET: FreeBay CI isolated runtime session key ${{ github.run_id }} attempt ${{ github.run_attempt }}
+      GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
+      STRIPE_SECRET_KEY: sk_test_ci_not_used_by_this_journey
+      STRIPE_WEBHOOK_SECRET: whsec_ci_not_used_by_this_journey
+      ALLOWED_ORIGINS: http://127.0.0.1:43187
+      E2E_BACKEND_URL: http://127.0.0.1:43187
+      MOBILE_JOURNEY_DIR: /tmp/freebay-mobile-journey
+
     steps:
-      - name: Fail closed until the Android emulator journey is implemented and run
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start native PostgreSQL and Redis
         run: |
-          echo '::error title=mobile-ui blocked::No approved Flutter integration journey exists for app login, business action, and persistence against real Nest/PostgreSQL/Redis. The existing native editor test is not an app/backend E2E.'
-          exit 1
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-16 redis-server
+          sudo systemctl start postgresql redis-server
+          sudo -u postgres psql --set=ON_ERROR_STOP=1 --command="CREATE ROLE test_user WITH LOGIN PASSWORD 'test_password';"
+          sudo -u postgres createdb --owner=test_user freebay_test_db
+          pg_isready --host=127.0.0.1 --port=5432
+          redis-cli ping
+
+      - name: Set up Node.js 24.10.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.10.0
+          cache: npm
+          cache-dependency-path: nest-backend/package-lock.json
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          cache: true
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install backend dependencies
+        working-directory: nest-backend
+        run: npm ci
+
+      - name: Download and verify exact backend build
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dist
+          path: .ci-backend-artifact
+
+      - name: Place backend build and validate manifest
+        run: |
+          cp -a .ci-backend-artifact/dist nest-backend/dist
+          node scripts/build-manifest.cjs verify nest-backend/dist .ci-backend-artifact/backend-build-manifest.json "$GITHUB_SHA" backend-node24-test-runtime
+
+      - name: Generate Prisma client and prepare guarded test database
+        working-directory: nest-backend
+        run: |
+          npx prisma generate
+          node scripts/safe-prisma-db-push.js
+
+      - name: Install Flutter dependencies
+        working-directory: frontend
+        run: flutter pub get
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Prepare mobile journey evidence directory
+        run: mkdir -p "$MOBILE_JOURNEY_DIR"
+
+      - name: Start backend and wait for readiness
+        run: |
+          nohup env PORT=43187 node nest-backend/dist/src/main.js >"$MOBILE_JOURNEY_DIR/backend.log" 2>&1 &
+          node -e "require('./scripts/readiness.cjs').waitForReadiness({ baseUrl: 'http://127.0.0.1:43187', timeoutMs: 120000 }).catch((error) => { console.error(error.message); process.exit(1); })"
+
+      - name: Enable KVM for the Android emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the real app journey on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -no-metrics
+          disable-animations: true
+          disable-linux-hw-accel: auto
+          script: |
+            adb reverse tcp:3000 tcp:43187
+            cd frontend
+            flutter test integration_test/real_backend_journey_test.dart -d emulator-5554
+
+      - name: Upload mobile journey evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-journey-evidence
+          path: /tmp/freebay-mobile-journey/
+          if-no-files-found: ignore
+          retention-days: 1
 
   quality-gate:
     name: Required CI quality gate
