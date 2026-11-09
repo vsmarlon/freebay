@@ -167,6 +167,9 @@ jobs:
         working-directory: frontend
         run: flutter analyze --fatal-infos lib libs/freebay_design_system/lib
 
+      - name: Write CI Firebase config
+        run: node scripts/write-ci-google-services.cjs frontend/android/app/google-services.json
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -414,6 +417,9 @@ jobs:
       - name: Install Flutter dependencies
         working-directory: frontend
         run: flutter pub get
+
+      - name: Write CI Firebase config
+        run: node scripts/write-ci-google-services.cjs frontend/android/app/google-services.json
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
