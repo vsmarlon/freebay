@@ -1208,5 +1208,15 @@
     "file": "nest-backend/src/modules/users/usecases/follow-user.usecase.ts",
     "specifier": "../../notifications/services/notification.service",
     "rule": "B1"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/auth_routes.dart",
+    "specifier": "package:freebay/features/auth/presentation/pages/recovery_code_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/chat_routes.dart",
+    "specifier": "package:freebay/features/chat/presentation/pages/chat_location_page.dart",
+    "rule": "F2"
   }
 ]
