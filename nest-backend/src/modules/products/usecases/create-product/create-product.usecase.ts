@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ProductStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { EmailVerificationGateService } from '@/modules/auth/services/email-verification-gate.service';
+import { EmailVerificationGateService } from '@/modules/auth';
 import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
 import { CreateProductInput, CreateProductOutput } from '../../dtos/product.dto';
 

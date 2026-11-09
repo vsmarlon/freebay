@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
 import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
-import { ProductStatus } from '@prisma/client';
 
 import { UpdateCartItemInput, UpdateCartItemOutput } from '../dtos/cart.dto';
 
@@ -21,7 +20,7 @@ export class UpdateCartItemUseCase {
 
     const productResult = await this.cartRepository.findProductById(input.productId);
     if (productResult.isLeft()) return left(productResult.value);
-    if (!productResult.value || productResult.value.status !== ProductStatus.ACTIVE) {
+    if (!productResult.value || productResult.value.status !== 'ACTIVE') {
       return left(new NotFoundError('Produto'));
     }
     const availableStock = Math.max(productResult.value.quantity - productResult.value.soldCount, 0);
