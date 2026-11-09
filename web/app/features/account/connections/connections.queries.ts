@@ -6,7 +6,7 @@ import {
   type InfiniteData,
 } from '@tanstack/react-query';
 import type { User } from '../account';
-import { connectionsApi, PAGE_SIZE, type FollowState } from './connections.api';
+import { connectionsApi, PAGE_SIZE, type FollowState } from '../api';
 
 export const connectionKeys = {
   list: (endpoint: string) => ['account', 'connections', endpoint] as const,

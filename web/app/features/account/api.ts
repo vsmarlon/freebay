@@ -74,3 +74,59 @@ export const accountApi = {
     screenContext: string;
   }) => api.post('/bug-reports', input),
 };
+
+export const PAGE_SIZE = 20;
+export type FollowState = boolean | null;
+type ConnectionsResponse = { users?: User[]; items?: User[] } | User[];
+
+export const connectionsApi = {
+  async list(endpoint: string, offset: number, signal?: AbortSignal): Promise<User[]> {
+    const result = await api.get<ConnectionsResponse>(
+      `${endpoint}?limit=${PAGE_SIZE}&offset=${offset}`,
+      { signal },
+    );
+    return Array.isArray(result) ? result : (result.users ?? result.items ?? []);
+  },
+  /** Follow state per listed person; `null` means unknown, which keeps the button disabled. */
+  async followStates(userIds: readonly string[]): Promise<Record<string, FollowState>> {
+    const entries = await Promise.all(
+      userIds.map(async (userId) => {
+        try {
+          const response = await accountApi.isFollowing(userId);
+          return [userId, response.isFollowing] as const;
+        } catch {
+          return [userId, null] as const;
+        }
+      }),
+    );
+    return Object.fromEntries(entries);
+  },
+  follow: (userId: string) => accountApi.follow(userId),
+  unfollow: (userId: string) => accountApi.unfollow(userId),
+};
+
+export const safetyApi = {
+  async list(endpoint: string): Promise<User[]> {
+    return usersFrom(await api.get<UsersResponse>(`${endpoint}?limit=50&offset=0`));
+  },
+  remove: (restricted: boolean, userId: string) =>
+    restricted
+      ? api.patch(`/users/me/restricted/${encodeURIComponent(userId)}/remove`)
+      : accountApi.unblock(userId),
+};
+
+export const closeFriendsApi = {
+  async selected(): Promise<User[]> {
+    return usersFrom(await api.get<UsersResponse>('/users/me/close-friends?limit=50&offset=0'));
+  },
+  async candidates(query: string): Promise<User[]> {
+    return usersFrom(
+      await api.get<UsersResponse>(
+        `/users/me/close-friends/candidates?q=${encodeURIComponent(query)}&limit=50&offset=0`,
+      ),
+    );
+  },
+  add: (userId: string) => api.post(`/users/me/close-friends/${encodeURIComponent(userId)}`),
+  remove: (userId: string) =>
+    api.patch(`/users/me/close-friends/${encodeURIComponent(userId)}/remove`),
+};

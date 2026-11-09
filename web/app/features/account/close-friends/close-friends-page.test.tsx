@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../../tests/render-with-providers';
 import type { User } from '../account';
 import CloseFriendsPage from './close-friends-page';
-import { closeFriendsApi } from './close-friends.api';
+import { closeFriendsApi } from '../api';
 
-vi.mock('./close-friends.api');
+vi.mock('../api');
 vi.mock('../../../core/session', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../core/session')>();
   return {

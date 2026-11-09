@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { closeFriendsApi } from './close-friends.api';
+import { closeFriendsApi } from '../api';
 
 export const closeFriendsKeys = {
   all: ['account', 'close-friends'] as const,

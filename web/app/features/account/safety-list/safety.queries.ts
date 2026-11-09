@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { safetyApi } from './safety.api';
+import { safetyApi } from '../api';
 
 export const safetyKeys = {
   list: (endpoint: string) => ['account', 'safety', endpoint] as const,

@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../../tests/render-with-providers';
 import type { User } from '../account';
 import SafetyListPage from './safety-page';
-import { safetyApi } from './safety.api';
+import { safetyApi } from '../api';
 
-vi.mock('./safety.api');
+vi.mock('../api');
 vi.mock('../../../core/session', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../core/session')>();
   return {

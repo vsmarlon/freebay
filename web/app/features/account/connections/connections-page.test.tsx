@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../../tests/render-with-providers';
 import type { User } from '../account';
 import ConnectionsPage from './connections-page';
-import { connectionsApi } from './connections.api';
+import { connectionsApi } from '../api';
 
-vi.mock('./connections.api');
+vi.mock('../api');
 // The route shell gates on the session; this page's own behavior is what is under test.
 vi.mock('../../../core/session', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../core/session')>();
