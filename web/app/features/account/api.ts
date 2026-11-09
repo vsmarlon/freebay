@@ -1,9 +1,17 @@
 import { api } from '../../core/api';
 import type { User } from './account';
 
-export type Profile = User & { cpf?: string | null; phone?: string | null };
+export type Profile = User & {
+  cpf?: string | null;
+  phone?: string | null;
+  notificationPrefs?: unknown;
+};
 export type Stats = Partial<{ followersCount: number; followingCount: number }>;
 export type PeoplePage = { users: User[]; hasMore: boolean; nextOffset: number | null };
+export type UsersResponse = { users?: User[] } | User[];
+
+export const usersFrom = (result: UsersResponse): User[] =>
+  Array.isArray(result) ? result : (result.users ?? []);
 
 export const accountApi = {
   me: (signal?: AbortSignal) => api.get<Profile>('/users/me', { signal }),
@@ -56,6 +64,8 @@ export const accountApi = {
     api.delete<{ purgeAfter: string }>('/users/me/web', {
       headers: { 'x-step-up-token': stepUpToken },
     }),
+  saveNotificationPreference: (key: string, enabled: boolean) =>
+    api.patch('/users/me/fcm-token', { notificationPrefs: { [key]: enabled } }),
   cancelDeletion: () => api.patch('/users/me/web/deletion/cancel'),
   sendBugReport: (input: {
     description: string;

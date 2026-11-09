@@ -1,37 +1,30 @@
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { accountApi } from './api';
-import { Frame, Panel, PersonCard, useAccountText, type User } from './account';
+import { Frame, Panel, PersonCard, useAccountText } from './account';
+
 export default function PeoplePage() {
   const { t } = useAccountText();
+  const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
-  const [users, setUsers] = useState<User[]>([]);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState(false);
-  async function search(next = false) {
-    setPending(true);
-    setError(false);
-    const start = next ? offset : 0;
-    try {
-      const result = await accountApi.searchPeople(query, start);
-      setUsers((current) => (next ? [...current, ...result.users] : result.users));
-      setOffset(result.nextOffset ?? start);
-      setHasMore(result.hasMore);
-    } catch {
-      setError(true);
-    } finally {
-      setPending(false);
-    }
-  }
+  const search = useInfiniteQuery({
+    queryKey: ['account', 'people', query],
+    enabled: query.length > 0,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => accountApi.searchPeople(query, pageParam),
+    getNextPageParam: (last) => (last.hasMore ? (last.nextOffset ?? undefined) : undefined),
+    retry: false,
+  });
+  const users = search.data?.pages.flatMap((page) => page.users) ?? [];
+
   return (
     <Frame title={t('people')}>
       <Panel>
         <form
           className="flex flex-wrap gap-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void search();
+          onSubmit={(event) => {
+            event.preventDefault();
+            setQuery(input);
           }}
         >
           <label className="sr-only" htmlFor="people-search">
@@ -40,19 +33,19 @@ export default function PeoplePage() {
           <input
             id="people-search"
             className="min-h-12 min-w-0 flex-1 bg-surface-high px-3"
-            value={query}
-            onChange={(e) => setQuery(e.currentTarget.value)}
+            value={input}
+            onChange={(event) => setInput(event.currentTarget.value)}
             placeholder={t('searchHint')}
             maxLength={100}
           />
-          <button className="min-h-12 bg-brand px-5 text-on-brand" disabled={pending}>
-            {pending ? t('loading') : t('search')}
+          <button className="min-h-12 bg-brand px-5 text-on-brand" disabled={search.isFetching}>
+            {search.isFetching ? t('loading') : t('search')}
           </button>
         </form>
-        {error ? (
+        {search.isError ? (
           <p role="alert" className="mt-4 text-danger">
             {t('error')}{' '}
-            <button className="underline" onClick={() => void search()}>
+            <button className="underline" onClick={() => void search.refetch()}>
               {t('retry')}
             </button>
           </p>
@@ -62,14 +55,14 @@ export default function PeoplePage() {
             <PersonCard key={user.id} user={user} />
           ))}
         </div>
-        {!pending && !error && query && users.length === 0 ? (
+        {!search.isFetching && !search.isError && query && users.length === 0 ? (
           <p className="mt-4">{t('noResults')}</p>
         ) : null}
-        {hasMore ? (
+        {search.hasNextPage ? (
           <button
             className="mt-4 min-h-12 bg-surface-high px-4"
-            disabled={pending}
-            onClick={() => void search(true)}
+            disabled={search.isFetchingNextPage}
+            onClick={() => void search.fetchNextPage()}
           >
             {t('loadMore')}
           </button>

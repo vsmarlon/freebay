@@ -1,20 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import { canSubmitEvidence, canonicalCheckoutGroup, checkoutFailureIsDefinitive, orderActions, paymentReturnState, reviewTargetId, safeCheckoutUrl, safeConnectUrl, type Order } from './types';
+import {
+  canSubmitEvidence,
+  canonicalCheckoutGroup,
+  checkoutFailureIsDefinitive,
+  orderParticipants,
+  paymentReturnState,
+  reviewTargetId,
+  safeCheckoutUrl,
+  safeConnectUrl,
+  type Order,
+} from './types';
 
 const baseOrder: Order = {
-  id: 'order-1', buyerId: 'buyer-1', sellerId: 'seller-1', productId: 'product-1', amount: 12_500,
-  platformFee: 1_250, sellerAmount: 11_250, status: 'SHIPPED', escrowStatus: 'HELD', createdAt: '2026-01-01T00:00:00Z',
+  id: 'order-1',
+  buyerId: 'buyer-1',
+  sellerId: 'seller-1',
+  productId: 'product-1',
+  amount: 12_500,
+  platformFee: 1_250,
+  sellerAmount: 11_250,
+  status: 'SHIPPED',
+  escrowStatus: 'HELD',
+  createdAt: '2026-01-01T00:00:00Z',
 };
 
 describe('server-driven commerce affordances', () => {
-  it('only offers each order transition to the participant and source status that permits it', () => {
-    expect(orderActions(baseOrder, 'buyer-1')).toMatchObject({ buyer: true, seller: false, markDelivered: true, confirmReceipt: true, markShipped: false, cancel: false, openDispute: true });
-    expect(orderActions(baseOrder, 'seller-1')).toMatchObject({ buyer: false, seller: true, markDelivered: false, confirmReceipt: false, markShipped: false, cancel: false, openDispute: true });
-    expect(orderActions({ ...baseOrder, status: 'CONFIRMED' }, 'seller-1').markShipped).toBe(true);
-    expect(orderActions({ ...baseOrder, status: 'PENDING' }, 'buyer-1').cancel).toBe(true);
-    expect(orderActions({ ...baseOrder, status: 'CONFIRMED' }, 'seller-1').cancel).toBe(true);
-    expect(orderActions({ ...baseOrder, status: 'PENDING', paymentGroupId: 'group-1' }, 'buyer-1').cancel).toBe(false);
-    expect(orderActions({ ...baseOrder, status: 'SHIPPED' }, 'other').openDispute).toBe(false);
+  it('identifies the viewer without deriving order transitions on the client', () => {
+    expect(orderParticipants(baseOrder, 'buyer-1')).toEqual({ buyer: true, seller: false });
+    expect(orderParticipants(baseOrder, 'seller-1')).toEqual({ buyer: false, seller: true });
+    expect(orderParticipants(baseOrder, 'other')).toEqual({ buyer: false, seller: false });
   });
 
   it('selects the opposite party for the server-provided review type', () => {
@@ -37,12 +51,21 @@ describe('server-driven commerce affordances', () => {
 
   it('renders the group total from the server instead of repricing from item amounts', () => {
     const group = canonicalCheckoutGroup({
-      paymentGroupId: 'group-1', totalOrders: 2, totalAmount: 13_450,
+      paymentGroupId: 'group-1',
+      totalOrders: 2,
+      totalAmount: 13_450,
       items: [
         { orderId: 'order-1', productId: 'p-1', productTitle: 'First', quantity: 1, amount: 6_000 },
-        { orderId: 'order-2', productId: 'p-2', productTitle: 'Second', quantity: 2, amount: 6_000 },
+        {
+          orderId: 'order-2',
+          productId: 'p-2',
+          productTitle: 'Second',
+          quantity: 2,
+          amount: 6_000,
+        },
       ],
-      checkoutUrl: null, expiresAt: null,
+      checkoutUrl: null,
+      expiresAt: null,
     });
     expect(group.totalAmount).toBe(13_450);
     expect(group.totalOrders).toBe(2);
@@ -66,10 +89,14 @@ describe('hosted provider redirects', () => {
 describe('checkout retry safety', () => {
   it('allows retry after authoritative pre-payment rejection but holds ambiguous outcomes', () => {
     expect(checkoutFailureIsDefinitive(400, 'BAD_REQUEST', 'Carrinho vazio')).toBe(true);
-    expect(checkoutFailureIsDefinitive(400, 'BAD_REQUEST', 'Estoque insuficiente para item')).toBe(true);
+    expect(checkoutFailureIsDefinitive(400, 'BAD_REQUEST', 'Estoque insuficiente para item')).toBe(
+      true,
+    );
     expect(checkoutFailureIsDefinitive(400, 'BAD_REQUEST', 'Falha desconhecida')).toBe(false);
     expect(checkoutFailureIsDefinitive(400)).toBe(false);
-    expect(checkoutFailureIsDefinitive(401, undefined, 'Session changed during request')).toBe(false);
+    expect(checkoutFailureIsDefinitive(401, undefined, 'Session changed during request')).toBe(
+      false,
+    );
     expect(checkoutFailureIsDefinitive(409)).toBe(false);
     expect(checkoutFailureIsDefinitive(500)).toBe(false);
     expect(checkoutFailureIsDefinitive(undefined)).toBe(false);

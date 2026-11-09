@@ -5,7 +5,8 @@ import { usePreferences, type Theme } from '../../core/preferences';
 import { paths } from '../../core/routes';
 import { useSession } from '../../core/session';
 import { userKey } from '../../core/query-client';
-import { useApiMutation, useApiQuery } from '../../core/api-hooks';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { accountApi } from './api';
 import { Icon, SegmentedControl, Toggle } from '../../components';
 import {
   parseNotificationPreferences,
@@ -32,18 +33,18 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState<PreferenceKey | null>(null);
   const [preferencesError, setPreferencesError] = useState(false);
 
-  const preferencesQuery = useApiQuery<{ notificationPrefs?: unknown }>(
-    userKey(user?.id ?? 'anonymous', 'settings'),
-    '/users/me',
-    { enabled: Boolean(user), staleTime: 30_000 },
-  );
+  const preferencesQuery = useQuery({
+    queryKey: userKey(user?.id ?? 'anonymous', 'settings'),
+    queryFn: ({ signal }) => accountApi.me(signal),
+    enabled: Boolean(user),
+    staleTime: 30_000,
+  });
   const remote = parseNotificationPreferences(preferencesQuery.data?.notificationPrefs);
   const preferences = { ...remote, ...overrides };
 
-  const savePreference = useApiMutation<{ key: PreferenceKey; enabled: boolean }, unknown>({
-    method: 'PATCH',
-    path: '/users/me/fcm-token',
-    body: ({ key, enabled }) => ({ notificationPrefs: { [key]: enabled } }),
+  const savePreference = useMutation({
+    mutationFn: ({ key, enabled }: { key: PreferenceKey; enabled: boolean }) =>
+      accountApi.saveNotificationPreference(key, enabled),
   });
 
   async function setPreference(key: PreferenceKey, enabled: boolean) {

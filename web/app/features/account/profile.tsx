@@ -1,4 +1,5 @@
-import { useCallback, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router';
 import { accountApi } from './api';
 import { useSession } from '../../core/session';
@@ -6,7 +7,7 @@ import { paths, pathsFor } from '../../core/routes';
 import { Timeline } from '../social/timeline';
 import { ProfileHighlights } from '../stories';
 import { startConversation } from '../chat';
-import { Frame, Panel, useAccountText, type User } from './account';
+import { Frame, Panel, useAccountText } from './account';
 import { Avatar, Button, Dialog, Icon } from '../../components';
 
 type Stats = Partial<{
@@ -20,67 +21,57 @@ export default function ProfilePage() {
   const { t, path } = useAccountText();
   const { user: viewer } = useSession();
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [error, setError] = useState(false);
+  const owner = !id;
+  const viewerId = viewer?.id;
   const [kind, setKind] = useState<'all' | 'post' | 'repost' | 'product'>('all');
-  const [following, setFollowing] = useState<boolean | null>(null);
-  const [blocked, setBlocked] = useState<boolean | null>(null);
+  const client = useQueryClient();
+  const profileKey = ['account', 'profile', id ?? 'me'];
+  const relationshipKey = ['account', 'relationship', id, viewerId];
+  const profile = useQuery({
+    queryKey: profileKey,
+    queryFn: ({ signal }) => (owner ? accountApi.me(signal) : accountApi.user(id!, signal)),
+    retry: false,
+  });
+  const statsQuery = useQuery({
+    queryKey: [...profileKey, 'stats'],
+    queryFn: ({ signal }) => (owner ? accountApi.stats(signal) : accountApi.totals(id!, signal)),
+    retry: false,
+  });
+  const relationship = useQuery({
+    queryKey: relationshipKey,
+    enabled: !owner && Boolean(viewerId),
+    queryFn: async ({ signal }) => {
+      const [follow, block] = await Promise.all([
+        accountApi.isFollowing(id!, signal),
+        accountApi.isBlocked(id!, signal),
+      ]);
+      return { following: follow.isFollowing, blocked: block.isBlocked };
+    },
+    retry: false,
+  });
+  const user = profile.data;
+  const stats = statsQuery.data;
+  const error = profile.isError || statsQuery.isError;
+  const following = relationship.data?.following ?? null;
+  const blocked = relationship.data?.blocked ?? null;
   const [notice, setNotice] = useState('');
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState('OTHER');
   const [reportDescription, setReportDescription] = useState('');
   const [reportPending, setReportPending] = useState(false);
   const [blockOpen, setBlockOpen] = useState(false);
-  const owner = !id;
-  const viewerId = viewer?.id;
-  const mountRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (!node) return;
-      let alive = true;
-      setUser(null);
-      setStats(null);
-      setError(false);
-      setFollowing(null);
-      setBlocked(null);
-      setNotice('');
-      const profile = owner ? accountApi.me() : accountApi.user(id!);
-      const statistics = owner ? accountApi.stats() : accountApi.totals(id!);
-      Promise.all([profile, statistics])
-        .then(([u, s]) => {
-          if (alive) {
-            setUser(u);
-            setStats(s);
-          }
-        })
-        .catch(() => {
-          if (alive) setError(true);
-        });
-      if (!owner && viewerId) {
-        accountApi
-          .isFollowing(id!)
-          .then((result) => alive && setFollowing(result.isFollowing))
-          .catch(() => undefined);
-        accountApi
-          .isBlocked(id!)
-          .then((result) => alive && setBlocked(result.isBlocked))
-          .catch(() => undefined);
-      }
-      return () => {
-        alive = false;
-      };
-    },
-    [id, owner, viewerId],
-  );
   async function toggleFollow() {
     if (!user || following === null) return;
     try {
       const result = following
         ? await accountApi.unfollow(user.id)
         : await accountApi.follow(user.id);
-      setFollowing(!following);
+      client.setQueryData(relationshipKey, { following: !following, blocked });
       if (typeof result.followersCount === 'number')
-        setStats((current) => ({ ...current, followersCount: result.followersCount }));
+        client.setQueryData([...profileKey, 'stats'], (current: Stats | undefined) => ({
+          ...current,
+          followersCount: result.followersCount,
+        }));
     } catch {
       setNotice(t('error'));
     }
@@ -99,7 +90,7 @@ export default function ProfilePage() {
     try {
       if (blocked) await accountApi.unblock(user.id);
       else await accountApi.block(user.id);
-      setBlocked(!blocked);
+      client.setQueryData(relationshipKey, { following, blocked: !blocked });
     } catch {
       setNotice(t('error'));
     }
@@ -136,7 +127,6 @@ export default function ProfilePage() {
   }
   return (
     <Frame title={t('profile')} publicPage={Boolean(id)} bare>
-      <div ref={mountRef} className="sr-only" aria-hidden />
       {error ? (
         <Panel>
           <p role="alert">{t('error')}</p>

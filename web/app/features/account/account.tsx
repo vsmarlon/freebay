@@ -1,8 +1,8 @@
-import { useMemo, useState, type FormEvent, type PropsWithChildren } from 'react';
+import { useState, type FormEvent, type PropsWithChildren } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
 import { ApiError } from '../../core/api';
 import { paths, pathsFor } from '../../core/routes';
-import { useLocale } from '../../core/locale';
+import { useI18n, type Catalogs } from '../../core/locale';
 import { RequireAuth, useSession } from '../../core/session';
 import enCatalog from './catalogs/en.json';
 import ptBR from './catalogs/pt-BR.json';
@@ -24,20 +24,10 @@ export type User = {
   hasCpf?: boolean;
   deletionRequestedAt?: string | null;
 };
+const catalogs: Catalogs = { en: enCatalog, 'pt-BR': ptBR };
+
 export function useAccountText() {
-  const { locale, path } = useLocale();
-  const isEnglish = locale === 'en';
-  const catalog = isEnglish ? enCatalog : ptBR;
-  const t = useMemo(
-    () =>
-      (key: string, values: Record<string, string | number> = {}) =>
-        Object.entries(values).reduce(
-          (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
-          catalog[key as keyof typeof enCatalog] ?? key,
-        ),
-    [catalog],
-  );
-  return { locale, path, t };
+  return useI18n(catalogs);
 }
 
 export function Frame({

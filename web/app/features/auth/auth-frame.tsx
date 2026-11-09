@@ -1,5 +1,4 @@
 import {
-  useMemo,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type PropsWithChildren,
@@ -22,13 +21,7 @@ import ptBR from './catalogs/pt-BR.json';
 const catalogs: Catalogs = { en, 'pt-BR': ptBR };
 
 export function useAuthText() {
-  const { locale, path, t: sharedT } = useI18n();
-  const t = useMemo(
-    () => (key: string, values?: Record<string, string | number>) =>
-      catalogs[locale][key] ?? sharedT(key, values),
-    [locale, sharedT],
-  );
-  return { locale, path, t };
+  return useI18n(catalogs);
 }
 
 export function AuthFrame({

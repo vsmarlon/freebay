@@ -2,7 +2,7 @@ import { api } from '../../../core/api';
 import type { User } from '../account';
 
 export const PAGE_SIZE = 20;
-type ConnectionsResponse = User[] | { users?: User[]; items?: User[] };
+type ConnectionsResponse = { users?: User[]; items?: User[] } | User[];
 export type FollowState = boolean | null;
 
 export const connectionsApi = {

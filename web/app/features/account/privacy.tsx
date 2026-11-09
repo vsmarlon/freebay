@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { accountApi } from './api';
 import { paths } from '../../core/routes';
@@ -9,14 +10,13 @@ export default function PrivacyPage() {
   const [action, setAction] = useState<'export_data' | 'delete_account' | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState(false);
-  const [deletionPending, setDeletionPending] = useState(false);
-  const mountRef = useCallback((node: HTMLDivElement | null) => {
-    if (node)
-      void accountApi
-        .me()
-        .then((user) => setDeletionPending(Boolean(user.deletionRequestedAt)))
-        .catch(() => undefined);
-  }, []);
+  const client = useQueryClient();
+  const me = useQuery({
+    queryKey: ['account', 'me'],
+    queryFn: ({ signal }) => accountApi.me(signal),
+    retry: false,
+  });
+  const deletionPending = Boolean(me.data?.deletionRequestedAt);
   async function verified(token: string) {
     const current = action;
     if (!current) return;
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
     setError(false);
     try {
       await accountApi.cancelDeletion();
-      setDeletionPending(false);
+      await client.invalidateQueries({ queryKey: ['account', 'me'] });
       setMessage(t('deletionCancelled'));
     } catch {
       setError(true);
@@ -57,7 +57,6 @@ export default function PrivacyPage() {
   return (
     <Frame title={t('privacy')}>
       <Panel>
-        <div ref={mountRef} className="sr-only" aria-hidden />
         <div className="grid gap-4">
           <Link to={path(paths.closeFriends)} className="underline">
             {t('closeFriends')}
