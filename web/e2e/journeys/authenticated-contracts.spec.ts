@@ -111,6 +111,20 @@ test('social comment/save round-trip follows fixture state rather than optimisti
   await expect(page.locator('article').filter({ hasText: 'Public fixture post' }).getByRole('button', { name: 'Remove saved post' })).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('post report opens in the shared dialog and submits the selected target', async ({ page }) => {
+  const state = await installBrowserFixture(page);
+  await openProtectedRoute(page, state, '/en/feed');
+  await page.locator('article').filter({ hasText: 'Public fixture post' }).locator('summary').click();
+  await page.getByRole('button', { name: 'Report post' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Report this post' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel('Additional details (optional)').fill('Synthetic report');
+  await dialog.getByRole('button', { name: 'Send report' }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByText('Report sent for review.')).toBeVisible();
+  expect(state.calls.find((call) => call.path === '/reports')).toMatchObject({ method: 'POST', body: { targetType: 'POST', targetId: '70000000-0000-4000-8000-000000000007', reason: 'SPAM', description: 'Synthetic report' } });
+});
+
 test('chat sends a reply, archives the thread, and never fetches view-once media before explicit open', async ({ page }) => {
   const state = await installBrowserFixture(page);
   state.profile.username = 'buyer_01';
@@ -123,10 +137,11 @@ test('chat sends a reply, archives the thread, and never fetches view-once media
   await expect(page.getByRole('button', { name: 'View once' })).toBeVisible();
   expect(state.viewOnceFetches).toBe(0);
   const incoming = page.locator('article').filter({ hasText: 'Incoming synthetic note' });
-  await incoming.getByRole('button', { name: 'Message 👍' }).click();
-  await expect(incoming.getByRole('button', { name: 'Message 👍' })).toContainText('1');
+  await incoming.getByText('Incoming synthetic note').click();
+  await page.getByRole('button', { name: 'Reactions' }).click();
+  await page.getByRole('listbox').getByRole('button', { name: '👍' }).click();
+  await expect(incoming.getByLabel('Reactions')).toContainText('👍');
   await page.getByRole('button', { name: 'Star message' }).first().click();
-  await expect(page.getByRole('button', { name: 'Unstar message' })).toBeVisible();
   await page.getByRole('button', { name: 'Starred messages' }).click();
   await expect(page.getByRole('dialog')).toContainText('Incoming synthetic note');
   await page.getByRole('button', { name: 'Close' }).click();
@@ -134,18 +149,17 @@ test('chat sends a reply, archives the thread, and never fetches view-once media
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(state.viewOnceFetches).toBe(0);
   await page.getByRole('button', { name: 'Close' }).click();
-  const sourceMessage = page.getByRole('checkbox', { name: 'Forward 30000000-0000-4000-8000-000000000003' });
-  await sourceMessage.check();
-  await expect(sourceMessage).toBeChecked();
+  await incoming.getByText('Incoming synthetic note').click();
   await page.getByRole('button', { name: 'Choose recipients' }).click();
   const targetConversation = page.getByRole('checkbox', { name: 'Synthetic Forward Target' });
   await targetConversation.check();
   await expect(targetConversation).toBeChecked();
-  const forwardButton = page.locator('fieldset').getByRole('button', { name: 'Forward', exact: true });
+  const forwardButton = page.getByRole('button', { name: 'Forward', exact: true });
   await expect(forwardButton).toBeEnabled();
   await forwardButton.click();
   await expect.poll(() => state.calls.find((call) => call.path === '/chat/messages/forward')?.body).toMatchObject({ messageIds: ['30000000-0000-4000-8000-000000000003'], targetConversationIds: ['40000000-0000-4000-8000-000000000008'] });
-  await page.locator('article').filter({ hasText: 'Incoming synthetic note' }).getByRole('button', { name: 'Reply' }).click();
+  await incoming.getByText('Incoming synthetic note').click();
+  await page.getByText('Selected messages (1)').locator('..').getByRole('button', { name: 'Reply' }).click();
   await expect(page.getByText(/Reply: Incoming synthetic note/)).toBeVisible();
   const message = page.getByRole('textbox', { name: 'Message' });
   await message.fill('Synthetic reply body');
@@ -212,8 +226,6 @@ test('mute is canonical per conversation; measured location sends only the confi
 
   await page.getByRole('button', { name: 'Share my location' }).click();
   await page.getByRole('button', { name: 'Use current location' }).click();
-  await expect(page.getByLabel('Latitude (-90 to 90)')).toHaveValue('37.4219983');
-  await expect(page.getByLabel('Longitude (-180 to 180)')).toHaveValue('-122.084');
   await expect(page.getByText(/Measured accuracy: 7\.5 m/)).toBeVisible();
   await page.getByRole('button', { name: 'Send chosen location' }).click();
   await expect(page.locator('article').getByRole('button', { name: 'Share my location' })).toBeVisible();

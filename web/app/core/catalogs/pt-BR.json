@@ -9,6 +9,8 @@
   "common.confirm": "Confirmar",
   "common.back": "Voltar",
   "common.search": "Buscar",
+  "common.searchPeople": "Buscar pessoas",
+  "common.searchProducts": "Buscar produtos",
   "common.send": "Enviar",
   "common.loadMore": "Carregar mais",
   "common.yes": "Sim",
@@ -71,7 +73,16 @@
   "marketing.about.escrowTitle": "Comprando com pagamento protegido",
   "marketing.about.sellingTitle": "Vendendo na Freebay",
   "marketing.about.safetyTitle": "Segurança e privacidade",
+  "mediaEditor.videoTitle": "Editor de vídeo",
+  "mediaEditor.trimStart": "Cortar no início",
+  "mediaEditor.trimEnd": "Cortar no fim",
+  "mediaEditor.mute": "Silenciar",
+  "mediaEditor.saving": "Salvando…",
+  "mediaEditor.processing": "Processando {percent}%",
+  "mediaEditor.segment": "Trecho",
+  "mediaEditor.unsupported": "Edição de vídeo não está disponível neste navegador.",
   "nav.collapseSidebar": "Recolher barra lateral",
   "nav.expandSidebar": "Expandir barra lateral",
-  "nav.resizeSidebar": "Redimensionar barra lateral"
+  "nav.resizeSidebar": "Redimensionar barra lateral",
+  "nav.wallet": "Carteira"
 }

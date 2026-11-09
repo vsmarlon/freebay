@@ -42,6 +42,10 @@ export type Transcript = {
   preference: { isArchived: boolean; theme: string; backgroundUrl: string | null; muted?: boolean } | null;
 };
 
+export function deletedCopy(message: ChatMessage): ChatMessage {
+  return { ...message, deletedAt: new Date().toISOString(), content: null, attachmentUrl: null, metadata: null };
+}
+
 export function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
   const byId = new Map(current.map((message) => [message.id, message]));
   const clientIds = new Map(current.filter((message) => message.clientMessageId).map((message) => [message.clientMessageId!, message.id]));

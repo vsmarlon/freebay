@@ -9,6 +9,8 @@
   "common.confirm": "Confirm",
   "common.back": "Back",
   "common.search": "Search",
+  "common.searchPeople": "Search people",
+  "common.searchProducts": "Search products",
   "common.send": "Send",
   "common.loadMore": "Load more",
   "common.yes": "Yes",
@@ -71,7 +73,16 @@
   "marketing.about.escrowTitle": "Buying with escrow protection",
   "marketing.about.sellingTitle": "Selling on Freebay",
   "marketing.about.safetyTitle": "Safety & privacy",
+  "mediaEditor.videoTitle": "Video editor",
+  "mediaEditor.trimStart": "Trim start",
+  "mediaEditor.trimEnd": "Trim end",
+  "mediaEditor.mute": "Mute",
+  "mediaEditor.saving": "Saving…",
+  "mediaEditor.processing": "Processing {percent}%",
+  "mediaEditor.segment": "Segment",
+  "mediaEditor.unsupported": "Video editing is unavailable in this browser.",
   "nav.collapseSidebar": "Collapse sidebar",
   "nav.expandSidebar": "Expand sidebar",
-  "nav.resizeSidebar": "Resize sidebar"
+  "nav.resizeSidebar": "Resize sidebar",
+  "nav.wallet": "Wallet"
 }

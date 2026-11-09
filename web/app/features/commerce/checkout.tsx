@@ -1,3 +1,4 @@
+import { buttonClass } from '../../components';
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -138,16 +139,16 @@ function CheckoutContent() {
   } });
   const group = checkout.data ? canonicalCheckoutGroup(checkout.data) : undefined;
   return <CommercePage title={t('commerce.checkout.title')}><div ref={mountRef} className="sr-only" aria-hidden />
-    <Surface className="commerce-checkout">
+    <Surface className="grid gap-[14px] bg-surface p-5 [&_p]:max-w-[72ch]">
       <p>{t('commerce.checkout.explainer')}</p>
       {preflightError && <ErrorState error={preflightError} />}
-      {paidRecovery && <Surface tone="mid"><p>{t('commerce.checkout.paymentConfirmed')}</p><Link className="ui-button ui-secondary" to={path(paths.orders)}>{t('commerce.orders.title')}</Link></Surface>}
+      {paidRecovery && <Surface tone="mid"><p>{t('commerce.checkout.paymentConfirmed')}</p><Link className={buttonClass('secondary')} to={path(paths.orders)}>{t('commerce.orders.title')}</Link></Surface>}
       {storageUnavailable && <p role="alert">{t('commerce.checkout.storageUnavailable')}</p>}
-      {group && <section className="commerce-summary" aria-live="polite"><h2>{t('commerce.checkout.total')}: {money(group.totalAmount)}</h2><p>{group.totalOrders} {t('commerce.checkout.orders')}</p>{group.items.map((item) => <p key={item.orderId}>{item.productTitle} × {item.quantity} — {money(item.amount)}</p>)}</section>}
+      {group && <section className="grid gap-[14px] bg-surface-mid max-[760px]:order-first p-5 [&_h2]:m-0 [&_h2]:font-display [&_h2]:text-[22px] [&_h2]:font-bold [&_p]:max-w-[72ch]" aria-live="polite"><h2>{t('commerce.checkout.total')}: {money(group.totalAmount)}</h2><p>{group.totalOrders} {t('commerce.checkout.orders')}</p>{group.items.map((item) => <p key={item.orderId}>{item.productTitle} × {item.quantity} — {money(item.amount)}</p>)}</section>}
       <Button disabled={checkout.isPending || ambiguous || restoring || storageUnavailable} pending={checkout.isPending || restoring} onClick={() => void startCheckout()}>{t('commerce.checkout.start')}</Button>
       {checkout.error != null ? <ErrorState error={checkout.error instanceof Error ? checkout.error : new Error(String(checkout.error))}/> : null}
-      {rejected && <Surface tone="mid"><p>{t('commerce.checkout.rejected')}</p><Link className="ui-button ui-secondary" to={path(paths.cart)}>{t('commerce.checkout.reviewCart')}</Link></Surface>}
-      {ambiguous && <Surface tone="mid"><p>{t('commerce.checkout.unclear')}</p><Link className="ui-button ui-secondary" to={path(paths.orders)}>{t('commerce.orders.title')}</Link><Button variant="secondary" disabled={restoring || storageUnavailable} pending={restoring} onClick={() => void reconcilePendingOrders()}>{t('commerce.checkout.reconcile')}</Button>{pendingOrderIds.map((id) => <Link key={id} to={path(pathsFor.order(id))}>{t('commerce.order.reference')}: {id}</Link>)}</Surface>}
+      {rejected && <Surface tone="mid"><p>{t('commerce.checkout.rejected')}</p><Link className={buttonClass('secondary')} to={path(paths.cart)}>{t('commerce.checkout.reviewCart')}</Link></Surface>}
+      {ambiguous && <Surface tone="mid"><p>{t('commerce.checkout.unclear')}</p><Link className={buttonClass('secondary')} to={path(paths.orders)}>{t('commerce.orders.title')}</Link><Button variant="secondary" disabled={restoring || storageUnavailable} pending={restoring} onClick={() => void reconcilePendingOrders()}>{t('commerce.checkout.reconcile')}</Button>{pendingOrderIds.map((id) => <Link key={id} to={path(pathsFor.order(id))}>{t('commerce.order.reference')}: {id}</Link>)}</Surface>}
     </Surface>
   </CommercePage>;
 }

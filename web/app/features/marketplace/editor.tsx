@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { useLoaderData, useNavigate, useRouteError, isRouteErrorResponse, type LoaderFunctionArgs } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { ApiError, api } from '../../core/api';
-import { Button, Dialog, ErrorState, Icon, Input, Loading, PageHeader, Select, Surface, TextArea } from '../../components';
+import { Button, ComposerInput, Dialog, ErrorState, Icon, Input, Loading, PageHeader, Select, Surface } from '../../components';
 import { QuantityStepper } from '../../components/quantity-stepper';
 import { useSession } from '../../core/session';
 import { useLocale, useI18n } from '../../core/locale';
@@ -14,7 +14,6 @@ import type { Category, ProductSummary } from './types';
 import { getCategories, getProduct } from './server.server';
 import { formatListingPriceInput, parseListingPrice, validateProductImage } from './listing-input';
 import en from './catalogs/en.json'; import pt from './catalogs/pt-BR.json';
-import './marketplace.css';
 
 const catalogs = { en, 'pt-BR': pt };
 type LoaderData = { product: ProductSummary | null; categories: Category[] };
@@ -41,10 +40,10 @@ export default function ListingEditorRoute() {
   const isEdit = product !== null;
   const previewUrls = isEdit ? (product?.images ?? []).map((image) => mediaUrl(image.url)) : previews;
   const cover = previewUrls[0];
-  if (isPending) return <section className="marketplace"><Loading label={t('common.loading')} /></section>;
-  if (!user) return <section className="marketplace"><Surface><p>{t('auth.required')}</p><Button onClick={() => navigate(path(paths.login))}>{t('auth.signIn')}</Button></Surface></section>;
-  if (product && product.sellerId !== user.id) return <section className="marketplace"><ErrorState error={new Error(t('common.error'))} /></section>;
-  if (product?.status === 'SOLD') return <section className="marketplace"><ErrorState error={new Error(t('editor.soldReadOnly'))} /></section>;
+  if (isPending) return <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5"><Loading label={t('common.loading')} /></section>;
+  if (!user) return <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5"><Surface><p>{t('auth.required')}</p><Button onClick={() => navigate(path(paths.login))}>{t('auth.signIn')}</Button></Surface></section>;
+  if (product && product.sellerId !== user.id) return <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5"><ErrorState error={new Error(t('common.error'))} /></section>;
+  if (product?.status === 'SOLD') return <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5"><ErrorState error={new Error(t('editor.soldReadOnly'))} /></section>;
   const userId = user.id;
   function change<K extends keyof FormValues>(key: K, value: FormValues[K]) { setValues((current) => ({ ...current, [key]: value })); }
   function addFiles(selected: FileList | null) {
@@ -75,24 +74,24 @@ export default function ListingEditorRoute() {
   try { priceLabel = formatMoney(parseListingPrice(values.price, locale), locale); } catch { /* incomplete price input keeps the dash */ }
   const quantityPreview = Math.max(1, Number(values.quantity) || 1);
 
-  return <section className="marketplace">
+  return <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
     <PageHeader title={t(isEdit ? 'editor.edit' : 'editor.create')} />
-    <div className="editor-layout">
-      <aside className="editor-preview" aria-label={t('editor.preview')}>
-        <div className="editor-preview-card">
-          <div className="editor-preview-media">
+    <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)]">
+      <aside className="order-1 grid gap-3 lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1" aria-label={t('editor.preview')}>
+        <div className="grid gap-2 border-[1.5px] border-edge bg-surface p-4">
+          <div className="relative grid aspect-square place-items-center overflow-hidden bg-surface-high text-muted [&_img]:block [&_img]:size-full [&_img]:object-cover">
             {cover ? <img src={cover} alt={values.title.trim() || t('editor.preview')} /> : <Icon name="image" size={40} />}
-            {previewUrls.length > 1 ? <span className="editor-preview-count">+{previewUrls.length - 1}</span> : null}
+            {previewUrls.length > 1 ? <span className="absolute bottom-2 right-2 bg-black/80 px-2 py-0.5 text-[11px] text-white">+{previewUrls.length - 1}</span> : null}
           </div>
-          <h3 className="editor-preview-title">{values.title.trim() || '—'}</h3>
-          <p className="editor-preview-price">{priceLabel}</p>
-          <p className="image-editor-hint">{t('editor.quantity')}: {quantityPreview}</p>
+          <h3 className="m-0 font-display text-base font-bold leading-[1.3]">{values.title.trim() || '—'}</h3>
+          <p className="m-0 font-display text-[22px] font-bold">{priceLabel}</p>
+          <p className="text-muted">{t('editor.quantity')}: {quantityPreview}</p>
         </div>
-        <p className="image-editor-hint">{t('editor.previewNote')}</p>
+        <p className="text-muted">{t('editor.previewNote')}</p>
       </aside>
-      <Surface className="editor-form-panel"><form className="editor-form" onSubmit={(event) => void save(event)}>
+      <Surface className="order-2 lg:col-start-1 lg:row-start-1"><form className="grid gap-4" onSubmit={(event) => void save(event)}>
         <Input label={t('editor.title')} required minLength={3} maxLength={100} value={values.title} onChange={(event) => change('title', event.currentTarget.value)} />
-        <TextArea label={t('editor.description')} required minLength={10} maxLength={5000} rows={6} autoGrow value={values.description} onChange={(event) => change('description', event.currentTarget.value)} />
+        <ComposerInput id="editor-description" label={t('editor.description')} value={values.description} maxLength={5000} submitOnEnter={false} onChange={(value) => change('description', value)} textareaProps={{ required: true, minLength: 10 }} />
         <Input label={t('editor.price')} required inputMode="decimal" value={values.price} onChange={(event) => change('price', event.currentTarget.value)} />
         <Select label={t('editor.condition')} value={values.condition} onChange={(event) => { if (isCondition(event.currentTarget.value)) change('condition', event.currentTarget.value); }}><option value="NEW">{t('catalog.new')}</option><option value="USED">{t('catalog.used')}</option></Select>
         <Select label={t('editor.category')} required value={values.categoryId} onChange={(event) => change('categoryId', event.currentTarget.value)}><option value="">{t('editor.selectCategory')}</option>{flatten(categories).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select>
@@ -100,21 +99,21 @@ export default function ListingEditorRoute() {
         {isEdit && <Select label={t('editor.status')} value={values.status} onChange={(event) => { if (isEditableStatus(event.currentTarget.value)) change('status', event.currentTarget.value); }}><option value="ACTIVE">{t('editor.active')}</option><option value="PAUSED">{t('editor.paused')}</option></Select>}
         {isEdit ? (
           <div>
-            <p className="image-editor-hint">{t('editor.imagesReadOnly')}</p>
-            {previewUrls.length ? <ul className="editor-images">{previewUrls.map((url, index) => <li key={url}><img src={url} alt={`${t('editor.images')} ${index + 1}`} />{index === 0 ? <span className="editor-cover">{t('editor.cover')}</span> : null}</li>)}</ul> : null}
+            <p className="text-muted">{t('editor.imagesReadOnly')}</p>
+            {previewUrls.length ? <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2 p-0 [&>li]:relative [&>li]:aspect-square [&>li]:bg-surface-high [&_img]:block [&_img]:size-full [&_img]:object-cover [&_button]:absolute [&_button]:right-1 [&_button]:top-1 [&_button]:grid [&_button]:size-[26px] [&_button]:place-items-center [&_button]:border-0 [&_button]:bg-black/80 [&_button]:text-white">{previewUrls.map((url, index) => <li key={url}><img src={url} alt={`${t('editor.images')} ${index + 1}`} />{index === 0 ? <span className="absolute bottom-1 left-1 bg-black/80 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-white">{t('editor.cover')}</span> : null}</li>)}</ul> : null}
           </div>
         ) : (
           <div>
             <Input label={t('editor.images')} type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" hint={t('editor.imagesHint')} onChange={(event) => { addFiles(event.currentTarget.files); event.currentTarget.value = ''; }} />
-            {files.length ? <ul className="editor-images">{previews.map((url, index) => <li key={url}><img src={url} alt={`${t('editor.images')} ${index + 1}`} />{index === 0 ? <span className="editor-cover">{t('editor.cover')}</span> : null}<button type="button" aria-label={t('editor.removeImage')} onClick={() => removeImage(index)}><Icon name="close" size={14} /></button></li>)}</ul> : null}
+            {files.length ? <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2 p-0 [&>li]:relative [&>li]:aspect-square [&>li]:bg-surface-high [&_img]:block [&_img]:size-full [&_img]:object-cover [&_button]:absolute [&_button]:right-1 [&_button]:top-1 [&_button]:grid [&_button]:size-[26px] [&_button]:place-items-center [&_button]:border-0 [&_button]:bg-black/80 [&_button]:text-white">{previews.map((url, index) => <li key={url}><img src={url} alt={`${t('editor.images')} ${index + 1}`} />{index === 0 ? <span className="absolute bottom-1 left-1 bg-black/80 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-white">{t('editor.cover')}</span> : null}<button type="button" aria-label={t('editor.removeImage')} onClick={() => removeImage(index)}><Icon name="close" size={14} /></button></li>)}</ul> : null}
           </div>
         )}
         <Button type="submit" disabled={busy} pending={busy}>{t(isEdit ? 'editor.update' : 'editor.submit')}</Button>{isEdit && <Button variant="danger" type="button" disabled={busy} onClick={() => setConfirmDelete(true)}>{t('editor.delete')}</Button>}
         {error && <p role="alert">{error}</p>}
       </form></Surface>
     </div>
-    <div className="market-confirm-dialog"><Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)} title={t('editor.delete')} actions={<><Button variant="secondary" disabled={busy} onClick={() => setConfirmDelete(false)}>{t('common.cancel')}</Button><Button variant="danger" disabled={busy} pending={busy} onClick={() => void remove()}>{t('common.delete')}</Button></>}>{t('editor.deleteConfirm')}</Dialog></div>
+    <div className="[&_.ui-dialog_footer>button:last-child]:hidden"><Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)} title={t('editor.delete')} actions={<><Button variant="secondary" disabled={busy} onClick={() => setConfirmDelete(false)}>{t('common.cancel')}</Button><Button variant="danger" disabled={busy} pending={busy} onClick={() => void remove()}>{t('common.delete')}</Button></>}>{t('editor.deleteConfirm')}</Dialog></div>
   </section>;
 }
 
-export function ErrorBoundary() { const error = useRouteError(); const { t } = useI18n(catalogs); return <section className="marketplace"><ErrorState error={new Error(isRouteErrorResponse(error) ? t('product.notFound') : t('editor.error'))} /></section>; }
+export function ErrorBoundary() { const error = useRouteError(); const { t } = useI18n(catalogs); return <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5"><ErrorState error={new Error(isRouteErrorResponse(error) ? t('product.notFound') : t('editor.error'))} /></section>; }

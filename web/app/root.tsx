@@ -31,13 +31,17 @@ function createQueryClient() {
 }
 
 export function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const locale = useLocation().pathname.split('/')[1] === 'en' ? 'en' : 'pt-BR';
+  const { pathname } = useLocation();
+  const segments = pathname.split('/').filter(Boolean);
+  const locale = segments[0] === 'en' ? 'en' : 'pt-BR';
+  const route = segments.slice(segments[0] === 'en' || segments[0] === 'pt-BR' ? 1 : 0);
+  const storyViewer = route[0] === 'highlights' || (route[0] === 'stories' && route.length === 2 && !['new', 'mine', 'archive'].includes(route[1]));
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
-  return <html lang={locale} data-theme="light" data-hydrated={hydrated ? 'true' : undefined} suppressHydrationWarning><head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><Meta /><Links /><script dangerouslySetInnerHTML={{ __html: `(()=>{try{const p=JSON.parse(localStorage.getItem('freebay.preferences')||'{}');const t=p.theme||'system';document.documentElement.dataset.theme=t==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.dataset.aurora=p.animatedBackground===false?'off':'on'}catch{}})()` }} /></head><body>{children}<ScrollRestoration /><Scripts /></body></html>;
+  return <html lang={locale} data-theme="light" data-hydrated={hydrated ? 'true' : undefined} suppressHydrationWarning><head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><Meta /><Links /><script>{`(()=>{try{const p=JSON.parse(localStorage.getItem('freebay.preferences')||'{}');const t=p.theme||'system';document.documentElement.dataset.theme=t==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.dataset.aurora=p.animatedBackground===false?'off':'on'}catch{}})();(()=>{let s;addEventListener('scroll',()=>{document.documentElement.dataset.scrolling='true';clearTimeout(s);s=setTimeout(()=>{delete document.documentElement.dataset.scrolling},1200)},{passive:true,capture:true})})()`}</script></head><body className={storyViewer ? 'overflow-hidden' : undefined}>{children}<ScrollRestoration /><Scripts /></body></html>;
 }
 
 export default function App() {
   const locale = useLocation().pathname.split('/')[1] === 'en' ? 'en' : 'pt-BR';
   const [queryClient] = useState(() => createQueryClient());
-  return <QueryClientProvider client={queryClient}><SessionProvider><LocaleProvider locale={locale}><a className="skip-link" href="#main-content">Skip to content</a><Aurora /><ToastProvider><Outlet /></ToastProvider></LocaleProvider></SessionProvider></QueryClientProvider>;
+  return <QueryClientProvider client={queryClient}><SessionProvider><LocaleProvider locale={locale}><a className="absolute left-[-9999px] top-0 z-20 bg-white p-2.5 focus:left-2" href="#main-content">Skip to content</a><Aurora /><ToastProvider><Outlet /></ToastProvider></LocaleProvider></SessionProvider></QueryClientProvider>;
 }

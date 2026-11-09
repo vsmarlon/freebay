@@ -86,6 +86,9 @@
   "social.post.playVideo": "Play video",
   "social.post.pauseVideo": "Pause video",
   "social.post.fullscreen": "Fullscreen video",
+  "social.post.openImage": "Open image full screen",
+  "social.post.previousImage": "Previous image",
+  "social.post.nextImage": "Next image",
   "social.post.muteFeed": "Mute video sound for this feed",
   "social.post.unmuteFeed": "Unmute video sound for this feed"
 }

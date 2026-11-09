@@ -86,6 +86,9 @@
   "social.post.playVideo": "Reproduzir vídeo",
   "social.post.pauseVideo": "Pausar vídeo",
   "social.post.fullscreen": "Vídeo em tela cheia",
+  "social.post.openImage": "Abrir imagem em tela cheia",
+  "social.post.previousImage": "Imagem anterior",
+  "social.post.nextImage": "Próxima imagem",
   "social.post.muteFeed": "Silenciar som dos vídeos neste feed",
   "social.post.unmuteFeed": "Ativar som dos vídeos neste feed"
 }

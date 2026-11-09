@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { api } from '../../core/api';
 import { useSession } from '../../core/session';
@@ -12,7 +12,7 @@ type AppleAuth = { init: (options: { clientId: string; scope: string; redirectUR
 
 declare global {
   interface Window {
-    google?: { accounts: { id: { initialize: (options: { client_id: string; callback: (response: GoogleCredential) => void }) => void; renderButton: (element: HTMLElement, options: { theme: string; size: string; shape: string; width: number }) => void } } };
+    google?: { accounts: { id: { initialize: (options: { client_id: string; ux_mode?: 'popup' | 'redirect'; login_uri?: string; callback?: (response: GoogleCredential) => void }) => void; renderButton: (element: HTMLElement, options: { theme: string; size: string; shape: string; width: number }) => void } } };
     AppleID?: { auth: AppleAuth };
   }
 }
@@ -87,7 +87,25 @@ export function OAuthButtons({ returnTo }: { returnTo?: string }) {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
-  const [googleReady, setGoogleReady] = useState(false);
+  const unavailable = useRef(t('auth.provider.unavailable'));
+  unavailable.current = t('auth.provider.unavailable');
+  // ponytail: GIS redirect flow, rendered on mount so Google owns the click (no popup, no double click).
+  const googleMount = useCallback((node: HTMLDivElement | null) => {
+    if (!node || !googleClientId) return;
+    let cancelled = false;
+    void loadScript('google-identity-services', 'https://accounts.google.com/gsi/client').then(() => {
+      if (cancelled || !window.google) return;
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        ux_mode: 'redirect',
+        login_uri: `${window.location.origin}/auth/web/google/redirect`,
+        // GIS validates the callback even in redirect mode; the credential arrives by POST.
+        callback: () => {},
+      });
+      window.google.accounts.id.renderButton(node, { theme: 'outline', size: 'large', shape: 'rectangular', width: Math.max(240, Math.floor(node.getBoundingClientRect().width)) });
+    }).catch(() => { if (!cancelled) setError(unavailable.current); });
+    return () => { cancelled = true; node.replaceChildren(); };
+  }, []);
   async function finish(pathname: string, credential: object) {
     setPending(true);
     setError('');
@@ -99,28 +117,6 @@ export function OAuthButtons({ returnTo }: { returnTo?: string }) {
     } catch {
       setError(t('auth.error'));
     } finally {
-      setPending(false);
-    }
-  }
-  async function google() {
-    if (!googleClientId) { setError(t('auth.provider.unavailable')); return; }
-    setPending(true);
-    setError('');
-    try {
-      await loadScript('google-identity-services', 'https://accounts.google.com/gsi/client');
-      if (!window.google) throw new Error('google_sdk_unavailable');
-      const target = document.getElementById('google-signin-control');
-      if (!target) throw new Error('google_button_missing');
-      target.replaceChildren();
-      window.google.accounts.id.initialize({ client_id: googleClientId, callback: (response) => {
-        if (response.credential) void finish('/auth/web/google', { idToken: response.credential });
-        else setError(t('auth.provider.cancelled'));
-      } });
-      window.google.accounts.id.renderButton(target, { theme: 'outline', size: 'large', shape: 'rectangular', width: Math.max(240, Math.floor(target.getBoundingClientRect().width)) });
-      setGoogleReady(true);
-      setPending(false);
-    } catch {
-      setError(t('auth.provider.unavailable'));
       setPending(false);
     }
   }
@@ -150,7 +146,7 @@ export function OAuthButtons({ returnTo }: { returnTo?: string }) {
   if (!googleConfigured && !appleConfigured) return null;
   return <div className="mt-6 grid gap-3">
     <div className="relative text-center text-xs text-muted"><span className="bg-surface px-3">{t('auth.or')}</span></div>
-    {googleConfigured ? <><div id="google-signin-control" className="min-h-11 w-full" />{!googleReady ? <AuthButton type="button" disabled={pending} onClick={() => void google()}>{t('auth.google')}</AuthButton> : null}</> : null}
+    {googleConfigured ? <div ref={googleMount} className="min-h-11 w-full" /> : null}
     {appleConfigured ? <AuthButton type="button" disabled={pending} onClick={() => void apple()}>{t('auth.apple')}</AuthButton> : null}
     {error ? <AuthMessage error>{error}</AuthMessage> : null}
   </div>;

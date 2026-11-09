@@ -32,16 +32,16 @@ function DisputeContent() {
   const formatEvidence = (value: unknown) => typeof value === 'string' ? value : value == null ? '—' : JSON.stringify(value);
   return <CommercePage title={t('commerce.dispute.detail')}>
     {(evidenceMutation.error || withdrawMutation.error) && <><ErrorState error={evidenceMutation.error ?? withdrawMutation.error}/><Button variant="secondary" onClick={() => { void query.refetch().then((result) => { if (!result.isError && result.data) { evidenceMutation.reset(); withdrawMutation.reset(); setReconcileNeeded(false); } }); }}>{t('commerce.order.reconcile')}</Button></>}
-    <Surface className="commerce-dispute-detail">
+    <Surface className="grid gap-[14px] bg-surface p-5 [&_h2]:mb-2 [&_h2]:mt-0 [&_h2]:font-display [&_h2]:text-[22px] [&_h2]:font-bold">
       <h2>{dispute.order.product.title}</h2><p>{t('commerce.status')}: <Status>{t(`commerce.disputeStatus.${dispute.status}`)}</Status></p>
       <p>{t('commerce.dispute.reason')}: {dispute.reason}</p><p>{t('commerce.dispute.opened')}: {new Date(dispute.createdAt).toLocaleString(locale)}</p>
       {dispute.resolution && <p>{t('commerce.dispute.resolution')}: {dispute.resolution}</p>}
     </Surface>
-    <Surface tone="mid" className="commerce-evidence">
+    <Surface tone="mid" className="grid gap-[14px] bg-surface p-5 [&_h2]:m-0 [&_h2]:font-display [&_h2]:text-[22px] [&_h2]:font-bold [&>p]:whitespace-pre-wrap [&>p]:wrap-break-word">
       <h2>{t('commerce.dispute.evidence')}</h2>
       <p>{user?.id === dispute.order.buyerId ? t('commerce.dispute.buyer') : t('commerce.dispute.seller')}: {formatEvidence(myEvidence)}</p>
       <p>{user?.id === dispute.order.buyerId ? t('commerce.dispute.seller') : t('commerce.dispute.buyer')}: {formatEvidence(otherEvidence)}</p>
-      {canSubmitEvidence(dispute.status, isParty) && <form className="commerce-form" onSubmit={(event) => { event.preventDefault(); evidenceMutation.mutate(); }}>
+      {canSubmitEvidence(dispute.status, isParty) && <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); evidenceMutation.mutate(); }}>
         <TextArea label={t('commerce.dispute.statement')} required value={evidence} onChange={(event) => setEvidence(event.currentTarget.value)}/>
         <Button pending={evidenceMutation.isPending} disabled={reconcileNeeded || !evidence.trim()}>{t('commerce.dispute.submitEvidence')}</Button>
       </form>}

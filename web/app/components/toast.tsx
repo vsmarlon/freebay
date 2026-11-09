@@ -30,10 +30,10 @@ export function ToastProvider({ children }: PropsWithChildren) {
     <ToastContext.Provider value={{ show }}>
       {children}
       {toast ? (
-        <div className="ui-toast">
-          <span role="status" aria-live="polite">{toast.message}</span>
-          {toast.actionLabel && toast.onAction ? <button type="button" className="ui-toast-action" onClick={runAction}>{toast.actionLabel}</button> : null}
-          <button type="button" className="ui-toast-close" aria-label={t('common.close')} onClick={dismiss}><Icon name="close" size={16} /></button>
+        <div className="fixed bottom-[max(20px,env(safe-area-inset-bottom))] left-1/2 z-40 flex w-[min(460px,calc(100vw-32px))] -translate-x-1/2 items-center gap-3.5 border border-ink bg-ink py-3 pr-3 pl-4 text-surface shadow-[4px_4px_#0006]">
+          <span className="flex-1 text-[13px]" role="status" aria-live="polite">{toast.message}</span>
+          {toast.actionLabel && toast.onAction ? <button type="button" className="min-h-[34px] cursor-pointer border border-current bg-transparent px-3 font-display text-xs font-bold uppercase tracking-wider text-inherit" onClick={runAction}>{toast.actionLabel}</button> : null}
+          <button type="button" className="grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent p-0 text-inherit opacity-70" aria-label={t('common.close')} onClick={dismiss}><Icon name="close" size={16} /></button>
         </div>
       ) : null}
     </ToastContext.Provider>

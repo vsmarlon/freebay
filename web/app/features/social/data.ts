@@ -1,5 +1,5 @@
 import { api } from '../../core/api';
-import type { Comment, ContentFilter, CursorPage, FeedPage, FeedType, Post, PostAudience, PostType, ProfileTimelineKind, ReportReason, ReportTargetType, TimelineEntry } from './types';
+import type { Comment, ContentFilter, CreatedComment, CursorPage, FeedPage, FeedType, MutationState, Post, PostAudience, PostType, ProfileTimelineKind, ReportReason, ReportTargetType, TimelineEntry, SaveMutationState } from './types';
 
 const params = (values: Record<string, string | number | undefined>) => {
   const search = new URLSearchParams();
@@ -11,7 +11,7 @@ export const socialApi = {
   feed: (type: FeedType, contentFilter: ContentFilter, cursor?: string, signal?: AbortSignal) => api.get<FeedPage>(`/social/feed${params({ type, contentFilter, cursor, limit: 20 })}`, { signal }),
   post: (id: string, signal?: AbortSignal) => api.get<Post>(`/social/posts/${encodeURIComponent(id)}`, { signal }),
   comments: (id: string, offset = 0, signal?: AbortSignal) => api.get<Comment[] | { comments: Comment[] }>(`/social/posts/${encodeURIComponent(id)}/comments${params({ limit: 20, offset })}`, { signal }),
-  saved: (cursor?: string, signal?: AbortSignal) => api.get<FeedPage>(`/social/posts/saved${params({ limit: 20, cursor })}`, { signal }),
+  saved: (cursor?: string, signal?: AbortSignal) => api.get<CursorPage<Post>>(`/social/posts/saved${params({ limit: 20, cursor })}`, { signal }),
   liked: (signal?: AbortSignal) => api.get<Post[]>('/social/posts/liked', { signal }),
   timeline: (userId: string, kind: ProfileTimelineKind | undefined, cursor?: string, signal?: AbortSignal, authenticated = true) => api.get<CursorPage<TimelineEntry>>(`/social/posts/user/${encodeURIComponent(userId)}/timeline${params({ kind, limit: 20, cursor })}`, { signal, auth: authenticated }),
   userPosts: (userId: string, cursor?: string, signal?: AbortSignal) => api.get<CursorPage<TimelineEntry>>(`/social/posts/user/${encodeURIComponent(userId)}${params({ limit: 20, cursor })}`, { signal }),
@@ -21,18 +21,21 @@ export const socialApi = {
     body.set('content', input.content);
     body.set('type', input.type);
     body.set('audience', input.audience);
-    if (input.image) body.set('image', input.image);
+    if (input.image) {
+      body.set('files', input.image);
+      body.set('mediaMetadata', JSON.stringify([{ fileIndex: 0, type: 'IMAGE', hotspots: [] }]));
+    }
     for (const id of input.mentionIds ?? []) body.append('mentionIds', id);
     return api.post<Post>('/social/posts', body);
   },
   deletePost: (id: string) => api.patch<void>(`/social/posts/${encodeURIComponent(id)}/delete`),
-  likePost: (id: string, active: boolean) => active ? api.patch<void>(`/social/posts/${encodeURIComponent(id)}/unlike`) : api.post<void>(`/social/posts/${encodeURIComponent(id)}/like`),
-  repost: (id: string, active: boolean) => active ? api.patch<void>(`/social/posts/${encodeURIComponent(id)}/unshare`) : api.post<void>(`/social/posts/${encodeURIComponent(id)}/share`),
-  save: (id: string, active: boolean) => active ? api.patch<void>(`/social/posts/${encodeURIComponent(id)}/unsave`) : api.post<void>(`/social/posts/${encodeURIComponent(id)}/save`),
-  createComment: (id: string, content: string, parentId?: string, mentionIds?: string[]) => api.post<Comment>(`/social/posts/${encodeURIComponent(id)}/comments`, { content, parentId, mentionIds }),
+  likePost: (id: string, active: boolean) => active ? api.patch<MutationState>(`/social/posts/${encodeURIComponent(id)}/unlike`) : api.post<MutationState>(`/social/posts/${encodeURIComponent(id)}/like`),
+  repost: (id: string, active: boolean) => active ? api.patch<MutationState>(`/social/posts/${encodeURIComponent(id)}/unshare`) : api.post<MutationState>(`/social/posts/${encodeURIComponent(id)}/share`),
+  save: (id: string, active: boolean) => active ? api.patch<SaveMutationState>(`/social/posts/${encodeURIComponent(id)}/unsave`) : api.post<SaveMutationState>(`/social/posts/${encodeURIComponent(id)}/save`),
+  createComment: (id: string, content: string, parentId?: string, mentionIds?: string[]) => api.post<CreatedComment>(`/social/posts/${encodeURIComponent(id)}/comments`, { content, parentId, mentionIds, clientRequestId: crypto.randomUUID() }),
   deleteComment: (id: string) => api.patch<void>(`/social/comments/${encodeURIComponent(id)}/delete`),
   approveComment: (id: string) => api.patch<void>(`/social/comments/${encodeURIComponent(id)}/approve`),
-  likeComment: (id: string, active: boolean) => active ? api.patch<void>(`/social/comments/${encodeURIComponent(id)}/unlike`) : api.post<void>(`/social/comments/${encodeURIComponent(id)}/like`),
+  likeComment: (id: string, active: boolean) => active ? api.patch<MutationState>(`/social/comments/${encodeURIComponent(id)}/unlike`) : api.post<MutationState>(`/social/comments/${encodeURIComponent(id)}/like`),
   report: (targetType: ReportTargetType, targetId: string, reason: ReportReason, description?: string) => api.post<void>('/reports', { targetType, targetId, reason, description }),
 };
 

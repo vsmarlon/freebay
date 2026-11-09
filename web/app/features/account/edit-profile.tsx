@@ -53,4 +53,4 @@ export default function EditProfilePage() {
   </form>}</Panel></Frame>;
 }
 
-function FormSection({ title, children }: { title: string; children: ReactNode }) { return <section className="form-section"><h2>{title}</h2>{children}</section>; }
+function FormSection({ title, children }: { title: string; children: ReactNode }) { return <section className="grid gap-3.5 [&+section]:border-t [&+section]:border-ink/20 [&+section]:pt-[18px]"><h2 className="m-0 font-display text-[15px] font-bold tracking-[.01em]">{title}</h2>{children}</section>; }

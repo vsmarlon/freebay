@@ -11,7 +11,6 @@ import { commerceApi } from './api';
 import en from './catalogs/en.json';
 import ptBR from './catalogs/pt-BR.json';
 import type { CursorPage, Order } from './types';
-import './commerce.css';
 
 const catalogs = { en, 'pt-BR': ptBR };
 export { Button, Dialog, Empty, ErrorState, Input, Loading, RequireAuth, Select, Status, Surface, TextArea };
@@ -50,12 +49,12 @@ export function useCommerceQuery<T>(feature: string, parts: readonly unknown[], 
 
 export function CommercePage({ title, description, children, actions }: { title: string; description?: string; children: ReactNode; actions?: ReactNode }) {
   const { t, path } = useCommerce();
-  return <main id="main-content" className="page-container"><PageHeader title={title} description={description} actions={actions}/><nav className="commerce-nav" aria-label={t('commerce.navigation')} style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem' }}><Link to={path(pathsFor.cart)}>{t('commerce.cart.title')}</Link><Link to={path(pathsFor.orders)}>{t('commerce.orders.title')}</Link><Link to={path(pathsFor.sales)}>{t('commerce.sales.title')}</Link><Link to={path(pathsFor.wallet)}>{t('commerce.wallet.title')}</Link><Link to={path(pathsFor.disputes)}>{t('commerce.disputes.title')}</Link></nav><div className="commerce-content">{children}</div></main>;
+  return <main id="main-content" className="mx-auto w-full max-w-[1120px] px-5 pt-8 pb-16 max-[760px]:px-3.5 max-[760px]:pt-[22px] max-[760px]:pb-[88px]"><div className="max-[760px]:[&_.page-header]:items-start max-[760px]:[&_.page-header]:flex-col max-[760px]:[&_.page-header_h1]:text-[28px]"><PageHeader title={title} description={description} actions={actions}/></div><nav className="mt-4 flex flex-wrap gap-4 font-semibold [&_a]:underline [&_a]:underline-offset-[3px] [&_a:hover]:text-brand" aria-label={t('commerce.navigation')}><Link to={path(pathsFor.cart)}>{t('commerce.cart.title')}</Link><Link to={path(pathsFor.orders)}>{t('commerce.orders.title')}</Link><Link to={path(pathsFor.sales)}>{t('commerce.sales.title')}</Link><Link to={path(pathsFor.wallet)}>{t('commerce.wallet.title')}</Link><Link to={path(pathsFor.disputes)}>{t('commerce.disputes.title')}</Link></nav><div className="mt-6 grid gap-5 max-[760px]:gap-3">{children}</div></main>;
 }
 
 export function OrderRow({ order }: { order: Order }) {
   const { path, locale, money, status, t } = useCommerce();
-  return <Link className="commerce-order-row" to={path(pathsFor.order(order.id))}>
+  return <Link className="flex items-center justify-between gap-[18px] bg-surface p-[18px] text-ink no-underline hover:bg-surface-high focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-[3px] max-[760px]:items-start [&_span]:grid [&_span]:gap-1 [&_small]:my-1 [&_small]:block [&_small]:text-muted" to={path(pathsFor.order(order.id))}>
     <span><strong>{order.product?.title ?? t('commerce.order.purchase')}</strong><small>{status(order.status, 'commerce.status.')} · {new Date(order.createdAt).toLocaleDateString(locale)}</small></span>
     <strong>{money(order.amount)}</strong>
   </Link>;

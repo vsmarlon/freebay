@@ -12,7 +12,7 @@ function OrdersContent() {
       <option value="ALL">{t('commerce.statusFilter.ALL')}</option>
       {orderStatuses.map((value) => <option key={value} value={value}>{status(value, 'commerce.status.')}</option>)}
     </Select>
-    {query.isPending ? <Loading label={t('commerce.loading')}/> : query.isError ? <ErrorState error={query.error} onRetry={() => void query.refetch()}/> : items.length ? <div className="commerce-list">{items.map((order) => <OrderRow key={order.id} order={order}/>)}</div> : <Empty title={t('commerce.orders.empty')}/>}
+    {query.isPending ? <Loading label={t('commerce.loading')}/> : query.isError ? <ErrorState error={query.error} onRetry={() => void query.refetch()}/> : items.length ? <div className="grid gap-3">{items.map((order) => <OrderRow key={order.id} order={order}/>)}</div> : <Empty title={t('commerce.orders.empty')}/>}
     {query.hasNextPage && <Button variant="secondary" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? t('commerce.loading') : t('commerce.loadMore')}</Button>}
   </CommercePage>;
 }

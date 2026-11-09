@@ -22,7 +22,9 @@ export default defineConfig(({ mode }) => {
       proxy: Object.fromEntries([
         ...(['/auth', '/users', '/products', '/categories', '/social', '/stories', '/cart', '/orders', '/favorites', '/payments', '/wallet', '/reviews', '/disputes', '/chat', '/notifications', '/uploads', '/media', '/reports', '/bug-reports', '/health'] as const).map((path) => [path, {
           target: backend,
-          bypass: (request: import('http').IncomingMessage) => request.headers['x-freebay-api'] === '1' ? undefined : request.url,
+          // ponytail: GIS redirect login POSTs natively (origin accounts.google.com, no header) — always forward it, otherwise the RR CSRF check aborts it.
+        // ponytail: only page navigations stay on the RR dev server; media subresources (<img>/<video>/fonts under these prefixes) proxy through, else /uploads/* would return the SPA shell instead of the file.
+        bypass: (request: import('http').IncomingMessage) => request.headers['x-freebay-api'] === '1' || request.url?.startsWith('/auth/web/google/redirect') || request.headers['sec-fetch-dest'] !== 'document' ? undefined : request.url,
         } satisfies ProxyOptions]),
         ['/socket.io', socketProxy] as const,
       ]),

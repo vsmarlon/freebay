@@ -1,5 +1,0 @@
-@keyframes story-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-.story-progress { transform: scaleX(0); transform-origin: left; }
-.story-progress.is-running { animation: story-progress 6s linear forwards; }
-.story-progress.is-paused { animation-play-state: paused; }
-@media (prefers-reduced-motion: reduce) { .story-progress.is-running { animation: none; } }

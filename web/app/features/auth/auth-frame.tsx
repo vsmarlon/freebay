@@ -26,9 +26,9 @@ export function AuthFrame({ title, description, children, footer }: PropsWithChi
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 sm:px-8">
         <header className="flex items-center justify-between">
           <Link to={path()} className="flex items-center gap-2 font-display text-xl font-black tracking-tight"><BrandMark className="size-6 text-[#660062]" />{t('auth.brand')}</Link>
-          <div className="auth-locale"><SegmentedControl<Locale> label={locale === 'en' ? 'Language' : 'Idioma'} value={locale} onChange={(next) => { if (next !== locale) void navigate(`/${next}${localizedRoute ? `/${localizedRoute}` : ''}`); }} options={[{ value: 'en', label: 'EN' }, { value: 'pt-BR', label: 'PT-BR' }]} /></div>
+          <div className="[&>div]:border [&>div]:p-0.5 [&>div]:before:inset-y-0.5  [&>div]:before:left-0.5 [&>div]:before:w-[calc((100%-4px)/var(--segment-count))] [&_button]:min-h-8 [&_button]:px-2.5 [&_button]:text-xs"><SegmentedControl<Locale> label={locale === 'en' ? 'Language' : 'Idioma'} value={locale} onChange={(next) => { if (next !== locale) void navigate(`/${next}${localizedRoute ? `/${localizedRoute}` : ''}`); }} options={[{ value: 'en', label: 'EN' }, { value: 'pt-BR', label: 'PT-BR' }]} /></div>
         </header>
-        <section className="mx-auto my-auto w-full max-w-md py-12" aria-labelledby="auth-title">
+        <section className="m-auto  w-full max-w-md py-12" aria-labelledby="auth-title">
           <h1 id="auth-title" className="font-display text-4xl font-bold tracking-tight">{title}</h1>
           <p className="mt-3 text-muted">{description}</p>
           <div className="mt-8">{children}</div>

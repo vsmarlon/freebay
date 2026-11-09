@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link, useLoaderData, type LoaderFunctionArgs } from 'react-router';
 import { ApiError } from '../../core/api';
-import { Button, ErrorState, Loading, PageHeader, Surface } from '../../components';
+import { Button, ErrorState, Icon, Loading, PageHeader, Surface, buttonClass } from '../../components';
 import { useLocale, useI18n } from '../../core/locale';
 import { useSession } from '../../core/session';
 import { formatMoney } from '../../core/money';
@@ -12,9 +12,9 @@ import { safeCheckoutUrl } from '../commerce/types';
 import { getProduct } from './server.server';
 import type { ProductSummary } from './types';
 import en from './catalogs/en.json'; import pt from './catalogs/pt-BR.json';
-import './marketplace.css';
+import commerceEn from '../commerce/catalogs/en.json'; import commercePt from '../commerce/catalogs/pt-BR.json';
 
-const catalogs = { en, 'pt-BR': pt };
+const catalogs = { en: { ...commerceEn, ...en }, 'pt-BR': { ...commercePt, ...pt } };
 type LoaderData = { product: ProductSummary };
 export async function loader({ params }: LoaderFunctionArgs): Promise<LoaderData> {
   if (!params.id) throw new Response('Not found', { status: 404 });
@@ -109,20 +109,34 @@ export default function BuyProductRoute() {
     } catch (cause) { setError(cause); }
     finally { setRestoring(false); }
   }
-  if (isPending) return <section className="marketplace"><Loading label={t('common.loading')} /></section>;
-  if (!user) return <section className="marketplace"><Surface><p>{t('auth.required')}</p><Link className="ui-button ui-primary" to={path(paths.login)}>{t('auth.signIn')}</Link></Surface></section>;
-  return <section className="marketplace">
+  if (isPending) return <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5"><Loading label={t('common.loading')} /></section>;
+  if (!user) return <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5"><Surface><p>{t('auth.required')}</p><Link className={buttonClass('primary')} to={path(paths.login)}>{t('auth.signIn')}</Link></Surface></section>;
+  return <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
     <div ref={mountRef} className="sr-only" aria-hidden />
     <PageHeader title={t('buy.title')} />
-    <Surface><h2>{product.title}</h2><p>{t('buy.oneUnit')}</p><strong>{formatMoney(product.price, locale)}</strong>
+    <Surface>
+      <div className="flex items-start gap-4">
+        {product.images[0]
+          ? <img src={product.images[0].url} alt={t('product.imageAlt', { title: product.title, index: 1 })} className="size-24  shrink-0 object-cover" />
+          : <div className="grid size-24  shrink-0 place-items-center bg-surface-mid text-muted"><Icon name="image" size={28} /></div>}
+        <div className="grid gap-1">
+          <h2>{product.title}</h2>
+          <p className="text-muted">{t('buy.oneUnit')}</p>
+          <strong className="text-lg">{formatMoney(product.price, locale)}</strong>
+        </div>
+      </div>
       {orderId && <p>{t('buy.orderCreated')}: <Link to={path(pathsFor.order(orderId))}>{orderId}</Link></p>}
-      <p>{t('buy.quantityViaCart')} <Link to={path(paths.cart)}>{t('commerce.cart.title')}</Link></p>
+      <p className="mt-3">{t('buy.quantityViaCart')} <Link className="inline-flex items-center gap-1.5 font-medium underline" to={path(paths.cart)}><Icon name="cart" size={16} />{t('commerce.cart.title')}</Link></p>
       {error !== null ? <ErrorState error={error instanceof Error ? error : new Error(String(error))} /> : null}
       {storageUnavailable && <p role="alert">{t('buy.storageUnavailable')}</p>}
-      {uncertain && <><p role="alert">{t('buy.uncertain')}</p><Button variant="secondary" disabled={restoring || storageUnavailable} pending={restoring} onClick={() => void findPendingOrders()}>{t('buy.findPending')}</Button></>}
+      {uncertain && <div className="mt-3 bg-surface-mid p-3" role="alert">{t('buy.uncertain')}</div>}
       {candidates.map((candidate) => <div key={candidate.id}><p>{t('buy.orderCreated')}: <Link to={path(pathsFor.order(candidate.id))}>{candidate.id}</Link></p><Button variant="secondary" disabled={restoring} onClick={() => void resumeKnownOrder(candidate)}>{t('buy.resumeOrder')}</Button></div>)}
-      {!uncertain && <Button disabled={busy || restoring || storageUnavailable || isOwner || product.status !== 'ACTIVE' || product.quantity <= product.soldCount} pending={busy || restoring} onClick={() => void begin()}>{orderId ? t('buy.retryPayment') : t('buy.continue')}</Button>}
-      <Link className="ui-button ui-secondary" to={path(paths.orders)}>{t('commerce.orders.title')}</Link>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {uncertain
+          ? <Button variant="secondary" className="flex-1 justify-center" disabled={restoring || storageUnavailable} pending={restoring} onClick={() => void findPendingOrders()}>{t('buy.findPending')}</Button>
+          : <Button className="flex-1 justify-center" disabled={busy || restoring || storageUnavailable || isOwner || product.status !== 'ACTIVE' || product.quantity <= product.soldCount} pending={busy || restoring} onClick={() => void begin()}>{orderId ? t('buy.retryPayment') : t('buy.continue')}</Button>}
+        <Link className={`${buttonClass('secondary')} flex-1 justify-center text-center`} to={path(paths.orders)}>{t('commerce.orders.title')}</Link>
+      </div>
     </Surface>
   </section>;
 }

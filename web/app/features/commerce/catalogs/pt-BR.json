@@ -162,5 +162,6 @@
   "commerce.dispute.notAvailable": "Este pedido não é elegível para disputa.",
   "commerce.review.reconcile": "Conferir status do pedido",
   "commerce.order.reconcile": "Atualize o status do pedido antes de tentar novamente",
-  "commerce.paymentReturn.waitingOrders": "Ainda não há pedidos visíveis para este grupo de pagamento."
+  "commerce.paymentReturn.waitingOrders": "Ainda não há pedidos visíveis para este grupo de pagamento.",
+  "commerce.wallet.requirementsHint": "Há pendências cadastrais. Continue o cadastro de vendedor para concluí-las."
 }

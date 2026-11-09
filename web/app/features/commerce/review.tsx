@@ -1,3 +1,4 @@
+import { buttonClass } from '../../components';
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router';
@@ -40,13 +41,13 @@ function ReviewContent() {
   return <CommercePage title={t('commerce.review.title')}>
     {submit.isSuccess ? <Surface><p role="status">{t('commerce.review.done')}</p></Surface> : !eligibility.canReview || !targetId || !user ? <Surface><p>{eligibility.reason ?? t('commerce.review.unavailable')}</p></Surface> : <Surface>
       <p>{order.product?.title}</p>
-      <form className="commerce-form" onSubmit={(event) => void onSubmit(event)}>
+      <form className="grid gap-4" onSubmit={(event) => void onSubmit(event)}>
         <Input label={t('commerce.review.score')} type="number" min={1} max={5} required value={score} onChange={(event) => setScore(Number(event.currentTarget.value))}/>
         <TextArea label={t('commerce.review.comment')} maxLength={500} value={comment} onChange={(event) => setComment(event.currentTarget.value)}/>
         <Input label={t('commerce.review.photos')} type="file" accept="image/*" multiple disabled={upload.isPending || imageIds.length >= 5} onChange={(event) => { selectImages(event.currentTarget.files); event.currentTarget.value = ''; }}/>
         {imageIds.length > 0 && <p>{imageIds.length} {t('commerce.review.attached')}</p>}
         {(fileError || upload.error || submit.error) && <ErrorState error={fileError ? new Error(fileError) : upload.error ?? submit.error}/>}
-        {submit.isError && <Link className="ui-button ui-secondary" to={path(paths.orders)}>{t('commerce.review.reconcile')}</Link>}
+        {submit.isError && <Link className={buttonClass('secondary')} to={path(paths.orders)}>{t('commerce.review.reconcile')}</Link>}
         <Button disabled={submit.isPending || submit.isError || upload.isPending || imageIds.length > 5} pending={submit.isPending}>{t('commerce.review.submit')}</Button>
       </form>
     </Surface>}

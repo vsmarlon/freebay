@@ -31,3 +31,34 @@ describe('restricted comment approval visibility', () => {
     patch.mockRestore();
   });
 });
+
+describe('social mutation endpoints', () => {
+  // Regression: like/repost now return the authoritative { active, count } state
+  // that the cache merge uses; an "active" post flips to the PATCH (deactivate) verb.
+  it('sends POST for activating and PATCH with the { active, count } payload for deactivating', async () => {
+    const post = vi.spyOn(api, 'post').mockResolvedValue({ active: true, count: 5 });
+    const patch = vi.spyOn(api, 'patch').mockResolvedValue({ active: false, count: 4 });
+
+    await expect(socialApi.likePost('p1', false)).resolves.toEqual({ active: true, count: 5 });
+    expect(post).toHaveBeenCalledWith('/social/posts/p1/like');
+    await expect(socialApi.likePost('p1', true)).resolves.toEqual({ active: false, count: 4 });
+    expect(patch).toHaveBeenCalledWith('/social/posts/p1/unlike');
+    await expect(socialApi.repost('p1', false)).resolves.toEqual({ active: true, count: 5 });
+    expect(post).toHaveBeenCalledWith('/social/posts/p1/share');
+    await expect(socialApi.likeComment('c1', true)).resolves.toEqual({ active: false, count: 4 });
+    expect(patch).toHaveBeenCalledWith('/social/comments/c1/unlike');
+    patch.mockResolvedValueOnce({ active: false });
+    await expect(socialApi.save('p1', true)).resolves.toEqual({ active: false });
+    expect(patch).toHaveBeenCalledWith('/social/posts/p1/unsave');
+
+    post.mockRestore();
+    patch.mockRestore();
+  });
+
+  it('stamps an idempotency key on comment creation', async () => {
+    const post = vi.spyOn(api, 'post').mockResolvedValue({ id: 'c2', postId: 'p1', userId: 'u', content: 'x', createdAt: '', commentsCount: 2 });
+    await socialApi.createComment('p1', 'x');
+    expect(post).toHaveBeenCalledWith('/social/posts/p1/comments', expect.objectContaining({ content: 'x', clientRequestId: expect.any(String) }));
+    post.mockRestore();
+  });
+});

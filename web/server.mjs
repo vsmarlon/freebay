@@ -64,7 +64,8 @@ const serveStatic = async (incoming, outgoing) => {
 
 const server = createServer((incoming, outgoing) => {
   const path = new URL(incoming.url ?? '/', 'http://localhost').pathname;
-  if (!isApiPath(path) || (path !== '/socket.io' && !path.startsWith('/socket.io/') && incoming.headers['x-freebay-api'] !== '1')) {
+  // GIS redirect login POSTs natively (origin accounts.google.com, no header) — always forward it, otherwise it lands in the React Router app.
+  if (!isApiPath(path) || (path !== '/socket.io' && !path.startsWith('/socket.io/') && incoming.headers['x-freebay-api'] !== '1' && path !== '/auth/web/google/redirect')) {
     serveStatic(incoming, outgoing).then((served) => { if (!served && !outgoing.destroyed) sendAppNoCache(incoming, outgoing); });
     return;
   }

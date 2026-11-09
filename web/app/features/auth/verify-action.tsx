@@ -32,9 +32,6 @@ export default function VerifyActionPage() {
   const layoutRef = useCallback((node: HTMLDivElement | null) => {
     if (!node) return;
     window.history.replaceState(window.history.state, '', `${location.pathname}`);
-    let meta = document.querySelector<HTMLMetaElement>('meta[name="referrer"]');
-    if (!meta) { meta = document.createElement('meta'); meta.name = 'referrer'; document.head.append(meta); }
-    meta.content = 'no-referrer';
   }, [location.pathname]);
 
   async function confirm() {
@@ -59,6 +56,7 @@ export default function VerifyActionPage() {
   if (sessionError) return <AuthFrame title={t('auth.stepup.verifyTitle')} description={t('auth.stepup.verifyDescription')}><AuthMessage error>{t('auth.error')}</AuthMessage><Button onClick={() => void reload()}>{t('common.retry')}</Button></AuthFrame>;
   if (!user) return <Navigate to={`/${locale}/login?returnTo=${encodeURIComponent(location.pathname)}`} replace />;
   return <AuthFrame title={t('auth.stepup.verifyTitle')} description={t('auth.stepup.verifyDescription')}>
+    <meta name="referrer" content="no-referrer" />
     <div ref={layoutRef} className="sr-only" aria-hidden />
     {action && validResource && token.startsWith('stepup.') && /^[0-9a-f]{64}$/.test(contextSignature)
       ? <p className="mb-4">{t('auth.stepup.verifyAction', { action: actionLabel })}{resourceId ? ` ${resourceId}` : ''}</p>

@@ -1,3 +1,4 @@
+import { buttonClass } from '../../components';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -45,31 +46,31 @@ function OrderContent() {
   if (orderQuery.isPending) return <CommercePage title={t('commerce.order.title')}><Loading label={t('commerce.loading')}/></CommercePage>;
   if (orderQuery.isError || !order) return <CommercePage title={t('commerce.order.title')}><ErrorState error={orderQuery.error} onRetry={() => void orderQuery.refetch()}/></CommercePage>;
   const confirmText = confirmAction === 'ship' ? t('commerce.order.shipPrompt') : confirmAction === 'deliver' ? t('commerce.order.deliverPrompt') : confirmAction === 'receipt' ? t('commerce.order.confirmReceiptPrompt') : t('commerce.order.cancelPrompt');
-  const participants = <div className="commerce-participants"><p>{t('commerce.order.buyer')}: {order.buyer?.displayName ?? '—'}</p><p>{t('commerce.order.seller')}: {order.seller?.displayName ?? '—'}</p></div>;
-  const reviews = (items: NonNullable<typeof buyerReviewsQuery.data>['reviews'], title: string) => <Surface tone="mid" className="commerce-review-list"><h3>{title}</h3>{items.length ? items.map((review) => <article key={review.id}><p>{review.score}/5 · {review.reviewer?.displayName ?? t('commerce.review.by')}</p>{review.comment && <p>{review.comment}</p>}{review.images?.map((image) => <img key={image.id} src={image.url} alt="" loading="lazy"/> )}</article>) : <p>{t('commerce.review.empty')}</p>}</Surface>;
+  const participants = <div className="grid gap-1 bg-surface-mid p-3"><p>{t('commerce.order.buyer')}: {order.buyer?.displayName ?? '—'}</p><p>{t('commerce.order.seller')}: {order.seller?.displayName ?? '—'}</p></div>;
+  const reviews = (items: NonNullable<typeof buyerReviewsQuery.data>['reviews'], title: string) => <Surface tone="mid" className="grid gap-3 [&_article]:grid [&_article]:gap-2 [&_article]:bg-surface [&_article]:p-3 [&_img]:h-[180px] [&_img]:w-full [&_img]:max-w-[180px] [&_img]:object-cover"><h3>{title}</h3>{items.length ? items.map((review) => <article key={review.id}><p>{review.score}/5 · {review.reviewer?.displayName ?? t('commerce.review.by')}</p>{review.comment && <p>{review.comment}</p>}{review.images?.map((image) => <img key={image.id} src={image.url} alt="" loading="lazy"/> )}</article>) : <p>{t('commerce.review.empty')}</p>}</Surface>;
   return <CommercePage title={t('commerce.order.title')}>
     {transition.error && <><ErrorState error={transition.error}/><Button variant="secondary" onClick={() => { void orderQuery.refetch().then((result) => { if (!result.isError && result.data) { transition.reset(); setReconcileNeeded(false); } }); }}>{t('commerce.order.reconcile')}</Button></>}
-    <div className="commerce-columns">
-      <Surface className="commerce-order-detail">
-        <p className="commerce-muted">{t('commerce.order.reference')}: {order.id}</p>
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(240px,320px)] items-start gap-5 max-[760px]:grid-cols-1">
+      <Surface className="grid content-start gap-[14px] bg-surface p-5 [&_h2]:mb-2 [&_h2]:mt-0 [&_h2]:font-display [&_h2]:text-[22px] [&_h2]:font-bold">
+        <p className="wrap-break-word text-muted">{t('commerce.order.reference')}: {order.id}</p>
         <h2>{order.product?.title ?? t('commerce.order.purchase')}</h2>
         <p>{t('commerce.status')}: <Status tone={order.status === 'COMPLETED' ? 'success' : order.status === 'DISPUTED' || order.status === 'CANCELLED' ? 'error' : order.status === 'PENDING' ? 'warning' : 'info'}>{status(order.status, 'commerce.status.')}</Status></p>
         <p>{t('commerce.order.escrow')}: <Status tone={order.escrowStatus === 'RELEASED' ? 'success' : order.escrowStatus === 'DISPUTED' || order.escrowStatus === 'REFUNDED' ? 'error' : 'warning'}>{status(order.escrowStatus, 'commerce.escrow.')}</Status></p>
-        <dl className="commerce-money-list"><div><dt>{t('commerce.order.amount')}</dt><dd>{money(order.amount)}</dd></div><div><dt>{t('commerce.order.fee')}</dt><dd>{money(order.platformFee)}</dd></div><div><dt>{t('commerce.order.sellerAmount')}</dt><dd>{money(order.sellerAmount)}</dd></div></dl>
+        <dl className="my-0 grid gap-2 [&_div]:flex [&_div]:justify-between [&_div]:gap-3 [&_dt]:text-muted [&_dd]:m-0 [&_dd]:font-bold"><div><dt>{t('commerce.order.amount')}</dt><dd>{money(order.amount)}</dd></div><div><dt>{t('commerce.order.fee')}</dt><dd>{money(order.platformFee)}</dd></div><div><dt>{t('commerce.order.sellerAmount')}</dt><dd>{money(order.sellerAmount)}</dd></div></dl>
         {participants}
-        <div className="commerce-actions">
+        <div className="flex flex-wrap items-center gap-[10px]">
           {order.buyerId === user?.id && order.status === 'PENDING' && !order.paymentGroupId && <Button pending={resumePayment.isPending} disabled={resumePayment.isPending} onClick={() => resumePayment.mutate()}>{t('commerce.order.pay')}</Button>}
           {actions?.markShipped && <Button variant="secondary" disabled={reconcileNeeded} onClick={() => setConfirmAction('ship')}>{t('commerce.order.ship')}</Button>}
           {actions?.markDelivered && <Button variant="secondary" disabled={reconcileNeeded} onClick={() => setConfirmAction('deliver')}>{t('commerce.order.deliver')}</Button>}
           {actions?.confirmReceipt && <Button disabled={reconcileNeeded} onClick={() => setConfirmAction('receipt')}>{t('commerce.order.confirmReceipt')}</Button>}
           {actions?.cancel && <Button variant="danger" disabled={reconcileNeeded} onClick={() => setConfirmAction('cancel')}>{t('commerce.order.cancel')}</Button>}
-          {actions?.openDispute && <Link className="ui-button ui-secondary" to={path(pathsFor.disputeOrder(id))}>{t('commerce.order.dispute')}</Link>}
-          {reviewEligibilityQuery.data?.canReview && reviewEligibilityQuery.data.reviewType && <Link className="ui-button ui-secondary" to={path(pathsFor.reviewOrder(id))}>{reviewEligibilityQuery.data.reviewType === 'BUYER_REVIEWING_SELLER' ? t('commerce.review.openSeller') : t('commerce.review.open')}</Link>}
-          {conversationQuery.data ? <Link className="ui-button ui-secondary" to={path(pathsFor.conversation(conversationQuery.data.id))}>{t('commerce.order.chat')}</Link> : actions && !conversationQuery.isPending && <Button variant="secondary" pending={startChat.isPending} onClick={() => startChat.mutate(actions.buyer ? order.sellerId : order.buyerId)}>{t('commerce.order.chat')}</Button>}
+          {actions?.openDispute && <Link className={buttonClass('secondary')} to={path(pathsFor.disputeOrder(id))}>{t('commerce.order.dispute')}</Link>}
+          {reviewEligibilityQuery.data?.canReview && reviewEligibilityQuery.data.reviewType && <Link className={buttonClass('secondary')} to={path(pathsFor.reviewOrder(id))}>{reviewEligibilityQuery.data.reviewType === 'BUYER_REVIEWING_SELLER' ? t('commerce.review.openSeller') : t('commerce.review.open')}</Link>}
+          {conversationQuery.data ? <Link className={buttonClass('secondary')} to={path(pathsFor.conversation(conversationQuery.data.id))}>{t('commerce.order.chat')}</Link> : actions && !conversationQuery.isPending && <Button variant="secondary" pending={startChat.isPending} onClick={() => startChat.mutate(actions.buyer ? order.sellerId : order.buyerId)}>{t('commerce.order.chat')}</Button>}
         </div>
       </Surface>
       {resumePayment.error && <ErrorState error={resumePayment.error} />}
-      <Surface tone="mid" className="commerce-order-timeline">
+      <Surface tone="mid" className="grid gap-[14px] bg-surface p-5 [&_h2]:m-0 [&_h2]:font-display [&_h2]:text-[22px] [&_h2]:font-bold [&_p]:max-w-[72ch] [&_ol]:grid [&_ol]:gap-[10px] [&_ol]:py-0 [&_ol]:ps-5">
         <h2>{t('commerce.order.timeline')}</h2>
         <ol><li>{t('commerce.order.created')}: {new Date(order.createdAt).toLocaleString(locale)}</li><li>{t('commerce.order.current')}: {status(order.status, 'commerce.status.')}</li><li>{t('commerce.order.escrowState')}: {status(order.escrowStatus, 'commerce.escrow.')}</li></ol>
         <p>{t('commerce.order.pendingWarning')}</p>

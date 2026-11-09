@@ -21,6 +21,12 @@ export type Post = {
 export type TimelineEntry = { post: Post; repostId: string | null; repostedAt: string | null; repostedBy: SocialUser | null; isReposted: boolean; sharesCount: number };
 export type CursorPage<T> = { items: T[]; hasMore: boolean; nextCursor?: string | null };
 export type FeedPage = { posts: Post[]; hasMore: boolean; nextCursor?: string | null };
+/** Wire shape of the post-level like/repost mutation endpoints: { success, data: { active, count } }. */
+export type MutationState = { active: boolean; count: number };
+/** Wire shape of the save/unsave endpoints (no denormalized counter to report). */
+export type SaveMutationState = { active: boolean };
+/** Wire shape of POST /social/posts/:id/comments (CreateCommentOutput). */
+export type CreatedComment = Pick<Comment, 'id' | 'postId' | 'userId' | 'content' | 'createdAt'> & { commentsCount: number };
 export type Comment = {
   id: string; postId: string; userId: string; content: string; parentId?: string | null; createdAt: string;
   likesCount: number; isLiked: boolean; isHidden: boolean; user?: SocialUser; replies: Comment[];

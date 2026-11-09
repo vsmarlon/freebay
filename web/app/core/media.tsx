@@ -7,9 +7,11 @@ export function mediaUrl(src: string): string { const url = new URL(src, typeof 
 
 export function useMediaUrl(src: string | null | undefined, enabled = true) {
   const { user, isSigningOut } = useSession();
+  // ponytail: external story media is public and must not go through the authenticated blob endpoint.
+  const external = Boolean(src && /^https?:\/\//.test(src));
   const query = useQuery<string | null>({
     queryKey: ['media', user?.id ?? '', src ?? ''],
-    enabled: Boolean(src && enabled && user && !isSigningOut),
+    enabled: Boolean(src && !external && enabled && user && !isSigningOut),
     queryFn: async ({ signal }) => {
       const blob = await api.blob(src!, { signal });
       return URL.createObjectURL(blob);
@@ -18,7 +20,9 @@ export function useMediaUrl(src: string | null | undefined, enabled = true) {
     gcTime: 5 * 60 * 1000,
     retry: false,
   });
-  if (!src || !enabled || !user || isSigningOut) return { url: null, isPending: false, error: undefined };
+  if (!src || !enabled) return { url: null, isPending: false, error: undefined };
+  if (external) return { url: mediaUrl(src), isPending: false, error: undefined };
+  if (!user || isSigningOut) return { url: null, isPending: false, error: undefined };
   return { url: query.data ?? null, isPending: query.isPending, error: query.error };
 }
 

@@ -1,3 +1,4 @@
+import { buttonClass } from '../../components';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
@@ -20,13 +21,13 @@ function OpenDisputeContent() {
   const participant = user?.id === orderQuery.data.buyerId || user?.id === orderQuery.data.sellerId;
   return <CommercePage title={t('commerce.dispute.open')}>
     <Surface><p>{t('commerce.dispute.order')}: {orderQuery.data.product?.title ?? id}</p>
-      {!participant || !allowedStatus ? <p>{t('commerce.dispute.notAvailable')}</p> : <form className="commerce-form" onSubmit={(event) => { event.preventDefault(); setConfirmOpen(true); }}>
+      {!participant || !allowedStatus ? <p>{t('commerce.dispute.notAvailable')}</p> : <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); setConfirmOpen(true); }}>
         <p>{t('commerce.dispute.describe')}</p>
         <TextArea label={t('commerce.dispute.reason')} required value={reason} onChange={(event) => setReason(event.currentTarget.value)}/>
         <Button disabled={!reason.trim() || create.isPending || uncertain}>{t('commerce.dispute.submit')}</Button>
       </form>}
       {create.error && <ErrorState error={create.error}/>}
-      {uncertain && <Link className="ui-button ui-secondary" to={path('disputes')}>{t('commerce.disputes.title')}</Link>}
+      {uncertain && <Link className={buttonClass('secondary')} to={path('disputes')}>{t('commerce.disputes.title')}</Link>}
     </Surface>
     <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} title={t('commerce.dispute.prompt')} actions={<Button pending={create.isPending} onClick={() => { setConfirmOpen(false); create.mutate(); }}>{t('commerce.confirm')}</Button>}><p>{reason}</p></Dialog>
   </CommercePage>;

@@ -162,5 +162,6 @@
   "commerce.dispute.notAvailable": "This order is not eligible for a dispute.",
   "commerce.review.reconcile": "Check order status",
   "commerce.order.reconcile": "Refresh order status before retrying",
-  "commerce.paymentReturn.waitingOrders": "No orders from this payment group are visible yet."
+  "commerce.paymentReturn.waitingOrders": "No orders from this payment group are visible yet.",
+  "commerce.wallet.requirementsHint": "There are pending requirements. Continue the seller onboarding to complete them."
 }
