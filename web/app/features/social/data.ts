@@ -1,4 +1,5 @@
 import { api } from '../../core/api';
+import type { SocialUser } from './types';
 import type {
   Comment,
   ContentFilter,
@@ -25,6 +26,11 @@ const params = (values: Record<string, string | number | undefined>) => {
 };
 
 export const socialApi = {
+  searchUsers: (term: string, signal?: AbortSignal) =>
+    api.get<{ users: SocialUser[] }>(
+      `/users/search?q=${encodeURIComponent(term)}&limit=10&offset=0`,
+      { signal },
+    ),
   feed: (type: FeedType, contentFilter: ContentFilter, cursor?: string, signal?: AbortSignal) =>
     api.get<FeedPage>(`/social/feed${params({ type, contentFilter, cursor, limit: 20 })}`, {
       signal,

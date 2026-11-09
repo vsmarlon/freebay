@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { ComposerInput, Select, buttonClass } from '../../components';
-import { api } from '../../core/api';
+import { socialApi } from './data';
 import { useSession, RequireAuth } from '../../core/session';
 import { ImageEditor } from '../../components/image-editor';
 import { useI18n } from '../../core/locale';
@@ -47,11 +47,7 @@ function CreatePost({ userId }: { userId: string }) {
   const term = mention?.term ?? '';
   const people = useQuery({
     queryKey: userKey(userId, 'social', 'mention-search', term),
-    queryFn: ({ signal }) =>
-      api.get<{ users: SocialUser[] }>(
-        `/users/search?q=${encodeURIComponent(term)}&limit=10&offset=0`,
-        { signal },
-      ),
+    queryFn: ({ signal }) => socialApi.searchUsers(term, signal),
     enabled: audience === 'EVERYONE' && term.length >= 2,
     gcTime: 0,
     staleTime: 0,
