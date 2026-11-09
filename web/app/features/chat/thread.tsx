@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
+import { useMemo, useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RequireAuth, useSession } from '../../core/session';
 import { useI18n } from '../../core/locale';
@@ -7,12 +7,11 @@ import { pathsFor } from '../../core/routes';
 import { api } from '../../core/api';
 import { useDebouncedValue } from '../../core/use-debounced-value';
 import { useMediaUrl } from '../../core/media';
-import { Avatar, Button, ComposerInput, Dialog, Icon, Select } from '../../components/index';
+import { Button, ComposerInput, Dialog, Icon, Select } from '../../components/index';
 import { LocationPicker } from '../../components/location-picker';
 import { useToast } from '../../components/toast';
 import { ImageEditor } from '../../components/image-editor';
-import en from './catalogs/en.json';
-import ptBR from './catalogs/pt-BR.json';
+import { chatCatalogs } from './catalogs';
 import { chatRepository } from './repository';
 import {
   CHAT_REACTIONS,
@@ -47,8 +46,10 @@ import { useChatSocket } from './hooks/use-chat-socket';
 import { useAudioRecorder } from './hooks/use-audio-recorder';
 import { usePresenceHidden } from './hooks/use-presence-hidden';
 import { MessageItem } from './message-item';
+import { ThreadSidebar } from './thread/thread-sidebar';
+import { useScrollAnchor } from './hooks/use-scroll-anchor';
+import { useProductInquiryDraft } from './hooks/use-product-inquiry-draft';
 
-const catalogs = { en, 'pt-BR': ptBR };
 const uuid = () => crypto.randomUUID();
 const isMediaType = (
   type: string,
@@ -64,10 +65,9 @@ export async function startConversation(targetUserId: string, productId?: string
 function Thread() {
   const { id = '', locale = 'pt-BR' } = useParams();
   const session = useSession();
-  const { t, path } = useI18n(catalogs);
+  const { t, path } = useI18n(chatCatalogs);
   const { show: showToast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
   const client = useQueryClient();
 
   const transcriptQuery = useThreadTranscript(id);
@@ -137,11 +137,9 @@ function Thread() {
   const recorder = useAudioRecorder((file, durationMs) => void upload(file, durationMs));
   const recording = recorder.recording;
 
-  const scrollNodeRef = useRef<HTMLDivElement | null>(null);
-  const previousHeight = useRef<number | null>(null);
+  const { scrollNodeRef, capture: captureScroll } = useScrollAnchor(messages.length);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const draftEdited = useRef(false);
-  const inquiryConsumed = useRef(false);
 
   const send = useMutation({
     mutationFn: (payload: SendPayload) => chatRepository.send(id, payload),
@@ -192,45 +190,19 @@ function Thread() {
   });
   const videoUrl = videoToSend ? (videoPreview.data ?? null) : null;
 
-  // Product-inquiry prefill arrives as router state keyed to this conversation+
-  // product pair; consumes exactly once and clears the location state.
-  useEffect(() => {
-    if (!newestPage || !record || inquiryConsumed.current) return;
-    const inquiry = (
-      location.state as {
-        productInquiryDraft?: { productId?: string; targetUserId?: string };
-      } | null
-    )?.productInquiryDraft;
-    if (!inquiry) return;
-    inquiryConsumed.current = true;
-    if (
-      !draftEdited.current &&
-      !draft &&
-      inquiry.productId === record.product?.id &&
-      inquiry.targetUserId === newestPage.otherUserId
-    )
-      setDraft(t('chat.productInquiryGreeting'));
-    void navigate(`${location.pathname}${location.search}${location.hash}`, {
-      replace: true,
-      state: null,
-    });
-  }, [newestPage, record, draft, location, navigate, t]);
-
-  // External-DOM follow: after each commit changing the list height, restore
-  // the viewport offset trimmed by prepending older pages (default bottom-stick).
-  useEffect(() => {
-    const scroll = scrollNodeRef.current;
-    if (!scroll) return;
-    if (previousHeight.current !== null) {
-      scroll.scrollTop += scroll.scrollHeight - previousHeight.current;
-      previousHeight.current = null;
-    } else scroll.scrollTop = scroll.scrollHeight;
-  }, [messages.length]);
+  useProductInquiryDraft({
+    ready: Boolean(newestPage && record),
+    productId: record?.product?.id,
+    otherUserId: newestPage?.otherUserId,
+    draft,
+    draftEdited: draftEdited.current,
+    greeting: t('chat.productInquiryGreeting'),
+    onDraft: setDraft,
+  });
 
   async function loadOlder() {
     if (!transcriptQuery.hasNextPage || send.isPending) return;
-    const scroll = scrollNodeRef.current;
-    previousHeight.current = scroll?.scrollHeight ?? 0;
+    captureScroll();
     try {
       await transcriptQuery.fetchNextPage();
     } catch {
@@ -709,47 +681,7 @@ function Thread() {
   const pending = send.isPending;
   return (
     <div className="mx-auto grid min-h-0 min-w-0 w-full flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-3 p-3 text-ink sm:p-6 md:grid-cols-[320px_minmax(0,1fr)]">
-      <aside
-        className="hidden min-h-0 min-w-0 overflow-x-hidden overflow-y-auto surface p-3 md:block"
-        aria-labelledby="chat-list-title"
-      >
-        <h2 id="chat-list-title" className="mb-3 font-display text-xl font-bold">
-          {t('chat.title')}
-        </h2>
-        <nav aria-label={t('chat.title')}>
-          <ul className="grid min-w-0 gap-1">
-            {sidebarConversations.map((item) => (
-              <li key={`${item.threadType}:${item.id}`} className="min-w-0">
-                <Link
-                  aria-current={item.id === id ? 'page' : undefined}
-                  className={`flex min-w-0 items-center gap-2 p-3 ${item.id === id ? 'bg-surface-high' : 'hover:bg-surface-mid'}`}
-                  to={path(pathsFor.conversation(item.id))}
-                  title={`${item.otherUser.displayName} — ${item.product?.title ?? item.orderInfo?.productTitle ?? item.lastMessage?.content ?? item.status}`}
-                >
-                  <span className="flex-none">
-                    <Avatar
-                      src={item.otherUser.avatarUrl}
-                      name={item.otherUser.displayName}
-                      size={36}
-                    />
-                  </span>
-                  <span className="min-w-0 flex-1 overflow-hidden">
-                    <span className="block whitespace-nowrap font-semibold">
-                      {item.otherUser.displayName}
-                    </span>
-                    <span className="block whitespace-nowrap text-xs text-muted">
-                      {item.product?.title ??
-                        item.orderInfo?.productTitle ??
-                        item.lastMessage?.content ??
-                        item.status}
-                    </span>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </aside>
+      <ThreadSidebar conversations={sidebarConversations} activeId={id} />
       <section className="flex min-h-0 min-w-0 flex-col">
         <header className="flex shrink-0 flex-wrap items-center gap-2 surface p-3 sm:p-4">
           <Link

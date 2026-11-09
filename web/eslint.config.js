@@ -24,7 +24,6 @@ const legacyEffectFiles = [
   'app/components/location-picker.tsx',
   'app/features/auth/step-up-dialog.tsx',
   'app/features/chat/media.tsx',
-  'app/features/chat/thread.tsx',
   'app/features/commerce/checkout.tsx',
   'app/features/marketplace/buy.tsx',
   'app/features/social/post-media.tsx',
