@@ -16,17 +16,13 @@ const bannedIconImports = [{
   ],
 }];
 
-// Effects policy (AGENTS.md): no useEffect outside a named custom hook. These files still
-// carry the pre-policy pattern; delete an entry as its file migrates. Hooks that subscribe
-// to an external system (use-chat-socket, use-audio-recorder, use-debounced-value,
-// location-picker) are listed only until they move under a hooks/ folder with the guard.
+// Effects policy (AGENTS.md): no useEffect in components. It is allowed inside a named
+// custom hook (`app/**/hooks/**` or `use-*.ts`), which is where external-system
+// subscriptions live. These files still carry the old component-level pattern; delete an
+// entry as its file migrates.
 const legacyEffectFiles = [
   'app/components/location-picker.tsx',
-  'app/core/use-debounced-value.ts',
-  'app/features/account/notifications.tsx',
   'app/features/auth/step-up-dialog.tsx',
-  'app/features/chat/hooks/use-audio-recorder.ts',
-  'app/features/chat/hooks/use-chat-socket.ts',
   'app/features/chat/media.tsx',
   'app/features/chat/thread.tsx',
   'app/features/commerce/checkout.tsx',
@@ -76,7 +72,7 @@ export default [
   },
   {
     files: ['app/**/*.{ts,tsx}'],
-    ignores: legacyEffectFiles,
+    ignores: [...legacyEffectFiles, 'app/**/hooks/**', 'app/**/use-*.ts'],
     rules: {
       'no-restricted-syntax': ['error',
         { selector: "CallExpression[callee.name='useEffect']", message: 'Use a custom hook, a callback ref, useSyncExternalStore or a query. See web playbook section 4.' },

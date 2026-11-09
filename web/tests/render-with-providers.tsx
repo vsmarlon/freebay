@@ -5,9 +5,15 @@ import { MemoryRouter } from 'react-router';
 
 export function renderWithProviders(ui: ReactElement, route = '/') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const tree = (element: ReactElement) => (
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
-    </QueryClientProvider>,
+      <MemoryRouter initialEntries={[route]}>{element}</MemoryRouter>
+    </QueryClientProvider>
   );
+  const result = render(tree(ui));
+  return {
+    ...result,
+    client,
+    rerenderUi: (element: ReactElement) => result.rerender(tree(element)),
+  };
 }
