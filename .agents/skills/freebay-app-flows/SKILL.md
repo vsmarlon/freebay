@@ -11,7 +11,7 @@ Before claiming or changing capability, read [`docs/FEATURE_TRUTH.md`](../../../
 
 - Navigate only with `AppRoutes` constants/builders. Preserve all five `AppShell` tab indexes and shell state; nested gestures must not switch tabs. Chat retains reverse scrolling, keyboard behavior, header and bottom controls.
 - New UI copy uses generated `AppLocalizations`; shared state follows the frontend guidance in `frontend/AGENTS.md` (generated Riverpod providers and feature-boundary exports).
-- Auth includes email/password, Google and biometrics; do not invent guest login. Token/session state is sensitive; logout and account switching must not retain user-scoped providers.
+- Auth includes email/password, Google, Apple and biometrics; Apple uses the native SDK, but provider/device behavior still needs runtime proof. Do not invent guest login. Token/session state is sensitive; logout and account switching must not retain user-scoped providers.
 - Money is integer cents. Payment settlement is provider-webhook driven, not inferred from a checkout success screen. Stripe paths and operational readiness are distinct; no Monero/crypto flow is established.
 - Enforce authorization/privacy at the backend boundary, including private media, blocked users and view-once access. Do not claim screenshot prevention or atomic single-open without evidence.
 

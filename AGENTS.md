@@ -98,6 +98,15 @@ make test
 
 For a perf-sensitive journey, use [`freebay-perf`](.agents/skills/freebay-perf/SKILL.md) and the flow gate `node scripts/perf-check.js <flow> --device <id>` when its backend, fixture, and device prerequisites are available. See the skill for valid flows and evidence requirements. Blocked as of 2026-10-26: the frontend integration-test driver was removed with the no-frontend-tests rule; do not re-add it without the owner.
 
+## Git e testes: comandos proibidos sem confirmação do owner
+
+Regras rígidas, reforçadas mecanicamente por `permissions` em `opencode.json` (o agente **nem consegue** executá-los):
+
+- **Nunca rode, em nenhuma sessão/agente:** `git commit`, `git push`, `git add .`/`-A`/`--all`/`-u`/`--pathspec-from-file`, `git stash`, `git reset`, `git rebase`, `git merge`, `git cherry-pick`, `git clean`, `git rm`, `git checkout`, ou suítes inteiras de teste (`npm test`, `npm run test*`, `make test`, `npx vitest run` sem arquivo, `npx playwright test`, `flutter test`).
+- **Verificação é sempre arquivo único e escopada:** `npx tsc --noEmit`, `npx eslint <arquivos da tarefa>`, `npx vitest run <arquivo específico>` — nada de rodar a suíte inteira para "confirmar".
+- **Antes de QUALQUER ação proibida** (mesmo que a tarefa a peça), pare e **confirme com o owner usando a ferramenta de pergunta (question tool)** e espere a resposta. Commits ficam por conta do owner; agentes apenas preparam código.
+- **Outras sessões podem estar editando o repo ao mesmo tempo.** Trabalhe só nos arquivos da sua tarefa. Se o working tree estiver sujo com trabalho de outra sessão, não toque nesses arquivos e **não use stash/reset/checkout para "limpar"** — pare e pergunte ao owner.
+
 ## Skills index
 
 See [`.agents/skills/`](.agents/skills/) for flow, Flutter, backend, data, design, Prisma, performance, system-design, device, Stripe, and test-audit instructions. Load only the skill relevant to the task; its instructions refine this shared contract.

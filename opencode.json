@@ -13,5 +13,22 @@
         "disabled": false
       }
     }
-  }
+  },
+  "permissions": [
+    { "action": "shell", "resource": "git stash*", "effect": "deny" },
+    { "action": "shell", "resource": "git reset*", "effect": "deny" },
+    { "action": "shell", "resource": "git rebase*", "effect": "deny" },
+    { "action": "shell", "resource": "git merge*", "effect": "deny" },
+    { "action": "shell", "resource": "git cherry-pick*", "effect": "deny" },
+    { "action": "shell", "resource": "git clean *", "effect": "deny" },
+    { "action": "shell", "resource": "git checkout *", "effect": "deny" },
+    { "action": "shell", "resource": "git rm *", "effect": "deny" },
+    { "action": "shell", "resource": "git add .", "effect": "deny" },
+    { "action": "shell", "resource": "git add -A*", "effect": "deny" },
+    { "action": "shell", "resource": "git add --all*", "effect": "deny" },
+    { "action": "shell", "resource": "git add -u*", "effect": "deny" },
+    { "action": "shell", "resource": "git add --pathspec-from-file*", "effect": "deny" },
+    { "action": "shell", "resource": "make test*", "effect": "deny" },
+    { "action": "shell", "resource": "flutter test *", "effect": "deny" }
+  ]
 }

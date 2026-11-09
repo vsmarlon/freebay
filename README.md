@@ -27,13 +27,12 @@ Consulte [`docs/FEATURE_TRUTH.md`](docs/FEATURE_TRUTH.md) para capacidades verif
 | Tests | ✅ Unit test |
 
 - Métodos: PIX, CREDIT_CARD
-- Providers reais: **AbacatePay** (PIX), **PagBank** (payouts). O enum `PaymentProvider` ainda usa labels legados `PAGARME`/`WOOVI` por razões históricas — os adapters por trás apontam para AbacatePay/PagBank.
-- Idempotency keys para evitar duplicatas
+- Providers reais: STRIPE.
+- Idempotency keys para evitar duplicatas - USE STRIPE SKILLS TO HANDLE FLUXES.
 - PIX QR Code com expiração
 - **Backend:** `nest-backend/src/modules/payments/`
 - **Frontend:** `frontend/lib/features/payments/`
 
-O que foi observado separadamente no código em `4558181`: o módulo importa `StripeProvider`, que lê `STRIPE_SECRET_KEY`; os use cases de PaymentIntent/Checkout Session, Connect e processamento de eventos Stripe existem. Isso é evidência de implementação, não aprovação do provider pelo owner nem comprovação de pagamentos reais. Consulte `nest-backend/src/modules/payments/` e [`0001-payment-sheet-migration.md`](nest-backend/src/modules/payments/docs/adr/0001-payment-sheet-migration.md) para detalhes técnicos.
 
 ## Arquitetura
 
