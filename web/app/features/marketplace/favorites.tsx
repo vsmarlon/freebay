@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiError, api } from '../../core/api';
+import { ApiError } from '../../core/api';
+import { favoritesApi, type FavoriteResponse } from './api';
 import { Avatar, Button, Empty, ErrorState, Loading, PageHeader, Surface } from '../../components';
 import { useSession } from '../../core/session';
 import { useLocale, useI18n } from '../../core/locale';
@@ -16,8 +17,6 @@ import pt from './catalogs/pt-BR.json';
 import { PageSection } from '../../components/page-section';
 
 const catalogs = { en, 'pt-BR': pt };
-type FavoriteRecord = { id: string; product: ProductSummary };
-type FavoriteResponse = FavoriteRecord[] | { products: Array<ProductSummary | FavoriteRecord> };
 function entriesFrom(value: FavoriteResponse): ProductSummary[] {
   const rows = Array.isArray(value) ? value : value.products;
   return rows.map((row) => toProductSummary('product' in row ? row.product : row));
@@ -32,7 +31,7 @@ export default function FavoritesRoute() {
   const query = useQuery({
     queryKey: userId ? userKey(userId, 'favorites', 'list') : ['user', 'signed-out', 'favorites'],
     enabled: Boolean(userId),
-    queryFn: async () => entriesFrom(await api.get<FavoriteResponse>('/favorites')),
+    queryFn: async ({ signal }) => entriesFrom(await favoritesApi.list(signal)),
   });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
@@ -63,7 +62,7 @@ export default function FavoritesRoute() {
     setBusyId(id);
     setActionError('');
     try {
-      await api.post(`/favorites/${id}`);
+      await favoritesApi.add(id);
       await client.invalidateQueries({ queryKey: userKey(signedInUserId, 'favorites') });
     } catch (cause) {
       if (cause instanceof ApiError && cause.status === 401) navigate(path(paths.login));

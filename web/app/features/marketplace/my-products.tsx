@@ -10,13 +10,12 @@ import {
   Surface,
   buttonClass,
 } from '../../components';
-import { api } from '../../core/api';
+import { myProductsApi } from './api';
 import { useLocale, useI18n } from '../../core/locale';
 import { useSession } from '../../core/session';
 import { paths, pathsFor } from '../../core/routes';
 import { mediaUrl } from '../../core/media';
 import { userKey } from '../../core/query-client';
-import type { ProductSummary } from './types';
 import { toProductSummary } from './types';
 import en from './catalogs/en.json';
 import pt from './catalogs/pt-BR.json';
@@ -31,7 +30,7 @@ export default function MyProductsRoute() {
     queryKey: userKey(user?.id ?? 'anonymous', 'products', 'mine'),
     enabled: Boolean(user),
     queryFn: async () => {
-      const data = await api.get<{ products: ProductSummary[] }>('/products/mine/all');
+      const data = await myProductsApi.list();
       return { products: data.products.map(toProductSummary) };
     },
   });

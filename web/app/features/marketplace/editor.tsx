@@ -3,7 +3,8 @@ import { useLoaderData, useNavigate, type LoaderFunctionArgs } from 'react-route
 import { PageSection } from '../../components/page-section';
 import { RouteErrorBoundary } from '../../components/route-error-boundary';
 import { useQueryClient } from '@tanstack/react-query';
-import { ApiError, api } from '../../core/api';
+import { ApiError } from '../../core/api';
+import { productEditorApi } from './api';
 import {
   Button,
   ComposerInput,
@@ -176,7 +177,7 @@ export default function ListingEditorRoute() {
     setBusy(true);
     try {
       if (product) {
-        await api.patch(`/products/${product.id}`, payload);
+        await productEditorApi.update(product.id, payload);
       } else {
         const body = new FormData();
         for (const [key, value] of Object.entries(payload)) body.set(key, String(value));
@@ -185,7 +186,7 @@ export default function ListingEditorRoute() {
           'mediaMetadata',
           JSON.stringify(files.map((_, fileIndex) => ({ fileIndex, type: 'IMAGE', hotspots: [] }))),
         );
-        const created = await api.post<{ id: string }>('/products', body);
+        const created = await productEditorApi.create(body);
         await invalidateListings();
         navigate(path(pathsFor.product(created.id)));
         return;
@@ -210,7 +211,7 @@ export default function ListingEditorRoute() {
     setBusy(true);
     setError('');
     try {
-      await api.patch(`/products/${product.id}/delete`);
+      await productEditorApi.remove(product.id);
       await invalidateListings();
       setConfirmDelete(false);
       navigate(path(paths.explore));

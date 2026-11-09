@@ -12,7 +12,7 @@ import {
   buttonClass,
 } from '../../components';
 import { PageSection } from '../../components/page-section';
-import { api } from '../../core/api';
+import { userReviewsApi } from './api';
 import { mediaUrl } from '../../core/media';
 import { useLocale, useI18n } from '../../core/locale';
 import { pathsFor } from '../../core/routes';
@@ -21,20 +21,6 @@ import pt from './catalogs/pt-BR.json';
 
 const catalogs = { en, 'pt-BR': pt };
 type ReviewType = '' | 'BUYER_REVIEWING_SELLER' | 'SELLER_REVIEWING_BUYER';
-type ReviewPage = {
-  reviews: Array<{
-    id: string;
-    score: number;
-    comment: string | null;
-    type: Exclude<ReviewType, ''>;
-    createdAt: string;
-    images: Array<{ id: string; url: string; order: number }>;
-    reviewer: { id: string; displayName: string; avatarUrl: string | null; isVerified: boolean };
-  }>;
-  total: number;
-  offset: number;
-  limit: number;
-};
 
 export default function UserReviewsRoute() {
   const { id = '' } = useParams();
@@ -48,9 +34,7 @@ export default function UserReviewsRoute() {
     queryFn: () => {
       const params = new URLSearchParams({ offset: String(offset), limit: '20' });
       if (type) params.set('type', type);
-      return api.get<ReviewPage>(`/reviews/users/${encodeURIComponent(id)}?${params}`, {
-        auth: false,
-      });
+      return userReviewsApi.page(id, params);
     },
   });
   return (

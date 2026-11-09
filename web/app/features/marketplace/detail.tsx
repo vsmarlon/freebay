@@ -11,7 +11,8 @@ import {
 import { PageSection } from '../../components/page-section';
 import { RouteErrorBoundary } from '../../components/route-error-boundary';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiError, api } from '../../core/api';
+import { ApiError } from '../../core/api';
+import { productApi } from './api';
 import {
   Avatar,
   Button,
@@ -56,21 +57,6 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
       ]
     : [{ title: 'Freebay' }];
 
-type Favorite = { isFavorited: boolean };
-type Conversation = { conversationId: string };
-type FollowStatus = { isFollowing: boolean; followersCount: number; followingCount: number };
-type SellerProfile = { reputationScore: number; totalReviews: number };
-type ReviewList = {
-  reviews: Array<{
-    id: string;
-    score: number;
-    comment: string | null;
-    reviewer: { displayName: string };
-  }>;
-  total: number;
-  offset: number;
-  limit: number;
-};
 function listingStatusTone(
   status: ProductSummary['status'],
 ): 'success' | 'warning' | 'error' | 'info' | 'neutral' {
@@ -105,7 +91,7 @@ export default function ProductDetailRoute() {
   const favorite = useQuery({
     queryKey: favoriteKey,
     enabled: Boolean(user) && !isOwner,
-    queryFn: () => api.get<Favorite>(`/favorites/check/${product.id}`),
+    queryFn: ({ signal }) => productApi.favoriteState(product.id, signal),
   });
   const followKey = user
     ? userKey(user.id, 'follow', product.sellerId)
@@ -113,16 +99,15 @@ export default function ProductDetailRoute() {
   const follow = useQuery({
     queryKey: followKey,
     enabled: Boolean(user) && !isOwner,
-    queryFn: () => api.get<FollowStatus>(`/users/${product.sellerId}/is-following`),
+    queryFn: ({ signal }) => productApi.followState(product.sellerId, signal),
   });
   const seller = useQuery({
     queryKey: ['public', 'seller', product.sellerId],
-    queryFn: () => api.get<SellerProfile>(`/users/${product.sellerId}`, { auth: false }),
+    queryFn: ({ signal }) => productApi.seller(product.sellerId, signal),
   });
   const reviews = useQuery({
     queryKey: ['public', 'reviews', product.sellerId],
-    queryFn: () =>
-      api.get<ReviewList>(`/reviews/users/${product.sellerId}?limit=5`, { auth: false }),
+    queryFn: ({ signal }) => productApi.reviews(product.sellerId, signal),
   });
   const saved = favorite.data?.isFavorited === true;
   const redirectRef = useCallback(
@@ -146,7 +131,7 @@ export default function ProductDetailRoute() {
     setBusy(true);
     setMessage('');
     try {
-      await api.post(`/favorites/${product.id}`);
+      await productApi.addFavorite(product.id);
       await cache.invalidateQueries({ queryKey: favoriteKey });
       await cache.invalidateQueries({ queryKey: userKey(user.id, 'favorites') });
     } catch (cause) {
@@ -160,7 +145,7 @@ export default function ProductDetailRoute() {
     setBusy(true);
     setMessage('');
     try {
-      await api.post(`/cart/${product.id}`, { quantity: selectedQuantity });
+      await productApi.addToCart(product.id, selectedQuantity);
       await cache.invalidateQueries({ queryKey: userKey(user.id, 'commerce', 'cart') });
       setMessage(t('product.added'));
     } catch (cause) {
@@ -174,7 +159,7 @@ export default function ProductDetailRoute() {
     setBusy(true);
     setMessage('');
     try {
-      const conversation = await api.post<Conversation>('/chat/conversations', {
+      const conversation = await productApi.contactSeller({
         targetUserId: product.sellerId,
         productId: product.id,
       });
@@ -192,8 +177,8 @@ export default function ProductDetailRoute() {
     setBusy(true);
     setMessage('');
     try {
-      if (follow.data?.isFollowing) await api.patch(`/users/${product.sellerId}/unfollow`);
-      else await api.post(`/users/${product.sellerId}/follow`);
+      if (follow.data?.isFollowing) await productApi.unfollow(product.sellerId);
+      else await productApi.follow(product.sellerId);
       await cache.invalidateQueries({ queryKey: followKey });
       await cache.invalidateQueries({ queryKey: userKey(user.id, 'profile', product.sellerId) });
     } catch (cause) {
