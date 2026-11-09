@@ -238,6 +238,10 @@ describe('Marketplace journey (HTTP + real database)', () => {
     expect(typeof sellerData.refreshToken).toBe('string');
     sellerToken = sellerData.token;
     sellerId = sellerData.user.id;
+    await prisma.user.update({
+      where: { id: sellerId },
+      data: { emailVerified: true },
+    });
 
     const buyer = await post('/auth/register', {
       body: {
@@ -248,7 +252,12 @@ describe('Marketplace journey (HTTP + real database)', () => {
       },
     });
     expect(buyer.status).toBe(201);
-    buyerToken = parseData<AuthData>(buyer).token;
+    const buyerData = parseData<AuthData>(buyer);
+    buyerToken = buyerData.token;
+    await prisma.user.update({
+      where: { id: buyerData.user.id },
+      data: { emailVerified: true },
+    });
   });
 
   it('offers available usernames when the requested handle is taken', async () => {

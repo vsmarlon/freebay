@@ -7,7 +7,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import type { Express } from 'express';
 import * as fileUtils from '../../src/shared/utils/file.utils';
-import { readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { AllExceptionsFilter } from '../../src/shared/http/exception-filter';
 import { TransformInterceptor } from '../../src/shared/http/transform.interceptor';
@@ -404,7 +404,7 @@ describe('conversation API (HTTP + guarded PostgreSQL)', () => {
     const payload = { content: 'Image quote @mentioned', sourcePostId, mentionIds: [mentioned.id], clientRequestId: requestId };
     const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', 'base64');
     const directory = join(process.cwd(), 'uploads', 'post');
-    const beforeFiles = new Set(readdirSync(directory));
+    const beforeFiles = new Set(existsSync(directory) ? readdirSync(directory) : []);
     const saveSpy = jest.spyOn(fileUtils, 'saveUpload');
     try {
       const [first, retry] = await Promise.all([quoteWithImage(payload, png), quoteWithImage(payload, png)]);
