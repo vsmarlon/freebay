@@ -91,9 +91,9 @@ class _BiometrySettingTileState extends ConsumerState<BiometrySettingTile> {
       leading: Icon(Icons.fingerprint, color: context.textPrimary, size: 22),
       title: Text(
         l10n(context).profileBiometry,
-        style: AppTypography.bodyMedium.weight(500).copyWith(
-          color: context.textPrimary,
-        ),
+        style: AppTypography.bodyMedium
+            .weight(500)
+            .copyWith(color: context.textPrimary),
       ),
       subtitle: Text(
         isAvailable

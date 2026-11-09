@@ -139,10 +139,12 @@ class StickerLayerView extends StatelessWidget {
         ],
         Text(
           text,
-          style: AppTypography.h2.weight(800).copyWith(
-            fontSize: size * .45,
-            color: dark ? const Color(0xDD000000) : AppColors.white,
-          ),
+          style: AppTypography.h2
+              .weight(800)
+              .copyWith(
+                fontSize: size * .45,
+                color: dark ? const Color(0xDD000000) : AppColors.white,
+              ),
         ),
       ],
     ),

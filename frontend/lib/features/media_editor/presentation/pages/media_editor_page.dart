@@ -556,13 +556,15 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const CircularProgressIndicator(color: AppColors.white),
+                          const CircularProgressIndicator(
+                            color: AppColors.white,
+                          ),
                           Spacing.vMd,
                           Text(
                             l10n(context).mediaEditorProcessing,
-                            style: AppTypography.bodyMedium.weight(700).copyWith(
-                              color: AppColors.white,
-                            ),
+                            style: AppTypography.bodyMedium
+                                .weight(700)
+                                .copyWith(color: AppColors.white),
                           ),
                         ],
                       ),
@@ -830,7 +832,10 @@ class _MediaEditorPageState extends ConsumerState<MediaEditorPage> {
                 backgroundColor: context.colors.primaryContainer,
                 shape: const RoundedRectangleBorder(),
                 onPressed: _onExport,
-                child: Icon(Icons.send, color: context.colors.onPrimaryContainer),
+                child: Icon(
+                  Icons.send,
+                  color: context.colors.onPrimaryContainer,
+                ),
               ),
             ],
           ),

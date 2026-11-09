@@ -155,9 +155,9 @@ class _TextEditorOverlayState extends State<TextEditorOverlay> {
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: ChoiceChip(
                         label: const Text('Aa'),
-                        labelStyle: AppTypography.labelLarge.weight(700).copyWith(
-                          fontFamily: font,
-                        ),
+                        labelStyle: AppTypography.labelLarge
+                            .weight(700)
+                            .copyWith(fontFamily: font),
                         selected: _layer.font == font,
                         onSelected: (_) => setState(
                           () => _layer = _layer.copyWith(font: font),
