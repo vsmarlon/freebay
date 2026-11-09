@@ -100,11 +100,12 @@ For a perf-sensitive journey, use [`freebay-perf`](.agents/skills/freebay-perf/S
 
 ## Git e testes: comandos proibidos sem confirmação do owner
 
-Regras rígidas, reforçadas mecanicamente por `permissions` em `opencode.json` (o agente **nem consegue** executá-los):
+Regras rígidas, reforçadas mecanicamente por `permissions` em `opencode.json`:
 
-- **Nunca rode, em nenhuma sessão/agente:** `git commit`, `git push`, `git add .`/`-A`/`--all`/`-u`/`--pathspec-from-file`, `git stash`, `git reset`, `git rebase`, `git merge`, `git cherry-pick`, `git clean`, `git rm`, `git checkout`, ou suítes inteiras de teste (`npm test`, `npm run test*`, `make test`, `npx vitest run` sem arquivo, `npx playwright test`, `flutter test`).
+- **Commit e push são permitidos ao agente** (owner liberou em 2026-11-09 removendo os denies de `git commit*`/`git push*`). Commits devem ser modulares (um por módulo/frente) e o agente deve relatar o que foi commitado. Se um `permissions.deny` ainda bloquear, o owner remove — não tente burlar.
+- **Nunca rode, em nenhuma sessão/agente:** `git add .`/`-A`/`--all`/`-u`/`--pathspec-from-file` (use paths explícitos), `git stash`, `git reset`, `git rebase`, `git merge`, `git cherry-pick`, `git clean`, `git rm`, `git checkout`, ou suítes inteiras de teste (`npm test`, `npm run test*`, `make test`, `npx vitest run` sem arquivo, `npx playwright test`, `flutter test`).
 - **Verificação é sempre arquivo único e escopada:** `npx tsc --noEmit`, `npx eslint <arquivos da tarefa>`, `npx vitest run <arquivo específico>` — nada de rodar a suíte inteira para "confirmar".
-- **Antes de QUALQUER ação proibida** (mesmo que a tarefa a peça), pare e **confirme com o owner usando a ferramenta de pergunta (question tool)** e espere a resposta. Commits ficam por conta do owner; agentes apenas preparam código.
+- **Antes de QUALQUER ação proibida** (mesmo que a tarefa a peça), pare e **confirme com o owner usando a ferramenta de pergunta (question tool)** e espere a resposta.
 - **Outras sessões podem estar editando o repo ao mesmo tempo.** Trabalhe só nos arquivos da sua tarefa. Se o working tree estiver sujo com trabalho de outra sessão, não toque nesses arquivos e **não use stash/reset/checkout para "limpar"** — pare e pergunte ao owner.
 
 ## Skills index
