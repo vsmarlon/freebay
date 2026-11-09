@@ -4,7 +4,6 @@ import { Frame, Panel, useAccountText } from './account';
 import { usePreferences, type Theme } from '../../core/preferences';
 import { paths } from '../../core/routes';
 import { useSession } from '../../core/session';
-import { userKey } from '../../core/query-client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { accountApi } from './api';
 import { Icon, SegmentedControl, Toggle } from '../../components';
@@ -34,7 +33,7 @@ export default function SettingsPage() {
   const [preferencesError, setPreferencesError] = useState(false);
 
   const preferencesQuery = useQuery({
-    queryKey: userKey(user?.id ?? 'anonymous', 'settings'),
+    queryKey: ['account', 'me'],
     queryFn: ({ signal }) => accountApi.me(signal),
     enabled: Boolean(user),
     staleTime: 30_000,
