@@ -1,15 +1,14 @@
 import { useCallback, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { api } from '../../core/api';
+import { accountApi, type Profile } from './api';
 import { ImageEditor } from '../../components/image-editor';
 import { useSession } from '../../core/session';
 import { paths } from '../../core/routes';
 import { digitsOnly, formatPhone, validCpfOrCnpj, validPhone } from './profile-validation';
-import { Frame, Panel, useAccountText, type User } from './account';
+import { Frame, Panel, useAccountText } from './account';
 import { Button, Input, TextArea } from '../../components';
 
-type Profile = User & { cpf?: string | null; phone?: string | null };
 type ImageKind = 'avatar' | 'banner';
 type Challenge = { expiresAt: number; resendAt: number };
 
@@ -54,8 +53,8 @@ export default function EditProfilePage() {
       setError('');
       setOk(false);
       setValues({ displayName: '', username: '', bio: '', city: '', state: '', cpf: '' });
-      api
-        .get<Profile>('/users/me')
+      accountApi
+        .me()
         .then((u) => {
           if (!active) return;
           setUser(u);
@@ -96,10 +95,7 @@ export default function EditProfilePage() {
     setError('');
     setOk(false);
     try {
-      const result = await api.post<{ expiresIn: number; resendAfter: number }>(
-        '/users/me/profile-verification',
-        { cpf: digitsOnly(values.cpf), locale },
-      );
+      const result = await accountApi.requestProfileVerification(digitsOnly(values.cpf), locale);
       const now = Date.now();
       setChallenge({
         expiresAt: now + result.expiresIn * 1000,
@@ -134,7 +130,7 @@ export default function EditProfilePage() {
           ? { cpf: digitsOnly(values.cpf), profileVerificationCode: verificationCode }
           : {}),
       };
-      const updated = await api.patch<Profile>('/users/me', payload);
+      const updated = await accountApi.updateProfile(payload);
       setUser(updated);
       await queryClient.invalidateQueries({ queryKey: ['session', 'user'] });
       setValues((current) => ({ ...current, cpf: updated.cpf ?? current.cpf }));
@@ -156,7 +152,7 @@ export default function EditProfilePage() {
     setError('');
     setOk(false);
     try {
-      const updated = await api.post<Profile>(`/users/me/${kind}`, body);
+      const updated = await accountApi.uploadImage(kind, body);
       setUser(updated);
       await queryClient.invalidateQueries({ queryKey: ['session', 'user'] });
       setOk(true);
@@ -193,7 +189,7 @@ export default function EditProfilePage() {
     setBusy(true);
     setError('');
     try {
-      await api.post('/users/me/phone', { phone: digitsOnly(phone) });
+      await accountApi.setPhone(digitsOnly(phone));
       const now = Date.now();
       setPhoneStep('code');
       setPhoneExpiresAt(now + 10 * 60 * 1000);
@@ -217,7 +213,7 @@ export default function EditProfilePage() {
     setBusy(true);
     setError('');
     try {
-      await api.post('/users/me/phone/verify', { code: phoneCode });
+      await accountApi.verifyPhone(phoneCode);
       setPhoneStep('verified');
       setPhoneExpiresAt(null);
     } catch (cause) {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../../core/api';
+import { accountApi } from './api';
 import { Frame, Panel, PersonCard, useAccountText, type User } from './account';
 export default function PeoplePage() {
   const { t } = useAccountText();
@@ -14,9 +14,7 @@ export default function PeoplePage() {
     setError(false);
     const start = next ? offset : 0;
     try {
-      const result = await api.get<{ users: User[]; hasMore: boolean; nextOffset: number | null }>(
-        `/users/search?q=${encodeURIComponent(query.trim())}&limit=20&offset=${start}`,
-      );
+      const result = await accountApi.searchPeople(query, start);
       setUsers((current) => (next ? [...current, ...result.users] : result.users));
       setOffset(result.nextOffset ?? start);
       setHasMore(result.hasMore);

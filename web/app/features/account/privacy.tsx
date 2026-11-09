@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
-import { api } from '../../core/api';
+import { accountApi } from './api';
 import { paths } from '../../core/routes';
 import { StepUpDialog } from '../auth';
 import { Frame, Panel, useAccountText } from './account';
@@ -12,8 +12,8 @@ export default function PrivacyPage() {
   const [deletionPending, setDeletionPending] = useState(false);
   const mountRef = useCallback((node: HTMLDivElement | null) => {
     if (node)
-      void api
-        .get<{ deletionRequestedAt?: string | null }>('/users/me')
+      void accountApi
+        .me()
         .then((user) => setDeletionPending(Boolean(user.deletionRequestedAt)))
         .catch(() => undefined);
   }, []);
@@ -24,9 +24,7 @@ export default function PrivacyPage() {
     setMessage('');
     try {
       if (current === 'export_data') {
-        const data = await api.get<unknown>('/users/me/export', {
-          headers: { 'x-step-up-token': token },
-        });
+        const data = await accountApi.exportData(token);
         const url = URL.createObjectURL(
           new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
         );
@@ -38,9 +36,7 @@ export default function PrivacyPage() {
         setMessage(t('exportScope'));
       } else {
         if (!window.confirm(t('deleteConfirm'))) return;
-        const result = await api.delete<{ purgeAfter: string }>('/users/me/web', {
-          headers: { 'x-step-up-token': token },
-        });
+        const result = await accountApi.requestDeletion(token);
         setMessage(t('deletionScheduled', { date: result.purgeAfter }));
       }
     } catch {
@@ -51,7 +47,7 @@ export default function PrivacyPage() {
     if (!window.confirm(t('cancelDeletionConfirm'))) return;
     setError(false);
     try {
-      await api.patch('/users/me/web/deletion/cancel');
+      await accountApi.cancelDeletion();
       setDeletionPending(false);
       setMessage(t('deletionCancelled'));
     } catch {

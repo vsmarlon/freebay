@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { api } from '../../core/api';
+import { accountApi } from './api';
 import { Button, TextArea } from '../../components';
 import { redactSensitiveDiagnostics } from './bug-report-sanitizer';
 import { Frame, Panel, useAccountText } from './account';
@@ -23,7 +23,7 @@ export default function BugReportPage() {
       .join('\n\n')
       .slice(0, 5000);
     try {
-      await api.post('/bug-reports', {
+      await accountApi.sendBugReport({
         description: reportText,
         appVersion: 'web',
         platform: navigator.userAgent.slice(0, 250),

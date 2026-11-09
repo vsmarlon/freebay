@@ -1,6 +1,6 @@
 import { useCallback, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { api } from '../../core/api';
+import { accountApi } from './api';
 import { useSession } from '../../core/session';
 import { paths, pathsFor } from '../../core/routes';
 import { Timeline } from '../social/timeline';
@@ -44,24 +44,8 @@ export default function ProfilePage() {
       setFollowing(null);
       setBlocked(null);
       setNotice('');
-      const profile = owner
-        ? api.get<User>('/users/me')
-        : api.get<User>(`/users/${encodeURIComponent(id!)}`, { auth: false });
-      const statistics = owner
-        ? api.get<Stats>('/users/me/stats')
-        : Promise.all([
-            api.get<{ total: number }>(
-              `/users/${encodeURIComponent(id!)}/followers?limit=1&offset=0`,
-              { auth: false },
-            ),
-            api.get<{ total: number }>(
-              `/users/${encodeURIComponent(id!)}/following?limit=1&offset=0`,
-              { auth: false },
-            ),
-          ]).then(([followers, followingUsers]) => ({
-            followersCount: followers.total,
-            followingCount: followingUsers.total,
-          }));
+      const profile = owner ? accountApi.me() : accountApi.user(id!);
+      const statistics = owner ? accountApi.stats() : accountApi.totals(id!);
       Promise.all([profile, statistics])
         .then(([u, s]) => {
           if (alive) {
@@ -73,12 +57,12 @@ export default function ProfilePage() {
           if (alive) setError(true);
         });
       if (!owner && viewerId) {
-        api
-          .get<{ isFollowing: boolean }>(`/users/${encodeURIComponent(id!)}/is-following`)
+        accountApi
+          .isFollowing(id!)
           .then((result) => alive && setFollowing(result.isFollowing))
           .catch(() => undefined);
-        api
-          .get<{ isBlocked: boolean }>(`/users/${encodeURIComponent(id!)}/is-blocked`)
+        accountApi
+          .isBlocked(id!)
           .then((result) => alive && setBlocked(result.isBlocked))
           .catch(() => undefined);
       }
@@ -92,8 +76,8 @@ export default function ProfilePage() {
     if (!user || following === null) return;
     try {
       const result = following
-        ? await api.patch<{ followersCount: number }>(`/users/${user.id}/unfollow`)
-        : await api.post<{ followersCount: number }>(`/users/${user.id}/follow`);
+        ? await accountApi.unfollow(user.id)
+        : await accountApi.follow(user.id);
       setFollowing(!following);
       if (typeof result.followersCount === 'number')
         setStats((current) => ({ ...current, followersCount: result.followersCount }));
@@ -113,8 +97,8 @@ export default function ProfilePage() {
   async function blockUser() {
     if (!user) return;
     try {
-      if (blocked) await api.patch(`/users/${user.id}/unblock`);
-      else await api.post(`/users/${user.id}/block`);
+      if (blocked) await accountApi.unblock(user.id);
+      else await accountApi.block(user.id);
       setBlocked(!blocked);
     } catch {
       setNotice(t('error'));
@@ -123,7 +107,7 @@ export default function ProfilePage() {
   async function restrictUser() {
     if (!user) return;
     try {
-      await api.post(`/users/me/restricted/${user.id}`);
+      await accountApi.restrict(user.id);
       setNotice(t('saveOk'));
     } catch {
       setNotice(t('error'));
@@ -134,8 +118,7 @@ export default function ProfilePage() {
     if (!user) return;
     setReportPending(true);
     try {
-      await api.post('/reports', {
-        targetType: 'USER',
+      await accountApi.reportUser({
         targetId: user.id,
         reason: reportReason,
         ...(reportDescription.trim()
