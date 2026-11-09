@@ -1,86 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
-
-const maxFileBytes = 32 * 1024 * 1024;
-const maxDimension = 2048;
-const filters = [
-  'none',
-  'contrast(1.2) saturate(1.1)',
-  'brightness(.95) sepia(.08)',
-  'grayscale(1) contrast(1.2)',
-  'brightness(1.05) saturate(.95)',
-  'sepia(.2) contrast(.9)',
-  'saturate(1.2) hue-rotate(-8deg)',
-];
-const names = {
-  en: [
-    'Crop',
-    'Rotate left',
-    'Rotate right',
-    'Filter',
-    'Text',
-    'Draw',
-    'Save image',
-    'Cancel',
-    'Add text',
-    'Image could not be edited.',
-    'Select a crop by dragging on the image.',
-  ],
-  'pt-BR': [
-    'Cortar',
-    'Girar à esquerda',
-    'Girar à direita',
-    'Filtro',
-    'Texto',
-    'Desenhar',
-    'Salvar imagem',
-    'Cancelar',
-    'Adicionar texto',
-    'Não foi possível editar a imagem.',
-    'Selecione a área de corte arrastando sobre a imagem.',
-  ],
-} as const;
-
-export function boundedImageSize(width: number, height: number, limit = maxDimension) {
-  if (
-    !Number.isFinite(width) ||
-    !Number.isFinite(height) ||
-    width < 1 ||
-    height < 1 ||
-    width * height > 50_000_000
-  )
-    throw new RangeError('Unsupported image dimensions');
-  const scale = Math.min(1, limit / Math.max(width, height));
-  return {
-    width: Math.max(1, Math.round(width * scale)),
-    height: Math.max(1, Math.round(height * scale)),
-  };
-}
-export function rotatedImageSize(width: number, height: number, angle: number) {
-  const radians = (angle * Math.PI) / 180;
-  const rotatedWidth = Math.abs(width * Math.cos(radians)) + Math.abs(height * Math.sin(radians));
-  const rotatedHeight = Math.abs(height * Math.cos(radians)) + Math.abs(width * Math.sin(radians));
-  const scale = Math.min(1, maxDimension / Math.max(rotatedWidth, rotatedHeight));
-  return {
-    width: Math.max(1, Math.ceil(rotatedWidth * scale - 1e-9)),
-    height: Math.max(1, Math.ceil(rotatedHeight * scale - 1e-9)),
-  };
-}
-export function supportedEditorFile(file: Pick<File, 'type' | 'size'>) {
-  return (
-    file.type.startsWith('image/') &&
-    file.type !== 'image/svg+xml' &&
-    file.size > 0 &&
-    file.size <= maxFileBytes
-  );
-}
-export function editedImageFile(blob: Blob | null, sourceName: string, lastModified = Date.now()) {
-  if (!blob || !blob.size) throw new TypeError('Canvas export did not produce image data');
-  return new File([blob], `${sourceName.replace(/\.[^.]+$/, '')}-edited.png`, {
-    type: 'image/png',
-    lastModified,
-  });
-}
+import { filters, names } from './constants';
+import { editedImageFile, rotatedImageSize } from './geometry';
+import { loadImageResource, type LoadedSource } from './load-image';
 
 type ImageEditorProps = { file: File; onSave: (file: File) => void; onCancel: () => void };
 type Point = { x: number; y: number };
@@ -90,44 +12,6 @@ type Stroke = {
   width: number;
   style: 'marker' | 'highlighter' | 'eraser';
 };
-
-type LoadedSource = { source: CanvasImageSource; width: number; height: number } | { error: true };
-
-function loadImageResource(file: File): Promise<LoadedSource> {
-  return new Promise((resolve) => {
-    if (!supportedEditorFile(file)) {
-      resolve({ error: true });
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = async () => {
-      try {
-        const dimensions = boundedImageSize(image.naturalWidth, image.naturalHeight);
-        if (typeof createImageBitmap === 'function') {
-          const bitmap = await createImageBitmap(image, {
-            resizeWidth: dimensions.width,
-            resizeHeight: dimensions.height,
-            resizeQuality: 'high',
-          });
-          URL.revokeObjectURL(url);
-          resolve({ source: bitmap, width: dimensions.width, height: dimensions.height });
-        } else {
-          URL.revokeObjectURL(url);
-          resolve({ source: image, width: dimensions.width, height: dimensions.height });
-        }
-      } catch {
-        URL.revokeObjectURL(url);
-        resolve({ error: true });
-      }
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve({ error: true });
-    };
-    image.src = url;
-  });
-}
 
 export function ImageEditor({ file, onSave, onCancel }: ImageEditorProps) {
   const location = useLocation();
@@ -556,3 +440,10 @@ export function ImageEditor({ file, onSave, onCancel }: ImageEditorProps) {
     </section>
   );
 }
+
+export {
+  boundedImageSize,
+  editedImageFile,
+  rotatedImageSize,
+  supportedEditorFile,
+} from './geometry';
