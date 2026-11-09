@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, Input } from '../../components';
-import { api } from '../../core/api';
 import { useSession } from '../../core/session';
 import { useAuthText, AuthButton, AuthMessage } from './auth-frame';
 import { requestAppleCredential, requestGoogleCredential } from './oauth-buttons';
+import { authApi } from './auth.api';
 
 export type StepUpAction =
   | 'biometric_enroll'
@@ -69,21 +69,20 @@ export function StepUpDialog({
     [open, action, resourceId, queryClient, user],
   );
 
-  async function verify(proof: object) {
+  async function verify(proof: Record<string, unknown>) {
     if (!user) return;
     const currentOperation = operation.current;
     const signal = abortController.current?.signal;
     setPending(true);
     setError(false);
     try {
-      const result = await api.post<{ stepUpToken: string; expiresAt: string }>(
-        '/auth/web/step-up',
+      const result = await authApi.stepUp(
         {
           purpose: action,
           ...(resourceId ? { resourceId } : {}),
           proof,
         },
-        { signal },
+        signal,
       );
       if (currentOperation !== operation.current) return;
       queryClient.setQueryData<CachedProof>(stepUpProofKey(user.id, action, resourceId), {
@@ -130,15 +129,14 @@ export function StepUpDialog({
     setPending(true);
     setError(false);
     try {
-      await api.post(
-        '/auth/web/step-up/magic-link/request',
+      await authApi.requestStepUpMagicLink(
         {
           purpose: action,
           ...(resourceId ? { resourceId } : {}),
           locale,
           consent: true,
         },
-        { signal },
+        signal,
       );
       if (currentOperation === operation.current) setEmailSent(true);
     } catch {

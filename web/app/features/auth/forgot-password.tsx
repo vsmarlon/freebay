@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
-import { api } from '../../core/api';
 import { useAuthText, AuthButton, AuthFrame, AuthInput, AuthMessage } from './auth-frame';
+import { authApi } from './auth.api';
 
 export default function ForgotPasswordPage() {
   const { t, path, locale } = useAuthText();
@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
     setError(false);
     try {
       if (step === 'request') {
-        await api.post('/auth/web/password-reset/request', { email, locale }, { auth: false });
+        await authApi.requestPasswordReset(email, locale);
         setStep('done');
       }
     } catch {

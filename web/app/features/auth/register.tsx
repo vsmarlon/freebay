@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { api } from '../../core/api';
 import { useSession } from '../../core/session';
 import {
   useAuthText,
@@ -12,6 +11,7 @@ import {
 } from './auth-frame';
 import { Checkbox } from '../../components';
 import { OAuthButtons } from './oauth-buttons';
+import { authApi } from './auth.api';
 
 export default function RegisterPage() {
   const { t, locale, path } = useAuthText();
@@ -41,11 +41,8 @@ export default function RegisterPage() {
       if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) return;
       let active = true;
       const timer = window.setTimeout(() => {
-        void api
-          .get<{ available: boolean }>(
-            `/auth/username-available?u=${encodeURIComponent(username)}`,
-            { auth: false },
-          )
+        void authApi
+          .usernameAvailable(username)
           .then((result) => {
             if (active) setUsernameAvailable(result.available);
           })
@@ -66,14 +63,10 @@ export default function RegisterPage() {
     setError(false);
     try {
       if (mode === 'magic') {
-        await api.post('/auth/web/magic-link/request', { email, consent, locale }, { auth: false });
+        await authApi.requestMagicLink({ email, consent, locale });
         setSent(true);
       } else {
-        await api.post(
-          '/auth/web/register',
-          { displayName, username, email, password },
-          { auth: false },
-        );
+        await authApi.register({ displayName, username, email, password });
         await session.reload();
         await navigate(path('feed'));
       }

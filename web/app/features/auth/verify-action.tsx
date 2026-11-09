@@ -2,11 +2,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components';
-import { api } from '../../core/api';
 import { paths } from '../../core/routes';
 import { useSession } from '../../core/session';
 import { AuthFrame, AuthMessage, useAuthText } from './auth-frame';
 import { stepUpProofKey, type StepUpAction } from './step-up-dialog';
+import { authApi } from './auth.api';
 
 const purposes: StepUpAction[] = [
   'biometric_enroll',
@@ -57,14 +57,11 @@ export default function VerifyActionPage() {
     setPending(true);
     setError(false);
     try {
-      const result = await api.post<{ stepUpToken: string; expiresAt: string }>(
-        '/auth/web/step-up',
-        {
-          purpose: action,
-          ...(resourceId ? { resourceId } : {}),
-          proof: { kind: 'magic_link', token, contextSignature },
-        },
-      );
+      const result = await authApi.stepUp({
+        purpose: action,
+        ...(resourceId ? { resourceId } : {}),
+        proof: { kind: 'magic_link', token, contextSignature },
+      });
       queryClient.setQueryData(stepUpProofKey(user.id, action, resourceId), {
         token: result.stepUpToken,
         expiresAt: result.expiresAt,

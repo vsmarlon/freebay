@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { api } from '../../core/api';
 import { useSession } from '../../core/session';
 import {
   useAuthText,
@@ -12,6 +11,7 @@ import {
 } from './auth-frame';
 import { OAuthButtons } from './oauth-buttons';
 import { safeLocalizedReturnTo } from '../../core/routes';
+import { authApi } from './auth.api';
 
 export default function LoginPage() {
   const { t, path, locale } = useAuthText();
@@ -33,11 +33,7 @@ export default function LoginPage() {
     setError(false);
     try {
       // ponytail: backend LoginDTO field stays `email` but accepts a unique @username too.
-      const result = await api.post<{ user?: { username?: string | null } }>(
-        '/auth/web/login',
-        { email: identifier, password },
-        { auth: false },
-      );
+      const result = await authApi.login(identifier, password);
       await session.reload();
       await navigate(
         result.user?.username

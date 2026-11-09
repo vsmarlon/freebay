@@ -2,9 +2,9 @@ import { useCallback, useState, type FormEvent } from 'react';
 import type { MetaFunction } from 'react-router';
 import { useLocation, useNavigate } from 'react-router';
 import { Link } from 'react-router';
-import { api } from '../../core/api';
 import { useSession } from '../../core/session';
 import { useAuthText, AuthButton, AuthFrame, AuthMessage } from './auth-frame';
+import { authApi } from './auth.api';
 
 export const meta: MetaFunction = () => [{ name: 'referrer', content: 'no-referrer' }];
 
@@ -30,11 +30,7 @@ export default function VerifyEmailPage() {
     setPending(true);
     setError(false);
     try {
-      const result = await api.post<{ user?: { username?: string | null } }>(
-        '/auth/web/magic-link/consume',
-        { token },
-        { auth: false },
-      );
+      const result = await authApi.consumeMagicLink(token);
       setComplete(true);
       await session.reload();
       await navigate(path(result.user?.username ? 'feed' : 'complete-profile'));

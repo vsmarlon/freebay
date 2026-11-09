@@ -1,7 +1,7 @@
 import { useCallback, useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router';
-import { api } from '../../core/api';
 import { useAuthText, AuthButton, AuthFrame, AuthInput, AuthMessage } from './auth-frame';
+import { authApi } from './auth.api';
 
 export function headers() {
   return { 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' };
@@ -44,13 +44,13 @@ export default function ResetPasswordPage() {
     try {
       if (token) {
         if (newPassword !== confirmPassword) throw new Error('password mismatch');
-        await api.post('/auth/web/password-reset/consume', { token, newPassword }, { auth: false });
+        await authApi.consumePasswordReset(token, newPassword);
         setStep('done');
       } else if (step === 'verify') {
-        await api.post('/auth/verify-reset-code', { email, code }, { auth: false });
+        await authApi.verifyResetCode(email, code);
         setStep('reset');
       } else {
-        await api.post('/auth/reset-password', { email, code, newPassword }, { auth: false });
+        await authApi.resetPassword({ email, code, newPassword });
         setStep('done');
       }
     } catch {

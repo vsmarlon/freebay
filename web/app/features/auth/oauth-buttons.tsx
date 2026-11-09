@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { api } from '../../core/api';
 import { useSession } from '../../core/session';
 import { useAuthText, AuthButton, AuthMessage } from './auth-frame';
+import { authApi } from './auth.api';
 
 type GoogleCredential = { credential?: string };
 type AppleAuthorization = { code?: string; id_token?: string; state?: string };
@@ -194,13 +194,11 @@ export function OAuthButtons({ returnTo }: { returnTo?: string }) {
     },
     [t],
   );
-  async function finish(pathname: string, credential: object) {
+  async function finish(pathname: string, credential: Record<string, unknown>) {
     setPending(true);
     setError('');
     try {
-      const result = await api.post<{ user?: { username?: string | null } }>(pathname, credential, {
-        auth: false,
-      });
+      const result = await authApi.oauth(pathname, credential);
       await session.reload();
       const destination = returnTo ?? path('feed');
       await navigate(

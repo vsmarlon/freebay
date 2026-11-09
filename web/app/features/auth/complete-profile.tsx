@@ -1,9 +1,9 @@
 import { useCallback, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { api } from '../../core/api';
 import { useSession } from '../../core/session';
 import { useAuthText, AuthButton, AuthFrame, AuthInput, AuthMessage } from './auth-frame';
 import { safeLocalizedReturnTo } from '../../core/routes';
+import { authApi } from './auth.api';
 
 export default function CompleteProfilePage() {
   const { t, path, locale } = useAuthText();
@@ -32,11 +32,8 @@ export default function CompleteProfilePage() {
       if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) return;
       let active = true;
       const timer = window.setTimeout(() => {
-        void api
-          .get<{ available: boolean; suggestions: string[] }>(
-            `/auth/username-available?u=${encodeURIComponent(username)}`,
-            { auth: false },
-          )
+        void authApi
+          .usernameAvailable(username)
           .then((result) => {
             if (active) setUsernameCheck(result);
           })
@@ -56,7 +53,7 @@ export default function CompleteProfilePage() {
     setPending(true);
     setError(false);
     try {
-      await api.post('/auth/complete-profile', {
+      await authApi.completeProfile({
         username,
         ...(displayName ? { displayName } : {}),
         ...(city ? { city } : {}),
