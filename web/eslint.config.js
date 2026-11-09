@@ -23,9 +23,7 @@ const bannedIconImports = [{
 const legacyEffectFiles = [
   'app/components/location-picker.tsx',
   'app/core/use-debounced-value.ts',
-  'app/features/account/close-friends.tsx',
   'app/features/account/notifications.tsx',
-  'app/features/account/safety-list.tsx',
   'app/features/auth/step-up-dialog.tsx',
   'app/features/chat/hooks/use-audio-recorder.ts',
   'app/features/chat/hooks/use-chat-socket.ts',
