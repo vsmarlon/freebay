@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useNavigate } from 'react-router';
-import { api } from '../../core/api';
+import { storiesApi } from './api';
 import { isCurrentStoryReady, shouldAutoAdvanceStory, storyAdvanceDelayMs } from './story-timing';
 import { StoryTextOverlays } from './text-block-editor';
 import { Avatar, Media, storyAge, useStoryCopy, type Story, type User } from './shared';
@@ -118,7 +118,7 @@ export function StoryPlayer({
     if (!storyId) return;
     if (ready && !viewed.current.has(storyId)) {
       viewed.current.add(storyId);
-      void api.post(`/stories/${encodeURIComponent(storyId)}/view`).catch(() => {});
+      void storiesApi.view(storyId).catch(() => {});
     }
     if (remainingStoryRef.current !== storyId) {
       remainingStoryRef.current = storyId;

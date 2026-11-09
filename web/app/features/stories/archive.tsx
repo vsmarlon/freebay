@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../../core/api';
+import { storiesApi } from './api';
 import { RequireAuth } from '../../core/session';
 import { Button, Dialog } from '../../components';
 import { Media, useStories, useStoryCopy, type Highlight, type Story } from './shared';
@@ -25,10 +25,8 @@ export function StoryArchive() {
   useEffect(() => {
     if (!ownerId) return;
     const controller = new AbortController();
-    void api
-      .get<{ highlights: Highlight[] }>(`/stories/highlights/user/${encodeURIComponent(ownerId)}`, {
-        signal: controller.signal,
-      })
+    void storiesApi
+      .highlightsOfUser(ownerId, controller.signal)
       .then((response) => setHighlights(response.highlights))
       .catch(() => {
         if (!controller.signal.aborted) setMutationError(t.error);
@@ -41,8 +39,7 @@ export function StoryArchive() {
     event.preventDefault();
     try {
       const body = { title, storyIds: selected, coverStoryId: cover };
-      if (editing) await api.patch(`/stories/highlights/${encodeURIComponent(editing)}`, body);
-      else await api.post('/stories/highlights', body);
+      await storiesApi.saveHighlight(editing ?? null, body);
       setSelected([]);
       setTitle('');
       setCover('');
@@ -54,7 +51,7 @@ export function StoryArchive() {
   }
   async function remove(id: string) {
     try {
-      await api.patch(`/stories/${encodeURIComponent(id)}/delete`);
+      await storiesApi.deleteStory(id);
       retry();
     } catch {
       setMutationError(t.error);
@@ -62,7 +59,7 @@ export function StoryArchive() {
   }
   async function removeHighlight(id: string) {
     try {
-      await api.patch(`/stories/highlights/${encodeURIComponent(id)}/delete`);
+      await storiesApi.deleteHighlight(id);
       setHighlights((items) => items.filter((item) => item.id !== id));
     } catch {
       setMutationError(t.error);

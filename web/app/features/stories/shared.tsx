@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../../core/api';
+import { storiesApi } from './api';
 import { useI18n } from '../../core/locale';
 import { useMediaUrl } from '../../core/media';
 import { useSession } from '../../core/session';
@@ -65,7 +65,7 @@ export function useStories<T>(path: string, key: string) {
   const { user } = useSession();
   const query = useQuery<T>({
     queryKey: ['stories', path, key, user?.id],
-    queryFn: ({ signal }) => api.get<T>(path, { signal }),
+    queryFn: ({ signal }) => storiesApi.get<T>(path, signal),
     retry: false,
   });
   return { value: query.data, error: query.isError, retry: () => void query.refetch() };

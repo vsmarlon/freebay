@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { api } from '../../core/api';
+import { storiesApi } from './api';
 import { paths } from '../../core/routes';
 import { RequireAuth } from '../../core/session';
 import { ImageEditor } from '../../components/image-editor';
@@ -55,7 +55,7 @@ export function CreateStory() {
     setPending(true);
     setError('');
     try {
-      await api.post('/stories', form);
+      await storiesApi.create(form);
       navigate(path(paths.feed), { replace: true });
     } catch {
       setError(t.submitError);
