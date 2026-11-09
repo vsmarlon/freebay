@@ -348,7 +348,6 @@ jobs:
 
   mobile-ui:
     name: Real mobile journey (Android emulator / Nest / PostgreSQL / Redis)
-    needs: [backend-ci]
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
@@ -397,21 +396,11 @@ jobs:
         working-directory: nest-backend
         run: npm ci
 
-      - name: Download and verify exact backend build
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-dist
-          path: .ci-backend-artifact
-
-      - name: Place backend build and validate manifest
-        run: |
-          cp -a .ci-backend-artifact/dist nest-backend/dist
-          node scripts/build-manifest.cjs verify nest-backend/dist .ci-backend-artifact/backend-build-manifest.json "$GITHUB_SHA" backend-node24-test-runtime
-
-      - name: Generate Prisma client and prepare guarded test database
+      - name: Generate Prisma client, build backend, and prepare guarded test database
         working-directory: nest-backend
         run: |
           npx prisma generate
+          npm run build
           node scripts/safe-prisma-db-push.js
 
       - name: Install Flutter dependencies
