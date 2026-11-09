@@ -389,9 +389,6 @@ jobs:
           flutter-version: '3.44.4'
           cache: true
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install backend dependencies
         working-directory: nest-backend
         run: npm ci
