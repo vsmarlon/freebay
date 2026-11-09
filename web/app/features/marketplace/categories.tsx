@@ -3,9 +3,11 @@ import { useI18n, useLocale } from '../../core/locale';
 import { paths } from '../../core/routes';
 import { getCategories } from './server.server';
 import type { Category } from './types';
-import { Button, ErrorState, PageHeader, Surface } from '../../components';
+import { PageHeader, Surface } from '../../components';
 import en from './catalogs/en.json';
 import pt from './catalogs/pt-BR.json';
+import { PageSection } from '../../components/page-section';
+import { RouteErrorBoundary } from '../../components/route-error-boundary';
 
 export async function loader() {
   return getCategories();
@@ -39,20 +41,12 @@ export default function CategoriesRoute() {
   const { path } = useLocale();
   const { t } = useI18n({ en, 'pt-BR': pt });
   return (
-    <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
       <PageHeader title={t('catalog.category')} />
       <CategoryBranch categories={categories} path={path} />
-    </section>
+    </PageSection>
   );
 }
 export function ErrorBoundary() {
-  const { t } = useI18n({ en, 'pt-BR': pt });
-  return (
-    <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
-      <ErrorState error={new Error(t('common.error'))} />
-      <Button variant="secondary" onClick={() => window.location.reload()}>
-        {t('common.retry')}
-      </Button>
-    </section>
-  );
+  return <RouteErrorBoundary catalogs={{ en, 'pt-BR': pt }} />;
 }

@@ -335,6 +335,9 @@ html[data-scrolling='true'] *::-webkit-scrollbar-thumb {
   .surface-high {
     background: var(--surface-high);
   }
+  .page-section {
+    @apply mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5;
+  }
   .page-header {
     display: flex;
     justify-content: space-between;

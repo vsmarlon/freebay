@@ -13,6 +13,7 @@ import type { ProductSummary } from './types';
 import { toProductSummary } from './types';
 import en from './catalogs/en.json';
 import pt from './catalogs/pt-BR.json';
+import { PageSection } from '../../components/page-section';
 
 const catalogs = { en, 'pt-BR': pt };
 type FavoriteRecord = { id: string; product: ProductSummary };
@@ -44,18 +45,18 @@ export default function FavoritesRoute() {
   );
   if (isPending)
     return (
-      <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
         <Loading label={t('common.loading')} />
-      </section>
+      </PageSection>
     );
   if (!user)
     return (
-      <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
         <Surface>
           <PageHeader title={t('favorites.title')} description={t('auth.required')} />
           <Button onClick={() => navigate(path(paths.login))}>{t('auth.signIn')}</Button>
         </Surface>
-      </section>
+      </PageSection>
     );
   const signedInUserId = user.id;
   async function remove(id: string) {
@@ -72,7 +73,7 @@ export default function FavoritesRoute() {
     }
   }
   return (
-    <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
       <div ref={redirectRef} className="sr-only" aria-hidden />
       <PageHeader title={t('favorites.title')} />
       {query.isPending ? (
@@ -141,6 +142,6 @@ export default function FavoritesRoute() {
         </div>
       )}
       {actionError && <ErrorState error={new Error(actionError)} />}
-    </section>
+    </PageSection>
   );
 }

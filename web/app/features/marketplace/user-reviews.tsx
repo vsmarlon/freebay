@@ -11,6 +11,7 @@ import {
   Surface,
   buttonClass,
 } from '../../components';
+import { PageSection } from '../../components/page-section';
 import { api } from '../../core/api';
 import { mediaUrl } from '../../core/media';
 import { useLocale, useI18n } from '../../core/locale';
@@ -53,7 +54,7 @@ export default function UserReviewsRoute() {
     },
   });
   return (
-    <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-[639px]:w-[min(calc(100%-1.25rem),80rem)] max-[639px]:pt-5">
+    <PageSection className="py-8 pb-20 max-[639px]:w-[min(calc(100%-1.25rem),80rem)] max-[639px]:pt-5">
       <PageHeader title={t('reviewList.title')} />
       <Select
         label={t('reviewList.filter')}
@@ -116,6 +117,6 @@ export default function UserReviewsRoute() {
       <Link className={buttonClass('secondary')} to={path(pathsFor.person(id))}>
         {t('reviewList.profile')}
       </Link>
-    </section>
+    </PageSection>
   );
 }

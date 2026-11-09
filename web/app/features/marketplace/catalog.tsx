@@ -9,6 +9,8 @@ import {
   useNavigation,
   type LoaderFunctionArgs,
 } from 'react-router';
+import { PageSection } from '../../components/page-section';
+import { RouteErrorBoundary } from '../../components/route-error-boundary';
 import { useLocale, useI18n } from '../../core/locale';
 import { paths } from '../../core/routes';
 import { formatListingPriceInput, parseListingPrice } from './listing-input';
@@ -19,7 +21,6 @@ import type { Category, ProductPage } from './types';
 import {
   Button,
   Empty,
-  ErrorState,
   IconButton,
   Input,
   Loading,
@@ -78,7 +79,7 @@ export default function CatalogRoute() {
   const loading = navigation.state !== 'idle';
   const isSearch = location.pathname.endsWith('/search');
   return (
-    <section className="mx-auto w-[min(calc(100%-2rem),80rem)] space-y-4 py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection className="space-y-4 py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
       <div ref={appendRef} className="sr-only" aria-hidden />
       <PageHeader
         title={t('catalog.title')}
@@ -223,18 +224,10 @@ export default function CatalogRoute() {
           {fetcher.state === 'idle' ? t('catalog.loadMore') : t('common.loading')}
         </Button>
       )}
-    </section>
+    </PageSection>
   );
 }
 
 export function ErrorBoundary() {
-  const { t } = useI18n(catalogs);
-  return (
-    <section className="mx-auto w-[min(calc(100%-2rem),80rem)] space-y-4 py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
-      <ErrorState error={new Error(t('common.error'))} />
-      <Button variant="secondary" onClick={() => window.location.reload()}>
-        {t('common.retry')}
-      </Button>
-    </section>
-  );
+  return <RouteErrorBoundary catalogs={catalogs} />;
 }

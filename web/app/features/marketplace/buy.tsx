@@ -10,6 +10,7 @@ import {
   Surface,
   buttonClass,
 } from '../../components';
+import { PageSection } from '../../components/page-section';
 import { useLocale, useI18n } from '../../core/locale';
 import { useSession } from '../../core/session';
 import { formatMoney } from '../../core/money';
@@ -270,23 +271,23 @@ export default function BuyProductRoute() {
   }
   if (isPending)
     return (
-      <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
         <Loading label={t('common.loading')} />
-      </section>
+      </PageSection>
     );
   if (!user)
     return (
-      <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
         <Surface>
           <p>{t('auth.required')}</p>
           <Link className={buttonClass('primary')} to={path(paths.login)}>
             {t('auth.signIn')}
           </Link>
         </Surface>
-      </section>
+      </PageSection>
     );
   return (
-    <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
       <div ref={mountRef} className="sr-only" aria-hidden />
       <PageHeader title={t('buy.title')} />
       <Surface>
@@ -383,6 +384,6 @@ export default function BuyProductRoute() {
           </Link>
         </div>
       </Surface>
-    </section>
+    </PageSection>
   );
 }

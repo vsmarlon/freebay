@@ -8,6 +8,8 @@ import {
   type LoaderFunctionArgs,
   type MetaFunction,
 } from 'react-router';
+import { PageSection } from '../../components/page-section';
+import { RouteErrorBoundary } from '../../components/route-error-boundary';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, api } from '../../core/api';
 import {
@@ -202,7 +204,7 @@ export default function ProductDetailRoute() {
   }
 
   return (
-    <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
       <div ref={redirectRef} className="sr-only" aria-hidden />
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,0.85fr)]">
         <ImageCarousel
@@ -389,7 +391,7 @@ export default function ProductDetailRoute() {
           )}
         </Surface>
       </div>
-    </section>
+    </PageSection>
   );
 }
 
@@ -397,19 +399,15 @@ export function ErrorBoundary() {
   const error = useRouteError();
   const { t } = useI18n(catalogs);
   const { path } = useLocale();
+  const notFound =
+    (isRouteErrorResponse(error) && error.status === 404) ||
+    (error instanceof ApiError && error.status === 404);
   return (
-    <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
-      <ErrorState
-        error={
-          new Error(
-            (isRouteErrorResponse(error) && error.status === 404) ||
-            (error instanceof ApiError && error.status === 404)
-              ? t('product.notFound')
-              : t('product.loadError'),
-          )
-        }
-      />
-      <Link to={path(paths.explore)}>{t('common.back')}</Link>
-    </section>
+    <RouteErrorBoundary
+      catalogs={catalogs}
+      fallbackKey={notFound ? 'product.notFound' : 'product.loadError'}
+      showRetry={false}
+      action={<Link to={path(paths.explore)}>{t('common.back')}</Link>}
+    />
   );
 }

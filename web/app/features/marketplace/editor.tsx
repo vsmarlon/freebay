@@ -1,11 +1,7 @@
 import { useMemo, useRef, useState, type FormEvent } from 'react';
-import {
-  useLoaderData,
-  useNavigate,
-  useRouteError,
-  isRouteErrorResponse,
-  type LoaderFunctionArgs,
-} from 'react-router';
+import { useLoaderData, useNavigate, type LoaderFunctionArgs } from 'react-router';
+import { PageSection } from '../../components/page-section';
+import { RouteErrorBoundary } from '../../components/route-error-boundary';
 import { useQueryClient } from '@tanstack/react-query';
 import { ApiError, api } from '../../core/api';
 import {
@@ -103,30 +99,30 @@ export default function ListingEditorRoute() {
   const cover = previewUrls[0];
   if (isPending)
     return (
-      <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
         <Loading label={t('common.loading')} />
-      </section>
+      </PageSection>
     );
   if (!user)
     return (
-      <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
         <Surface>
           <p>{t('auth.required')}</p>
           <Button onClick={() => navigate(path(paths.login))}>{t('auth.signIn')}</Button>
         </Surface>
-      </section>
+      </PageSection>
     );
   if (product && product.sellerId !== user.id)
     return (
-      <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
         <ErrorState error={new Error(t('common.error'))} />
-      </section>
+      </PageSection>
     );
   if (product?.status === 'SOLD')
     return (
-      <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+      <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
         <ErrorState error={new Error(t('editor.soldReadOnly'))} />
-      </section>
+      </PageSection>
     );
   const userId = user.id;
   function change<K extends keyof FormValues>(key: K, value: FormValues[K]) {
@@ -235,7 +231,7 @@ export default function ListingEditorRoute() {
   const quantityPreview = Math.max(1, Number(values.quantity) || 1);
 
   return (
-    <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
+    <PageSection className="py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
       <PageHeader title={t(isEdit ? 'editor.edit' : 'editor.create')} />
       <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)]">
         <aside
@@ -427,18 +423,17 @@ export default function ListingEditorRoute() {
           {t('editor.deleteConfirm')}
         </Dialog>
       </div>
-    </section>
+    </PageSection>
   );
 }
 
 export function ErrorBoundary() {
-  const error = useRouteError();
-  const { t } = useI18n(catalogs);
   return (
-    <section className="mx-auto w-[min(calc(100%-2rem),80rem)] py-8 pb-20 max-sm:w-[min(calc(100%-1.25rem),80rem)] max-sm:pt-5">
-      <ErrorState
-        error={new Error(isRouteErrorResponse(error) ? t('product.notFound') : t('editor.error'))}
-      />
-    </section>
+    <RouteErrorBoundary
+      catalogs={catalogs}
+      notFoundKey="product.notFound"
+      fallbackKey="editor.error"
+      showRetry={false}
+    />
   );
 }
