@@ -111,27 +111,24 @@ export function AppShell({ children }: React.PropsWithChildren) {
   };
   const clampWidth = (value: number) =>
     Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(value)));
-  const commitWidth = useCallback(
-    (value: number) => {
-      const nextWidth = clampWidth(value);
-      setWidth(nextWidth);
-      persistSidebar({ width: nextWidth, collapsed });
-    },
-    [collapsed],
-  );
-  const toggleCollapsed = useCallback(() => {
+  const commitWidth = (value: number) => {
+    const nextWidth = clampWidth(value);
+    setWidth(nextWidth);
+    persistSidebar({ width: nextWidth, collapsed });
+  };
+  const toggleCollapsed = () => {
     setCollapsed((current) => {
       const next = !current;
       persistSidebar({ width, collapsed: next });
       return next;
     });
-  }, [width]);
+  };
 
   // Drag-resizable expanded sidebar: drag the right edge or use arrows on it; collapsed rails do nothing until expanded again.
-  const expandSidebar = useCallback(() => {
+  const expandSidebar = () => {
     setCollapsed(false);
     persistSidebar({ width, collapsed: false });
-  }, [width]);
+  };
   const onDragStart = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (collapsed) {
       expandSidebar();

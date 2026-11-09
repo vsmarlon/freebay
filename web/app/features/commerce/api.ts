@@ -1,15 +1,20 @@
 import { api } from '../../core/api';
+import {
+  checkoutGroupSchema,
+  checkoutRecoverySchema,
+  orderEnvelopeSchema,
+  orderSchema,
+  ordersPageSchema,
+  orderWithActionsSchema,
+  walletSchema,
+} from './schemas';
 import type {
   Cart,
-  CheckoutGroup,
-  CheckoutRecovery,
   ConnectStatus,
   CursorPage,
   Dispute,
-  Order,
   Review,
   ReviewEligibility,
-  Wallet,
   WalletEntry,
 } from './types';
 
@@ -41,11 +46,21 @@ export const commerceApi = {
     }),
   clearCart: () => api.patch('/cart/clear', undefined, { retryAfterRefresh: false }),
   checkout: () =>
-    api.post<CheckoutGroup>('/cart/checkout', { mode: 'session' }, { retryAfterRefresh: false }),
+    api.post(
+      '/cart/checkout',
+      { mode: 'session' },
+      {
+        retryAfterRefresh: false,
+        schema: checkoutGroupSchema,
+      },
+    ),
   checkoutRecovery: (signal?: AbortSignal) =>
-    api.get<CheckoutRecovery | null>('/cart/checkout/recovery?mode=session', { signal }),
+    api.get('/cart/checkout/recovery?mode=session', {
+      signal,
+      schema: checkoutRecoverySchema.nullable(),
+    }),
   createOrder: (productId: string) =>
-    api.post<Order>('/orders', { productId }, { retryAfterRefresh: false }),
+    api.post('/orders', { productId }, { retryAfterRefresh: false, schema: orderSchema }),
   paymentSession: (orderId: string) =>
     api.post<{ checkoutUrl: string }>(
       `/payments/checkout/${encodeURIComponent(orderId)}`,
@@ -53,15 +68,17 @@ export const commerceApi = {
       { retryAfterRefresh: false },
     ),
   purchases: (cursor?: string | null, signal?: AbortSignal, status?: string, limit = 20) =>
-    api.get<CursorPage<Order>>(`/orders/my/purchases?${query(cursor, status, limit)}`, { signal }),
-  sales: (status?: string, cursor?: string | null, signal?: AbortSignal) =>
-    api.get<CursorPage<Order>>(`/orders/my/sales?${query(cursor, status)}`, { signal }),
-  order: async (id: string, signal?: AbortSignal) =>
-    (await api.get<{ order: Order }>(`/orders/${encodeURIComponent(id)}`, { signal })).order,
-  orderWithActions: (id: string, signal?: AbortSignal) =>
-    api.get<{ order: Order; allowedActions: string[] }>(`/orders/${encodeURIComponent(id)}`, {
+    api.get(`/orders/my/purchases?${query(cursor, status, limit)}`, {
       signal,
+      schema: ordersPageSchema,
     }),
+  sales: (status?: string, cursor?: string | null, signal?: AbortSignal) =>
+    api.get(`/orders/my/sales?${query(cursor, status)}`, { signal, schema: ordersPageSchema }),
+  order: async (id: string, signal?: AbortSignal) =>
+    (await api.get(`/orders/${encodeURIComponent(id)}`, { signal, schema: orderEnvelopeSchema }))
+      .order,
+  orderWithActions: (id: string, signal?: AbortSignal) =>
+    api.get(`/orders/${encodeURIComponent(id)}`, { signal, schema: orderWithActionsSchema }),
   ship: (id: string) =>
     api.patch(`/orders/${encodeURIComponent(id)}/ship`, undefined, { retryAfterRefresh: false }),
   markDelivered: (id: string) =>
@@ -115,7 +132,7 @@ export const commerceApi = {
     api.patch(`/disputes/${encodeURIComponent(id)}/withdraw`, undefined, {
       retryAfterRefresh: false,
     }),
-  wallet: (signal?: AbortSignal) => api.get<Wallet>('/wallet', { signal }),
+  wallet: (signal?: AbortSignal) => api.get('/wallet', { signal, schema: walletSchema }),
   ledger: (cursor?: string | null, signal?: AbortSignal) =>
     api.get<CursorPage<WalletEntry>>(`/wallet/transactions?${query(cursor)}`, { signal }),
   connectStatus: (signal?: AbortSignal) =>

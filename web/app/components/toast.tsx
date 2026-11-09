@@ -1,6 +1,5 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useRef,
   useState,
@@ -18,14 +17,14 @@ export function ToastProvider({ children }: PropsWithChildren) {
   const [toast, setToast] = useState<(ToastInput & { id: number }) | null>(null);
   // ponytail: provider lives for the whole app, so the timer is not cleared on unmount.
   const timer = useRef<number | null>(null);
-  const dismiss = useCallback(() => {
+  const dismiss = () => {
     if (timer.current !== null) {
       window.clearTimeout(timer.current);
       timer.current = null;
     }
     setToast(null);
-  }, []);
-  const show = useCallback((next: ToastInput) => {
+  };
+  const show = (next: ToastInput) => {
     if (timer.current !== null) window.clearTimeout(timer.current);
     const id = Date.now();
     setToast({ ...next, id });
@@ -33,7 +32,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
       () => setToast((current) => (current?.id === id ? null : current)),
       6000,
     );
-  }, []);
+  };
   const runAction = () => {
     const action = toast?.onAction;
     dismiss();

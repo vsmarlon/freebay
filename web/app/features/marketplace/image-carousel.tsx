@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
+import { useRef, useState, type KeyboardEvent } from 'react';
 import { Icon } from '../../components';
 import { ImageViewer } from '../../components/image-viewer';
 
@@ -30,16 +30,13 @@ export function ImageCarousel({
   const trackRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const go = useCallback(
-    (nextIndex: number) => {
-      const track = trackRef.current;
-      if (!track) return;
-      const clamped = Math.max(0, Math.min(nextIndex, images.length - 1));
-      track.scrollTo({ left: clamped * track.clientWidth, behavior: 'smooth' });
-      setIndex(clamped);
-    },
-    [images.length],
-  );
+  const go = (nextIndex: number) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const clamped = Math.max(0, Math.min(nextIndex, images.length - 1));
+    track.scrollTo({ left: clamped * track.clientWidth, behavior: 'smooth' });
+    setIndex(clamped);
+  };
   // Follow the settled slide, not every intermediate frame: smooth-scroll
   // events would otherwise bounce the counter back (2/2 → 1/2 → 2/2).
   const settleTimer = useRef<ReturnType<typeof setTimeout>>(undefined);

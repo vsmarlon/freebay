@@ -1,12 +1,15 @@
+import type { ZodType } from 'zod';
 import { allowedPath } from './allowed-path';
 import { ApiError } from './api-error';
 import { currentGeneration, getToken, refreshToken } from './session-token';
 
-export type ApiRequestOptions = {
+export type ApiRequestOptions<T = unknown> = {
   auth?: boolean;
   signal?: AbortSignal;
   headers?: HeadersInit;
   retryAfterRefresh?: boolean;
+  /** Validates the response before the UI sees it; use it on money/auth/order endpoints. */
+  schema?: ZodType<T>;
 };
 
 // ponytail: endpoint contracts are owned by the backend; keep their single trust-boundary cast here.
@@ -18,7 +21,7 @@ export async function send<T>(
   method: string,
   path: string,
   body: unknown,
-  options: ApiRequestOptions = {},
+  options: ApiRequestOptions<T> = {},
   asBlob = false,
 ): Promise<T> {
   if (typeof window === 'undefined')
@@ -93,7 +96,11 @@ export async function send<T>(
   } catch {
     throw new ApiError('Invalid API response', 502);
   }
-  if (payload && typeof payload === 'object' && 'data' in payload)
-    return backendValue<T>(payload.data);
-  return backendValue<T>(payload);
+  const raw = payload && typeof payload === 'object' && 'data' in payload ? payload.data : payload;
+  if (options.schema) {
+    const parsed = options.schema.safeParse(raw);
+    if (!parsed.success) throw new ApiError('Invalid API response', 502, undefined, parsed.error);
+    return parsed.data;
+  }
+  return backendValue<T>(raw);
 }
