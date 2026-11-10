@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useRef, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, Input } from '../../components';
 import { useSession } from '../../core/session';
+import { useLatest } from '../../core/use-latest';
 import { useAuthText, AuthButton, AuthMessage } from './auth-frame';
 import { requestAppleCredential, requestGoogleCredential } from './oauth-buttons';
 import { authApi } from './auth.api';
@@ -41,10 +42,7 @@ export function StepUpDialog({
   const googleTarget = useRef<HTMLDivElement>(null);
   // Latest callbacks via ref: the mount callback stays stable so the dialog does not
   // re-run its cache check (and reset the form) on every parent render.
-  const actions = useRef({ onClose, onVerified });
-  useEffect(() => {
-    actions.current = { onClose, onVerified };
-  });
+  const actions = useLatest({ onClose, onVerified });
 
   const mountRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -66,7 +64,7 @@ export function StepUpDialog({
       } else if (cached) queryClient.removeQueries({ queryKey: key, exact: true });
       return () => abortController.current?.abort();
     },
-    [open, action, resourceId, queryClient, user],
+    [open, action, resourceId, queryClient, user, actions],
   );
 
   async function verify(proof: Record<string, unknown>) {

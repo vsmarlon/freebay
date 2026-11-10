@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useRef, useState, useSyncExternalStore } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useNavigate } from 'react-router';
-import { storiesApi } from './api';
-import { isCurrentStoryReady, shouldAutoAdvanceStory, storyAdvanceDelayMs } from './story-timing';
+import { isCurrentStoryReady, storyAdvanceDelayMs } from './story-timing';
+import { useStoryPlayback } from './hooks/use-story-playback';
 import { StoryTextOverlays } from './text-block-editor';
 import { Avatar, Media, storyAge, useStoryCopy, type Story, type User } from './shared';
 
@@ -43,9 +43,6 @@ export function StoryPlayer({
   const [dragging, setDragging] = useState(false);
   const dragOffsetRef = useRef(0);
   const dragRef = useRef<{ x: number; y: number; active: boolean } | null>(null);
-  const remainingRef = useRef<number | null>(null);
-  const remainingStoryRef = useRef<string | undefined>(undefined);
-  const viewed = useRef(new Set<string>());
   const story = stories[index];
   const inactive = paused || !visible;
   const ready = isCurrentStoryReady(story?.id, readyMedia?.storyId) && failedMediaId !== story?.id;
@@ -114,43 +111,16 @@ export function StoryPlayer({
       event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
-  useEffect(() => {
-    if (!storyId) return;
-    if (ready && !viewed.current.has(storyId)) {
-      viewed.current.add(storyId);
-      void storiesApi.view(storyId).catch(() => {});
-    }
-    if (remainingStoryRef.current !== storyId) {
-      remainingStoryRef.current = storyId;
-      remainingRef.current = null;
-    }
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft') move(index - 1);
-      else if (event.key === 'ArrowRight') move(index + 1);
-      else if (event.key === 'Escape') closeViewer();
-      else if (event.key === ' ') {
-        event.preventDefault();
-        setPaused((state) => !state);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    let timer: number | undefined;
-    let cleanupTimer = () => {};
-    if (storyMediaType !== 'VIDEO' && shouldAutoAdvanceStory(ready, inactive)) {
-      const remaining = remainingRef.current ?? storyAdvanceDelayMs('IMAGE');
-      const started = Date.now();
-      timer = window.setTimeout(() => move(index + 1), remaining);
-      // pause keeps the remaining time so the bar and the slide stay in step
-      cleanupTimer = () => {
-        if (timer) window.clearTimeout(timer);
-        remainingRef.current = Math.max(0, remaining - (Date.now() - started));
-      };
-    }
-    return () => {
-      cleanupTimer();
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [storyId, storyMediaType, ready, inactive, index, move, closeViewer]);
+  useStoryPlayback({
+    storyId,
+    storyMediaType,
+    ready,
+    inactive,
+    index,
+    move,
+    closeViewer,
+    setPaused,
+  });
 
   return (
     <div

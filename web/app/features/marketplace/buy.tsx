@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useLoaderData, type LoaderFunctionArgs } from 'react-router';
 import { ApiError } from '../../core/api';
+import { useLatest } from '../../core/use-latest';
 import {
   Button,
   ErrorState,
@@ -41,10 +42,7 @@ export default function BuyProductRoute() {
   const { locale, path } = useLocale();
   const { t } = useI18n(catalogs);
   const userId = user?.id ?? null;
-  const userIdRef = useRef(userId);
-  useEffect(() => {
-    userIdRef.current = userId;
-  }, [userId]);
+  const userIdRef = useLatest(userId);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [restoring, setRestoring] = useState(true);

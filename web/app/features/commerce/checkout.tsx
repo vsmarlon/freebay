@@ -1,9 +1,10 @@
 import { buttonClass } from '../../components';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../../core/api';
 import { userKey } from '../../core/query-client';
+import { useLatest } from '../../core/use-latest';
 import { commerceApi } from './api';
 import { Button, CommercePage, ErrorState, RequireAuth, Surface, useCommerce } from './shared';
 import { canonicalCheckoutGroup, checkoutFailureIsDefinitive, safeCheckoutUrl } from './types';
@@ -18,10 +19,7 @@ function attemptTimestamp() {
 function CheckoutContent() {
   const { t, money, path, user } = useCommerce();
   const userId = user?.id ?? null;
-  const userIdRef = useRef(userId);
-  useEffect(() => {
-    userIdRef.current = userId;
-  }, [userId]);
+  const userIdRef = useLatest(userId);
   const queryClient = useQueryClient();
   const [ambiguous, setAmbiguous] = useState(false);
   const [rejected, setRejected] = useState(false);
