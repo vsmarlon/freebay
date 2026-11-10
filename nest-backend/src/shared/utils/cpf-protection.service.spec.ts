@@ -37,6 +37,7 @@ describe('CpfProtectionService', () => {
       if (processHmacKey === undefined) delete process.env.CPF_HMAC_KEY;
       else process.env.CPF_HMAC_KEY = processHmacKey;
     }
-    expect(() => service.decrypt(`${encrypted.slice(0, -1)}A`)).toThrow();
+    const tampered = `${encrypted.slice(0, -1)}${encrypted.endsWith('A') ? 'B' : 'A'}`;
+    expect(() => service.decrypt(tampered)).toThrow();
   });
 });
