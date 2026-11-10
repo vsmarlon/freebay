@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { RequireAuth, useSession } from '../../core/session';
 import { useI18n } from '../../core/locale';
@@ -28,10 +28,7 @@ function Inbox() {
   const debouncedQuery = useDebouncedValue(query, 180);
   const debouncedNewQuery = useDebouncedValue(newQuery, 180);
   const conversationsQuery = useInboxConversations(user?.id, debouncedQuery, archived);
-  const items = useMemo(
-    () => conversationsQuery.data?.pages.flatMap((page) => page.items) ?? [],
-    [conversationsQuery.data],
-  );
+  const items = conversationsQuery.data?.pages.flatMap((page) => page.items) ?? [];
 
   const searchActive = creating && newQuery.trim().length >= 2;
   const peopleQuery = usePeopleSearch(user?.id, debouncedNewQuery.trim(), searchActive);

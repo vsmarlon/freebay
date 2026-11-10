@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useSession } from '../../../core/session';
 import { useI18n } from '../../../core/locale';
 import { chatCatalogs } from '../catalogs';
@@ -30,12 +30,9 @@ export function ThreadPage({ conversationId, locale }: { conversationId: string;
   const transcript = useThreadTranscript(conversationId);
   const pages = transcript.data?.pages;
   const page = pages?.[0];
-  const messages = useMemo(() => (pages ? threadMessages(pages) : []), [pages]);
+  const messages = pages ? threadMessages(pages) : [];
   const recordQuery = useConversationRecord(conversationId, page?.otherUser.displayName);
-  const record = useMemo(
-    () => conversationRecordFrom(recordQuery.data, conversationId),
-    [recordQuery.data, conversationId],
-  );
+  const record = conversationRecordFrom(recordQuery.data, conversationId);
   const sidebar = useChatSidebar();
   const socket = useChatSocket(conversationId, page?.otherUserId, session.user?.id);
   const selection = useMessageSelection();

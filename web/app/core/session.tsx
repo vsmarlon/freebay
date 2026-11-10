@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { createContext, useContext, useRef, useState, useSyncExternalStore } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { ApiError, accessTokenForSocket, api, clearAccessToken, refreshAccessToken } from './api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -153,7 +146,7 @@ function SessionStateProvider({ children }: React.PropsWithChildren) {
   const user = signedOut ? null : (rawUser ?? null);
   const isPending = queryPending && !signedOut;
 
-  const reload = useCallback(async () => {
+  const reload = async () => {
     const id = ++reloadId.current;
     clearAccessToken();
     try {
@@ -168,9 +161,9 @@ function SessionStateProvider({ children }: React.PropsWithChildren) {
     } catch {
       /* error state reflects it */
     }
-  }, [queryClient, refetch]);
+  };
 
-  const signOut = useCallback(async () => {
+  const signOut = async () => {
     if (logoutFlight.current) return;
     logoutFlight.current = true;
     const operation = ++reloadId.current;
@@ -214,7 +207,7 @@ function SessionStateProvider({ children }: React.PropsWithChildren) {
       /* cross-tab notification is best effort */
     }
     navigate(appPath(locale, paths.login), { replace: true });
-  }, [locale, navigate, queryClient]);
+  };
 
   return (
     <Context.Provider
