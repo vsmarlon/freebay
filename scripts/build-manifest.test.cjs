@@ -31,3 +31,33 @@ test('build manifest digest is stable and changes when artifact content changes'
     rmSync(temporary, { recursive: true, force: true });
   }
 });
+
+test('build manifest allows intentional skips but rejects failures', () => {
+  const temporary = mkdtempSync(path.join(os.tmpdir(), 'freebay-manifest-skips-'));
+  try {
+    const artifact = path.join(temporary, 'build');
+    mkdirSync(artifact, { recursive: true });
+    writeFileSync(path.join(artifact, 'app.js'), 'synthetic artifact');
+    const manifest = path.join(temporary, 'manifest.json');
+    const verification = path.join(temporary, 'verification.json');
+    const script = path.join(__dirname, 'build-manifest.cjs');
+    const run = (action) =>
+      spawnSync(
+        process.execPath,
+        [script, action, artifact, manifest, 'revision-1', 'test-config', verification],
+        { encoding: 'utf8' },
+      );
+
+    writeFileSync(verification, JSON.stringify({ tests: 2, failed: 0, skipped: 1, success: true }));
+    assert.equal(run('create').status, 0);
+    assert.equal(run('verify').status, 0);
+
+    writeFileSync(verification, JSON.stringify({ tests: 2, failed: 1, skipped: 0, success: false }));
+    assert.equal(run('create').status, 0);
+    const failed = run('verify');
+    assert.notEqual(failed.status, 0);
+    assert.match(failed.stderr, /successful non-empty/);
+  } finally {
+    rmSync(temporary, { recursive: true, force: true });
+  }
+});
