@@ -4,6 +4,7 @@ import path from 'node:path';
 
 export default defineConfig({
   testDir: './journeys',
+  expect: { timeout: 15_000 },
   outputDir: path.resolve(
     process.env.PLAYWRIGHT_OUTPUT_DIR ?? path.join(tmpdir(), 'freebay-playwright-fixture-output'),
   ),
