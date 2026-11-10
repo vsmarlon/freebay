@@ -1,232 +1,426 @@
-import 'package:dio/dio.dart';
-import 'package:freebay/shared/services/http_client.dart';
-import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/either/either.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:dio/dio.dart';
+import 'package:freebay/shared/models/cursor_page.dart';
+import 'package:freebay/shared/http/request_either.dart';
+import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
-
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
-import 'package:freebay/features/chat/domain/repositories/i_chat_repository.dart';
+import 'package:freebay/features/chat/data/entities/message_type.dart';
+import 'package:freebay/features/chat/data/entities/conversation_media_filter.dart';
+import 'package:freebay/features/profile/data/entities/block_responses.dart';
 
-class ChatRepository implements IChatRepository {
-  @override
-  Future<Either<Failure, List<ChatEntity>>> getChats({String? query}) async {
-    try {
-      final path = query != null && query.isNotEmpty
-          ? '/chat/conversations?q=${Uri.encodeQueryComponent(query)}'
-          : '/chat/conversations';
-      final response = await HttpClient.instance.get(path);
+const _archivedChatsPageLimit = 50;
+const _conversationMediaPageLimit = 50;
 
-      if (response.statusCode == 200 && response.data != null) {
-        final conversations = response.data['data']['conversations'] as List;
-        final chats = conversations
-            .map((json) => ChatEntity.fromJson(json as Map<String, dynamic>))
-            .toList();
-        return Right(chats);
-      }
-      return const Left(ServerFailure('Erro ao carregar conversas'));
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
-    }
-  }
+class ChatRepository {
+  final Dio client;
 
-  @override
-  Future<Either<Failure, List<ChatEntity>>> getArchivedChats() async {
-    try {
-      final response = await HttpClient.instance.get('/chat/archived');
+  ChatRepository({Dio? client}) : client = client ?? HttpClient.instance;
 
-      if (response.statusCode == 200 && response.data != null) {
-        final conversations = response.data['data']['conversations'] as List;
-        final chats = conversations
-            .map((json) => ChatEntity.fromJson(json as Map<String, dynamic>))
-            .toList();
-        return Right(chats);
-      }
-      return const Left(ServerFailure('Erro ao carregar conversas arquivadas'));
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
-    }
-  }
+  Future<Either<Failure, CursorPage<ChatEntity>>> getChats({
+    String? query,
+    String? cursor,
+    int? limit,
+  }) => requestEither<CursorPage<ChatEntity>>(
+    () => client.get(
+      '/chat/conversations',
+      queryParameters: {
+        'q': ?query?.isNotEmpty == true ? query : null,
+        'cursor': ?cursor,
+        'limit': ?limit,
+      },
+    ),
+    decoder: (response) => Right(
+      parseCursorPage<ChatEntity>(response.data['data'], ChatEntity.fromJson),
+    ),
+  );
 
-  @override
-  Future<Either<Failure, void>> sendMessage(
-    String chatId,
-    String message,
-  ) async {
-    try {
-      await HttpClient.instance.post(
-        '/chat/conversations/$chatId/messages',
-        data: {'content': message},
+  Future<Either<Failure, CursorPage<ChatEntity>>> getArchivedChats({
+    String? cursor,
+    int limit = _archivedChatsPageLimit,
+  }) => requestEither<CursorPage<ChatEntity>>(
+    () => client.get(
+      '/chat/archived',
+      queryParameters: {'cursor': ?cursor, 'limit': limit},
+    ),
+    decoder: (response) => Right(
+      parseCursorPage<ChatEntity>(response.data['data'], ChatEntity.fromJson),
+    ),
+  );
+
+  Future<Either<Failure, String>> startDirectConversation(
+    String targetUserId, {
+    String? productId,
+  }) => requestEither(
+    () => client.post(
+      '/chat/conversations',
+      data: {'targetUserId': targetUserId, 'productId': ?productId},
+    ),
+    decoder: (response) =>
+        Right(response.data['data']['conversationId'] as String),
+  );
+
+  Future<
+    Either<
+      Failure,
+      ({
+        List<MessageEntity> messages,
+        bool hasMore,
+        String? nextCursor,
+        ChatThreadType threadType,
+        String otherUserId,
+        String otherUserName,
+        String? otherUserAvatarUrl,
+        ConversationPreference? preference,
+      })
+    >
+  >
+  getConversation(String conversationId, {String? cursor, int? limit}) =>
+      requestEither(
+        () => client.get(
+          '/chat/conversations/$conversationId',
+          queryParameters: {'cursor': ?cursor, 'limit': ?limit},
+        ),
+        decoder: (response) {
+          final data = response.data['data'];
+          if (data is! Map<String, dynamic>) {
+            return const Left(ServerFailure('Resposta inválida do servidor.'));
+          }
+          final rawOtherUser = data['otherUser'];
+          if (rawOtherUser is! Map) {
+            return const Left(ServerFailure('Resposta inválida do servidor.'));
+          }
+          final otherUser = Map<String, dynamic>.from(rawOtherUser);
+          final otherUserId = otherUser['id'];
+          if (otherUserId is! String) {
+            return const Left(ServerFailure('Resposta inválida do servidor.'));
+          }
+          final displayName = otherUser['displayName'];
+          final otherUserName =
+              displayName is String && displayName.trim().isNotEmpty
+              ? displayName
+              : 'Usuário';
+          final rawMessages = (data['messages'] as List?) ?? const [];
+          final messages = rawMessages
+              .whereType<Map>()
+              .map((m) => MessageEntity.fromJson(Map<String, dynamic>.from(m)))
+              .toList();
+          final threadType = ChatThreadType.fromWire(data['threadType']);
+          if (threadType == null) {
+            return const Left(ServerFailure('Resposta inválida do servidor.'));
+          }
+          final rawPref = data['preference'];
+          final preference = rawPref is Map
+              ? ConversationPreference.fromJson(
+                  Map<String, dynamic>.from(rawPref),
+                )
+              : null;
+
+          return Right((
+            messages: messages,
+            hasMore: data['hasMore'] == true,
+            nextCursor: data['nextCursor'] as String?,
+            threadType: threadType,
+            otherUserId: otherUserId,
+            otherUserName: otherUserName,
+            otherUserAvatarUrl: otherUser['avatarUrl'] as String?,
+            preference: preference,
+          ));
+        },
       );
-      return const Right(null);
-    } catch (e) {
-      return const Left(ServerFailure('Erro ao enviar mensagem'));
-    }
-  }
 
-  @override
-  Future<Either<Failure, void>> markAsRead(String chatId) async {
-    try {
-      await HttpClient.instance.patch('/chat/conversations/$chatId/read');
-      return const Right(null);
-    } catch (e) {
-      return const Left(ServerFailure('Erro ao marcar como lido'));
-    }
-  }
+  Future<Either<Failure, MessageEntity>> sendMessage(
+    String chatId,
+    String message, {
+    String? replyToId,
+    bool viewOnce = false,
+    String? clientMessageId,
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.post(
+      '/chat/conversations/$chatId/messages',
+      data: {
+        'content': message,
+        'replyToId': ?replyToId,
+        'clientMessageId': ?clientMessageId,
+        if (viewOnce) 'viewOnce': true,
+      },
+      cancelToken: cancelToken,
+    ),
+    decoder: (response) => Right(MessageEntity.fromJson(response.data['data'])),
+  );
 
-  @override
+  Future<Either<Failure, void>> markAsRead(
+    String chatId, {
+    String? messageId,
+  }) => requestEither<void>(
+    () => client.patch(
+      '/chat/conversations/$chatId/read',
+      data: {'messageId': ?messageId},
+    ),
+    decoder: (_) => const Right(null),
+  );
+
   Future<Either<Failure, void>> archiveChat(
     String id,
     ChatThreadType type,
     bool archived,
-  ) async {
-    try {
-      await HttpClient.instance.patch(
-        '/chat/conversations/$id/archive',
-        data: {'archived': archived},
+  ) => requestEither<void>(
+    () => client.patch(
+      '/chat/conversations/$id/archive',
+      data: {'archived': archived},
+    ),
+    decoder: (_) => const Right(null),
+  );
+
+  Future<Either<Failure, void>> deleteChat(String id, ChatThreadType type) =>
+      requestEither<void>(
+        () => client.patch('/chat/conversations/$id/delete'),
+        decoder: (_) => const Right(null),
       );
-      return const Right(null);
-    } catch (e) {
-      return const Left(ServerFailure('Erro ao arquivar conversa'));
-    }
-  }
 
-  @override
-  Future<Either<Failure, void>> deleteChat(
-    String id,
-    ChatThreadType type,
-  ) async {
-    try {
-      await HttpClient.instance.delete('/chat/conversations/$id');
-      return const Right(null);
-    } catch (e) {
-      return const Left(ServerFailure('Erro ao excluir conversa'));
-    }
-  }
+  Future<Either<Failure, BlockResponse>> blockUser(String userId) =>
+      requestEither(
+        () => client.post('/users/$userId/block'),
+        decoder: (response) =>
+            Right(BlockResponse.fromJson(response.data['data'])),
+      );
 
-  @override
   Future<Either<Failure, ConversationPreference>> setTheme(
     String id,
     ChatThreadType type,
     String theme,
-  ) async {
-    try {
-      final response = await HttpClient.instance.patch(
-        '/chat/conversations/$id/theme',
-        data: {'theme': theme},
-      );
-      if (response.statusCode == 200 && response.data != null) {
-        final prefData =
-            response.data['data']['preference'] as Map<String, dynamic>;
-        return Right(ConversationPreference.fromJson(prefData));
-      }
-      return const Left(ServerFailure('Erro ao alterar tema'));
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
-    }
-  }
+  ) => requestEither(
+    () => client.patch('/chat/conversations/$id/theme', data: {'theme': theme}),
+    decoder: (response) =>
+        Right(ConversationPreference.fromJson(response.data['data'])),
+  );
 
-  @override
+  Future<Either<Failure, ConversationPreference>> setMuted(
+    String id,
+    ChatThreadType type,
+    bool muted,
+  ) => requestEither(
+    () => client.patch('/chat/conversations/$id/theme', data: {'muted': muted}),
+    decoder: (response) =>
+        Right(ConversationPreference.fromJson(response.data['data'])),
+  );
+
+  Future<Either<Failure, ({String mediaUrl, DateTime readAt})>> openViewOnce(
+    String conversationId,
+    String messageId,
+    String openingKey,
+  ) => requestEither(
+    () => client.post(
+      '/chat/conversations/$conversationId/messages/$messageId/view-once/open',
+      data: {'openingKey': openingKey},
+    ),
+    decoder: (response) {
+      final data = response.data['data'];
+      if (data is! Map<String, dynamic> ||
+          data['mediaUrl'] is! String ||
+          data['readAt'] is! String) {
+        return const Left(ServerFailure());
+      }
+      final readAt = DateTime.tryParse(data['readAt'] as String);
+      if (readAt == null) {
+        return const Left(ServerFailure());
+      }
+      return Right((mediaUrl: data['mediaUrl'] as String, readAt: readAt));
+    },
+  );
+
+  Future<Either<Failure, void>> closeViewOnce(
+    String conversationId,
+    String messageId,
+    String openingKey,
+  ) => requestEither<void>(
+    () => client.post(
+      '/chat/conversations/$conversationId/messages/$messageId/view-once/close',
+      data: {'openingKey': openingKey},
+    ),
+    decoder: (_) => const Right(null),
+  );
+
   Future<Either<Failure, ConversationPreference>> setBackground(
     String id,
     ChatThreadType type,
     String base64DataUri,
-  ) async {
-    try {
-      final response = await HttpClient.instance.patch(
-        '/chat/conversations/$id/background',
-        data: {'backgroundUrl': base64DataUri},
-      );
-      if (response.statusCode == 200 && response.data != null) {
-        final prefData =
-            response.data['data']['preference'] as Map<String, dynamic>;
-        return Right(ConversationPreference.fromJson(prefData));
-      }
-      return const Left(ServerFailure('Erro ao alterar plano de fundo'));
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 413) {
-        return const Left(
-          ServerFailure('Imagem muito grande. Escolha uma imagem menor.'),
-        );
-      }
-      return const Left(ServerFailure('Erro de conexão'));
-    } catch (_) {
-      return const Left(ServerFailure('Erro ao alterar plano de fundo'));
-    }
-  }
+  ) => requestEither(
+    () => client.patch(
+      '/chat/conversations/$id/background',
+      data: {'backgroundUrl': base64DataUri},
+    ),
+    decoder: (response) =>
+        Right(ConversationPreference.fromJson(response.data['data'])),
+  );
 
-  @override
   Future<Either<Failure, MessageEntity>> sendRichMessage({
     required String conversationId,
+    String? clientMessageId,
     String? content,
-    String type = 'TEXT',
+    MessageType type = MessageType.text,
     String? attachmentUrl,
     String? replyToId,
     Map<String, dynamic>? metadata,
-  }) async {
-    try {
-      final data = <String, dynamic>{'type': type};
-      if (content != null) data['content'] = content;
-      if (attachmentUrl != null) data['attachmentUrl'] = attachmentUrl;
-      if (replyToId != null) data['replyToId'] = replyToId;
-      if (metadata != null) data['metadata'] = metadata;
-      final response = await HttpClient.instance.post(
-        '/chat/conversations/$conversationId/messages',
-        data: data,
-      );
-      if (response.statusCode == 201 && response.data != null) {
-        return Right(
-          MessageEntity.fromJson(response.data['data'] as Map<String, dynamic>),
-        );
-      }
-      return const Left(ServerFailure('Falha ao enviar mensagem'));
-    } catch (_) {
-      return const Left(ServerFailure('Erro de conexão'));
-    }
-  }
+    bool viewOnce = false,
+    int? durationMs,
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.post(
+      '/chat/conversations/$conversationId/messages',
+      data: {
+        'type': type.wireValue,
+        'clientMessageId': ?clientMessageId,
+        'content': ?content,
+        'attachmentUrl': ?attachmentUrl,
+        'replyToId': ?replyToId,
+        'metadata': ?metadata,
+        'durationMs': ?durationMs,
+        if (viewOnce) 'viewOnce': true,
+      },
+      cancelToken: cancelToken,
+    ),
+    decoder: (response) => Right(MessageEntity.fromJson(response.data['data'])),
+  );
 
-  @override
   Future<Either<Failure, void>> deleteMessage(
     String conversationId,
     String messageId,
-  ) async {
-    try {
-      await HttpClient.instance.delete(
-        '/chat/conversations/$conversationId/messages/$messageId',
-      );
-      return const Right(null);
-    } catch (_) {
-      return const Left(ServerFailure('Erro ao apagar mensagem'));
-    }
-  }
+  ) => requestEither<void>(
+    () => client.patch(
+      '/chat/conversations/$conversationId/messages/$messageId/delete',
+    ),
+    decoder: (_) => const Right(null),
+  );
 
-  @override
+  Future<Either<Failure, bool>> toggleStar(
+    String conversationId,
+    String messageId,
+  ) => requestEither(
+    () => client.post(
+      '/chat/conversations/$conversationId/messages/$messageId/star',
+    ),
+    decoder: (response) => Right(response.data['data']['starred'] == true),
+  );
+
+  Future<Either<Failure, bool>> setMessagePinned(
+    String conversationId,
+    String messageId,
+    bool pinned,
+  ) => requestEither(
+    () => client.patch(
+      '/chat/conversations/$conversationId/messages/$messageId/pin',
+      data: {'pinned': pinned},
+    ),
+    decoder: (response) => Right(response.data['data']['pinned'] == true),
+  );
+
+  Future<Either<Failure, List<MessageEntity>>> getStarredMessages(
+    String conversationId,
+  ) => requestEither(
+    () => client.get('/chat/conversations/$conversationId/starred'),
+    decoder: (response) {
+      final raw = response.data['data'];
+      return Right(
+        raw is List
+            ? raw
+                  .whereType<Map>()
+                  .map(
+                    (item) =>
+                        MessageEntity.fromJson(Map<String, dynamic>.from(item)),
+                  )
+                  .toList()
+            : <MessageEntity>[],
+      );
+    },
+  );
+
   Future<Either<Failure, List<MessageReactionEntity>>> reactToMessage(
     String conversationId,
     String messageId,
     String emoji,
-  ) async {
-    try {
-      final response = await HttpClient.instance.post(
-        '/chat/conversations/$conversationId/messages/$messageId/react',
-        data: {'emoji': emoji},
+  ) => requestEither(
+    () => client.post(
+      '/chat/conversations/$conversationId/messages/$messageId/react',
+      data: {'emoji': emoji},
+    ),
+    decoder: (response) {
+      final raw = response.data['data']['reactions'];
+      return Right(
+        raw is List
+            ? raw
+                  .whereType<Map>()
+                  .map(
+                    (e) => MessageReactionEntity.fromJson(
+                      Map<String, dynamic>.from(e),
+                    ),
+                  )
+                  .toList()
+            : <MessageReactionEntity>[],
       );
-      if (response.statusCode == 200 && response.data != null) {
-        final list = response.data['data']['reactions'] as List;
-        return Right(
-          list
-              .map(
-                (e) =>
-                    MessageReactionEntity.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
-        );
-      }
-      return const Left(ServerFailure('Falha ao reagir'));
-    } catch (_) {
-      return const Left(ServerFailure('Erro de conexão'));
-    }
-  }
+    },
+  );
+
+  Future<Either<Failure, ({List<MessageEntity> messages, String? nextCursor})>>
+  getConversationMedia(
+    String conversationId, {
+    ConversationMediaFilter type = ConversationMediaFilter.image,
+    int limit = _conversationMediaPageLimit,
+    String? cursor,
+  }) => requestEither<({List<MessageEntity> messages, String? nextCursor})>(
+    () => client.get(
+      '/chat/conversations/$conversationId/messages',
+      queryParameters: {
+        'type': type.wireValue,
+        'limit': limit,
+        'cursor': ?cursor,
+      },
+    ),
+    decoder: (response) {
+      final data = response.data['data'] as Map<String, dynamic>? ?? {};
+      final rawMessages = (data['messages'] as List?) ?? [];
+      final messages = rawMessages
+          .whereType<Map>()
+          .map((m) => MessageEntity.fromJson(Map<String, dynamic>.from(m)))
+          .where((message) => !message.viewOnce)
+          .toList();
+      return Right((
+        messages: messages,
+        nextCursor: data['nextCursor'] as String?,
+      ));
+    },
+  );
+
+  Future<Either<Failure, List<MessageEntity>>> forwardMessages({
+    required List<String> messageIds,
+    required List<String> targetConversationIds,
+    String? sourceConversationId,
+  }) => requestEither(
+    () => client.post(
+      '/chat/messages/forward',
+      data: {
+        'messageIds': messageIds,
+        'targetConversationIds': targetConversationIds,
+        'sourceConversationId': ?sourceConversationId,
+      },
+    ),
+    decoder: (response) {
+      final raw = response.data['data']['messages'];
+      return Right(
+        raw is List
+            ? raw
+                  .whereType<Map>()
+                  .map(
+                    (e) => MessageEntity.fromJson(Map<String, dynamic>.from(e)),
+                  )
+                  .toList()
+            : <MessageEntity>[],
+      );
+    },
+  );
 }

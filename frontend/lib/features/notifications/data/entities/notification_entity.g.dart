@@ -9,7 +9,7 @@ part of 'notification_entity.dart';
 _NotificationEntity _$NotificationEntityFromJson(Map<String, dynamic> json) =>
     _NotificationEntity(
       id: json['id'] as String,
-      type: json['type'] as String,
+      type: const NotificationTypeConverter().fromJson(json['type'] as String),
       title: json['title'] as String,
       body: json['body'] as String,
       data: json['data'] as Map<String, dynamic>?,
@@ -20,7 +20,7 @@ _NotificationEntity _$NotificationEntityFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$NotificationEntityToJson(_NotificationEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'type': instance.type,
+      'type': const NotificationTypeConverter().toJson(instance.type),
       'title': instance.title,
       'body': instance.body,
       'data': instance.data,

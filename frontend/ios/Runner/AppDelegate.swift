@@ -3,6 +3,7 @@ import UIKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  private let nativeVideoEditor = NativeVideoEditor()
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -12,5 +13,8 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    NativeImageCompositor.register(messenger: engineBridge.applicationRegistrar.messenger)
+    NativeBiometricKey.register(messenger: engineBridge.applicationRegistrar.messenger)
+    nativeVideoEditor.register(messenger: engineBridge.applicationRegistrar.messenger)
   }
 }

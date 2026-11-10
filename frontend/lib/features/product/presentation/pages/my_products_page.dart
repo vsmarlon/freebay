@@ -1,33 +1,22 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_card.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-
-final myProductsProvider = FutureProvider<List<ProductEntity>>((ref) async {
-  final repository = ref.watch(productRepositoryProvider);
-  final result = await repository.getMyProducts();
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (products) => products,
-  );
-});
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 class MyProductsPage extends ConsumerWidget {
   const MyProductsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final isDark = context.isDark;
     final productsAsync = ref.watch(myProductsProvider);
 
@@ -36,29 +25,16 @@ class MyProductsPage extends ConsumerWidget {
       body: Column(
         children: [
           PageHeader(
-            text: 'MEUS ANÚNCIOS',
-            leading: GestureDetector(
+            text: strings.productMyListings.toUpperCase(),
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
+              semanticLabel: strings.accessibilityBack,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
             actions: [
               IconButton(
-                icon: Icon(
-                  Icons.add,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
-                ),
-                onPressed: () => context.push('/products/create'),
+                icon: Icon(Icons.add, color: context.textPrimary),
+                onPressed: () => context.push(AppRoutes.createProduct),
               ),
             ],
           ),
@@ -72,13 +48,13 @@ class MyProductsPage extends ConsumerWidget {
                       child: products.isEmpty
                           ? EmptyState(
                               icon: Icons.shopping_bag_outlined,
-                              title: 'NENHUM AN\u00daNCIO',
-                              subtitle: 'Nenhum an\u00fancio ainda',
+                              title: strings.productNoListings,
+                              subtitle: strings.productListingsEmpty,
                               action: AppButton(
-                                label: 'Criar an\u00fancio',
+                                label: strings.productCreateListing,
                                 icon: Icons.add,
                                 onPressed: () =>
-                                    context.push('/products/create'),
+                                    context.push(AppRoutes.createProduct),
                               ),
                             )
                           : RefreshIndicator(
@@ -132,10 +108,8 @@ class MyProductsPage extends ConsumerWidget {
                     ),
                     Spacing.vMd,
                     Text(
-                      'Erro ao carregar an\u00fancios',
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                      ),
+                      strings.productListingsLoadFailed,
+                      style: TextStyle(color: context.textPrimary),
                     ),
                   ],
                 ),
@@ -155,11 +129,10 @@ class MyProductsPage extends ConsumerWidget {
     final price = product.price > 0 ? product.price / 100 : 0.0;
 
     return GestureDetector(
-      onTap: () => context.push('/products/${product.id}'),
+      onTap: () => context.push(AppRoutes.productPath(product.id)),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.white,
-          borderRadius: BorderRadius.zero,
+          color: context.bgColor,
           border: Border.all(
             color: AppColors.onSurface.withValues(alpha: 0.15),
             width: 2,
@@ -177,7 +150,28 @@ class MyProductsPage extends ConsumerWidget {
                       : AppColors.lightGray,
                 ),
                 child: product.imageUrl != null && product.imageUrl!.isNotEmpty
-                    ? Image.network(product.imageUrl!, fit: BoxFit.cover)
+                    ? CachedNetworkImage(
+                        imageUrl: product.imageUrl!,
+                        httpHeaders: mediaAuthHeaders(product.imageUrl!),
+                        fit: BoxFit.cover,
+                        memCacheWidth: 400,
+                        memCacheHeight: 400,
+                        placeholder: (context, url) => BlurHashPlaceholder(
+                          hash: isPrivateMedia(url)
+                              ? null
+                              : product.imageBlurHash,
+                          fallback: Container(
+                            color: isDark
+                                ? AppColors.backgroundDark
+                                : AppColors.lightGray,
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => const Icon(
+                          Icons.shopping_bag,
+                          color: AppColors.mediumGray,
+                          size: 40,
+                        ),
+                      )
                     : const Icon(
                         Icons.shopping_bag,
                         color: AppColors.mediumGray,
@@ -196,7 +190,7 @@ class MyProductsPage extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.white : AppColors.darkGray,
+                      color: context.textPrimary,
                     ),
                   ),
                   Spacing.vXs,
@@ -210,22 +204,23 @@ class MyProductsPage extends ConsumerWidget {
                           color: AppColors.primaryContainer,
                         ),
                       ),
-                      _buildStatusBadge(product.status, isDark),
+                      _buildStatusBadge(context, product.status),
                     ],
                   ),
                   Spacing.vSm,
                   InkWell(
-                    onTap: () => context.push('/products/${product.id}/edit'),
+                    onTap: () =>
+                        context.push(AppRoutes.productEditPath(product.id)),
                     child: Container(
                       width: double.infinity,
                       height: 36,
                       color: isDark
                           ? AppColors.surfaceContainerDark
                           : AppColors.surfaceContainerHighest,
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          'Editar anúncio',
-                          style: TextStyle(
+                          l10n(context).productEditListing,
+                          style: const TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontWeight: FontWeight.w700,
                             color: AppColors.onSurface,
@@ -243,20 +238,20 @@ class MyProductsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusBadge(String status, bool isDark) {
+  Widget _buildStatusBadge(BuildContext context, ProductStatus status) {
     Color bgColor;
     Color textColor;
 
     switch (status) {
-      case 'ACTIVE':
+      case ProductStatus.active:
         bgColor = AppColors.success.withValues(alpha: 0.2);
         textColor = AppColors.success;
         break;
-      case 'PAUSED':
+      case ProductStatus.paused:
         bgColor = AppColors.warning.withValues(alpha: 0.2);
         textColor = AppColors.warning;
         break;
-      case 'SOLD':
+      case ProductStatus.sold:
         bgColor = AppColors.mediumGray.withValues(alpha: 0.2);
         textColor = AppColors.mediumGray;
         break;
@@ -265,14 +260,18 @@ class MyProductsPage extends ConsumerWidget {
         textColor = AppColors.mediumGray;
     }
 
+    final strings = l10n(context);
+    final label = switch (status) {
+      ProductStatus.active => strings.productStatusActive,
+      ProductStatus.paused => strings.productStatusPaused,
+      ProductStatus.sold => strings.productStatusSold,
+      ProductStatus.deleted => strings.productStatusDeleted,
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.zero,
-      ),
+      decoration: BoxDecoration(color: bgColor),
       child: Text(
-        status,
+        label,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.bold,

@@ -1,42 +1,85 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
+import 'empty_state.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
+import 'package:freebay/shared/l10n/app_locale_resolution.dart';
+import 'package:freebay/shared/services/error_reporter.dart';
 
-class AppErrorWidget extends StatelessWidget {
-  const AppErrorWidget({super.key, required this.details});
+enum AppErrorAction { retry, back, home }
+
+class AppErrorWidget extends StatefulWidget {
+  const AppErrorWidget({
+    super.key,
+    required this.details,
+    this.onRecover,
+    this.action = AppErrorAction.retry,
+  });
 
   final FlutterErrorDetails details;
+  final Future<void> Function()? onRecover;
+  final AppErrorAction action;
+
+  @override
+  State<AppErrorWidget> createState() => _AppErrorWidgetState();
+}
+
+class _AppErrorWidgetState extends State<AppErrorWidget> {
+  bool _recovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('app-error diagnostic: ${widget.details.exception}');
+  }
+
+  static AppLocalizations _localizations(BuildContext context) =>
+      maybeL10n(context) ??
+      lookupAppLocalizations(
+        resolveAppLocale(WidgetsBinding.instance.platformDispatcher.locales),
+      );
+
+  Future<void> _recover() async {
+    if (_recovering || widget.onRecover == null) return;
+    setState(() => _recovering = true);
+    try {
+      await widget.onRecover!();
+    } catch (error, stack) {
+      ErrorReporter.report('error-recovery', error, stack);
+      if (mounted) setState(() => _recovering = false);
+      return;
+    }
+    if (mounted) setState(() => _recovering = false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surfaceContainerLowest,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Color(0xFF8A1083),
-              ),
-              Spacing.vMd,
-              const Text(
-                'Algo deu errado',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              Spacing.vSm,
-              Text(
-                details.exception.toString(),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            ],
+    final localizations = _localizations(context);
+    return Directionality(
+      textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
+      child: Material(
+        color: context.bgColor,
+        child: Center(
+          child: SingleChildScrollView(
+            child: EmptyState(
+              icon: Icons.error_outline,
+              title: localizations.commonError.toUpperCase(),
+              subtitle: localizations.errorScreenLoad,
+              action: widget.onRecover == null
+                  ? null
+                  : AppButton(
+                      label: switch (widget.action) {
+                        AppErrorAction.retry =>
+                          localizations.commonRetry.toUpperCase(),
+                        AppErrorAction.back =>
+                          localizations.commonBack.toUpperCase(),
+                        AppErrorAction.home =>
+                          localizations.navHome.toUpperCase(),
+                      },
+                      onPressed: _recovering ? null : _recover,
+                      isLoading: _recovering,
+                    ),
+            ),
           ),
         ),
       ),

@@ -1,0 +1,330 @@
+import { StepUpPurpose } from '@/shared/auth/biometric-credential.service';
+import {
+  Controller,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Query,
+} from "@nestjs/common";
+import { BoundedMultipartInterceptor } from "@/shared/interceptors/bounded-multipart.interceptor";
+import { ApiTags } from "@nestjs/swagger";
+import { UserDatabaseRepository } from "@/modules/users";
+import {
+  GetUserStatsUseCase,
+  RegisterPhoneUseCase,
+  VerifyPhoneUseCase,
+  GetProfileUseCase,
+  UpdateProfileUseCase,
+  RequestProfileVerificationUseCase,
+  UpdateFcmTokenUseCase,
+  RequestAccountDeletionUseCase,
+  CancelAccountDeletionUseCase,
+  ExportUserDataUseCase,
+} from "./usecases";
+import {
+  GetAuth,
+  PostAuth,
+  PatchAuth,
+  DeleteAuth,
+  CurrentUserId,
+  CurrentUser,
+  StrictOrigin,
+} from "@/shared/decorators";
+import { AuthUser, JwtTokenType } from '@/shared/core/types';
+import { AllowTokenTypes } from '@/modules/auth/guards/token-types.decorator';
+import { SafetyListKind } from './types/user.types';
+import { WebCookieAuth } from '@/modules/auth/guards/web-cookie-auth.decorator';
+import {
+  UpdateProfileDTO,
+  RequestProfileVerificationDTO,
+  UpdateFcmTokenDTO,
+  RegisterPhoneDTO,
+  VerifyPhoneDTO,
+  OffsetPaginationQueryDTO,
+  CloseFriendCandidatesQueryDTO,
+} from "./dtos/user.dto";
+import { ManageSafetyListUseCase } from './usecases/manage-safety-list.usecase';
+import {
+  UserResponse,
+  UserStatsResponse,
+  AccountDeletionResponse,
+  toUserResponse,
+} from "./dtos/user-response.class";
+import { validateImageFile } from "@/shared/utils/image-upload.utils";
+import { deleteUpload, saveUpload } from "@/shared/utils/file.utils";
+import { generateImageBlurHash } from '@/shared/utils/blurhash.utils';
+import { RequireStepUp } from '@/shared/auth/step-up.guard';
+
+@ApiTags("Users")
+@Controller("users")
+export class UsersAccountController {
+  constructor(
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly getUserStatsUseCase: GetUserStatsUseCase,
+    private readonly registerPhoneUseCase: RegisterPhoneUseCase,
+    private readonly verifyPhoneUseCase: VerifyPhoneUseCase,
+    private readonly getProfileUseCase: GetProfileUseCase,
+    private readonly updateProfileUseCase: UpdateProfileUseCase,
+    private readonly requestProfileVerification: RequestProfileVerificationUseCase,
+    private readonly updateFcmTokenUseCase: UpdateFcmTokenUseCase,
+    private readonly requestAccountDeletionUseCase: RequestAccountDeletionUseCase,
+    private readonly cancelAccountDeletionUseCase: CancelAccountDeletionUseCase,
+    private readonly exportUserDataUseCase: ExportUserDataUseCase,
+    private readonly safetyLists: ManageSafetyListUseCase,
+  ) {}
+
+  @GetAuth('me/close-friends/candidates', 'Search my followers and close friends')
+  getCloseFriendCandidates(@CurrentUserId() userId: string, @Query() query: CloseFriendCandidatesQueryDTO) {
+    return this.safetyLists.candidates(userId, query.q ?? '', query.selected === 'true', query.limit ?? 20, query.offset ?? 0);
+  }
+
+  @GetAuth('me/close-friends', 'List my close friends')
+  getCloseFriends(@CurrentUserId() userId: string, @Query() query: OffsetPaginationQueryDTO) {
+    return this.safetyLists.list(userId, SafetyListKind.CLOSE_FRIENDS, query.limit ?? 20, query.offset ?? 0);
+  }
+
+  @PostAuth('me/close-friends/:memberId', { summary: 'Add a follower to close friends', responseStatus: 201 })
+  addCloseFriend(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
+    return this.safetyLists.change(userId, memberId, SafetyListKind.CLOSE_FRIENDS, true);
+  }
+
+  @PatchAuth('me/close-friends/:memberId/remove', 'Remove a close friend')
+  removeCloseFriend(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
+    return this.safetyLists.change(userId, memberId, SafetyListKind.CLOSE_FRIENDS, false);
+  }
+
+  @GetAuth('me/restricted', 'List my restricted users')
+  getRestricted(@CurrentUserId() userId: string, @Query() query: OffsetPaginationQueryDTO) {
+    return this.safetyLists.list(userId, SafetyListKind.RESTRICTED, query.limit ?? 20, query.offset ?? 0);
+  }
+
+  @PostAuth('me/restricted/:memberId', { summary: 'Restrict a user', responseStatus: 201 })
+  restrict(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
+    return this.safetyLists.change(userId, memberId, SafetyListKind.RESTRICTED, true);
+  }
+
+  @PatchAuth('me/restricted/:memberId/remove', 'Remove a restriction')
+  unrestrict(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
+    return this.safetyLists.change(userId, memberId, SafetyListKind.RESTRICTED, false);
+  }
+
+  @GetAuth("me", {
+    summary: "Get current user profile",
+    responseType: UserResponse,
+    errors: [{ status: 404, description: "User not found" }],
+  })
+  async getMe(@CurrentUserId() userId: string) {
+    return this.getProfileUseCase.execute({ userId, includePrivate: true });
+  }
+
+  @GetAuth("me/stats", {
+    summary: "Get current user stats",
+    responseType: UserStatsResponse,
+  })
+  async getMyStats(@CurrentUserId() userId: string) {
+    return this.getUserStatsUseCase.execute({ userId });
+  }
+
+  @GetAuth("me/export", {
+    summary: "Export selected account data",
+    description:
+      "Returns the listed profile, listing, social, order, payment, wallet, message and notification fields. The response includes explicit scope and exclusions; it is not a complete archive of all server-held data.",
+    throttle: { limit: 3, ttl: 3600000 },
+    errors: [{ status: 404, description: "User not found" }],
+  })
+  @RequireStepUp(StepUpPurpose.EXPORT_DATA)
+  async exportMyData(@CurrentUserId() userId: string) {
+    return this.exportUserDataUseCase.execute({ userId });
+  }
+
+  @DeleteAuth("me", {
+    summary: "Request account deletion",
+    description:
+      "Starts the 30-day deletion window: sessions are revoked, listings are paused, and the account is anonymized by the purge job unless cancelled.",
+    responseType: AccountDeletionResponse,
+    throttle: { limit: 3, ttl: 3600000 },
+    errors: [
+      { status: 404, description: "User not found" },
+      {
+        status: 409,
+        description: "Account has open orders, disputes or a wallet balance",
+      },
+    ],
+  })
+  @RequireStepUp(StepUpPurpose.DELETE_ACCOUNT)
+  async requestAccountDeletion(@CurrentUserId() userId: string) {
+    return this.requestAccountDeletionUseCase.execute({ userId });
+  }
+
+  @DeleteAuth('me/web', {
+    summary: 'Request account deletion from the public web flow',
+    responseType: AccountDeletionResponse,
+    errors: [{ status: 409, description: 'Account deletion is blocked by open orders, disputes, wallet balance, or Apple revocation' }],
+  })
+  @AllowTokenTypes(JwtTokenType.ACCESS)
+  @WebCookieAuth()
+  @StrictOrigin()
+  @RequireStepUp(StepUpPurpose.DELETE_ACCOUNT)
+  async requestWebAccountDeletion(@CurrentUser() user: AuthUser) {
+    return this.requestAccountDeletionUseCase.execute({ userId: user.userId });
+  }
+
+  @PatchAuth("me/deletion/cancel", {
+    summary: "Cancel a pending account deletion",
+    errors: [
+      { status: 400, description: "No pending deletion" },
+      { status: 401, description: "A fresh authenticated session is required" },
+      { status: 404, description: "User not found" },
+    ],
+  })
+  async cancelAccountDeletion(@CurrentUser() user: AuthUser) {
+    return this.cancelAccountDeletionUseCase.execute({ userId: user.userId, authenticatedAtMs: user.authenticatedAtMs });
+  }
+
+  @PatchAuth('me/web/deletion/cancel', { summary: 'Cancel deletion using a fresh same-origin web session' })
+  @AllowTokenTypes(JwtTokenType.ACCESS)
+  @WebCookieAuth()
+  @StrictOrigin()
+  async cancelWebAccountDeletion(@CurrentUser() user: AuthUser) {
+    return this.cancelAccountDeletionUseCase.execute({ userId: user.userId, authenticatedAtMs: user.authenticatedAtMs });
+  }
+
+  @PatchAuth("me", {
+    summary: "Update profile",
+    bodyType: UpdateProfileDTO,
+    responseType: UserResponse,
+    errors: [{ status: 404, description: "User not found" }],
+  })
+  async updateProfile(
+    @CurrentUserId() userId: string,
+    @Body() body: UpdateProfileDTO,
+  ) {
+    return this.updateProfileUseCase.execute({ userId, ...body });
+  }
+
+  @PostAuth('me/profile-verification', { summary: 'Request email code to authorize a profile document change', bodyType: RequestProfileVerificationDTO, httpCode: HttpStatus.OK })
+  async requestProfileVerificationCode(
+    @CurrentUserId() userId: string,
+    @Body() body: RequestProfileVerificationDTO,
+  ) {
+    return this.requestProfileVerification.request({ userId, cpf: body.cpf, locale: body.locale ?? 'pt-BR' });
+  }
+
+  @PostAuth("me/avatar", {
+    summary: "Upload profile picture",
+    description:
+      "Uploads an image to be used as profile avatar. Accepts JPEG, PNG, WebP, GIF up to 5MB.",
+    responseType: UserResponse,
+    httpCode: HttpStatus.OK,
+  })
+  @UseInterceptors(
+    BoundedMultipartInterceptor("avatar", 1, 5 * 1024 * 1024 + 512 * 1024, 4 * 1024, 5 * 1024 * 1024),
+  )
+  async uploadAvatar(
+    @CurrentUserId() userId: string,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.uploadProfileImage(userId, file, "avatar", 5 * 1024 * 1024);
+  }
+
+  @PostAuth("me/banner", {
+    summary: "Upload profile banner picture",
+    description:
+      "Uploads an image to be used as profile banner. Accepts JPEG, PNG, WebP, GIF up to 8MB.",
+    responseType: UserResponse,
+    httpCode: HttpStatus.OK,
+  })
+  @UseInterceptors(
+    BoundedMultipartInterceptor("banner", 1, 8 * 1024 * 1024 + 512 * 1024, 4 * 1024, 8 * 1024 * 1024),
+  )
+  async uploadBanner(
+    @CurrentUserId() userId: string,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.uploadProfileImage(userId, file, "banner", 8 * 1024 * 1024);
+  }
+
+  @PostAuth("me/phone", {
+    summary: "Register phone number for verification",
+    bodyType: RegisterPhoneDTO,
+    throttle: {
+      short: { limit: 3, ttl: 60000 },
+      medium: { limit: 5, ttl: 60000 },
+    },
+    httpCode: HttpStatus.OK,
+  })
+  async registerPhone(
+    @CurrentUserId() userId: string,
+    @Body() body: RegisterPhoneDTO,
+  ) {
+    return this.registerPhoneUseCase.execute({ userId, phone: body.phone });
+  }
+
+  @PostAuth("me/phone/verify", {
+    summary: "Verify phone number using code",
+    bodyType: VerifyPhoneDTO,
+    throttle: {
+      short: { limit: 5, ttl: 60000 },
+      medium: { limit: 10, ttl: 60000 },
+    },
+    httpCode: HttpStatus.OK,
+  })
+  async verifyPhone(
+    @CurrentUserId() userId: string,
+    @Body() body: VerifyPhoneDTO,
+  ) {
+    return this.verifyPhoneUseCase.execute({ userId, code: body.code });
+  }
+
+  @PatchAuth("me/fcm-token", {
+    summary: "Update FCM token",
+    bodyType: UpdateFcmTokenDTO,
+  })
+  async updateFcmToken(
+    @CurrentUserId() userId: string,
+    @Body() body: UpdateFcmTokenDTO,
+  ) {
+    const result = await this.updateFcmTokenUseCase.execute({
+      userId,
+      ...body,
+    });
+    if (result.isLeft()) return result;
+    return { success: true };
+  }
+
+  private async uploadProfileImage(
+    userId: string,
+    file: Express.Multer.File | undefined,
+    field: "avatar" | "banner",
+    maxSizeBytes: number,
+  ) {
+    if (file) {
+      const mimeError = validateImageFile(file, maxSizeBytes);
+      if (mimeError) throw new BadRequestException(mimeError);
+    }
+    if (!file) throw new BadRequestException("Imagem é obrigatória");
+    const imageUrl = saveUpload(file, field);
+
+    const blurHash = field === 'avatar'
+      ? await generateImageBlurHash(file.buffer)
+      : undefined;
+    try {
+      const updateResult = field === "avatar"
+        ? await this.userRepository.update(userId, {
+            avatarUrl: imageUrl,
+            avatarBlurHash: blurHash ?? null,
+          })
+        : await this.userRepository.update(userId, { bannerUrl: imageUrl });
+      if (updateResult.isLeft()) deleteUpload(imageUrl);
+      if (updateResult.isLeft()) return updateResult;
+      return toUserResponse(updateResult.value, undefined, true);
+    } catch (error) {
+      deleteUpload(imageUrl);
+      throw error;
+    }
+  }
+}

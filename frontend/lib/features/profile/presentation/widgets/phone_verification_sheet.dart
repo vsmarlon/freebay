@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/value_utils.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 void showPhoneVerificationSheet(BuildContext context) {
   showBrutalistSheet(
     context: context,
-    title: 'Verificação do Perfil',
+    title: l10n(context).profileVerifyTitle,
     useSafeArea: false,
     padding: const EdgeInsets.all(24),
     builder: (sheetContext) {
@@ -30,6 +24,7 @@ class _PhoneVerificationView extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final step = useState<int>(
       1,
     ); // 1 = Phone Input, 2 = Code Input, 3 = Success
@@ -57,10 +52,7 @@ class _PhoneVerificationView extends HookConsumerWidget {
     Future<void> requestVerificationCode() async {
       final phone = phoneController.text.replaceAll(RegExp(r'\D'), '');
       if (phone.length < 10 || phone.length > 11) {
-        AppSnackbar.error(
-          context,
-          'Informe um número de telefone com DDD válido.',
-        );
+        AppSnackbar.error(context, strings.profilePhoneInvalid);
         return;
       }
 
@@ -69,21 +61,18 @@ class _PhoneVerificationView extends HookConsumerWidget {
       final result = await repository.registerPhone(phone);
       isLoading.value = false;
 
-      result.fold((failure) => AppSnackbar.error(context, failure.message), (
+      result.fold((failure) => AppSnackbar.handleFailure(context, failure), (
         _,
       ) {
         step.value = 2;
-        AppSnackbar.success(context, 'Código de verificação enviado por SMS.');
+        AppSnackbar.success(context, strings.profileVerificationCodeSent);
       });
     }
 
     Future<void> verifyCode() async {
       final code = codeController.text.trim();
       if (code.length != 6) {
-        AppSnackbar.error(
-          context,
-          'O código de verificação deve ter 6 dígitos.',
-        );
+        AppSnackbar.error(context, strings.authCodeSixDigitsRequired);
         return;
       }
 
@@ -92,7 +81,7 @@ class _PhoneVerificationView extends HookConsumerWidget {
       final result = await repository.verifyPhone(code);
       isLoading.value = false;
 
-      result.fold((failure) => AppSnackbar.error(context, failure.message), (
+      result.fold((failure) => AppSnackbar.handleFailure(context, failure), (
         updatedUser,
       ) {
         // Update local user state
@@ -107,9 +96,9 @@ class _PhoneVerificationView extends HookConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Verifique sua conta para obter o selo de verificação e passar mais segurança na plataforma.',
-            style: TextStyle(
+          Text(
+            strings.profileVerificationIntro,
+            style: const TextStyle(
               fontSize: 14,
               color: AppColors.mediumGray,
               height: 1.4,
@@ -118,7 +107,7 @@ class _PhoneVerificationView extends HookConsumerWidget {
           Spacing.vLg,
           AppTextField(
             controller: phoneController,
-            label: 'Número de celular',
+            label: strings.profilePhoneNumber,
             hint: '(11) 99999-9999',
             keyboardType: TextInputType.phone,
             prefixIcon: Icons.phone_android,
@@ -127,7 +116,7 @@ class _PhoneVerificationView extends HookConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: AppButton(
-              label: 'Enviar código via SMS',
+              label: strings.profileSendSmsCode,
               isLoading: isLoading.value,
               onPressed: requestVerificationCode,
             ),
@@ -143,7 +132,7 @@ class _PhoneVerificationView extends HookConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Insira o código de 6 dígitos que enviamos para o número ${phoneController.text}.',
+            strings.profileEnterPhoneCode(phoneController.text),
             style: const TextStyle(
               fontSize: 14,
               color: AppColors.mediumGray,
@@ -153,7 +142,7 @@ class _PhoneVerificationView extends HookConsumerWidget {
           Spacing.vLg,
           AppTextField(
             controller: codeController,
-            label: 'Código de verificação',
+            label: strings.profileVerificationCode,
             hint: '000000',
             keyboardType: TextInputType.number,
             prefixIcon: Icons.lock_open,
@@ -171,7 +160,7 @@ class _PhoneVerificationView extends HookConsumerWidget {
                     ),
                     child: Center(
                       child: Text(
-                        'Voltar',
+                        strings.commonBack,
                         style: TextStyle(
                           color: context.textPrimary,
                           fontWeight: FontWeight.w700,
@@ -184,7 +173,7 @@ class _PhoneVerificationView extends HookConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: AppButton(
-                  label: 'Verificar',
+                  label: strings.profileVerifyAction,
                   isLoading: isLoading.value,
                   onPressed: verifyCode,
                 ),
@@ -199,12 +188,11 @@ class _PhoneVerificationView extends HookConsumerWidget {
     // Success Screen
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const Icon(Icons.verified, color: AppColors.primaryContainer, size: 72),
         Spacing.vMd,
         Text(
-          'Perfil verificado!',
+          strings.profileVerified,
           style: TextStyle(
             fontFamily: AppTypography.headlineFontFamily,
             fontSize: 22,
@@ -213,10 +201,10 @@ class _PhoneVerificationView extends HookConsumerWidget {
           ),
         ),
         Spacing.vSm,
-        const Text(
-          'Parabéns! Sua conta agora possui o selo de verificação oficial e você já pode negociar com maior segurança.',
+        Text(
+          strings.profileVerifiedBody,
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             color: AppColors.mediumGray,
             height: 1.4,
@@ -226,7 +214,7 @@ class _PhoneVerificationView extends HookConsumerWidget {
         SizedBox(
           width: double.infinity,
           child: AppButton(
-            label: 'Concluir',
+            label: strings.commonFinish,
             onPressed: () => Navigator.pop(context),
           ),
         ),

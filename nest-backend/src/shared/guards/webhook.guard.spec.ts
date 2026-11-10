@@ -1,73 +1,68 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
+import { StripeProvider, StripeWebhookEvent } from '@/modules/payments/providers/stripe-provider';
+import { createExecutionContext } from '@/shared/testing/test-doubles';
 import { WebhookGuard } from './webhook.guard';
-import { RedisService } from '@/shared/infra/redis/redis.service';
-import { AbacatePayProvider } from '@/modules/payments/providers/abacatepay.provider';
 
 describe('WebhookGuard', () => {
   let guard: WebhookGuard;
-  let mockRedis: { exists: jest.Mock; add: jest.Mock };
-  let mockAbacatePay: { verifyWebhook: jest.Mock };
-
-  const createContext = (headers: Record<string, string> = {}, body = {}): ExecutionContext => ({
-    switchToHttp: () => ({
-      getRequest: () => ({ headers, body }),
-    }),
-  }) as ExecutionContext;
+  const event: StripeWebhookEvent = {
+    id: 'evt_v2_account',
+    object: 'v2.core.event',
+    created: new Date().toISOString(),
+    livemode: false,
+    type: 'v2.core.account.updated',
+    related_object: { id: 'acct_1', type: 'v2.core.account', url: '' },
+    fetchRelatedObject: async () => {
+      throw new Error('not used');
+    },
+    fetchEvent: async () => {
+      throw new Error('not used');
+    },
+  };
 
   beforeEach(async () => {
-    mockRedis = {
-      exists: jest.fn().mockResolvedValue(false),
-      add: jest.fn().mockResolvedValue(undefined),
-    };
-
-    mockAbacatePay = {
-      verifyWebhook: jest.fn().mockReturnValue(true),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WebhookGuard,
-        { provide: RedisService, useValue: mockRedis },
-        { provide: AbacatePayProvider, useValue: mockAbacatePay },
+        {
+          provide: StripeProvider,
+          useValue: { constructWebhookEvent: jest.fn().mockReturnValue(event) },
+        },
       ],
     }).compile();
 
-    guard = module.get<WebhookGuard>(WebhookGuard);
+    guard = module.get(WebhookGuard);
   });
 
-  it('should allow valid webhook', async () => {
-    const ctx = createContext(
-      { 'x-webhook-signature': 'valid', 'x-webhook-id': 'wh-123' },
-      { event: 'charge.completed' },
-    );
+  it('attaches a verified v2 event to the request', async () => {
+    const request = {
+      headers: { 'stripe-signature': 'valid' },
+      rawBody: Buffer.from('{"type":"v2.core.account.updated"}'),
+    };
 
-    expect(await guard.canActivate(ctx)).toBe(true);
-    expect(mockRedis.add).toHaveBeenCalledWith('webhook:wh-123', '1', 86400);
+    await expect(guard.canActivate(createExecutionContext({ request }))).resolves.toBe(true);
+    expect(request).toHaveProperty('stripeEvent', event);
   });
 
-  it('should reject duplicate webhook', async () => {
-    mockRedis.exists.mockResolvedValue(true);
+  it('rejects a request when signature verification returns no event', async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        WebhookGuard,
+        {
+          provide: StripeProvider,
+          useValue: { constructWebhookEvent: jest.fn().mockReturnValue(null) },
+        },
+      ],
+    }).compile();
+    const invalidGuard = module.get(WebhookGuard);
+    const request = {
+      headers: { 'stripe-signature': 'invalid' },
+      rawBody: Buffer.from('{}'),
+    };
 
-    const ctx = createContext({ 'x-webhook-id': 'already-done' });
-
-    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
-    expect(mockAbacatePay.verifyWebhook).not.toHaveBeenCalled();
-  });
-
-  it('should reject invalid signature', async () => {
-    mockAbacatePay.verifyWebhook.mockReturnValue(false);
-
-    const ctx = createContext({ 'x-webhook-signature': 'bad' });
-
-    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
-  });
-
-  it('should work without webhook id', async () => {
-    const ctx = createContext({ 'x-webhook-signature': 'valid' });
-
-    expect(await guard.canActivate(ctx)).toBe(true);
-    expect(mockRedis.exists).not.toHaveBeenCalled();
-    expect(mockRedis.add).not.toHaveBeenCalled();
+    await expect(
+      invalidGuard.canActivate(createExecutionContext({ request })),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

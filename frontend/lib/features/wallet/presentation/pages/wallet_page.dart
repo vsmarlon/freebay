@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:freebay/core/router/app_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_refresh_indicator.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/wallet_card.dart';
-import 'package:freebay/core/components/section_title.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:freebay/features/auth/auth.dart';
+import 'package:freebay/features/auth/data/entities/user_entity.dart';
+import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart'
+    hide ConnectStatus;
+import 'package:freebay/features/wallet/presentation/widgets/wallet_content.dart';
+import 'package:freebay/features/wallet/presentation/widgets/wallet_error_states.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class WalletPage extends ConsumerStatefulWidget {
   const WalletPage({super.key});
@@ -26,187 +25,219 @@ class _WalletPageState extends ConsumerState<WalletPage>
   @override
   bool get wantKeepAlive => true;
 
+  String? _walletUserId;
+
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      final authState = ref.read(authControllerProvider);
-      final user = authState.valueOrNull;
-      if (user != null && !user.isGuest) {
-        ref.read(walletProvider.notifier).loadWallet();
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _syncWalletSession(ref.read(authControllerProvider));
     });
+  }
+
+  void _syncWalletSession(AsyncValue<UserEntity?> next) {
+    final user = next.value;
+    if (user == null) {
+      if (next.hasValue && _walletUserId != null) {
+        _walletUserId = null;
+        ref.read(walletProvider.notifier).reset();
+        ref.read(walletHistoryProvider.notifier).reset();
+        ref.read(connectStatusProvider.notifier).reset();
+      }
+      return;
+    }
+    if (_walletUserId == user.id) return;
+    _walletUserId = user.id;
+    ref.read(walletProvider.notifier).loadWallet(user.id);
+    ref.read(walletHistoryProvider.notifier).load(user.id);
+    ref.read(connectStatusProvider.notifier).load(user.id);
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isDark = context.isDark;
+    final strings = l10n(context);
     final authState = ref.watch(authControllerProvider);
     final walletState = ref.watch(walletProvider);
-    final user = authState.valueOrNull;
-    final isGuest = user == null || user.isGuest;
+    final historyState = ref.watch(walletHistoryProvider);
+    final connectState = ref.watch(connectStatusProvider);
 
-    final availableBalance = walletState.valueOrNull?.availableBalance ?? 0;
-    final pendingBalance = walletState.valueOrNull?.pendingBalance ?? 0;
+    ref.listen<AsyncValue<UserEntity?>>(
+      authControllerProvider,
+      (_, next) => _syncWalletSession(next),
+    );
+
+    // Auth still loading — show skeleton, not guest view
+    if (authState.isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
+            ShellScrollHeader(
+              child: PageHeader(text: strings.walletTitleBrutalist),
+            ),
+            const Expanded(
+              child: SkeletonPage(
+                child: Column(
+                  children: [
+                    SizedBox(height: 16),
+                    ShimmerBlock(height: 120),
+                    SizedBox(height: 12),
+                    ShimmerBlock(height: 60),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final user = authState.value;
+
+    if (user == null) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
+            ShellScrollHeader(
+              child: PageHeader(text: strings.walletTitleBrutalist),
+            ),
+            Expanded(
+              child: GuestGateView(
+                icon: Icons.account_balance_wallet_outlined,
+                title: strings.walletTitleBrutalist,
+                description: strings.walletGuestDescription,
+                onLoginPressed: () => context.push(loginPathFrom(context)),
+                onRegisterPressed: () => context.push(AppRoutes.register),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final availableBalance = walletState.value?.availableBalance ?? 0;
+    final pendingBalance = walletState.value?.pendingBalance ?? 0;
 
     return Scaffold(
-      backgroundColor: context.bgColor,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          PageHeader(
-            text: 'CARTEIRA',
-            actions: [
-              IconButton(
-                icon: Icon(
-                  Icons.help_outline,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
+          ShellScrollHeader(
+            child: PageHeader(
+              text: strings.walletTitleBrutalist,
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.help_outline, color: context.textPrimary),
+                  onPressed: () => context.push(AppRoutes.faq),
                 ),
-                onPressed: () => context.push('/faq'),
-              ),
-            ],
+              ],
+            ),
           ),
           Expanded(
-            child: walletState.isLoading && !isGuest
-                ? const WalletSkeleton()
-                : walletState.hasError && !isGuest
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.account_balance_wallet_outlined,
-                                size: 48,
-                                color: AppColors.error,
-                              ),
-                              Spacing.vMd,
-                              Text(
-                                'Não foi possível carregar o saldo.',
-                                style: TextStyle(
-                                  fontFamily: AppTypography.headlineFontFamily,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark
-                                      ? AppColors.white
-                                      : AppColors.darkGray,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : AppRefreshIndicator(
-                        onRefresh: () async =>
-                            ref.read(walletProvider.notifier).loadWallet(),
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              WalletCard(
-                                availableBalanceInCents: availableBalance,
-                                pendingBalanceInCents: pendingBalance,
-                              ),
-                              Spacing.vLg,
-                              SectionTitle.compact(
-                                  text: 'Visão da carteira', isDark: isDark),
-                              Container(
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? AppColors.surfaceDark
-                                      : AppColors.surfaceLight,
-                                  border: Border(
-                                    bottom: BorderSide(
-                                        color: context.borderColor, width: 1),
-                                  ),
-                                ),
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildInfoLine(
-                                      label: 'Disponível',
-                                      value:
-                                          'Saldo já liberado para o vendedor.',
-                                    ),
-                                    Spacing.vMd,
-                                    _buildInfoLine(
-                                      label: 'Em custódia',
-                                      value:
-                                          'Valor aguardando confirmação do pedido.',
-                                    ),
-                                    Spacing.vMd,
-                                    _buildInfoLine(
-                                      label: 'Saques',
-                                      value:
-                                          'Saques automáticos ficam para a próxima etapa do produto.',
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Spacing.vLg,
-                              Text(
-                                'Histórico',
-                                style: TextStyle(
-                                  fontFamily: AppTypography.headlineFontFamily,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? AppColors.white
-                                      : AppColors.darkGray,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildEmptyState(context),
-                            ],
-                          ),
-                        ),
+            child: walletState.hasError
+                ? WalletErrorState(
+                    message: strings.errorUnknown,
+                    onRetry: () => _loadWallet(user.id),
+                  )
+                : walletState.isLoading
+                ? const SkeletonPage(
+                    child: Column(
+                      children: [
+                        SizedBox(height: 16),
+                        ShimmerBlock(height: 120),
+                        SizedBox(height: 12),
+                        ShimmerBlock(height: 60),
+                      ],
+                    ),
+                  )
+                : AppRefreshIndicator(
+                    onRefresh: () async {
+                      final currentUser = ref
+                          .read(authControllerProvider)
+                          .value;
+                      if (currentUser == null) return;
+                      ref
+                          .read(walletProvider.notifier)
+                          .loadWallet(currentUser.id);
+                      ref
+                          .read(connectStatusProvider.notifier)
+                          .load(currentUser.id);
+                      await ref
+                          .read(walletHistoryProvider.notifier)
+                          .load(currentUser.id);
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      child: WalletContent(
+                        availableBalance: availableBalance,
+                        pendingBalance: pendingBalance,
+                        connectStatus: connectState.value,
+                        connectLoading: connectState.isLoading,
+                        historyState: historyState,
+                        onStartOnboarding: _startOnboarding,
+                        onOpenDashboard: _openDashboard,
+                        onRetryHistory: () => ref
+                            .read(walletHistoryProvider.notifier)
+                            .load(user.id),
+                        onLoadMore: () =>
+                            ref.read(walletHistoryProvider.notifier).loadMore(),
                       ),
+                    ),
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return const EmptyState(
-      icon: Icons.receipt_long_outlined,
-      title: 'SEM TRANSAÇÕES',
-      subtitle:
-          'Realize uma compra ou venda para visualizar suas transações aqui.',
+  void _loadWallet(String userId) {
+    ref.read(walletProvider.notifier).loadWallet(userId);
+    ref.read(walletHistoryProvider.notifier).load(userId);
+    ref.read(connectStatusProvider.notifier).load(userId);
+  }
+
+  Future<void> _startOnboarding() async {
+    final result = await ref
+        .read(walletRepositoryProvider)
+        .startConnectOnboarding();
+    if (!mounted) return;
+    result.fold(
+      (failure) => AppSnackbar.handleFailure(context, failure),
+      _openExternal,
     );
   }
 
-  Widget _buildInfoLine({
-    required String label,
-    required String value,
-  }) {
-    final isDark = context.isDark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-          ),
-        ),
-      ],
+  Future<void> _openDashboard() async {
+    final stepUpToken = await StepUpAuthenticator.authorize(
+      context,
+      ref,
+      purpose: 'connect_dashboard',
     );
+    if (stepUpToken == null || !mounted) return;
+    final result = await ref
+        .read(walletRepositoryProvider)
+        .getConnectDashboardLink(stepUpToken: stepUpToken);
+    if (!mounted) return;
+    result.fold(
+      (failure) => AppSnackbar.handleFailure(context, failure),
+      _openExternal,
+    );
+  }
+
+  Future<void> _openExternal(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      AppSnackbar.error(context, l10n(context).walletStripeOpenFailed);
+      return;
+    }
+    if (mounted) {
+      final user = ref.read(authControllerProvider).value;
+      if (user != null) ref.read(connectStatusProvider.notifier).load(user.id);
+    }
   }
 }

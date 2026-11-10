@@ -1,0 +1,93 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { UserRole } from '@prisma/client';
+import { Either, left } from '@/shared/core/either';
+import { AppError, AppleUnavailableError, EmailVerificationRequiredError, InvalidAppleTokenError } from '@/shared/core/errors';
+import { AppleConfigurationError, AppleProviderService } from '@/shared/auth/apple-provider.service';
+import { UserDatabaseRepository } from '@/modules/users';
+import { AuthSessionResponse } from '../dtos/auth-response.class';
+import { normalizeEmail } from '@/shared/utils/normalize-email';
+import { SessionTokenService } from '../services/session-token.service';
+import { issueSession } from '../utils/session-policy';
+
+@Injectable()
+export class AppleAuthUseCase {
+  constructor(
+    private readonly users: UserDatabaseRepository,
+    private readonly apple: AppleProviderService,
+    private readonly sessionTokens: SessionTokenService,
+    private readonly config: ConfigService,
+  ) {}
+
+  async execute(input: { identityToken: string; authorizationCode: string; rawNonce: string; fullName?: string }, web = false): Promise<Either<AppError, AuthSessionResponse>> {
+    const sessionStartedAtMs = Date.now();
+    try {
+      const clientId = web
+        ? this.config.get<string>('APPLE_WEB_CLIENT_ID')?.trim()
+        : this.config.get<string>('APPLE_CLIENT_ID')?.trim();
+      if (!clientId) return left(new AppleUnavailableError());
+      const clientIdentity = await this.apple.verifyIdentityToken(input.identityToken, input.rawNonce, clientId);
+      const exchanged = await this.apple.exchangeAuthorizationCode(input.authorizationCode, input.rawNonce, clientId);
+      if (clientIdentity.sub !== exchanged.identity.sub || clientIdentity.nonce !== exchanged.identity.nonce) {
+        return left(new InvalidAppleTokenError('A resposta da Apple não corresponde ao login iniciado'));
+      }
+
+      const byAppleId = await this.users.findByAppleId(exchanged.identity.sub);
+      if (byAppleId.isLeft()) return left(byAppleId.value);
+      if (byAppleId.value) {
+        if (byAppleId.value.deletedAt) return left(new InvalidAppleTokenError('Esta conta foi removida'));
+        const updated = await this.users.updateAppleCredential(byAppleId.value.id, exchanged.encryptedRefreshToken);
+        if (updated.isLeft()) return left(updated.value);
+        if (!updated.value || updated.value.deletedAt) return left(new InvalidAppleTokenError('Esta conta foi removida'));
+        return issueSession(updated.value, this.sessionTokens, sessionStartedAtMs);
+      }
+
+      if (!exchanged.identity.email || exchanged.identity.emailVerified !== true) {
+        return left(new InvalidAppleTokenError('A Apple precisa fornecer um e-mail verificado para criar a conta'));
+      }
+      const email = normalizeEmail(exchanged.identity.email);
+      const byEmail = await this.users.findByEmail(email);
+      if (byEmail.isLeft()) return left(byEmail.value);
+      if (byEmail.value) {
+        if (byEmail.value.deletedAt) return left(new InvalidAppleTokenError('Esta conta foi removida'));
+        if (byEmail.value.emailVerified !== true) {
+          return left(new EmailVerificationRequiredError('Verifique seu e-mail antes de vincular sua conta Apple'));
+        }
+        const linked = await this.users.update(byEmail.value.id, {
+          appleId: exchanged.identity.sub,
+          appleRefreshTokenEncrypted: exchanged.encryptedRefreshToken,
+        });
+        if (linked.isLeft()) return left(linked.value);
+        return issueSession(linked.value, this.sessionTokens, sessionStartedAtMs);
+      }
+
+      const created = await this.users.create({
+        displayName: input.fullName ?? email.split('@')[0],
+        username: null,
+        email,
+        passwordHash: null,
+        appleId: exchanged.identity.sub,
+        appleRefreshTokenEncrypted: exchanged.encryptedRefreshToken,
+        emailVerified: true,
+        cpfHash: null,
+        phone: null,
+        phoneVerified: false,
+        city: null,
+        state: null,
+        avatarUrl: null,
+        bio: null,
+        isVerified: false,
+        isGuest: false,
+        role: UserRole.USER,
+        reputationScore: 0,
+        totalReviews: 0,
+        wallet: { create: {} },
+      });
+      if (created.isLeft()) return left(created.value);
+      return issueSession(created.value, this.sessionTokens, sessionStartedAtMs);
+    } catch (error) {
+      if (error instanceof AppleConfigurationError) return left(new AppleUnavailableError());
+      return left(new InvalidAppleTokenError());
+    }
+  }
+}

@@ -1,27 +1,45 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { Either, left, right } from '@/shared/core/either';
-import { AppError, EmailAlreadyExistsError } from '@/shared/core/errors';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { Either, left } from '@/shared/core/either';
+import { AppError, EmailAlreadyExistsError, UsernameAlreadyExistsError } from '@/shared/core/errors';
+import { UserDatabaseRepository } from '@/modules/users';
 import { RegisterDTO } from '../dtos/auth.dto';
-import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
+import { AuthSessionResponse } from '../dtos/auth-response.class';
+import { normalizeEmail } from '@/shared/utils/normalize-email';
+import { SessionTokenService } from '../services/session-token.service';
+import { issueSession } from '../utils/session-policy';
+import { RequestEmailVerificationUseCase } from './request-email-verification.usecase';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class RegisterUseCase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly sessionTokens: SessionTokenService,
+    private readonly requestEmailVerification: RequestEmailVerificationUseCase,
+  ) {}
 
-  async execute(input: RegisterDTO): Promise<Either<AppError, AuthResponse>> {
-    const existingResult = await this.userRepository.findByEmail(input.email);
+  async execute(input: RegisterDTO): Promise<Either<AppError, AuthSessionResponse>> {
+    const sessionStartedAtMs = Date.now();
+    const email = normalizeEmail(input.email);
+    const existingResult = await this.userRepository.findByEmail(email);
     if (existingResult.isLeft()) return left(existingResult.value);
     if (existingResult.value) {
       return left(new EmailAlreadyExistsError());
+    }
+
+    const existingUsernameResult = await this.userRepository.findByUsername(input.username);
+    if (existingUsernameResult.isLeft()) return left(existingUsernameResult.value);
+    if (existingUsernameResult.value) {
+      return left(new UsernameAlreadyExistsError());
     }
 
     const passwordHash = await bcrypt.hash(input.password, 12);
 
     const createResult = await this.userRepository.create({
       displayName: input.displayName,
-      email: input.email,
+      username: input.username,
+      email,
       passwordHash,
       emailVerified: false,
       cpfHash: null,
@@ -33,12 +51,15 @@ export class RegisterUseCase {
       bio: null,
       isVerified: false,
       isGuest: false,
-      role: 'USER',
+      role: UserRole.USER,
       reputationScore: 0,
       totalReviews: 0,
     });
     if (createResult.isLeft()) return left(createResult.value);
 
-    return right(toAuthResponse(createResult.value));
+    // Session behavior is unchanged: the account can browse while unverified.
+    void this.requestEmailVerification.execute(createResult.value.id).catch(() => undefined);
+
+    return issueSession(createResult.value, this.sessionTokens, sessionStartedAtMs);
   }
 }

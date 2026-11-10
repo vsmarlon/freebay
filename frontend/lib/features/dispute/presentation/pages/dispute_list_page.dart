@@ -2,16 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/features/dispute/presentation/providers/dispute_providers.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/brutalist_box.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class DisputeListPage extends ConsumerStatefulWidget {
   const DisputeListPage({super.key});
@@ -31,27 +25,18 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final state = ref.watch(disputeListProvider);
 
     return Scaffold(
       body: Column(
         children: [
           PageHeader(
-            text: 'MINHAS DISPUTAS',
-            leading: GestureDetector(
+            text: strings.disputesMyTitle,
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
+              semanticLabel: strings.accessibilityBack,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           BrutalistBreadcrumb(items: context.breadcrumbs),
@@ -62,17 +47,18 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
   }
 
   Widget _buildBody(DisputeListState state) {
+    final strings = l10n(context);
     if (state.isLoading) {
       return SkeletonPage(
         child: SkeletonList(
           itemCount: 5,
-          itemBuilder: (_, i) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          itemBuilder: (_, i) => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             child: Row(
               children: [
-                const ShimmerBlock(width: 40, height: 40),
-                const SizedBox(width: 12),
-                const Column(
+                ShimmerBlock(width: 40, height: 40),
+                SizedBox(width: 12),
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ShimmerBlock(height: 16, width: 140),
@@ -80,8 +66,8 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
                     ShimmerBlock(height: 14, width: 100),
                   ],
                 ),
-                const Spacer(),
-                const ShimmerBlock(height: 14, width: 60),
+                Spacer(),
+                ShimmerBlock(height: 14, width: 60),
               ],
             ),
           ),
@@ -90,39 +76,17 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
     }
 
     if (state.error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(state.error!, style: TextStyle(color: AppColors.error)),
-            Spacing.vMd,
-            Container(
-              color: AppColors.primaryContainer,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () =>
-                      ref.read(disputeListProvider.notifier).loadDisputes(),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    child: Text(
-                      'Tentar novamente',
-                      style: AppTypography.button,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+      return EmptyState.error(
+        message: state.error,
+        onRetry: () => ref.read(disputeListProvider.notifier).loadDisputes(),
       );
     }
 
     if (state.disputes.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.verified_user_outlined,
-        title: 'Nenhuma disputa',
-        subtitle: 'Você ainda não abriu nenhuma disputa',
+        title: strings.ordersNoDisputes,
+        subtitle: strings.ordersNoDisputesBody,
       );
     }
 
@@ -140,18 +104,30 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
                 'Disputa #${dispute.id.split('-').first}',
                 style: AppTypography.bodyMedium,
               ),
-              subtitle: Text(
-                dispute.status.label,
-                style: AppTypography.bodySmall.copyWith(
+              subtitle: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   color: dispute.isOpen
                       ? AppColors.warning
                       : dispute.isResolved
                       ? AppColors.success
-                      : AppColors.onSurfaceVariant,
+                      : context.textSecondary,
+                  child: Text(
+                    dispute.status.label,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/disputes/${dispute.id}'),
+              onTap: () => context.push(AppRoutes.disputePath(dispute.id)),
             ),
           );
         },

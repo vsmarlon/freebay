@@ -36,7 +36,19 @@
       "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse --show-toplevel)",
       "Bash(cat \"$\\(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse --show-toplevel\\)/.superpowers/sdd/progress.md\")",
       "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" log --oneline -5)",
-      "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse HEAD)"
+      "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse HEAD)",
+      "Read(//c/Users/Qiyana/.claude/**)",
+      "Read(//c/Users/Qiyana/.claude/commands/**)",
+      "Bash(echo \"TSC_EXIT=$?\")",
+      "Bash(echo \"exit=$?\")",
+      "PowerShell(\\(Get-Command dart -ErrorAction SilentlyContinue\\).Source; \"---\"; \\(Get-Command fvm -ErrorAction SilentlyContinue\\).Source; \"---\"; \\(Get-Command flutter -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(fvm list *)",
+      "PowerShell(& \"$env:USERPROFILE\\\\fvm\\\\default\\\\bin\\\\dart.bat\" --version 2>&1 | Out-String; \"=== help mcp-server ===\"; & \"$env:USERPROFILE\\\\fvm\\\\default\\\\bin\\\\dart.bat\" mcp-server --help 2>&1 | Out-String)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "postgres",
+    "dart",
+    "flutter-profile"
+  ]
 }

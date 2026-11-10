@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 
 class BrutalistConfirmDialog extends StatelessWidget {
   final String title;
@@ -23,7 +20,6 @@ class BrutalistConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       backgroundColor: context.surfaceColor,
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -53,8 +49,9 @@ class BrutalistConfirmDialog extends StatelessWidget {
             Spacing.vLg,
             AppButton(
               label: confirmLabel,
-              variant:
-                  isDanger ? AppButtonVariant.danger : AppButtonVariant.primary,
+              variant: isDanger
+                  ? AppButtonVariant.danger
+                  : AppButtonVariant.primary,
               onPressed: () => Navigator.of(context).pop(true),
             ),
             const SizedBox(height: 12),

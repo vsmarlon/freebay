@@ -211,18 +211,18 @@ return $default(_that.items,_that.totalItems,_that.totalPrice);case _:
 @JsonSerializable()
 
 class _CartEntity implements CartEntity {
-  const _CartEntity({required final  List<CartItemEntity> items, required this.totalItems, required this.totalPrice}): _items = items;
+  const _CartEntity({final  List<CartItemEntity> items = const [], this.totalItems = 0, this.totalPrice = 0}): _items = items;
   factory _CartEntity.fromJson(Map<String, dynamic> json) => _$CartEntityFromJson(json);
 
  final  List<CartItemEntity> _items;
-@override List<CartItemEntity> get items {
+@override@JsonKey() List<CartItemEntity> get items {
   if (_items is EqualUnmodifiableListView) return _items;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_items);
 }
 
-@override final  int totalItems;
-@override final  int totalPrice;
+@override@JsonKey() final  int totalItems;
+@override@JsonKey() final  int totalPrice;
 
 /// Create a copy of CartEntity
 /// with the given fields replaced by the non-null parameter values.

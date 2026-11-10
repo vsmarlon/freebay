@@ -1,24 +1,23 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/shared/utils/media_url.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
-final likedPostsProvider = FutureProvider<List<PostEntity>>((ref) async {
+final likedPostsProvider = FutureProvider.autoDispose<List<PostEntity>>((
+  ref,
+) async {
+  ref.watch(authControllerProvider.select((state) => state.value?.id));
   final repository = ref.watch(socialRepositoryProvider);
   final result = await repository.getLikedPosts();
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (posts) => posts,
-  );
+  return result.fold((failure) => throw failure, (posts) => posts);
 });
 
 class LikedPostsPage extends ConsumerWidget {
@@ -26,6 +25,7 @@ class LikedPostsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final isDark = context.isDark;
     final postsAsync = ref.watch(likedPostsProvider);
 
@@ -34,21 +34,11 @@ class LikedPostsPage extends ConsumerWidget {
       body: Column(
         children: [
           PageHeader(
-            text: 'POSTS CURTIDOS',
-            leading: GestureDetector(
+            text: strings.feedLikedPostsTitle,
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
+              semanticLabel: strings.accessibilityBack,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           Expanded(
@@ -59,10 +49,10 @@ class LikedPostsPage extends ConsumerWidget {
                     BrutalistBreadcrumb(items: [...context.breadcrumbs]),
                     Expanded(
                       child: posts.isEmpty
-                          ? const EmptyState(
+                          ? EmptyState(
                               icon: Icons.favorite_border,
-                              title: 'NENHUM POST CURTIDO',
-                              subtitle: 'Curtidas em posts aparecerão aqui.',
+                              title: strings.feedNoLikedPosts,
+                              subtitle: strings.feedLikedPostsEmpty,
                             )
                           : RefreshIndicator(
                               onRefresh: () async {
@@ -111,10 +101,8 @@ class LikedPostsPage extends ConsumerWidget {
                     ),
                     Spacing.vMd,
                     Text(
-                      'Erro ao carregar posts curtidos',
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                      ),
+                      strings.commonError,
+                      style: TextStyle(color: context.textPrimary),
                     ),
                   ],
                 ),
@@ -127,35 +115,43 @@ class LikedPostsPage extends ConsumerWidget {
   }
 
   Widget _buildPostTile(BuildContext context, PostEntity post, bool isDark) {
-    final imageUrl = post.imageUrl;
+    final imageUrl = post.firstMedia?.previewUrl;
 
     return GestureDetector(
-      onTap: () => context.push('/post/${post.id}'),
+      onTap: () => context.push(AppRoutes.postPath(post.id)),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
+          color: context.bgColor,
           border: Border.all(
             color: AppColors.onSurface.withValues(alpha: 0.15),
             width: 2,
           ),
         ),
         child: imageUrl != null && imageUrl.isNotEmpty
-            ? Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) =>
-                    const Icon(Icons.image, color: AppColors.mediumGray),
-              )
+            ? isPrivateMedia(imageUrl)
+                  ? Image.network(
+                      imageUrl,
+                      headers: mediaAuthHeaders(imageUrl),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) =>
+                          const Icon(Icons.image, color: AppColors.mediumGray),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 300,
+                      memCacheHeight: 300,
+                      placeholder: (_, _) => Container(color: context.bgColor),
+                      errorWidget: (_, _, _) =>
+                          const Icon(Icons.image, color: AppColors.mediumGray),
+                    )
             : post.content != null && post.content!.isNotEmpty
             ? Center(
                 child: Padding(
                   padding: const EdgeInsets.all(8),
                   child: Text(
                     post.content!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppColors.white : AppColors.darkGray,
-                    ),
+                    style: TextStyle(fontSize: 12, color: context.textPrimary),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),

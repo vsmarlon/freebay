@@ -1,4 +1,4 @@
-import { IsInt, Min, Max, IsOptional } from 'class-validator';
+import { IsInt, Min, Max, IsOptional, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -21,8 +21,46 @@ export class UpdateCartItemDTO {
   readonly quantity!: number;
 }
 
+export enum CheckoutMode {
+  SESSION = 'session',
+  INTENT = 'intent',
+}
+
+export class CheckoutCartDTO {
+  @ApiPropertyOptional({
+    enum: CheckoutMode,
+    description:
+      'session = hosted Stripe Checkout (web, PIX auto-offer, requires CPF). intent = PaymentSheet (mobile). Defaults to session.',
+  })
+  @IsOptional()
+  @IsIn([CheckoutMode.SESSION, CheckoutMode.INTENT])
+  readonly mode?: CheckoutMode;
+}
+
 export interface CheckoutCartInput {
   userId: string;
+  mode?: CheckoutMode;
+}
+
+export class CheckoutRecoveryQueryDTO {
+  @ApiProperty({ enum: CheckoutMode })
+  @IsIn([CheckoutMode.SESSION, CheckoutMode.INTENT])
+  readonly mode!: CheckoutMode;
+}
+
+export interface CheckoutRecoveryInput {
+  userId: string;
+  mode: CheckoutMode;
+}
+
+export interface CheckoutRecoveryOutput {
+  status: 'CHECKING' | 'PAID';
+  paymentGroupId: string;
+  orderIds: string[];
+  totalAmount: number;
+  checkoutUrl: string | null;
+  paymentIntentClientSecret: string | null;
+  expiresAt: Date | null;
 }
 
 export interface CheckoutCartItemOutput {
@@ -31,15 +69,16 @@ export interface CheckoutCartItemOutput {
   productTitle: string;
   quantity: number;
   amount: number;
-  pixQrCode: string;
-  pixImage: string;
-  expiresAt: Date;
 }
 
 export interface CheckoutCartOutput {
+  paymentGroupId: string;
   items: CheckoutCartItemOutput[];
   totalOrders: number;
   totalAmount: number;
+  checkoutUrl: string | null;
+  paymentIntentClientSecret: string | null;
+  expiresAt: Date | null;
 }
 
 export class CheckoutCartItemResponse {
@@ -57,18 +96,12 @@ export class CheckoutCartItemResponse {
 
   @ApiProperty({ example: 15000 })
   readonly amount!: number;
-
-  @ApiProperty({ example: '00020126580014BR.GOV.BCB.PIX...' })
-  readonly pixQrCode!: string;
-
-  @ApiProperty({ example: 'data:image/png;base64,...' })
-  readonly pixImage!: string;
-
-  @ApiProperty({ example: '2026-06-17T13:00:00.000Z' })
-  readonly expiresAt!: Date;
 }
 
 export class CheckoutCartResponse {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  readonly paymentGroupId!: string;
+
   @ApiProperty({ type: [CheckoutCartItemResponse] })
   readonly items!: CheckoutCartItemResponse[];
 
@@ -77,6 +110,18 @@ export class CheckoutCartResponse {
 
   @ApiProperty({ example: 45000 })
   readonly totalAmount!: number;
+
+  @ApiPropertyOptional({
+    example: 'https://checkout.stripe.com/pay/cs_test_abc123',
+    nullable: true,
+  })
+  readonly checkoutUrl!: string | null;
+
+  @ApiPropertyOptional({ example: 'pi_123_secret_456', nullable: true })
+  readonly paymentIntentClientSecret!: string | null;
+
+  @ApiPropertyOptional({ example: '2026-06-17T13:00:00.000Z', nullable: true })
+  readonly expiresAt!: Date | null;
 }
 
 export class CartItemResponse {
@@ -100,7 +145,7 @@ export interface CartItemProduct {
   title: string;
   price: number;
   sellerId: string;
-  images: { id: string; url: string }[];
+  media: { id: string; url: string }[];
   seller: { id: string; displayName: string; avatarUrl: string | null; isVerified: boolean };
 }
 

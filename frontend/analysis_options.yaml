@@ -6,4 +6,7 @@ analyzer:
 
 linter:
   rules:
-    avoid_print: false
+    prefer_const_constructors: true
+    unnecessary_lambdas: true
+    use_super_parameters: true
+    avoid_redundant_argument_values: true

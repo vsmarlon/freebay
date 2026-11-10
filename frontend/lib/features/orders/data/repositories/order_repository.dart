@@ -1,59 +1,118 @@
-import 'package:freebay/shared/either/either.dart';
+import 'package:dio/dio.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
-import 'package:freebay/features/orders/data/services/order_service.dart';
-import 'package:freebay/features/orders/data/entities/order_list_response.dart';
-import 'package:freebay/features/orders/domain/repositories/i_order_repository.dart';
+import 'package:freebay/features/orders/domain/repositories/order_repository.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/http/request_either.dart';
+import 'package:freebay/shared/models/cursor_page.dart';
+import 'package:freebay/shared/services/http_client.dart';
 
-class OrderRepository implements IOrderRepository {
-  final OrderService _service;
+class OrderRepositoryImpl implements OrderRepository {
+  final Dio client;
 
-  OrderRepository(this._service);
-
-  @override
-  Future<Either<Failure, OrderEntity>> getOrder(String orderId) {
-    return _service.getOrder(orderId);
-  }
+  OrderRepositoryImpl({Dio? client}) : client = client ?? HttpClient.instance;
 
   @override
-  Future<Either<Failure, OrderListResponse>> getMyPurchases({
-    int limit = 10,
-    int offset = 0,
-    String? status,
-  }) {
-    return _service.getMyPurchases(
-      limit: limit,
-      offset: offset,
-      status: status,
+  Future<Either<Failure, OrderEntity>> getOrder(
+    String orderId, {
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.get('/orders/$orderId', cancelToken: cancelToken),
+    decoder: (response) =>
+        Right(OrderEntity.fromJson(response.data['data']['order'])),
+  );
+
+  @override
+  Future<Either<Failure, CursorPage<OrderEntity>>> getMyPurchases({
+    String? cursor,
+    int limit = defaultOrderPageLimit,
+    OrderStatus? status,
+  }) => requestEither(
+    () => client.get(
+      '/orders/my/purchases',
+      queryParameters: {
+        'cursor': ?cursor,
+        'limit': limit,
+        'status': ?status?.toApiString(),
+      },
+    ),
+    decoder: (response) => Right(
+      parseCursorPage<OrderEntity>(response.data['data'], OrderEntity.fromJson),
+    ),
+  );
+
+  @override
+  Future<Either<Failure, CursorPage<OrderEntity>>> getMySales({
+    String? cursor,
+    int limit = defaultOrderPageLimit,
+    OrderStatus? status,
+  }) => requestEither(
+    () => client.get(
+      '/orders/my/sales',
+      queryParameters: {
+        'cursor': ?cursor,
+        'limit': limit,
+        'status': ?status?.toApiString(),
+      },
+    ),
+    decoder: (response) => Right(
+      parseCursorPage<OrderEntity>(response.data['data'], OrderEntity.fromJson),
+    ),
+  );
+
+  @override
+  Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) async {
+    final confirmation = await requestEither<void>(
+      () => client.patch('/orders/$orderId/confirm-delivery'),
+      decoder: (_) => const Right(null),
     );
+    if (confirmation.isLeft) {
+      return Left(confirmation.leftOrNull!);
+    }
+
+    // Confirmation returns an acknowledgement; reload the canonical order.
+    return getOrder(orderId);
   }
 
   @override
-  Future<Either<Failure, OrderListResponse>> getMySales({
-    int limit = 10,
-    int offset = 0,
-    String? status,
-  }) {
-    return _service.getMySales(limit: limit, offset: offset, status: status);
-  }
+  Future<Either<Failure, OrderEntity>> createOrder(String productId) =>
+      requestEither(
+        () => client.post('/orders', data: {'productId': productId}),
+        decoder: (response) =>
+            Right(OrderEntity.fromJson(response.data['data'])),
+      );
 
   @override
-  Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) {
-    return _service.confirmDelivery(orderId);
-  }
+  Future<Either<Failure, String>> cancelOrder(
+    String orderId, {
+    String? reason,
+    required String stepUpToken,
+  }) => requestEither(
+    () => client.patch(
+      '/orders/$orderId/cancel',
+      data: {'reason': reason ?? 'Cancelado pelo usuário'},
+      options: Options(headers: {'x-step-up-token': stepUpToken}),
+    ),
+    decoder: (response) =>
+        Right(response.data['data'] as String? ?? 'CANCELLED'),
+  );
 
   @override
-  Future<Either<Failure, OrderEntity>> createOrder(String productId) {
-    return _service.createOrder(productId);
-  }
-
-  @override
-  Future<Either<Failure, OrderEntity>> cancelOrder(String orderId) {
-    return _service.cancelOrder(orderId);
-  }
-
-  @override
-  Future<Either<Failure, CanReviewResponse>> canReviewOrder(String orderId) {
-    return _service.canReviewOrder(orderId);
-  }
+  Future<Either<Failure, CanReviewResponse>> canReviewOrder(
+    String orderId, {
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.get(
+      '/reviews/orders/$orderId/can-review',
+      cancelToken: cancelToken,
+    ),
+    decoder: (response) {
+      final data = response.data['data'];
+      return Right(
+        data is Map<String, dynamic>
+            ? CanReviewResponse.fromJson(data)
+            : const CanReviewResponse(),
+      );
+    },
+  );
 }

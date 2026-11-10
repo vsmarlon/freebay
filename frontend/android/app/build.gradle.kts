@@ -1,3 +1,21 @@
+import java.util.Properties
+
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("key.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+val releaseSigningPreflight = tasks.register("validateReleaseSigning") {
+    doLast {
+        val required = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+        val missing = required.filter { keystoreProperties.getProperty(it).isNullOrBlank() }
+        val storePath = keystoreProperties.getProperty("storeFile")
+        if (missing.isNotEmpty() || storePath == null || !project.file(storePath).isFile) {
+            throw GradleException("Release signing is not configured: ${missing.joinToString()}")
+        }
+    }
+}
+
 plugins {
     id("com.android.application")
     id("dev.flutter.flutter-gradle-plugin")
@@ -5,7 +23,7 @@ plugins {
 }
 
 android {
-    namespace = "com.company.freebay"
+    namespace = "com.freebay.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,11 +33,18 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    signingConfigs {
+        create("release") {
+            val storePath = keystoreProperties.getProperty("storeFile")
+            if (storePath != null) storeFile = file(storePath)
+            storePassword = keystoreProperties.getProperty("storePassword")
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+        }
+    }
+
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.company.freebay"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.freebay.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -29,10 +54,15 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
+    }
+}
+
+tasks.configureEach {
+    if (name.contains("Release", ignoreCase = true) &&
+        (name.startsWith("assemble") || name.startsWith("bundle") || name.startsWith("package"))) {
+        dependsOn(releaseSigningPreflight)
     }
 }
 
@@ -48,7 +78,6 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-messaging")
+    implementation("androidx.media3:media3-transformer:1.9.2")
+    implementation("androidx.media3:media3-effect:1.9.2")
 }

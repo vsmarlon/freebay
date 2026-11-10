@@ -1,180 +1,198 @@
+import { StepUpPurpose } from '@/shared/auth/biometric-credential.service';
 import {
   Controller,
-  Get,
-  Post,
   Body,
   Param,
   Query,
-  UseGuards,
-  HttpCode,
   HttpStatus,
   ParseUUIDPipe,
-} from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { OrdersService } from './orders.service';
-import { CreateOrderDTO } from './dtos/order.dto';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { isLeft } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+} from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
+import {
+  GetAuth,
+  PostAuth,
+  PatchAuth,
+  CurrentUser,
+  CurrentUserId,
+  Paginated,
+  PAGINATION_QUERIES,
+} from "@/shared/decorators";
+import { PageQuery } from "@/shared/core/pagination";
+import { THROTTLE_TTL_MINUTE_MS } from "@/shared/http/throttle.constants";
+import { OrderDatabaseRepository } from "./data/repositories/order-database.repository";
+import { OrderStatus } from "@prisma/client";
+import { CreateOrderUseCase } from "./usecases/create-order.usecase";
+import { ConfirmDeliveryUseCase } from "./usecases/confirm-delivery.usecase";
+import { MarkAsShippedUseCase } from "./usecases/mark-as-shipped.usecase";
+import { MarkAsDeliveredUseCase } from "./usecases/mark-as-delivered.usecase";
+import { CancelOrderUseCase } from "./usecases/cancel-order.usecase";
+import { GetOrderUseCase } from './usecases/get-order.usecase';
+import { ListSalesOrdersUseCase } from './usecases/list-sales-orders.usecase';
+import { CancelOrderDTO, CreateOrderDTO, SalesOrdersQueryDTO } from "./dtos/order.dto";
+import { AuthUser } from "@/shared/core/types";
+import { RequireStepUp } from '@/shared/auth/step-up.guard';
+import { left } from "@/shared/core/either";
+import { BadRequestError } from "@/shared/core/errors";
+import { getPlatformFeePercent } from "@/shared/core/platform-fee";
 
-@ApiTags('Orders')
-@Controller('orders')
-@UseGuards(JwtAuthGuard, NonGuestGuard)
+@ApiTags("Orders")
+@Controller("orders")
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly orderRepository: OrderDatabaseRepository,
+    private readonly createOrderUseCase: CreateOrderUseCase,
+    private readonly confirmDeliveryUseCase: ConfirmDeliveryUseCase,
+    private readonly markAsShippedUseCase: MarkAsShippedUseCase,
+    private readonly markAsDeliveredUseCase: MarkAsDeliveredUseCase,
+    private readonly cancelOrderUseCase: CancelOrderUseCase,
+    private readonly getOrderUseCase: GetOrderUseCase,
+    private readonly listSalesOrdersUseCase: ListSalesOrdersUseCase,
+  ) {}
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Create order',
+  @PostAuth({
+    summary: "Create order",
     bodyType: CreateOrderDTO,
     responseStatus: 201,
-    auth: true,
-    errors: [{ status: 404, description: 'Product not found' }],
+    httpCode: HttpStatus.CREATED,
+    throttle: { short: { limit: 5, ttl: THROTTLE_TTL_MINUTE_MS } },
+    errors: [{ status: 404, description: "Product not found" }],
   })
-  async create(@CurrentUser() user: AuthUser, @Body() body: CreateOrderDTO) {
-    const productResult = await this.ordersService.findProductForOrder(body.productId);
-    if (isLeft(productResult)) throw productResult.value;
-
-    const product = productResult.value;
-    if (!product) throw new AppError('NOT_FOUND', 'Produto não encontrado', 404);
-
-    const result = await this.ordersService.create({
-      buyerId: user.userId,
-      sellerId: product.sellerId,
-      productId: product.id,
-      amount: product.price,
-      platformFeePercent: 10,
+  async create(@CurrentUserId() buyerId: string, @Body() body: CreateOrderDTO) {
+    return this.createOrderUseCase.execute({
+      buyerId,
+      productId: body.productId,
+      platformFeePercent: getPlatformFeePercent(),
     });
-
-    if (isLeft(result)) throw result.value;
-    return result.value;
   }
 
-  @Get(':id')
-  @ApiDoc({
-    summary: 'Get order by ID',
-    params: [{ name: 'id', description: 'Order UUID' }],
-    errors: [{ status: 404, description: 'Order not found' }],
+  @GetAuth("my/purchases", {
+    summary: "Get my purchases",
+    queries: PAGINATION_QUERIES,
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    const result = await this.ordersService.findOne(id);
-    if (isLeft(result)) throw result.value;
-    if (!result.value) throw new AppError('NOT_FOUND', 'Pedido não encontrado', 404);
-    return { order: result.value };
+  async getMyPurchases(
+    @CurrentUserId() userId: string,
+    @Paginated() page: PageQuery,
+    @Query("status") status?: string,
+  ) {
+    const parsedStatus = this.parseStatus(status);
+    if (status && !parsedStatus)
+      return left(new BadRequestError("Status de pedido inválido"));
+    return this.orderRepository.findByBuyerId(userId, page, parsedStatus);
   }
 
-  @Post(':id/ship')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Mark order as shipped',
-    auth: true,
-    params: [{ name: 'id', description: 'Order UUID' }],
-    errors: [{ status: 404, description: 'Order not found' }],
-  })
-  async markAsShipped(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.markAsShipped({ orderId: id, sellerId: user.userId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
+  @GetAuth("my/sales", { summary: "Get my sales", queries: PAGINATION_QUERIES })
+  async getMySales(
+    @CurrentUserId() userId: string,
+    @Query() query: SalesOrdersQueryDTO,
+  ) {
+    return this.listSalesOrdersUseCase.execute(userId, query);
   }
 
-  @Post(':id/deliver')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Mark order as delivered',
-    auth: true,
-    params: [{ name: 'id', description: 'Order UUID' }],
-    errors: [{ status: 404, description: 'Order not found' }],
-  })
-  async markAsDelivered(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.markAsDelivered({ orderId: id, buyerId: user.userId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
-  }
-
-  @Post(':id/confirm')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Confirm delivery (release escrow to seller)',
-    auth: true,
-    params: [{ name: 'id', description: 'Order UUID' }],
-    errors: [{ status: 404, description: 'Order not found' }],
-  })
-  async confirmDelivery(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.confirmDelivery({ orderId: id, buyerId: user.userId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
-  }
-
-  @Post(':id/confirm-delivery')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Confirm delivery (alias)',
-    auth: true,
-    params: [{ name: 'id', description: 'Order UUID' }],
-    errors: [{ status: 404, description: 'Order not found' }],
-  })
-  async confirmDeliveryAlias(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    return this.confirmDelivery(id, user);
-  }
-
-  @Post(':id/cancel')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Cancel order',
-    auth: true,
-    params: [{ name: 'id', description: 'Order UUID' }],
-    errors: [{ status: 404, description: 'Order not found' }],
-  })
-  async cancel(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.cancel({ orderId: id, userId: user.userId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
-  }
-
-  @Get()
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'List user orders',
-    auth: true,
-    queries: [
-      { name: 'role', required: false, description: 'Filter by role: "seller" or "buyer" (default)' },
+  @GetAuth(":id", {
+    summary: "Get order by ID",
+    params: [{ name: "id", description: "Order UUID" }],
+    errors: [
+      { status: 404, description: "Order not found" },
+      { status: 403, description: "Access denied" },
     ],
   })
-  async findAll(@CurrentUser() user: AuthUser, @Query('role') role?: string) {
-    const result = role === 'seller'
-      ? await this.ordersService.findBySellerId(user.userId)
-      : await this.ordersService.findByBuyerId(user.userId);
-    if (isLeft(result)) throw result.value;
-    return { orders: result.value };
+  async findOne(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.getOrderUseCase.execute(id, user);
   }
 
-  @Get('my/purchases')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Get my purchases',
-    auth: true,
+  @PatchAuth(":id/ship", {
+    summary: "Mark order as shipped",
+    params: [{ name: "id", description: "Order UUID" }],
+    errors: [{ status: 404, description: "Order not found" }],
   })
-  async getMyPurchases(@CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.findByBuyerId(user.userId);
-    if (isLeft(result)) throw result.value;
-    return { orders: result.value };
+  async markAsShipped(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUserId() sellerId: string,
+  ) {
+    return this.markAsShippedUseCase.execute({ orderId: id, sellerId });
   }
 
-  @Get('my/sales')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Get my sales',
-    auth: true,
+  @PatchAuth(":id/deliver", {
+    summary: "Mark order as delivered",
+    params: [{ name: "id", description: "Order UUID" }],
+    errors: [{ status: 404, description: "Order not found" }],
   })
-  async getMySales(@CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.findBySellerId(user.userId);
-    if (isLeft(result)) throw result.value;
-    return { orders: result.value };
+  async markAsDelivered(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUserId() buyerId: string,
+  ) {
+    return this.markAsDeliveredUseCase.execute({ orderId: id, buyerId });
+  }
+
+  @PatchAuth(":id/confirm", {
+    summary: "Confirm delivery (release escrow to seller)",
+    params: [{ name: "id", description: "Order UUID" }],
+    errors: [{ status: 404, description: "Order not found" }],
+  })
+  async confirmDelivery(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUserId() buyerId: string,
+  ) {
+    return this.confirmDeliveryUseCase.execute({ orderId: id, buyerId });
+  }
+
+  @PatchAuth(":id/confirm-delivery", {
+    summary: "Confirm delivery (alias)",
+    params: [{ name: "id", description: "Order UUID" }],
+    errors: [{ status: 404, description: "Order not found" }],
+  })
+  async confirmDeliveryAlias(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUserId() buyerId: string,
+  ) {
+    return this.confirmDelivery(id, buyerId);
+  }
+
+  @PatchAuth(":id/cancel", {
+    summary: "Cancel order",
+    params: [{ name: "id", description: "Order UUID" }],
+    bodyType: CancelOrderDTO,
+    errors: [{ status: 404, description: "Order not found" }],
+  })
+  @RequireStepUp(StepUpPurpose.CANCEL_ORDER, 'id')
+  async cancel(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+    @Body() body: CancelOrderDTO,
+  ) {
+    return this.cancelOrderUseCase.execute({ orderId: id, userId, reason: body.reason });
+  }
+
+  @GetAuth({
+    summary: "List user orders",
+    queries: [
+      {
+        name: "role",
+        required: false,
+        description: 'Filter by role: "seller" or "buyer" (default)',
+      },
+      ...PAGINATION_QUERIES,
+    ],
+  })
+  async findAll(
+    @CurrentUserId() userId: string,
+    @Paginated() page: PageQuery,
+    @Query("role") role?: string,
+    @Query("status") status?: string,
+  ) {
+    const parsedStatus = this.parseStatus(status);
+    if (status && !parsedStatus)
+      return left(new BadRequestError("Status de pedido inválido"));
+    return role === "seller"
+      ? this.orderRepository.findBySellerId(userId, page, parsedStatus)
+      : this.orderRepository.findByBuyerId(userId, page, parsedStatus);
+  }
+
+  private parseStatus(status?: string): OrderStatus | undefined {
+    if (!status) return undefined;
+    return Object.values(OrderStatus).find((candidate) => candidate === status);
   }
 }

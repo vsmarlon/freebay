@@ -1,48 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ChatHeader extends StatelessWidget {
   final String name;
   final String? avatarUrl;
-  final String chatType;
+  final VoidCallback? onAvatarTap;
+  final ChatThreadType chatType;
   final Color accentColor;
   final VoidCallback onBack;
   final VoidCallback onConfig;
+  final VoidCallback? onInfo;
   final bool isOnline;
   final DateTime? lastSeenAt;
+  final bool isLoading;
+  final bool hasError;
+  final VoidCallback? onRetry;
 
   const ChatHeader({
     super.key,
     required this.name,
     this.avatarUrl,
+    this.onAvatarTap,
     required this.chatType,
     required this.accentColor,
     required this.onBack,
     required this.onConfig,
+    this.onInfo,
     this.isOnline = false,
     this.lastSeenAt,
+    this.isLoading = false,
+    this.hasError = false,
+    this.onRetry,
   });
 
-  String get _statusLabel {
-    if (isOnline) return 'Online agora';
+  String _statusLabel(BuildContext context) {
+    final strings = l10n(context);
+    if (isOnline) return strings.chatOnlineNow;
     if (lastSeenAt != null) {
       final diff = DateTime.now().difference(lastSeenAt!);
-      if (diff.inMinutes < 1) return 'Visto agora';
-      if (diff.inHours < 1) return 'Visto há ${diff.inMinutes}min';
-      if (diff.inDays < 1) return 'Visto há ${diff.inHours}h';
-      return 'Visto há ${diff.inDays}d';
+      if (diff.inMinutes < 1) return strings.chatLastSeenNow;
+      if (diff.inHours < 1) return strings.chatLastSeenMinutes(diff.inMinutes);
+      if (diff.inDays < 1) return strings.chatLastSeenHours(diff.inHours);
+      return strings.chatLastSeenDays(diff.inDays);
     }
     switch (chatType) {
-      case 'order':
-        return 'PEDIDO';
-      case 'direct':
-        return 'DIRETA';
-      default:
-        return chatType.toUpperCase();
+      case ChatThreadType.order:
+        return strings.chatOrderLabel;
+      case ChatThreadType.direct:
+        return strings.chatDirectLabel;
     }
   }
 
@@ -50,7 +57,7 @@ class ChatHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
+        top: MediaQuery.paddingOf(context).top + 8,
         left: 16,
         right: 16,
         bottom: 8,
@@ -61,42 +68,87 @@ class ChatHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          BrutalistIconButton(icon: Icons.arrow_back, onTap: onBack),
+          BrutalistIconButton(
+            icon: Icons.arrow_back,
+            semanticLabel: l10n(context).accessibilityBack,
+            onTap: onBack,
+          ),
           const SizedBox(width: 12),
-          UserAvatar(imageUrl: avatarUrl, size: AppAvatarSize.small),
+          Semantics(
+            button: onAvatarTap != null,
+            label: onAvatarTap == null ? null : l10n(context).navProfile,
+            child: InkWell(
+              onTap: onAvatarTap,
+              child: UserAvatar(imageUrl: avatarUrl, size: AppAvatarSize.small),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontFamily: AppTypography.headlineFontFamily,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    fontStyle: FontStyle.italic,
-                    color: context.textPrimary,
+                if (isLoading)
+                  Container(
+                    height: 16,
+                    width: 140,
+                    color: context.surfaceMidColor,
+                  )
+                else
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontFamily: AppTypography.headlineFontFamily,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      fontStyle: FontStyle.italic,
+                      color: context.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
                 const SizedBox(height: 2),
-                Text(
-                  _statusLabel,
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                    color: isOnline ? AppColors.success : AppColors.outline,
+                if (hasError)
+                  GestureDetector(
+                    onTap: onRetry,
+                    child: Text(
+                      l10n(context).chatLoadRetry,
+                      style: const TextStyle(
+                        fontFamily: AppTypography.fontFamily,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  )
+                else if (!isLoading)
+                  Text(
+                    _statusLabel(context),
+                    style: TextStyle(
+                      fontFamily: AppTypography.fontFamily,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                      color: isOnline
+                          ? AppColors.success
+                          : context.textSecondary,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
-          BrutalistIconButton(icon: Icons.more_vert, onTap: onConfig),
+          BrutalistIconButton(
+            icon: Icons.info_outline,
+            semanticLabel: l10n(context).chatConversationInfo,
+            onTap: onInfo,
+          ),
+          const SizedBox(width: 4),
+          BrutalistIconButton(
+            icon: Icons.more_vert,
+            semanticLabel: l10n(context).chatConversationOptionsLabel,
+            onTap: onConfig,
+          ),
         ],
       ),
     );

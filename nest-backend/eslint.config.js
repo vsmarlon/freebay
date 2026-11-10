@@ -23,10 +23,23 @@ module.exports = [
     },
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'TSAsExpression > TSAsExpression[typeAnnotation.type="TSUnknownKeyword"]',
+          message: 'Avoid nested as unknown assertions; narrow the value instead.',
+        },
+      ],
       'no-console': 'warn',
       'no-unused-vars': 'off',
       'no-undef': 'off',
+    },
+  },
+  {
+    files: ['test/**/*.ts'],
+    rules: {
+      'no-console': 'off',
     },
   },
   {
@@ -43,8 +56,6 @@ module.exports = [
         afterAll: 'readonly',
       },
     },
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-    },
+    rules: {},
   },
 ];

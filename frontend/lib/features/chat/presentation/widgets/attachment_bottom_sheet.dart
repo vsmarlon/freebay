@@ -2,17 +2,18 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/shared/services/upload_service.dart';
+import 'package:freebay/features/chat/data/entities/message_type.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+
+const _imageUploadMaxWidth = 1024.0;
+const _imageUploadQuality = 85;
 
 /// Result returned by the attachment bottom sheet.
 class AttachmentResult {
   final String url;
-  final String type; // 'IMAGE' or 'GIF'
+  final MessageType type;
 
   const AttachmentResult({required this.url, required this.type});
 }
@@ -27,17 +28,25 @@ class AttachmentResult {
 Future<void> showAttachmentSheet({
   required BuildContext context,
   required ValueChanged<AttachmentResult> onMediaReady,
+  bool returnRawFile = false,
+  ValueChanged<XFile>? onRawImage,
+  ValueChanged<XFile>? onRawVideo,
   VoidCallback? onLocationTap,
   VoidCallback? onProductTap,
+  VoidCallback? onOfferTap,
   required ValueChanged<String> onError,
 }) {
   return showBrutalistSheet(
     context: context,
-    title: 'ADICIONAR',
+    title: l10n(context).chatAddAttachment,
     builder: (ctx) => _AttachmentSheetBody(
       onMediaReady: onMediaReady,
+      returnRawFile: returnRawFile,
+      onRawImage: onRawImage,
+      onRawVideo: onRawVideo,
       onLocationTap: onLocationTap,
       onProductTap: onProductTap,
+      onOfferTap: onOfferTap,
       onError: onError,
     ),
   );
@@ -45,14 +54,22 @@ Future<void> showAttachmentSheet({
 
 class _AttachmentSheetBody extends StatefulWidget {
   final ValueChanged<AttachmentResult> onMediaReady;
+  final bool returnRawFile;
+  final ValueChanged<XFile>? onRawImage;
+  final ValueChanged<XFile>? onRawVideo;
   final VoidCallback? onLocationTap;
   final VoidCallback? onProductTap;
+  final VoidCallback? onOfferTap;
   final ValueChanged<String> onError;
 
   const _AttachmentSheetBody({
     required this.onMediaReady,
+    this.returnRawFile = false,
+    this.onRawImage,
+    this.onRawVideo,
     this.onLocationTap,
     this.onProductTap,
+    this.onOfferTap,
     required this.onError,
   });
 
@@ -69,10 +86,17 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
 
     final xfile = await _picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 1024,
-      imageQuality: 85,
+      maxWidth: _imageUploadMaxWidth,
+      imageQuality: _imageUploadQuality,
     );
     if (xfile == null) return;
+
+    if (widget.returnRawFile) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      widget.onRawImage?.call(xfile);
+      return;
+    }
 
     setState(() => _isUploading = true);
 
@@ -81,19 +105,64 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
       result.fold(
         (failure) {
           if (mounted) {
-            widget.onError(failure.message);
+            widget.onError(localizedFailureMessage(context, failure));
           }
         },
         (url) {
           if (mounted) {
             Navigator.of(context).pop();
-            widget.onMediaReady(AttachmentResult(url: url, type: 'IMAGE'));
+            widget.onMediaReady(
+              AttachmentResult(url: url, type: MessageType.image),
+            );
           }
         },
       );
     } catch (e) {
       if (mounted) {
-        widget.onError('Erro ao enviar imagem');
+        widget.onError(l10n(context).errorUploadFailed);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    if (_isUploading) return;
+
+    final xfile = await _picker.pickVideo(source: ImageSource.gallery);
+    if (xfile == null) return;
+
+    if (widget.returnRawFile && widget.onRawVideo != null) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      widget.onRawVideo?.call(xfile);
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    try {
+      final result = await UploadService.uploadFile(File(xfile.path), 'chat');
+      result.fold(
+        (failure) {
+          if (mounted) {
+            widget.onError(localizedFailureMessage(context, failure));
+          }
+        },
+        (url) {
+          if (mounted) {
+            Navigator.of(context).pop();
+            widget.onMediaReady(
+              AttachmentResult(url: url, type: MessageType.video),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        widget.onError(l10n(context).errorUploadFailed);
       }
     } finally {
       if (mounted) {
@@ -104,6 +173,7 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -118,13 +188,19 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
         else ...[
           _buildTile(
             icon: Icons.image_outlined,
-            label: 'IMAGEM / GIF',
+            label: strings.chatImageGif,
             onTap: _pickAndUploadImage,
           ),
           Spacing.vMd,
           _buildTile(
+            icon: Icons.videocam_outlined,
+            label: strings.chatVideo,
+            onTap: _pickVideo,
+          ),
+          Spacing.vMd,
+          _buildTile(
             icon: Icons.location_on_outlined,
-            label: 'LOCALIZAÇÃO',
+            label: strings.chatSelectLocation,
             onTap: () {
               Navigator.of(context).pop();
               widget.onLocationTap?.call();
@@ -133,10 +209,19 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
           Spacing.vMd,
           _buildTile(
             icon: Icons.shopping_bag_outlined,
-            label: 'PRODUTO',
+            label: strings.chatProduct,
             onTap: () {
               Navigator.of(context).pop();
               widget.onProductTap?.call();
+            },
+          ),
+          Spacing.vMd,
+          _buildTile(
+            icon: Icons.local_offer_outlined,
+            label: strings.chatMakeOffer,
+            onTap: () {
+              Navigator.of(context).pop();
+              widget.onOfferTap?.call();
             },
           ),
         ],

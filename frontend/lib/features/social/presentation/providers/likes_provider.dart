@@ -1,82 +1,138 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
+import 'package:freebay/features/social/data/repositories/social_repository.dart';
+import 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/features/social/presentation/providers/social_override_helpers.dart';
+import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class LikesState {
-  /// Map of post IDs to their liked status override (null means use entity value)
-  final Map<String, bool> likedOverrides;
+export 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
 
-  /// Map of post IDs to their like count override (null means use entity value)
-  final Map<String, int> countOverrides;
+part 'likes_provider.g.dart';
 
-  const LikesState({
-    this.likedOverrides = const {},
-    this.countOverrides = const {},
-  });
+@Riverpod(keepAlive: true)
+class Likes extends _$Likes {
+  int _sessionId = 0;
+  Set<String> _inFlight = <String>{};
+  Map<String, int> _versions = <String, int>{};
+  SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
-  LikesState copyWith({
-    Map<String, bool>? likedOverrides,
-    Map<String, int>? countOverrides,
-  }) {
-    return LikesState(
-      likedOverrides: likedOverrides ?? this.likedOverrides,
-      countOverrides: countOverrides ?? this.countOverrides,
-    );
+  @override
+  LikesState build() {
+    _inFlight = <String>{};
+    _versions = <String, int>{};
+    return const LikesState();
   }
 
-  bool? getLikedOverride(String postId) => likedOverrides[postId];
-  int? getCountOverride(String postId) => countOverrides[postId];
-}
+  void clear() {
+    _sessionId++;
+    _inFlight.clear();
+    _versions.clear();
+    state = const LikesState();
+  }
 
-class LikesNotifier extends StateNotifier<LikesState> {
-  final ISocialRepository _repository;
+  bool isPostLiked(String postId, {bool initial = false}) =>
+      state.getLikedOverride(postId) ?? initial;
 
-  LikesNotifier(this._repository) : super(const LikesState());
+  int postLikesCount(String postId, {int initial = 0}) =>
+      state.getCountOverride(postId) ?? initial;
 
-  /// Toggles like status. If no override exists, it uses initial values from the entity.
+  void reconcilePosts(Iterable<PostEntity> posts) {
+    final liked = Map<String, bool>.of(state.likedOverrides);
+    final counts = Map<String, int>.of(state.countOverrides);
+    for (final post in posts) {
+      if (_inFlight.contains(post.id)) continue;
+      var reconciled = false;
+      if (liked.containsKey(post.id) && liked[post.id] == post.isLiked) {
+        liked.remove(post.id);
+        reconciled = true;
+      }
+      if (counts.containsKey(post.id) && counts[post.id] == post.likesCount) {
+        counts.remove(post.id);
+        reconciled = true;
+      }
+      if (reconciled) _versions.remove(post.id);
+    }
+    state = state.copyWith(likedOverrides: liked, countOverrides: counts);
+  }
+
   Future<bool> toggleLike(
     String postId, {
     required bool initialIsLiked,
     required int initialCount,
   }) async {
+    if (!_inFlight.add(postId)) return false;
+    final sessionId = _sessionId;
+    final version = _versions.update(
+      postId,
+      (current) => current + 1,
+      ifAbsent: () => 1,
+    );
     final currentLiked = state.likedOverrides[postId] ?? initialIsLiked;
     final currentCount = state.countOverrides[postId] ?? initialCount;
-
     final newIsLiked = !currentLiked;
-    final newCount = newIsLiked ? currentCount + 1 : currentCount - 1;
-
-    // Apply optimistic update
+    final newCount = newIsLiked
+        ? currentCount + 1
+        : (currentCount > 0 ? currentCount - 1 : 0);
     state = state.copyWith(
-      likedOverrides: {...state.likedOverrides, postId: newIsLiked},
-      countOverrides: {...state.countOverrides, postId: newCount},
+      likedOverrides: withOverride(state.likedOverrides, postId, newIsLiked),
+      countOverrides: withOverride(state.countOverrides, postId, newCount),
     );
 
     try {
       final result = newIsLiked
           ? await _repository.likePost(postId)
           : await _repository.unlikePost(postId);
-
-      if (result.isLeft) {
-        // Rollback on failure
-        state = state.copyWith(
-          likedOverrides: {...state.likedOverrides, postId: currentLiked},
-          countOverrides: {...state.countOverrides, postId: currentCount},
-        );
+      if (!ref.mounted ||
+          sessionId != _sessionId ||
+          _versions[postId] != version) {
         return false;
       }
-      return true;
-    } catch (e) {
-      // Rollback on exception
-      state = state.copyWith(
-        likedOverrides: {...state.likedOverrides, postId: currentLiked},
-        countOverrides: {...state.countOverrides, postId: currentCount},
-      );
+      if (result.isLeft) {
+        _restore(postId, currentLiked, currentCount);
+        return false;
+      }
+      return result.fold((_) => false, (authoritative) {
+        state = state.copyWith(
+          likedOverrides: withOverride(
+            state.likedOverrides,
+            postId,
+            authoritative.active,
+          ),
+          countOverrides: withOverride(
+            state.countOverrides,
+            postId,
+            authoritative.count,
+          ),
+        );
+        if (authoritative.active == initialIsLiked &&
+            authoritative.count == initialCount) {
+          final liked = Map<String, bool>.of(state.likedOverrides)
+            ..remove(postId);
+          final counts = Map<String, int>.of(state.countOverrides)
+            ..remove(postId);
+          state = state.copyWith(likedOverrides: liked, countOverrides: counts);
+        }
+        return true;
+      });
+    } catch (_) {
+      if (ref.mounted &&
+          sessionId == _sessionId &&
+          _versions[postId] == version) {
+        _restore(postId, currentLiked, currentCount);
+      }
       return false;
+    } finally {
+      if (sessionId == _sessionId) {
+        _inFlight.remove(postId);
+        _versions.remove(postId);
+      }
     }
   }
-}
 
-final likesProvider = StateNotifierProvider<LikesNotifier, LikesState>((ref) {
-  final repository = ref.read(socialRepositoryProvider);
-  return LikesNotifier(repository);
-});
+  void _restore(String postId, bool liked, int count) {
+    state = state.copyWith(
+      likedOverrides: withOverride(state.likedOverrides, postId, liked),
+      countOverrides: withOverride(state.countOverrides, postId, count),
+    );
+  }
+}

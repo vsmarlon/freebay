@@ -14,6 +14,7 @@ abstract class CommentEntity with _$CommentEntity {
     String? parentId,
     @Default(0) int likesCount,
     @Default(false) bool isLiked,
+    @Default(false) bool isHidden,
     required DateTime createdAt,
     UserEntity? user,
     @Default([]) List<CommentEntity> replies,

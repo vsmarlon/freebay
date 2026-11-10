@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FreeBay — guia da codebase</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-stone-50 text-stone-950 antialiased">
+  <main class="mx-auto max-w-6xl space-y-12 px-5 py-10 sm:px-8">
+    <header class="border-2 border-stone-950 bg-stone-950 p-7 text-stone-50 shadow-[6px_6px_0_#8a1083] sm:p-10">
+      <p class="mb-4 text-xs font-bold uppercase tracking-widest text-fuchsia-300">Guia vivo da codebase</p>
+      <h1 class="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">FreeBay</h1>
+      <p class="mt-4 max-w-3xl text-lg text-stone-200">Onde encontrar cada jornada, qual contrato ela usa e como verificar uma mudança. As rotas abaixo vêm do código; disponibilidade em produção exige evidência própria.</p>
+      <nav aria-label="Seções do guia" class="mt-8 flex flex-wrap gap-3 text-sm font-bold">
+        <a class="border border-stone-300 px-3 py-2 hover:bg-stone-800 focus:outline-2 focus:outline-fuchsia-300" href="#arquitetura">Arquitetura</a>
+        <a class="border border-stone-300 px-3 py-2 hover:bg-stone-800 focus:outline-2 focus:outline-fuchsia-300" href="#jornadas">Jornadas</a>
+        <a class="border border-stone-300 px-3 py-2 hover:bg-stone-800 focus:outline-2 focus:outline-fuchsia-300" href="#telas">Mapa de telas</a>
+        <a class="border border-stone-300 px-3 py-2 hover:bg-stone-800 focus:outline-2 focus:outline-fuchsia-300" href="#trabalho">Como trabalhar</a>
+      </nav>
+    </header>
+
+    <section id="arquitetura" class="space-y-5">
+      <h2 class="text-3xl font-black">Arquitetura e fontes de verdade</h2>
+      <p class="max-w-4xl">O app Flutter e a web React usam a API NestJS. Os dados persistem via Prisma/PostgreSQL. Um componente ou uma rota no código indica um caminho implementado, não uma jornada concluída no dispositivo, no provedor ou em produção.</p>
+      <svg viewBox="0 0 960 240" role="img" aria-labelledby="architecture-title architecture-desc" class="w-full border-2 border-stone-950 bg-white p-4">
+        <title id="architecture-title">Camadas da FreeBay</title>
+        <desc id="architecture-desc">Flutter e Web chamam a API NestJS, que usa Prisma e PostgreSQL. Provedores externos exigem verificação separada.</desc>
+        <g fill="none" stroke="currentColor" stroke-width="3">
+          <rect x="20" y="30" width="180" height="64"/><rect x="20" y="140" width="180" height="64"/>
+          <rect x="300" y="85" width="180" height="64"/><rect x="580" y="85" width="180" height="64"/>
+          <path d="M200 62 H250 V117 H300 M200 172 H250 V117 M480 117 H580"/>
+        </g>
+        <g fill="currentColor" font-family="sans-serif" font-size="19" font-weight="700" text-anchor="middle">
+          <text x="110" y="69">App Flutter</text><text x="110" y="179">Web React</text>
+          <text x="390" y="124">API NestJS</text><text x="670" y="124">Prisma / DB</text>
+        </g>
+        <text x="20" y="229" fill="currentColor" font-family="sans-serif" font-size="14">Pagamentos, e-mail, OAuth e push: contratos externos com evidência separada.</text>
+      </svg>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="border border-stone-950 bg-white p-5">
+          <h3 class="mb-2 font-bold">Capacidade e limites</h3>
+          <p>Leia <a class="font-semibold underline" href="FEATURE_TRUTH.md">FEATURE_TRUTH.md</a> antes de afirmar que algo funciona. Siga a trilha UI → estado/repositório → endpoint → caso de uso → persistência/efeito externo.</p>
+        </div>
+        <div class="border border-stone-950 bg-white p-5">
+          <h3 class="mb-2 font-bold">Contratos de implementação</h3>
+          <p><a class="font-semibold underline" href="../frontend/DESIGN.md">Design Flutter</a> define tokens; <a class="font-semibold underline" href="../web/DESIGN.md">Design web</a> descreve a adaptação. <a class="font-semibold underline" href="adr/0004-selective-modular-backend-architecture.md">ADR 0004</a> e <a class="font-semibold underline" href="adr/0005-module-template-public-api-uow-events.md">ADR 0005</a> definem fronteiras do backend.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="jornadas" class="space-y-5">
+      <h2 class="text-3xl font-black">Jornadas e fronteiras</h2>
+      <svg viewBox="0 0 960 250" role="img" aria-labelledby="journey-title journey-desc" class="w-full border-2 border-stone-950 bg-white p-4">
+        <title id="journey-title">Jornadas principais</title>
+        <desc id="journey-desc">Depois da autenticação, o shell dá acesso a Início, Explorar, Carteira, Mensagens e Perfil. A descoberta pode levar a publicação, anúncio ou conversa; compra segue carrinho, checkout e pedido.</desc>
+        <g fill="none" stroke="currentColor" stroke-width="3">
+          <rect x="18" y="16" width="170" height="54"/><rect x="250" y="16" width="170" height="54"/><path d="M188 43 H250"/>
+          <rect x="18" y="120" width="170" height="54"/><rect x="210" y="120" width="170" height="54"/>
+          <rect x="402" y="120" width="170" height="54"/><rect x="594" y="120" width="170" height="54"/><rect x="786" y="120" width="150" height="54"/>
+          <path d="M335 70 V95 H95 V120 M335 95 H295 V120 M335 95 H487 V120 M335 95 H679 V120 M335 95 H861 V120"/>
+        </g>
+        <g fill="currentColor" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">
+          <text x="103" y="49">Autenticação</text><text x="335" y="49">Shell</text>
+          <text x="103" y="153">Início</text><text x="295" y="153">Explorar</text><text x="487" y="153">Carteira</text>
+          <text x="679" y="153">Mensagens</text><text x="861" y="153">Perfil</text>
+        </g>
+        <text x="18" y="216" fill="currentColor" font-family="sans-serif" font-size="15">Descoberta → anúncio → carrinho → checkout → pedido</text>
+        <text x="18" y="240" fill="currentColor" font-family="sans-serif" font-size="15">Feed → publicação → interação; perfil → posts, republicações e anúncios</text>
+      </svg>
+      <div class="grid gap-4 md:grid-cols-3">
+        <article class="border border-stone-950 bg-white p-5"><h3 class="font-bold">Social</h3><p class="mt-2 text-sm">Feed, posts, stories, busca e perfil. Republicação é uma relação com o post original; a mídia vem do contrato <code>media[]</code>. Consulte <a class="underline" href="../nest-backend/src/modules/social/">o módulo social</a> e <a class="underline" href="../frontend/lib/features/social/">a feature Flutter</a>.</p></article>
+        <article class="border border-stone-950 bg-white p-5"><h3 class="font-bold">Comércio</h3><p class="mt-2 text-sm">Catálogo, carrinho, checkout, pedidos, avaliação e disputa têm fronteiras distintas. A tela de sucesso não prova liquidação; o estado final depende do backend e dos eventos do provedor. Consulte <a class="underline" href="FEATURE_TRUTH.md">os limites verificados</a>.</p></article>
+        <article class="border border-stone-950 bg-white p-5"><h3 class="font-bold">Conversa e conta</h3><p class="mt-2 text-sm">Chat, notificações, privacidade e sessão precisam preservar autorização e estado do usuário. Verifique mídia privada, logout e troca de conta no fluxo inteiro.</p></article>
+      </div>
+    </section>
+
+    <section id="telas" class="space-y-5">
+      <h2 class="text-3xl font-black">Mapa de telas do app</h2>
+      <p class="max-w-4xl">Inventário de caminhos de <a class="font-semibold underline" href="../frontend/lib/core/router/app_routes.dart">AppRoutes</a>; a composição e os redirecionamentos ficam em <a class="font-semibold underline" href="../frontend/lib/core/router/app_router.dart">app_router.dart</a>. Caminhos são identificadores de navegação, não prova de operação completa. A web tem rotas localizadas e deve ser consultada em <a class="font-semibold underline" href="../web/app/routes.ts">web/app/routes.ts</a>.</p>
+      <div class="overflow-x-auto border-2 border-stone-950 bg-white">
+        <table class="w-full min-w-[700px] border-collapse text-left text-sm">
+          <thead class="bg-stone-950 text-white"><tr><th class="p-3">Área</th><th class="p-3">Telas e caminhos do app</th><th class="p-3">Fonte</th></tr></thead>
+          <tbody class="divide-y divide-stone-300">
+            <tr><th scope="row" class="p-3 align-top">Entrada</th><td class="p-3"><code>/splash</code>, <code>/login</code>, <code>/register</code>, <code>/complete-profile</code>, <code>/recover-password</code>, <code>/verify-reset-code</code>, <code>/reset-password</code>, <code>/onboarding</code>, <code>/welcome</code></td><td class="p-3"><a class="underline" href="../frontend/lib/core/router/routes/auth_routes.dart">auth_routes.dart</a></td></tr>
+            <tr><th scope="row" class="p-3 align-top">Abas do shell</th><td class="p-3"><code>/feed</code>, <code>/explore</code>, <code>/wallet</code>, <code>/chat</code>, <code>/profile</code></td><td class="p-3"><a class="underline" href="../frontend/lib/core/components/app_shell.dart">app_shell.dart</a></td></tr>
+            <tr><th scope="row" class="p-3 align-top">Social e stories</th><td class="p-3"><code>/create-post</code>, <code>/post/:id</code>, <code>/post/:postId/comment/:commentId</code>, <code>/posts/search</code>, <code>/people/search</code>, <code>/story</code>, <code>/create-story</code>, <code>/story/highlights/:id</code>, <code>/image-editor</code></td><td class="p-3"><a class="underline" href="../frontend/lib/core/router/routes/social_routes.dart">social_routes.dart</a></td></tr>
+            <tr><th scope="row" class="p-3 align-top">Catálogo e compra</th><td class="p-3"><code>/products</code>, <code>/products/create</code>, <code>/products/:id</code>, edição em <code>edit</code> sob o anúncio; <code>/cart</code>, <code>/checkout/cart</code>, <code>/checkout</code></td><td class="p-3"><a class="underline" href="../frontend/lib/core/router/app_routes.dart">AppRoutes</a></td></tr>
+            <tr><th scope="row" class="p-3 align-top">Pedidos e confiança</th><td class="p-3"><code>/orders</code>, <code>/orders/:orderId</code>, <code>/reviews</code>, <code>/reviews/create</code>, <code>/user/:id/reviews</code>, <code>/disputes</code>, <code>/disputes/:disputeId</code>, <code>/disputes/create/:orderId</code></td><td class="p-3"><a class="underline" href="../frontend/lib/core/router/app_routes.dart">AppRoutes</a></td></tr>
+            <tr><th scope="row" class="p-3 align-top">Chat</th><td class="p-3"><code>/chat/new</code>, <code>/chat/archived</code>, <code>/chat/:chatId</code>, <code>/chat/:chatId/details</code>, <code>/chat/location-view</code></td><td class="p-3"><a class="underline" href="../frontend/lib/core/router/routes/chat_routes.dart">chat_routes.dart</a></td></tr>
+            <tr><th scope="row" class="p-3 align-top">Perfil e conta</th><td class="p-3"><code>/user/:id</code>, <code>/profile/edit</code>, <code>/profile/privacy</code>, <code>/profile/followers</code>, <code>/profile/following</code>, <code>/profile/blocked</code>, <code>/profile/close-friends</code>, <code>/profile/posts</code>, <code>/profile/stories</code>, <code>/profile/products</code>, <code>/profile/liked</code>, <code>/profile/favorites</code>, <code>/profile/saved</code>, <code>/profile/purchases</code>, <code>/profile/payment</code>, <code>/notifications</code>, <code>/faq</code></td><td class="p-3"><a class="underline" href="../frontend/lib/core/router/app_routes.dart">AppRoutes</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="trabalho" class="space-y-5">
+      <h2 class="text-3xl font-black">Como trabalhar nesta codebase</h2>
+      <ol class="grid gap-4 md:grid-cols-3">
+        <li class="border border-stone-950 bg-white p-5"><strong class="block text-lg">1. Localize a jornada</strong><span class="mt-2 block text-sm">Comece pelo mapa de rotas e pela linha correspondente em <a class="underline" href="FEATURE_TRUTH.md">FEATURE_TRUTH.md</a>. Confirme o código antes de mudar uma afirmação.</span></li>
+        <li class="border border-stone-950 bg-white p-5"><strong class="block text-lg">2. Respeite a fronteira</strong><span class="mt-2 block text-sm">Flutter em <code>frontend/lib/features/</code>; web em <code>web/app/features/</code>; backend em módulos NestJS. Consulte <a class="underline" href="../AGENTS.md">AGENTS.md</a> e a skill aplicável.</span></li>
+        <li class="border border-stone-950 bg-white p-5"><strong class="block text-lg">3. Verifique o efeito</strong><span class="mt-2 block text-sm">Registre teste focado e evidência de navegador/dispositivo para mudança visível. Ambiente de teste, provedor e produção são evidências diferentes. Use <a class="underline" href="DEVICE_TESTING.md">DEVICE_TESTING.md</a>.</span></li>
+      </ol>
+      <p class="border-l-4 border-fuchsia-800 bg-white p-4">Este guia não duplica resultados datados. Relatórios de execução ficam em <a class="font-semibold underline" href="test-runs/">docs/test-runs/</a>; os limites de capacidade ficam em <a class="font-semibold underline" href="FEATURE_TRUTH.md">FEATURE_TRUTH.md</a>. Atualize este mapa quando a navegação ou a arquitetura mudar.</p>
+    </section>
+    <footer class="border-t border-stone-300 pt-5 text-sm text-stone-600">FreeBay · guia de navegação e manutenção da codebase</footer>
+  </main>
+</body>
+</html>

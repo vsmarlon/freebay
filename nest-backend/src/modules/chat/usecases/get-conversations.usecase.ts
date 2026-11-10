@@ -1,23 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { Either, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { ConversationWithStatus } from '../dtos/chat.dto';
 
 @Injectable()
 export class GetConversationsUseCase {
-  constructor(private readonly conversationRepository: ConversationRepository) {}
+  constructor(private readonly conversationRepository: ConversationDatabaseRepository) {}
 
   async execute(userId: string): Promise<Either<AppError, ConversationWithStatus[]>> {
     const convsResult = await this.conversationRepository.findDirectConversationsByUser(userId);
-    if (isLeft(convsResult)) return convsResult;
-
-    const delResult = await this.conversationRepository.markMessagesDelivered(userId, userId);
-    if (isLeft(delResult)) return delResult;
+    if (convsResult.isLeft()) return left(convsResult.value);
 
     const result: ConversationWithStatus[] = convsResult.value.map(conv => {
       const otherUser = conv.user1Id === userId ? conv.user2 : conv.user1;
-      const unreadCount = (conv.messages ?? []).filter(m =>
+      const unreadCount = (conv.messages ?? []).filter((m: { senderId: string; readAt: Date | null }) =>
         m.senderId !== userId && !m.readAt
       ).length;
       const lastMsg = conv.messages?.[0] ?? null;
@@ -30,7 +27,7 @@ export class GetConversationsUseCase {
           createdAt: lastMsg.createdAt,
         } : null,
         unreadCount,
-        status: conv.status as 'ACTIVE' | 'PENDING',
+        status: conv.status,
         createdAt: conv.createdAt,
       };
     });
@@ -38,3 +35,4 @@ export class GetConversationsUseCase {
     return right(result);
   }
 }
+

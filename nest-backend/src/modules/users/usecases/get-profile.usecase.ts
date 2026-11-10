@@ -1,22 +1,30 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { UserResponse, toUserResponse } from '../mappers/user.mapper';
+import { UserDatabaseRepository } from '@/modules/users';
+import { UserResponse, toUserResponse } from '../dtos/user-response.class';
 import { GetProfileInput } from '../dtos/user.dto';
 
 @Injectable()
 export class GetProfileUseCase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(private readonly userRepository: UserDatabaseRepository) {}
 
   async execute(input: GetProfileInput): Promise<Either<AppError, UserResponse>> {
     const userResult = await this.userRepository.findById(input.userId);
-    if (isLeft(userResult)) {
+    if (userResult.isLeft()) {
       return left(userResult.value);
     }
     if (!userResult.value) {
       return left(new NotFoundError('User'));
     }
-    return right(toUserResponse(userResult.value));
+
+    const countsResult = await this.userRepository.getProfileCounts(
+      input.userId, input.viewerId ?? (input.includePrivate ? input.userId : undefined),
+    );
+    if (countsResult.isLeft()) {
+      return left(countsResult.value);
+    }
+
+    return right(toUserResponse(userResult.value, countsResult.value, input.includePrivate));
   }
 }

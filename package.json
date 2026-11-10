@@ -4,14 +4,33 @@
     "lint-staged": "^17.0.8"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "ci:check": "node scripts/ci-check.js",
+    "test:ci-scripts": "node --test scripts/ci-check.test.js scripts/perf-check.test.js scripts/dev.test.cjs scripts/readiness.test.cjs",
+    "dev:profile": "node scripts/dev.cjs --mode profile",
+    "dev:debug": "node scripts/dev.cjs --mode debug",
+    "e2e:backend": "npm --prefix nest-backend run test:e2e",
+    "e2e:web": "npm --prefix web run test:e2e:real",
+    "web:dev": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build",
+    "web:typecheck": "npm --prefix web run typecheck",
+    "web:lint": "npm --prefix web run lint",
+    "web:test": "npm --prefix web run test",
+    "web:check": "npm run web:typecheck && npm run web:lint && npm run web:test && npm run web:build"
   },
   "lint-staged": {
     "nest-backend/src/**/*.ts": [
-      "nest-backend/node_modules/.bin/eslint --config nest-backend/eslint.config.js --fix"
+      "node nest-backend/node_modules/eslint/bin/eslint.js --config nest-backend/eslint.config.js --fix"
     ],
     "frontend/lib/**/*.dart": [
-      "fvm dart format"
+      "dart format"
+    ],
+    "web/{app,tests,e2e}/**/*.{ts,tsx,mjs}": [
+      "node web/node_modules/prettier/bin/prettier.cjs --write",
+      "node web/node_modules/eslint/bin/eslint.js --config web/eslint.config.js --fix"
+    ],
+    "web/app/**/*.json": [
+      "node web/node_modules/prettier/bin/prettier.cjs --write"
     ]
   }
 }

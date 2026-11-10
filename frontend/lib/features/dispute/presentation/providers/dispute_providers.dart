@@ -1,30 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/dispute/data/entities/dispute_entity.dart';
 import 'package:freebay/features/dispute/data/repositories/dispute_repository.dart';
-import 'package:freebay/features/dispute/data/services/dispute_service.dart';
-import 'package:freebay/features/dispute/domain/repositories/i_dispute_repository.dart';
-import 'package:freebay/features/dispute/domain/usecases/create_dispute_usecase.dart';
-import 'package:freebay/features/dispute/domain/usecases/get_dispute_usecase.dart';
-import 'package:freebay/features/dispute/domain/usecases/get_my_disputes_usecase.dart';
-import 'package:freebay/features/dispute/domain/usecases/submit_evidence_usecase.dart';
+import 'package:freebay/features/dispute/domain/repositories/dispute_repository.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:freebay/shared/services/http_client.dart';
 
-final disputeServiceProvider = Provider((ref) => DisputeService());
+part 'dispute_providers.g.dart';
 
-final disputeRepositoryProvider = Provider<IDisputeRepository>((ref) {
-  return DisputeRepository(ref.watch(disputeServiceProvider));
-});
-
-final getDisputeUsecaseProvider = Provider(
-  (ref) => GetDisputeUsecase(ref.watch(disputeRepositoryProvider)),
-);
-final getMyDisputesUsecaseProvider = Provider(
-  (ref) => GetMyDisputesUsecase(ref.watch(disputeRepositoryProvider)),
-);
-final createDisputeUsecaseProvider = Provider(
-  (ref) => CreateDisputeUsecase(ref.watch(disputeRepositoryProvider)),
-);
-final submitEvidenceUsecaseProvider = Provider(
-  (ref) => SubmitEvidenceUsecase(ref.watch(disputeRepositoryProvider)),
+final disputeRepositoryProvider = Provider<DisputeRepository>(
+  (ref) => DisputeRepositoryImpl(client: HttpClient.instance),
 );
 
 class DisputeListState {
@@ -51,15 +35,17 @@ class DisputeListState {
   }
 }
 
-class DisputeListNotifier extends StateNotifier<DisputeListState> {
-  final GetMyDisputesUsecase _getMyDisputesUsecase;
-
-  DisputeListNotifier(this._getMyDisputesUsecase)
-      : super(const DisputeListState());
+@Riverpod(keepAlive: true)
+class DisputeList extends _$DisputeList {
+  @override
+  DisputeListState build() {
+    ref.watch(disputeRepositoryProvider);
+    return const DisputeListState();
+  }
 
   Future<void> loadDisputes() async {
-    state = state.copyWith(isLoading: true, error: null);
-    final result = await _getMyDisputesUsecase();
+    state = state.copyWith(isLoading: true);
+    final result = await ref.read(disputeRepositoryProvider).getMyDisputes();
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
@@ -68,11 +54,6 @@ class DisputeListNotifier extends StateNotifier<DisputeListState> {
     );
   }
 }
-
-final disputeListProvider =
-    StateNotifierProvider<DisputeListNotifier, DisputeListState>((ref) {
-  return DisputeListNotifier(ref.watch(getMyDisputesUsecaseProvider));
-});
 
 class DisputeDetailState {
   final bool isLoading;
@@ -102,20 +83,19 @@ class DisputeDetailState {
   }
 }
 
-class DisputeDetailNotifier extends StateNotifier<DisputeDetailState> {
-  final GetDisputeUsecase _getDisputeUsecase;
-  final SubmitEvidenceUsecase _submitEvidenceUsecase;
-  final String disputeId;
-
-  DisputeDetailNotifier(
-    this._getDisputeUsecase,
-    this._submitEvidenceUsecase,
-    this.disputeId,
-  ) : super(const DisputeDetailState());
+@Riverpod()
+class DisputeDetail extends _$DisputeDetail {
+  @override
+  DisputeDetailState build(String disputeId) {
+    ref.watch(disputeRepositoryProvider);
+    return const DisputeDetailState();
+  }
 
   Future<void> loadDispute() async {
-    state = state.copyWith(isLoading: true, error: null);
-    final result = await _getDisputeUsecase(disputeId);
+    state = state.copyWith(isLoading: true);
+    final result = await ref
+        .read(disputeRepositoryProvider)
+        .getDispute(disputeId);
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
@@ -124,10 +104,10 @@ class DisputeDetailNotifier extends StateNotifier<DisputeDetailState> {
   }
 
   Future<bool> submitEvidence(String evidence) async {
-    state = state.copyWith(isSubmitting: true, error: null);
-    final result = await _submitEvidenceUsecase(
-      SubmitEvidenceParams(disputeId: disputeId, evidence: evidence),
-    );
+    state = state.copyWith(isSubmitting: true);
+    final result = await ref
+        .read(disputeRepositoryProvider)
+        .submitEvidence(disputeId, evidence);
     return result.fold(
       (failure) {
         state = state.copyWith(isSubmitting: false, error: failure.message);
@@ -141,13 +121,3 @@ class DisputeDetailNotifier extends StateNotifier<DisputeDetailState> {
     );
   }
 }
-
-final disputeDetailProvider = StateNotifierProvider.autoDispose
-    .family<DisputeDetailNotifier, DisputeDetailState, String>(
-        (ref, disputeId) {
-  return DisputeDetailNotifier(
-    ref.watch(getDisputeUsecaseProvider),
-    ref.watch(submitEvidenceUsecaseProvider),
-    disputeId,
-  );
-});

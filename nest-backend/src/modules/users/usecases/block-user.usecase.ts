@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { BlockRepository } from '../domain/repositories/block.repository';
-import { BlockResponse } from '../mappers/user.mapper';
+import { BlockResponse } from '../dtos/user-response.class';
 import { BlockUserInput } from '../dtos/user.dto';
 
 @Injectable()
 export class BlockUserUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
+    private readonly userRepository: UserDatabaseRepository,
     private readonly blockRepository: BlockRepository,
   ) {}
 
@@ -19,7 +19,7 @@ export class BlockUserUseCase {
     }
 
     const targetResult = await this.userRepository.findById(input.blockedId);
-    if (isLeft(targetResult)) {
+    if (targetResult.isLeft()) {
       return left(targetResult.value);
     }
     if (!targetResult.value) {

@@ -2,11 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CreateReviewUseCase } from './usecases/create-review/create-review.usecase';
 import { GetUserReviewsUseCase } from './usecases/get-user-reviews/get-user-reviews.usecase';
 import { CanReviewOrderUseCase } from './usecases/can-review-order/can-review-order.usecase';
-import { ReviewRepository } from './domain/repositories/review.repository';
+import { ReviewDatabaseRepository } from './data/repositories/review-database.repository';
 import { CreateReviewInput } from './dtos/create-review.dto';
 import { AuthUser } from '@/shared/core/types';
 import { validateImageFile } from '@/shared/utils/image-upload.utils';
-import { AppError, BadRequestError } from '@/shared/core/errors';
+import { AppError, BadRequestError, ForbiddenError } from '@/shared/core/errors';
 import { left, right, Either } from '@/shared/core/either';
 import { ReviewType } from '@prisma/client';
 
@@ -18,7 +18,7 @@ export class ReviewsService {
     private readonly createReviewUseCase: CreateReviewUseCase,
     private readonly getUserReviewsUseCase: GetUserReviewsUseCase,
     private readonly canReviewOrderUseCase: CanReviewOrderUseCase,
-    private readonly reviewRepository: ReviewRepository,
+    private readonly reviewRepository: ReviewDatabaseRepository,
   ) {}
 
   async createReview(
@@ -59,9 +59,17 @@ export class ReviewsService {
 
   private tempImages = new Map<string, string>();
 
-  async uploadImage(orderId: string, file: Express.Multer.File | undefined): Promise<Either<AppError, { imageId: string; url: string }>> {
+  async uploadImage(orderId: string, file: Express.Multer.File | undefined, userId: string): Promise<Either<AppError, { imageId: string; url: string }>> {
     if (!file) {
       return left(new BadRequestError('Arquivo de imagem é obrigatório'));
+    }
+
+    const eligibility = await this.canReviewOrderUseCase.execute({ orderId, userId });
+    if (eligibility.isLeft()) {
+      return left(eligibility.value);
+    }
+    if (!eligibility.value.canReview) {
+      return left(new ForbiddenError(eligibility.value.reason));
     }
 
     const validationError = validateImageFile(file);

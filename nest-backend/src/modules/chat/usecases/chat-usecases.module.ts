@@ -1,13 +1,8 @@
 import { Module } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
-import { PrismaConversationPreferenceRepository } from '../data/repositories/conversation-preference-database.repository';
+import { ConversationPreferenceDatabaseRepository } from '../data/repositories/conversation-preference-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
-import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
-import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { SendMessageUseCase } from './send-message.usecase';
 import { GetConversationsUseCase } from './get-conversations.usecase';
 import { GetMessagesUseCase } from './get-messages.usecase';
@@ -19,18 +14,27 @@ import { DeleteConversationUseCase } from './delete-conversation.usecase';
 import { SetConversationThemeUseCase } from './set-conversation-theme.usecase';
 import { SetConversationBackgroundUseCase } from './set-conversation-background.usecase';
 import { OgScraperService } from '../services/og-scraper.service';
+import { UrlSafetyService } from '../services/url-safety.service';
 import { DeleteMessageUseCase } from './delete-message.usecase';
 import { ToggleReactionUseCase } from './toggle-reaction.usecase';
+import { ToggleStarUseCase } from './toggle-star.usecase';
+import { GetStarredMessagesUseCase } from './get-starred-messages.usecase';
+import { GetConversationMediaUseCase } from './get-conversation-media.usecase';
+import { VerifyUrlSafetyUseCase } from './verify-url-safety.usecase';
+import { ForwardMessagesUseCase } from './forward-messages.usecase';
+import { MarkAsReadUseCase } from './mark-as-read.usecase';
+import { ViewOnceUseCase } from './view-once.usecase';
+import { SetMessagePinUseCase } from './set-message-pin.usecase';
 
 @Module({
   providers: [
-    { provide: PrismaClient, useExisting: PrismaService },
-    { provide: ConversationRepository, useClass: ConversationDatabaseRepository },
-    PrismaConversationPreferenceRepository,
-    { provide: ConversationPreferenceRepository, useExisting: PrismaConversationPreferenceRepository },
+    SetMessagePinUseCase,
+    MarkAsReadUseCase,
+    ViewOnceUseCase,
+    ConversationDatabaseRepository,
+    ConversationPreferenceDatabaseRepository,
     ChatThreadAccessService,
-    PrismaBlockRepository,
-    { provide: BlockRepository, useExisting: PrismaBlockRepository },
+    BlockDatabaseRepository,
     SendMessageUseCase,
     GetConversationsUseCase,
     GetMessagesUseCase,
@@ -42,13 +46,22 @@ import { ToggleReactionUseCase } from './toggle-reaction.usecase';
     SetConversationThemeUseCase,
     SetConversationBackgroundUseCase,
     OgScraperService,
+    UrlSafetyService,
     DeleteMessageUseCase,
     ToggleReactionUseCase,
+    ToggleStarUseCase,
+    GetStarredMessagesUseCase,
+    GetConversationMediaUseCase,
+    VerifyUrlSafetyUseCase,
+    ForwardMessagesUseCase,
   ],
   exports: [
-    ConversationRepository,
+    SetMessagePinUseCase,
+    MarkAsReadUseCase,
+    ViewOnceUseCase,
+    ConversationDatabaseRepository,
     ChatThreadAccessService,
-    BlockRepository,
+    BlockDatabaseRepository,
     SendMessageUseCase,
     GetConversationsUseCase,
     GetMessagesUseCase,
@@ -60,8 +73,15 @@ import { ToggleReactionUseCase } from './toggle-reaction.usecase';
     SetConversationThemeUseCase,
     SetConversationBackgroundUseCase,
     OgScraperService,
+    UrlSafetyService,
     DeleteMessageUseCase,
     ToggleReactionUseCase,
+    ToggleStarUseCase,
+    GetStarredMessagesUseCase,
+    GetConversationMediaUseCase,
+    VerifyUrlSafetyUseCase,
+    ForwardMessagesUseCase,
   ],
 })
 export class ChatUseCasesModule {}
+

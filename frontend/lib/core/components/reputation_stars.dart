@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class ReputationStars extends StatelessWidget {
@@ -24,13 +23,10 @@ class ReputationStars extends StatelessWidget {
       children: [
         RatingBar.builder(
           initialRating: score,
-          minRating: 0,
-          direction: Axis.horizontal,
           allowHalfRating: true,
-          itemCount: 5,
           itemSize: size,
           ignoreGestures: true,
-          unratedColor: AppColors.mediumGray.withAlpha(128),
+          unratedColor: context.textSecondary.withAlpha(128),
           itemBuilder: (context, _) =>
               const Icon(Icons.star, color: AppColors.warning),
           onRatingUpdate: (_) {},
@@ -41,7 +37,7 @@ class ReputationStars extends StatelessWidget {
             '($reviewCount)',
             style: TextStyle(
               fontSize: size * 0.75,
-              color: AppColors.mediumGray,
+              color: context.textSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),

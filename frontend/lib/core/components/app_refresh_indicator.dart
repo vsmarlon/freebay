@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
 class AppRefreshIndicator extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final Widget child;
   final Color? color;
+  final ScrollNotificationPredicate notificationPredicate;
 
   const AppRefreshIndicator({
     super.key,
     required this.onRefresh,
     required this.child,
     this.color,
+    this.notificationPredicate = defaultScrollNotificationPredicate,
   });
 
   @override
@@ -18,6 +20,7 @@ class AppRefreshIndicator extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       color: color ?? AppColors.primaryContainer,
+      notificationPredicate: notificationPredicate,
       child: child,
     );
   }

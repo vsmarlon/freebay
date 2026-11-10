@@ -1,28 +1,29 @@
-import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { CategoryService } from './category.service';
+import { GetPublic } from '@/shared/decorators';
+import { ListCategoriesUseCase } from './usecases/list-categories.usecase';
+import { GetCategoryUseCase } from './usecases/get-category.usecase';
+import { unwrap } from '@/shared/http/unwrap';
 
 @ApiTags('Categories')
 @Controller('categories')
 export class CategoryController {
-  constructor(private readonly categoryService: CategoryService) {}
+  constructor(
+    private readonly listCategoriesUseCase: ListCategoriesUseCase,
+    private readonly getCategoryUseCase: GetCategoryUseCase,
+  ) {}
 
-  @Get()
-  @ApiDoc({
-    summary: 'List all categories',
-  })
+  @GetPublic('List all categories')
   async findAll() {
-    return this.categoryService.findAll();
+    return unwrap(await this.listCategoriesUseCase.execute());
   }
 
-  @Get(':id')
-  @ApiDoc({
+  @GetPublic(':id', {
     summary: 'Get category by ID',
     params: [{ name: 'id', description: 'Category UUID' }],
     errors: [{ status: 404, description: 'Category not found' }],
   })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.categoryService.findOne(id);
+    return unwrap(await this.getCategoryUseCase.execute(id));
   }
 }

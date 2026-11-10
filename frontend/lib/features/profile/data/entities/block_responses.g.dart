@@ -6,50 +6,32 @@ part of 'block_responses.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_BlockListUser _$BlockListUserFromJson(Map<String, dynamic> json) =>
-    _BlockListUser(
-      id: json['id'] as String,
-      displayName: json['displayName'] as String,
-      avatarUrl: json['avatarUrl'] as String?,
-      isVerified: json['isVerified'] as bool,
-      reputationScore: (json['reputationScore'] as num).toDouble(),
-    );
-
-Map<String, dynamic> _$BlockListUserToJson(_BlockListUser instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'displayName': instance.displayName,
-      'avatarUrl': instance.avatarUrl,
-      'isVerified': instance.isVerified,
-      'reputationScore': instance.reputationScore,
-    };
-
-_BlockListResponse _$BlockListResponseFromJson(Map<String, dynamic> json) =>
-    _BlockListResponse(
+BlockListResponse _$BlockListResponseFromJson(Map<String, dynamic> json) =>
+    BlockListResponse(
       users:
           (json['users'] as List<dynamic>?)
-              ?.map((e) => BlockListUser.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => UserBrief.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
-      limit: (json['limit'] as num).toInt(),
-      offset: (json['offset'] as num).toInt(),
+      limit: (json['limit'] as num?)?.toInt() ?? 0,
+      offset: (json['offset'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$BlockListResponseToJson(_BlockListResponse instance) =>
+Map<String, dynamic> _$BlockListResponseToJson(BlockListResponse instance) =>
     <String, dynamic>{
-      'users': instance.users,
+      'users': instance.users.map((e) => e.toJson()).toList(),
       'limit': instance.limit,
       'offset': instance.offset,
     };
 
-_UnblockResponse _$UnblockResponseFromJson(Map<String, dynamic> json) =>
-    _UnblockResponse(blocked: json['blocked'] as bool);
+UnblockResponse _$UnblockResponseFromJson(Map<String, dynamic> json) =>
+    UnblockResponse(blocked: json['blocked'] as bool? ?? false);
 
-Map<String, dynamic> _$UnblockResponseToJson(_UnblockResponse instance) =>
+Map<String, dynamic> _$UnblockResponseToJson(UnblockResponse instance) =>
     <String, dynamic>{'blocked': instance.blocked};
 
-_BlockResponse _$BlockResponseFromJson(Map<String, dynamic> json) =>
-    _BlockResponse(blocked: json['blocked'] as bool);
+BlockResponse _$BlockResponseFromJson(Map<String, dynamic> json) =>
+    BlockResponse(blocked: json['blocked'] as bool? ?? false);
 
-Map<String, dynamic> _$BlockResponseToJson(_BlockResponse instance) =>
+Map<String, dynamic> _$BlockResponseToJson(BlockResponse instance) =>
     <String, dynamic>{'blocked': instance.blocked};

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PostActions extends StatelessWidget {
   final bool isLiked;
   final bool isSaved;
   final bool isReposted;
   final bool isLikeLoading;
+  final bool allowRepost;
   final int likesCount;
   final int commentsCount;
   final int sharesCount;
@@ -17,6 +16,8 @@ class PostActions extends StatelessWidget {
   final VoidCallback onSave;
   final VoidCallback onRepost;
   final VoidCallback? onComment;
+  final VoidCallback? onQuote;
+  final VoidCallback? onMore;
 
   const PostActions({
     super.key,
@@ -24,6 +25,7 @@ class PostActions extends StatelessWidget {
     required this.isSaved,
     required this.isReposted,
     required this.isLikeLoading,
+    this.allowRepost = true,
     required this.likesCount,
     required this.commentsCount,
     required this.sharesCount,
@@ -31,49 +33,92 @@ class PostActions extends StatelessWidget {
     required this.onSave,
     required this.onRepost,
     this.onComment,
+    this.onQuote,
+    this.onMore,
   });
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: AppColors.onSurface.withAlpha(26), width: 1),
+          top: BorderSide(color: AppColors.onSurface.withAlpha(26)),
         ),
       ),
-      child: Row(
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        runAlignment: WrapAlignment.spaceBetween,
+        spacing: Spacing.sm,
+        runSpacing: Spacing.xs,
         children: [
           Opacity(
             opacity: isLikeLoading ? 0.5 : 1.0,
             child: PostActionButton(
+              key: const ValueKey('post-action-like'),
               icon: isLiked ? Icons.favorite : Icons.favorite_border,
-              iconColor: isLiked ? AppColors.primaryContainer : null,
+              iconColor: isLiked ? context.colors.primary : null,
               label: likesCount > 0 ? likesCount.toString() : null,
               onTap: onLike,
             ),
           ),
-          Spacing.hMd,
           PostActionButton(
+            key: const ValueKey('post-action-comment'),
             icon: Icons.chat_bubble_outline,
             label: commentsCount > 0 ? commentsCount.toString() : null,
+            semanticLabel: strings.accessibilityCommentCount(commentsCount),
             onTap: () {
               HapticFeedback.lightImpact();
               onComment?.call();
             },
           ),
-          Spacing.hMd,
+          if (allowRepost)
+            PostActionButton(
+              key: const ValueKey('post-action-repost'),
+              icon: Icons.repeat,
+              iconColor: isReposted ? context.colors.primary : null,
+              label: sharesCount > 0 ? sharesCount.toString() : null,
+              semanticLabel: strings.feedRepost,
+              onTap: onRepost,
+              onLongPress: onQuote == null
+                  ? null
+                  : () => showBrutalistSheet<void>(
+                      context: context,
+                      title: strings.feedRepost,
+                      builder: (sheetContext) => ListTile(
+                        leading: const Icon(Icons.format_quote),
+                        title: Text(strings.socialQuoteLabel),
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          onQuote!();
+                        },
+                      ),
+                    ),
+            ),
+          if (onQuote != null) ...[
+            PostActionButton(
+              key: const ValueKey('post-action-quote'),
+              icon: Icons.format_quote,
+              semanticLabel: strings.socialQuoteLabel,
+              onTap: onQuote!,
+            ),
+          ],
           PostActionButton(
-            icon: isReposted ? Icons.repeat : Icons.repeat,
-            iconColor: isReposted ? AppColors.primaryContainer : null,
-            label: sharesCount > 0 ? sharesCount.toString() : null,
-            onTap: onRepost,
-          ),
-          const Spacer(),
-          PostActionButton(
+            key: const ValueKey('post-action-save'),
             icon: isSaved ? Icons.bookmark : Icons.bookmark_border,
+            semanticLabel: isSaved
+                ? strings.feedUnsavePost
+                : strings.feedSavePost,
             onTap: onSave,
           ),
+          if (onMore != null)
+            PostActionButton(
+              key: const ValueKey('post-action-more'),
+              icon: Icons.more_horiz,
+              semanticLabel: strings.accessibilityMoreOptions,
+              onTap: onMore!,
+            ),
         ],
       ),
     );
@@ -85,6 +130,8 @@ class PostActionButton extends StatelessWidget {
   final Color? iconColor;
   final String? label;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final String? semanticLabel;
 
   const PostActionButton({
     super.key,
@@ -92,222 +139,48 @@ class PostActionButton extends StatelessWidget {
     this.iconColor,
     this.label,
     required this.onTap,
+    this.onLongPress,
+    this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final defaultColor = context.textPrimary;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: semanticLabel,
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: iconColor ?? defaultColor, size: 24),
-            if (label != null) ...[
-              Spacing.hXs,
-              Text(
-                label!,
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: iconColor ?? defaultColor,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class PostFullScreenImage extends StatefulWidget {
-  final String imageUrl;
-  final VoidCallback onClose;
-
-  const PostFullScreenImage({
-    super.key,
-    required this.imageUrl,
-    required this.onClose,
-  });
-
-  @override
-  State<PostFullScreenImage> createState() => _PostFullScreenImageState();
-}
-
-class _PostFullScreenImageState extends State<PostFullScreenImage> {
-  final _transformController = TransformationController();
-
-  bool get _isZoomed => _transformController.value != Matrix4.identity();
-
-  void _onDoubleTapDown(TapDownDetails details) {
-    if (_isZoomed) {
-      _transformController.value = Matrix4.identity();
-    } else {
-      final pos = details.localPosition;
-      _transformController.value = Matrix4.identity()
-        ..translateByDouble(-pos.dx * 2, -pos.dy * 2, 0, 1)
-        ..scaleByDouble(3.0, 3.0, 3.0, 1);
-    }
-    setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _transformController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onClose,
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null &&
-            details.primaryVelocity!.abs() > 300) {
-          widget.onClose();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Colors.black.withValues(alpha: 0.9),
-        body: Stack(
-          children: [
-            GestureDetector(
-              onDoubleTapDown: _onDoubleTapDown,
-              onDoubleTap: () {},
-              child: InteractiveViewer(
-                transformationController: _transformController,
-                minScale: 0.5,
-                maxScale: 6.0,
-                child: Center(
-                  child: Image.network(widget.imageUrl, fit: BoxFit.contain),
-                ),
-              ),
-            ),
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 16,
-              right: 16,
-              child: GestureDetector(
-                onTap: widget.onClose,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.onSurface,
-                    border: Border.all(
-                      color: AppColors.surfaceContainerLowest,
-                      width: 2,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.close,
-                    color: AppColors.onPrimary,
-                    size: 24,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: MediaQuery.of(context).padding.bottom + 32,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  color: AppColors.onSurface.withValues(alpha: 0.7),
-                  child: const Text(
-                    'DESLIZE PARA FECHAR • DUPLO TOQUE PARA ZOOM',
+      onLongPress: onLongPress,
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: iconColor ?? defaultColor, size: 24),
+                if (label != null) ...[
+                  Spacing.hXs,
+                  Text(
+                    label!,
                     style: TextStyle(
                       fontFamily: AppTypography.fontFamily,
-                      color: AppColors.onPrimary,
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
+                      color: iconColor ?? defaultColor,
                     ),
                   ),
-                ),
-              ),
+                ],
+              ],
             ),
-          ],
+          ),
         ),
       ),
-    );
-  }
-}
-
-class PostShareBottomSheet extends StatelessWidget {
-  final String userName;
-  final String? content;
-  final VoidCallback onShareExternal;
-  final VoidCallback onShareAsPost;
-
-  const PostShareBottomSheet({
-    super.key,
-    required this.userName,
-    this.content,
-    required this.onShareExternal,
-    required this.onShareAsPost,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = context.isDark;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ListTile(
-          leading: Icon(
-            Icons.link,
-            color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-          ),
-          title: Text(
-            'Compartilhar externamente',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-            ),
-          ),
-          subtitle: const Text(
-            'WhatsApp, Instagram, etc.',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              color: AppColors.outline,
-              fontSize: 12,
-            ),
-          ),
-          onTap: onShareExternal,
-        ),
-        ListTile(
-          leading: Icon(
-            Icons.article_outlined,
-            color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-          ),
-          title: Text(
-            'Compartilhar no perfil',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-            ),
-          ),
-          subtitle: Text(
-            'Criar post com "Compartilhado de @$userName"',
-            style: const TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              color: AppColors.outline,
-              fontSize: 12,
-            ),
-          ),
-          onTap: onShareAsPost,
-        ),
-        Spacing.vMd,
-      ],
     );
   }
 }

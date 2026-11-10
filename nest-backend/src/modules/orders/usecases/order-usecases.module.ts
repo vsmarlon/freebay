@@ -1,38 +1,36 @@
 import { Module } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { OrderRepository } from '../domain/repositories/order.repository';
-import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { CreateOrderUseCase } from './create-order.usecase';
 import { ConfirmDeliveryUseCase } from './confirm-delivery.usecase';
-import { ActivateEscrowUseCase } from './activate-escrow.usecase';
 import { MarkAsShippedUseCase } from './mark-as-shipped.usecase';
 import { MarkAsDeliveredUseCase } from './mark-as-delivered.usecase';
 import { CancelOrderUseCase } from './cancel-order.usecase';
+import { GetOrderUseCase } from './get-order.usecase';
+import { ListSalesOrdersUseCase } from './list-sales-orders.usecase';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
+import { PaymentsModule } from '@/modules/payments/payments.module';
 
 @Module({
-  imports: [NotificationsModule],
+  imports: [NotificationsModule, PaymentsModule],
   providers: [
-    { provide: PrismaClient, useExisting: PrismaService },
-    PrismaOrderRepository,
-    { provide: OrderRepository, useExisting: PrismaOrderRepository },
+    OrderDatabaseRepository,
     CreateOrderUseCase,
     ConfirmDeliveryUseCase,
-    ActivateEscrowUseCase,
     MarkAsShippedUseCase,
     MarkAsDeliveredUseCase,
     CancelOrderUseCase,
+    GetOrderUseCase,
+    ListSalesOrdersUseCase,
   ],
   exports: [
-    OrderRepository,
-    PrismaOrderRepository,
+    OrderDatabaseRepository,
     CreateOrderUseCase,
     ConfirmDeliveryUseCase,
-    ActivateEscrowUseCase,
     MarkAsShippedUseCase,
     MarkAsDeliveredUseCase,
     CancelOrderUseCase,
+    GetOrderUseCase,
+    ListSalesOrdersUseCase,
   ],
 })
 export class OrderUseCasesModule {}

@@ -1,0 +1,118 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'profile_timeline_provider.dart';
+
+// **************************************************************************
+// RiverpodGenerator
+// **************************************************************************
+
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+@ProviderFor(ProfileTimeline)
+final profileTimelineProvider = ProfileTimelineFamily._();
+
+final class ProfileTimelineProvider
+    extends $NotifierProvider<ProfileTimeline, ProfileTimelineState> {
+  ProfileTimelineProvider._({
+    required ProfileTimelineFamily super.from,
+    required (String, {String? kind, String? viewerId}) super.argument,
+  }) : super(
+         retry: null,
+         name: r'profileTimelineProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$profileTimelineHash();
+
+  @override
+  String toString() {
+    return r'profileTimelineProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  ProfileTimeline create() => ProfileTimeline();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ProfileTimelineState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ProfileTimelineState>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ProfileTimelineProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$profileTimelineHash() => r'd925afc761a63ecf5c684ccdf1c2e5928dc62783';
+
+final class ProfileTimelineFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          ProfileTimeline,
+          ProfileTimelineState,
+          ProfileTimelineState,
+          ProfileTimelineState,
+          (String, {String? kind, String? viewerId})
+        > {
+  ProfileTimelineFamily._()
+    : super(
+        retry: null,
+        name: r'profileTimelineProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  ProfileTimelineProvider call(
+    String userId, {
+    String? kind,
+    String? viewerId,
+  }) => ProfileTimelineProvider._(
+    argument: (userId, kind: kind, viewerId: viewerId),
+    from: this,
+  );
+
+  @override
+  String toString() => r'profileTimelineProvider';
+}
+
+abstract class _$ProfileTimeline extends $Notifier<ProfileTimelineState> {
+  late final _$args = ref.$arg as (String, {String? kind, String? viewerId});
+  String get userId => _$args.$1;
+  String? get kind => _$args.kind;
+  String? get viewerId => _$args.viewerId;
+
+  ProfileTimelineState build(String userId, {String? kind, String? viewerId});
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<ProfileTimelineState, ProfileTimelineState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<ProfileTimelineState, ProfileTimelineState>,
+              ProfileTimelineState,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(
+      ref,
+      () => build(_$args.$1, kind: _$args.kind, viewerId: _$args.viewerId),
+    );
+  }
+}

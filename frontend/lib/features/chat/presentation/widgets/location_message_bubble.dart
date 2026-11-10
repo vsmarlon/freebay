@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/features/chat/presentation/pages/chat_location_page.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class LocationMessageBubble extends StatelessWidget {
   final Map<String, dynamic>? metadata;
@@ -14,12 +17,69 @@ class LocationMessageBubble extends StatelessWidget {
     required this.isMe,
   });
 
+  bool get _hasCanonicalMetadata {
+    final data = metadata;
+    if (data == null ||
+        !data.keys.every(
+          (key) => const {
+            'latitude',
+            'longitude',
+            'accuracyMeters',
+            'capturedAt',
+            'address',
+          }.contains(key),
+        ) ||
+        !data.containsKey('latitude') ||
+        !data.containsKey('longitude') ||
+        !data.containsKey('accuracyMeters') ||
+        !data.containsKey('capturedAt')) {
+      return false;
+    }
+    final accuracy = data['accuracyMeters'];
+    final capturedAt = data['capturedAt'];
+    final parsed = capturedAt is String ? DateTime.tryParse(capturedAt) : null;
+    return accuracy is num &&
+        accuracy.isFinite &&
+        accuracy >= 0 &&
+        accuracy <= 100000 &&
+        parsed != null &&
+        parsed.isUtc &&
+        parsed.toIso8601String() == capturedAt &&
+        (data['address'] == null ||
+            (data['address'] is String &&
+                (data['address'] as String).trim().isNotEmpty &&
+                (data['address'] as String).length <= 500));
+  }
+
   LatLng? get _coordinates {
+    if (!_hasCanonicalMetadata) return null;
+    final lat = metadata!['latitude'];
+    final lng = metadata!['longitude'];
+    if (lat is! num || lng is! num) return null;
+    final latitude = lat.toDouble();
+    final longitude = lng.toDouble();
+    if (!latitude.isFinite ||
+        !longitude.isFinite ||
+        latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180) {
+      return null;
+    }
+    return LatLng(latitude, longitude);
+  }
+
+  String? get _address {
     if (metadata == null) return null;
-    final lat = metadata!['latitude'] ?? metadata!['lat'];
-    final lng = metadata!['longitude'] ?? metadata!['lng'];
-    if (lat == null || lng == null) return null;
-    return LatLng((lat as num).toDouble(), (lng as num).toDouble());
+    final address = metadata!['address'];
+    return address is String ? address : null;
+  }
+
+  num? get _accuracy {
+    if (!_hasCanonicalMetadata) return null;
+    final accuracy = metadata?['accuracyMeters'];
+    if (accuracy is! num || !accuracy.isFinite || accuracy < 0) return null;
+    return accuracy;
   }
 
   @override
@@ -39,7 +99,7 @@ class LocationMessageBubble extends StatelessWidget {
             Icon(Icons.location_off, size: 16, color: context.textSecondary),
             const SizedBox(width: 6),
             Text(
-              'Localização indisponível',
+              l10n(context).locationUnavailable,
               style: TextStyle(fontSize: 12, color: context.textSecondary),
             ),
           ],
@@ -47,37 +107,99 @@ class LocationMessageBubble extends StatelessWidget {
       );
     }
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 240, maxHeight: 180),
-      child: ClipRect(
-        child: FlutterMap(
-          options: MapOptions(
-            initialCenter: coords,
-            initialZoom: 15,
-            interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.none,
-            ),
+    final address = _address;
+
+    return Semantics(
+      button: true,
+      label: l10n(context).chatLocationLabel,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => context.push(
+          AppRoutes.chatLocationView,
+          extra: ChatLocationDetails(
+            coordinates: coords,
+            address: address,
+            accuracyMeters: _accuracy,
           ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.freebay.app',
-            ),
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: coords,
-                  width: 32,
-                  height: 32,
-                  child: Icon(
-                    Icons.location_pin,
-                    color: AppColors.primaryContainer,
-                    size: 32,
+        ),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 240),
+          decoration: BoxDecoration(
+            color: context.isDark
+                ? AppColors.surfaceContainerDark
+                : AppColors.surfaceContainerLow,
+            border: Border.all(color: context.borderColor),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 140,
+                child: IgnorePointer(
+                  child: ClipRect(
+                    child: FlutterMap(
+                      options: MapOptions(
+                        initialCenter: coords,
+                        initialZoom: 15,
+                        interactionOptions: const InteractionOptions(
+                          flags: InteractiveFlag.none,
+                        ),
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.freebay.app',
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: coords,
+                              width: 32,
+                              height: 32,
+                              child: const Icon(
+                                Icons.location_pin,
+                                color: AppColors.primaryContainer,
+                                size: 32,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ],
+              ),
+              if (address != null && address.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    address,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: context.textPrimary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              if (_accuracy != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                  child: Text(
+                    l10n(
+                      context,
+                    ).locationAccuracy(_accuracy!.toStringAsFixed(0)),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.textSecondary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

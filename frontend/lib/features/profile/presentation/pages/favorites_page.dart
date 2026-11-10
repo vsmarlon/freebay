@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_card.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
-import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class FavoritesPage extends ConsumerStatefulWidget {
   const FavoritesPage({super.key});
@@ -25,143 +23,126 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
+    final strings = l10n(context);
     final state = ref.watch(favoritesProvider);
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'FAVORITOS',
-            leading: GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: strings.profileFavoritesTitle,
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                semanticLabel: strings.commonBack,
+                onTap: () => context.pop(),
               ),
             ),
-          ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () =>
-                  ref.read(favoritesProvider.notifier).loadFavorites(),
-              child: state.isLoading
-                  ? GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.7,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
-                      itemCount: 6,
-                      itemBuilder: (_, _) => const AppCard.skeleton(),
-                    )
-                  : state.products.isEmpty
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.22,
-                        ),
-                        Icon(
-                          Icons.favorite_border,
-                          size: 80,
-                          color: isDark
-                              ? AppColors.mediumGray
-                              : AppColors.mediumGray,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Você ainda não tem favoritos',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: AppTypography.headlineFontFamily,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? AppColors.white
-                                : AppColors.darkGray,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Toque no coração dos produtos para salvar aqui.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: AppTypography.fontFamily,
-                            color: isDark
-                                ? AppColors.mediumGray
-                                : AppColors.mediumGray,
-                          ),
-                        ),
-                      ],
-                    )
-                  : GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.7,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
-                      itemCount: state.products.length,
-                      itemBuilder: (context, index) {
-                        final product = state.products[index];
-                        return Stack(
-                          children: [
-                            Positioned.fill(
-                              child: AppCard(
-                                title: product.title,
-                                priceInCents: product.price,
-                                imageUrl: product.imageUrl,
-                                variant: AppCardVariant.compact,
-                                onTap: () =>
-                                    context.push('/products/${product.id}'),
-                              ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () =>
+                    ref.read(favoritesProvider.notifier).loadFavorites(),
+                child: state.isLoading
+                    ? GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.7,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
                             ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: InkWell(
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  ref
-                                      .read(favoritesProvider.notifier)
-                                      .toggleFavorite(product.id);
-                                },
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  color: isDark
-                                      ? AppColors.surfaceDark
-                                      : AppColors.white,
-                                  child: const Icon(
-                                    Icons.favorite,
-                                    size: 18,
-                                    color: AppColors.error,
+                        itemCount: 6,
+                        itemBuilder: (context, index) =>
+                            const AppCard.skeleton(),
+                      )
+                    : state.loadFailure != null
+                    ? EmptyState.error(
+                        message: localizedFailureMessage(
+                          context,
+                          state.loadFailure,
+                        ),
+                        onRetry: () => ref
+                            .read(favoritesProvider.notifier)
+                            .loadFavorites(),
+                      )
+                    : state.products.isEmpty
+                    ? EmptyState(
+                        icon: Icons.favorite_border,
+                        title: strings.profileNoFavorites,
+                        subtitle: strings.profileFavoritesEmpty,
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.7,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
+                        itemCount: state.products.length,
+                        itemBuilder: (context, index) {
+                          final product = state.products[index];
+                          return Stack(
+                            children: [
+                              Positioned.fill(
+                                child: AppCard(
+                                  title: product.title,
+                                  priceInCents: product.price,
+                                  imageUrl: product.imageUrl,
+                                  imageBlurHash: product.imageBlurHash,
+                                  variant: AppCardVariant.compact,
+                                  onTap: () => context.push(
+                                    AppRoutes.productPath(product.id),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: Semantics(
+                                  button: true,
+                                  label: strings.productFavoriteRemove,
+                                  excludeSemantics: true,
+                                  child: Tooltip(
+                                    message: strings.productFavoriteRemove,
+                                    child: InkWell(
+                                      onTap: () {
+                                        HapticFeedback.lightImpact();
+                                        ref
+                                            .read(favoritesProvider.notifier)
+                                            .toggleFavorite(product.id);
+                                      },
+                                      child: SizedBox(
+                                        width: 48,
+                                        height: 48,
+                                        child: Center(
+                                          child: Container(
+                                            width: 32,
+                                            height: 32,
+                                            color: context.surfaceColor,
+                                            child: const Icon(
+                                              Icons.favorite,
+                                              size: 18,
+                                              color: AppColors.error,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

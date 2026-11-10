@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { LikeRepository } from '../domain/repositories/like.repository';
+import { LikeDatabaseRepository } from '../data/repositories/like-database.repository';
+import { PostResponse } from '../types/social.types';
 
 @Injectable()
 export class GetLikedPostsUseCase {
-  constructor(private readonly likeRepository: LikeRepository) {}
+  constructor(private readonly likeRepository: LikeDatabaseRepository) {}
 
-  async execute(userId: string): Promise<Either<AppError, unknown[]>> {
+  async execute(userId: string): Promise<Either<AppError, PostResponse[]>> {
     const result = await this.likeRepository.findLikedByUserId(userId);
-    if (isLeft(result)) return left(result.value);
+    if (result.isLeft()) return left(result.value);
     return right(result.value);
   }
 }

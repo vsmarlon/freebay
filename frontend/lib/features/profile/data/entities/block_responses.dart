@@ -1,46 +1,52 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:json_annotation/json_annotation.dart';
+import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 
-part 'block_responses.freezed.dart';
 part 'block_responses.g.dart';
 
-@freezed
-abstract class BlockListUser with _$BlockListUser {
-  const factory BlockListUser({
-    required String id,
-    required String displayName,
-    String? avatarUrl,
-    required bool isVerified,
-    required double reputationScore,
-  }) = _BlockListUser;
+@JsonSerializable()
+class BlockListResponse {
+  final List<UserBrief> users;
+  @JsonKey(defaultValue: 0)
+  final int limit;
+  @JsonKey(defaultValue: 0)
+  final int offset;
 
-  factory BlockListUser.fromJson(Map<String, dynamic> json) =>
-      _$BlockListUserFromJson(json);
-}
-
-@freezed
-abstract class BlockListResponse with _$BlockListResponse {
-  const factory BlockListResponse({
-    @Default([]) List<BlockListUser> users,
-    required int limit,
-    required int offset,
-  }) = _BlockListResponse;
+  const BlockListResponse({
+    this.users = const [],
+    required this.limit,
+    required this.offset,
+  });
 
   factory BlockListResponse.fromJson(Map<String, dynamic> json) =>
       _$BlockListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$BlockListResponseToJson(this);
 }
 
-@freezed
-abstract class UnblockResponse with _$UnblockResponse {
-  const factory UnblockResponse({required bool blocked}) = _UnblockResponse;
+typedef BlockListUser = UserBrief;
+
+@JsonSerializable()
+class UnblockResponse {
+  @JsonKey(defaultValue: false)
+  final bool blocked;
+
+  const UnblockResponse({required this.blocked});
 
   factory UnblockResponse.fromJson(Map<String, dynamic> json) =>
       _$UnblockResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UnblockResponseToJson(this);
 }
 
-@freezed
-abstract class BlockResponse with _$BlockResponse {
-  const factory BlockResponse({required bool blocked}) = _BlockResponse;
+@JsonSerializable()
+class BlockResponse {
+  @JsonKey(defaultValue: false)
+  final bool blocked;
+
+  const BlockResponse({required this.blocked});
 
   factory BlockResponse.fromJson(Map<String, dynamic> json) =>
       _$BlockResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$BlockResponseToJson(this);
 }

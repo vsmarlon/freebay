@@ -1,4 +1,5 @@
 export * from './get-profile.usecase';
+export * from './request-profile-verification.usecase';
 export * from './get-user-stats.usecase';
 export * from './update-profile.usecase';
 export * from './update-fcm-token.usecase';
@@ -10,3 +11,10 @@ export * from './search-users.usecase';
 export * from './get-suggestions.usecase';
 export * from './register-phone.usecase';
 export * from './verify-phone.usecase';
+export * from './request-account-deletion.usecase';
+export * from './cancel-account-deletion.usecase';
+export * from './export-user-data.usecase';
+export * from './list-followers.usecase';
+export * from './list-following.usecase';
+export * from './get-follow-status.usecase';
+export * from './get-block-status.usecase';

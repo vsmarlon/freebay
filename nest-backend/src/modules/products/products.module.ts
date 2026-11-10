@@ -1,23 +1,36 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '@/modules/auth/auth.module';
 import { ProductsController } from './products.controller';
-import { ProductsService } from './products.service';
-import { CreateProductUseCaseModule } from './usecases/create-product/create-product.usecase.module';
-import { UpdateProductUseCaseModule } from './usecases/update-product/update-product.usecase.module';
-import { DeleteProductUseCaseModule } from './usecases/delete-product/delete-product.usecase.module';
-import { GetProductsUseCaseModule } from './usecases/get-products/get-products.usecase.module';
-import { GetProductByIdUseCaseModule } from './usecases/get-products/get-product-by-id.usecase.module';
-import { GetMyProductsUseCaseModule } from './usecases/get-products/get-my-products.usecase.module';
+import { CreateProductUseCase } from './usecases/create-product/create-product.usecase';
+import { UpdateProductUseCase } from './usecases/update-product/update-product.usecase';
+import { DeleteProductUseCase } from './usecases/delete-product/delete-product.usecase';
+import { GetProductsUseCase } from './usecases/get-products/get-products.usecase';
+import { GetProductByIdUseCase } from './usecases/get-products/get-product-by-id.usecase';
+import { GetMyProductsUseCase } from './usecases/get-products/get-my-products.usecase';
+import { ProductDatabaseRepository } from './data/repositories/product-database.repository';
 
 @Module({
   imports: [
-    CreateProductUseCaseModule,
-    UpdateProductUseCaseModule,
-    DeleteProductUseCaseModule,
-    GetProductsUseCaseModule,
-    GetProductByIdUseCaseModule,
-    GetMyProductsUseCaseModule,
+    AuthModule,
   ],
   controllers: [ProductsController],
-  providers: [ProductsController, ProductsService],
+  providers: [
+    ProductDatabaseRepository,
+    CreateProductUseCase,
+    UpdateProductUseCase,
+    DeleteProductUseCase,
+    GetProductsUseCase,
+    GetProductByIdUseCase,
+    GetMyProductsUseCase,
+  ],
+  exports: [
+    ProductDatabaseRepository,
+    CreateProductUseCase,
+    UpdateProductUseCase,
+    DeleteProductUseCase,
+    GetProductsUseCase,
+    GetProductByIdUseCase,
+    GetMyProductsUseCase,
+  ],
 })
 export class ProductsModule {}

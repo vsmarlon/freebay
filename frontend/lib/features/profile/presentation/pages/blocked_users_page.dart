@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/profile/data/services/block_service.dart';
 import 'package:freebay/features/profile/data/entities/block_responses.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 final blockServiceProvider = Provider<BlockService>((ref) {
   return BlockService();
@@ -20,10 +14,7 @@ final blockServiceProvider = Provider<BlockService>((ref) {
 final blockedUsersProvider = FutureProvider<BlockListResponse>((ref) async {
   final service = ref.watch(blockServiceProvider);
   final result = await service.getBlockedUsers();
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (response) => response,
-  );
+  return result.fold((failure) => throw failure, (response) => response);
 });
 
 class BlockedUsersPage extends ConsumerWidget {
@@ -31,127 +22,73 @@ class BlockedUsersPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = context.isDark;
+    final strings = l10n(context);
     final blockedUsersAsync = ref.watch(blockedUsersProvider);
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'USUÁRIOS BLOQUEADOS',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: strings.profileBlockedUsersTitle,
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
+                onTap: () => context.pop(),
+              ),
+              breadcrumbs: context.breadcrumbs,
             ),
-            breadcrumbs: context.breadcrumbs,
-          ),
-          Expanded(
-            child: blockedUsersAsync.when(
-              data: (response) {
-                return response.users.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.block_outlined,
-                              size: 64,
-                              color: isDark
-                                  ? AppColors.mediumGray
-                                  : AppColors.mediumGray,
-                            ),
-                            Spacing.vMd,
-                            Text(
-                              'Você não bloqueou nenhum usuário',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: isDark
-                                    ? AppColors.mediumGray
-                                    : AppColors.mediumGray,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: () async {
-                          ref.invalidate(blockedUsersProvider);
-                        },
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount: response.users.length,
-                          itemBuilder: (context, index) {
-                            final user = response.users[index];
-                            return _BlockedUserTile(
-                              user: user,
-                              isDark: isDark,
-                              onUnblock: () async {
-                                final service = ref.read(blockServiceProvider);
-                                final result = await service.unblock(user.id);
-                                result.fold(
-                                  (failure) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(failure.message),
-                                        backgroundColor: AppColors.error,
-                                      ),
-                                    );
-                                  },
-                                  (_) {
-                                    ref.invalidate(blockedUsersProvider);
-                                  },
-                                );
-                              },
-                            );
+            Expanded(
+              child: blockedUsersAsync.when(
+                data: (response) {
+                  return response.users.isEmpty
+                      ? EmptyState(
+                          icon: Icons.block_outlined,
+                          title: strings.profileNoBlockedUsers,
+                        )
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            ref.invalidate(blockedUsersProvider);
                           },
-                        ),
-                      );
-              },
-              loading: () =>
-                  const Center(child: ShimmerBlock(width: 20, height: 20)),
-              error: (err, stack) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: AppColors.error,
-                      ),
-                      Spacing.vMd,
-                      Text(
-                        'Erro ao carregar usuários bloqueados',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      Text(
-                        'Não foi possível carregar a lista. Verifique sua conexão.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isDark
-                              ? AppColors.mediumGray
-                              : AppColors.mediumGray,
-                        ),
-                      ),
-                      Spacing.vMd,
-                      AppButton(
-                        label: 'Tentar novamente',
-                        onPressed: () => ref.invalidate(blockedUsersProvider),
-                      ),
-                    ],
-                  ),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: response.users.length,
+                            itemBuilder: (context, index) {
+                              final user = response.users[index];
+                              return _BlockedUserTile(
+                                user: user,
+                                onUnblock: () async {
+                                  final service = ref.read(
+                                    blockServiceProvider,
+                                  );
+                                  final result = await service.unblock(user.id);
+                                  if (!context.mounted) return;
+                                  result.fold(
+                                    (failure) => AppSnackbar.handleFailure(
+                                      context,
+                                      failure,
+                                    ),
+                                    (_) {
+                                      ref.invalidate(blockedUsersProvider);
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        );
+                },
+                loading: () =>
+                    const Center(child: ShimmerBlock(width: 20, height: 20)),
+                error: (err, stack) => EmptyState.error(
+                  message: strings.profileLoadFailed,
+                  onRetry: () => ref.invalidate(blockedUsersProvider),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -159,14 +96,9 @@ class BlockedUsersPage extends ConsumerWidget {
 
 class _BlockedUserTile extends StatelessWidget {
   final BlockListUser user;
-  final bool isDark;
   final VoidCallback onUnblock;
 
-  const _BlockedUserTile({
-    required this.user,
-    required this.isDark,
-    required this.onUnblock,
-  });
+  const _BlockedUserTile({required this.user, required this.onUnblock});
 
   @override
   Widget build(BuildContext context) {
@@ -174,11 +106,7 @@ class _BlockedUserTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          UserAvatar(
-            imageUrl: user.avatarUrl,
-            isVerified: user.isVerified,
-            size: AppAvatarSize.medium,
-          ),
+          UserAvatar(imageUrl: user.avatarUrl, isVerified: user.isVerified),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -192,7 +120,7 @@ class _BlockedUserTile extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
+                          color: context.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -210,28 +138,27 @@ class _BlockedUserTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${user.reputationScore.toStringAsFixed(1)} ★',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                  ),
+                  style: TextStyle(fontSize: 12, color: context.textSecondary),
                 ),
               ],
             ),
           ),
-          InkWell(
-            onTap: onUnblock,
-            child: Container(
-              height: 36,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.primaryContainer),
-              ),
-              child: const Center(
-                child: Text(
-                  'Desbloquear',
-                  style: TextStyle(
-                    color: AppColors.primaryContainer,
-                    fontWeight: FontWeight.w700,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            child: InkWell(
+              onTap: onUnblock,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.primaryContainer),
+                ),
+                child: Center(
+                  child: Text(
+                    l10n(context).profileUnblock,
+                    style: const TextStyle(
+                      color: AppColors.primaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),

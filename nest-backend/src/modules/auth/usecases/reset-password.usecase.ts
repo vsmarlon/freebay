@@ -4,20 +4,21 @@ import { Either, left, right } from '@/shared/core/either';
 import {
   AppError,
   RecoveryCodeAlreadyUsedError,
+  RecoveryCodeAttemptsExceededError,
   RecoveryCodeExpiredError,
   RecoveryCodeNotFoundError,
 } from '@/shared/core/errors';
-import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { PasswordRecoveryDatabaseRepository } from '../data/repositories/password-recovery-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { ResetPasswordDTO } from '../dtos/password-recovery.dto';
-import { RedisService } from '@/shared/infra/redis/redis.service';
+import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
 
 @Injectable()
 export class ResetPasswordUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly recoveryRepository: PasswordRecoveryRepository,
-    private readonly redisService: RedisService,
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly recoveryRepository: PasswordRecoveryDatabaseRepository,
+    private readonly sessionRevoker: SessionRevokerService,
   ) {}
 
   async execute(input: ResetPasswordDTO): Promise<Either<AppError, void>> {
@@ -37,6 +38,14 @@ export class ResetPasswordUseCase {
       return left(new RecoveryCodeExpiredError());
     }
 
+    if (recovery.codeHash.startsWith('web-reset:')) {
+      return left(new RecoveryCodeNotFoundError());
+    }
+
+    const reservation = await this.recoveryRepository.reserveAttempt(recovery.id);
+    if (reservation.isLeft()) return left(reservation.value);
+    if (!reservation.value) return left(new RecoveryCodeAttemptsExceededError());
+
     const matches = await bcrypt.compare(input.code, recovery.codeHash);
     if (!matches) {
       return left(new RecoveryCodeNotFoundError());
@@ -52,17 +61,11 @@ export class ResetPasswordUseCase {
       return left(new RecoveryCodeNotFoundError());
     }
 
-    const updateResult = await this.userRepository.update(user.id, { passwordHash });
-    if (updateResult.isLeft()) return left(updateResult.value);
+    const consumeResult = await this.recoveryRepository.consumeAndUpdatePassword(recovery.id, user.id, passwordHash);
+    if (consumeResult.isLeft()) return left(consumeResult.value);
+    if (!consumeResult.value) return left(new RecoveryCodeAlreadyUsedError());
 
-    const markResult = await this.recoveryRepository.markUsed(recovery.id);
-    if (markResult.isLeft()) return left(markResult.value);
-
-    await this.redisService.add(
-      `user_tokens_invalid_before:${user.id}`,
-      Math.floor(Date.now() / 1000).toString(),
-      60 * 60 * 24 * 30,
-    );
+    await this.sessionRevoker.revokeAllSessions(user.id);
 
     return right(undefined);
   }

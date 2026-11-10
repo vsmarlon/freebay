@@ -1,25 +1,84 @@
 import {
   Controller,
   Post,
-  Body,
   Param,
-  UseGuards,
-  HttpCode,
   HttpStatus,
   Headers,
   Logger,
+  Req,
+  ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { Public } from '@/shared/decorators/public.decorator';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
-import { WebhookGuard } from '@/shared/guards/webhook.guard';
-import { CreatePixPaymentUseCase } from './usecases/create-pix-payment.usecase';
+import { ApiTags } from '@nestjs/swagger';
+import { GetAuth, PostAuth, StripeWebhook, CurrentUserId } from '@/shared/decorators';
+import { CreatePaymentSessionUseCase } from './usecases/create-payment-session.usecase';
+import { CreatePaymentIntentUseCase } from './usecases/create-payment-intent.usecase';
 import { ProcessWebhookUseCase } from './usecases/process-webhook.usecase';
-import { ProcessWebhookInput, CreatePixPaymentOutput } from './dtos/payment.dto';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import { ProcessGroupWebhookUseCase } from './usecases/process-group-webhook.usecase';
+import { ProcessRefundUseCase } from './usecases/process-refund.usecase';
+import { StartConnectOnboardingUseCase } from './usecases/start-connect-onboarding.usecase';
+import { GetConnectStatusUseCase } from './usecases/get-connect-status.usecase';
+import { GetConnectDashboardLinkUseCase } from './usecases/get-connect-dashboard-link.usecase';
+import { SyncConnectAccountUseCase } from './usecases/sync-connect-account.usecase';
+import { RecoverDisputeTransferUseCase } from './usecases/recover-dispute-transfer.usecase';
+import {
+  ConnectStatusOutput,
+  ConnectOnboardingOutput,
+  ConnectDashboardOutput,
+} from './dtos/connect.dto';
+import { CreatePaymentSessionOutput, CreatePaymentIntentOutput } from './dtos/payment.dto';
+import { right } from '@/shared/core/either';
+import { setContextUserId } from '@/shared/observability/request-context';
+import {
+  StripeWebhookEvent,
+  VerifiedV2AccountWebhookEvent,
+} from './providers/stripe-provider';
+
+interface WebhookRequest {
+  stripeEvent?: StripeWebhookEvent;
+}
+
+const WHITELIST_EVENTS = [
+  'checkout.session.completed',
+  'checkout.session.async_payment_succeeded',
+  'checkout.session.async_payment_failed',
+  'checkout.session.expired',
+  'payment_intent.succeeded',
+  'payment_intent.canceled',
+  'payment_intent.payment_failed',
+  'account.updated',
+  'v2.core.account.updated',
+  'v2.core.account.closed',
+  'v2.core.account[configuration.recipient].updated',
+  'v2.core.account[configuration.recipient].capability_status_updated',
+  'v2.core.account[requirements].updated',
+  'v2.core.account[future_requirements].updated',
+  'charge.refunded',
+  'refund.created',
+  'refund.updated',
+  'refund.failed',
+  'charge.refund.updated',
+  'charge.dispute.created',
+  'charge.dispute.closed',
+];
+
+const V2_ACCOUNT_EVENTS = new Set([
+  'v2.core.account.updated',
+  'v2.core.account.closed',
+  'v2.core.account[configuration.recipient].updated',
+  'v2.core.account[configuration.recipient].capability_status_updated',
+  'v2.core.account[requirements].updated',
+  'v2.core.account[future_requirements].updated',
+]);
+
+function isV2AccountEvent(
+  event: StripeWebhookEvent,
+): event is VerifiedV2AccountWebhookEvent {
+  return (
+    V2_ACCOUNT_EVENTS.has(event.type) &&
+    'related_object' in event &&
+    event.related_object?.type === 'v2.core.account'
+  );
+}
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -27,62 +86,195 @@ export class PaymentsController {
   private readonly logger = new Logger(PaymentsController.name);
 
   constructor(
-    private readonly createPixPaymentUseCase: CreatePixPaymentUseCase,
+    private readonly createPaymentSessionUseCase: CreatePaymentSessionUseCase,
+    private readonly createPaymentIntentUseCase: CreatePaymentIntentUseCase,
     private readonly processWebhookUseCase: ProcessWebhookUseCase,
+    private readonly processGroupWebhookUseCase: ProcessGroupWebhookUseCase,
+    private readonly processRefundUseCase: ProcessRefundUseCase,
+    private readonly startConnectOnboardingUseCase: StartConnectOnboardingUseCase,
+    private readonly getConnectStatusUseCase: GetConnectStatusUseCase,
+    private readonly getConnectDashboardLinkUseCase: GetConnectDashboardLinkUseCase,
+    private readonly syncConnectAccountUseCase: SyncConnectAccountUseCase,
+    private readonly recoverDisputeTransferUseCase: RecoverDisputeTransferUseCase,
   ) {}
 
-  @Post('pix/:orderId')
-  @UseGuards(JwtAuthGuard)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Create PIX payment',
-    description: 'Creates a PIX QR code for an order (rate limited: 5/min)',
-    auth: true,
+  @PostAuth('connect/onboarding', {
+    summary: 'Start or resume Stripe Connect onboarding',
+    description: 'Creates the connected account if needed and returns a hosted onboarding link',
     responseStatus: 201,
-    responseType: CreatePixPaymentOutput,
-    params: [{ name: 'orderId', description: 'Order UUID' }],
-    errors: [
-      { status: 429, description: 'Too many requests' },
-    ],
+    responseType: ConnectOnboardingOutput,
+    httpCode: HttpStatus.CREATED,
   })
-  async createPixPayment(
-    @Param('orderId') orderId: string,
-    @CurrentUser() user: AuthUser,
+  async startConnectOnboarding(@CurrentUserId() userId: string) {
+    return this.startConnectOnboardingUseCase.execute(userId);
+  }
+
+  @GetAuth('connect/status', {
+    summary: 'Get Stripe Connect account status',
+    description: 'Returns onboarding and capability state for the current seller',
+    responseType: ConnectStatusOutput,
+  })
+  async getConnectStatus(@CurrentUserId() userId: string) {
+    return this.getConnectStatusUseCase.execute(userId);
+  }
+
+  @PostAuth('connect/dashboard', {
+    summary: 'Open the Stripe Express dashboard',
+    description: 'Returns a single-use login link to the seller Express dashboard',
+    responseStatus: 201,
+    responseType: ConnectDashboardOutput,
+    httpCode: HttpStatus.CREATED,
+  })
+  async getConnectDashboardLink(@CurrentUserId() userId: string) {
+    return this.getConnectDashboardLinkUseCase.execute(userId);
+  }
+
+  @PostAuth('checkout/:orderId', {
+    summary: 'Create Stripe Checkout payment session',
+    description: 'Creates a Stripe Checkout Session for an order (rate limited: 5/min)',
+    responseStatus: 201,
+    responseType: CreatePaymentSessionOutput,
+    params: [{ name: 'orderId', description: 'Order UUID' }],
+    errors: [{ status: 429, description: 'Too many requests' }],
+    throttle: { limit: 5, ttl: 60000 },
+    httpCode: HttpStatus.CREATED,
+  })
+  async createPaymentSession(
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @CurrentUserId() userId: string,
     @Headers('idempotency-key') idempotencyKey?: string,
   ) {
-    const result = await this.createPixPaymentUseCase.execute({
-      orderId,
-      userId: user.userId,
-      idempotencyKey,
-    });
+    return this.createPaymentSessionUseCase.execute({ orderId, userId, idempotencyKey });
+  }
 
-    if (result.isLeft()) return result;
-
-    return result.value;
+  @PostAuth('payment-intent/:orderId', {
+    summary: 'Create Stripe PaymentIntent for PaymentSheet',
+    description: 'Creates a Stripe PaymentIntent for an order (mobile PaymentSheet; rate limited: 5/min)',
+    responseStatus: 201,
+    responseType: CreatePaymentIntentOutput,
+    params: [{ name: 'orderId', description: 'Order UUID' }],
+    errors: [{ status: 429, description: 'Too many requests' }],
+    throttle: { limit: 5, ttl: 60000 },
+    httpCode: HttpStatus.CREATED,
+  })
+  async createPaymentIntent(
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @CurrentUserId() userId: string,
+    @Headers('idempotency-key') idempotencyKey?: string,
+  ) {
+    return this.createPaymentIntentUseCase.execute({ orderId, userId, idempotencyKey });
   }
 
   @Post('webhook')
-  @Public()
-  @Throttle({ default: { limit: 60, ttl: 60000 } })
-  @UseGuards(WebhookGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiDoc({
-    summary: 'Payment webhook',
-    description: 'Receives payment status updates from the PIX provider',
-  })
-  async handleWebhook(
-    @Body() body: ProcessWebhookInput,
-    @Headers('x-webhook-event') event?: string,
-  ) {
-    const result = await this.processWebhookUseCase.execute({
-      event: event || body.event || 'charge.completed',
-      data: body.data,
-    });
+  @StripeWebhook
+  async handleWebhook(@Req() request: WebhookRequest) {
+    const event = request.stripeEvent;
+    if (!event) {
+      this.logger.error('Webhook guard did not attach stripeEvent to request');
+      return right(undefined);
+    }
 
-    if (result.isLeft()) return result;
+    setContextUserId(`stripe-event:${event.id}`);
 
-    return result.value;
+    if (!WHITELIST_EVENTS.includes(event.type)) {
+      this.logger.log(`Ignoring non-whitelisted Stripe event ${event.type} (${event.id})`);
+      return right(undefined);
+    }
+
+    if (isV2AccountEvent(event)) {
+      return this.syncConnectAccountUseCase.execute(event.related_object.id);
+    }
+
+    if (V2_ACCOUNT_EVENTS.has(event.type)) return right(undefined);
+
+    if (event.type === 'account.updated') {
+      const accountId = event.account ?? event.data.object.id;
+      if (!accountId) return right(undefined);
+      return this.syncConnectAccountUseCase.execute(accountId);
+    }
+
+    if (!('data' in event)) return right(undefined);
+
+    let orderId: string | undefined;
+    let paymentGroupId: string | undefined;
+    let providerObjectId: string | undefined;
+    let amountTotal: number | undefined;
+    let currency: string | undefined;
+    let paymentStatus: string | undefined;
+    let chargeId: string | undefined;
+
+    switch (event.type) {
+      case 'charge.refunded': {
+        const charge = event.data.object;
+        return this.processRefundUseCase.execute(charge.id);
+      }
+      case 'refund.updated':
+      case 'refund.created':
+      case 'refund.failed':
+      case 'charge.refund.updated': {
+        return this.processRefundUseCase.executeRefund(event.data.object.id);
+      }
+      case 'charge.dispute.created':
+      case 'charge.dispute.closed': {
+        const dispute = event.data.object;
+        const chargeId = typeof dispute.charge === 'string' ? dispute.charge : dispute.charge.id;
+        if (event.type === 'charge.dispute.created' || dispute.status === 'lost') {
+          return this.recoverDisputeTransferUseCase.execute(chargeId);
+        }
+        this.logger.log(`Dispute event ${event.type} for charge ${chargeId} does not require transfer recovery`);
+        return right(undefined);
+      }
+      case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded':
+      case 'checkout.session.async_payment_failed':
+      case 'checkout.session.expired': {
+        const session = event.data.object;
+        orderId = session.metadata?.orderId ?? undefined;
+        paymentGroupId = session.metadata?.paymentGroupId ?? undefined;
+        providerObjectId = session.id;
+        amountTotal = session.amount_total ?? undefined;
+        currency = session.currency ?? undefined;
+        paymentStatus = session.payment_status;
+        const paymentIntent = session.payment_intent;
+        const latestCharge =
+          typeof paymentIntent === 'string' || paymentIntent === null
+            ? undefined
+            : paymentIntent.latest_charge;
+        chargeId = typeof latestCharge === 'string' ? latestCharge : latestCharge?.id;
+        break;
+      }
+      case 'payment_intent.succeeded':
+      case 'payment_intent.canceled':
+      case 'payment_intent.payment_failed': {
+        const intent = event.data.object;
+        orderId = intent.metadata?.orderId ?? undefined;
+        paymentGroupId = intent.metadata?.paymentGroupId ?? undefined;
+        providerObjectId = intent.id;
+        amountTotal = intent.amount;
+        currency = intent.currency;
+        paymentStatus = intent.status;
+        const latestCharge = intent.latest_charge;
+        chargeId = typeof latestCharge === 'string' ? latestCharge : latestCharge?.id;
+        break;
+      }
+      default:
+        return right(undefined);
+    }
+
+    const data = {
+      orderId,
+      paymentGroupId,
+      providerObjectId,
+      amountTotal,
+      currency,
+      paymentStatus,
+      chargeId,
+    };
+
+    if (paymentGroupId) {
+      return this.processGroupWebhookUseCase.execute({ event: event.type, data });
+    }
+
+    return this.processWebhookUseCase.execute({ event: event.type, data });
   }
 }

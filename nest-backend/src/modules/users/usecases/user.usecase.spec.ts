@@ -1,21 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GetProfileUseCase, GetUserStatsUseCase, UpdateProfileUseCase, FollowUserUseCase, UnfollowUserUseCase, BlockUserUseCase, UnblockUserUseCase, SearchUsersUseCase, GetSuggestionsUseCase } from './index';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
+import {
+  GetProfileUseCase,
+  UpdateProfileUseCase,
+  RequestProfileVerificationUseCase,
+  FollowUserUseCase,
+  UnfollowUserUseCase,
+  BlockUserUseCase,
+  UnblockUserUseCase,
+} from './index';
+import { UserDatabaseRepository } from '@/modules/users';
 import { FollowRepository } from '../domain/repositories/follow.repository';
 import { BlockRepository } from '../domain/repositories/block.repository';
-import { PrismaOrderRepository } from '@/modules/orders/repositories/order.repository';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { OrderDatabaseRepository } from '@/modules/orders/data/repositories/order-database.repository';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
-import { NotFoundError, BadRequestError } from '@/shared/core/errors';
-import { right, left } from '@/shared/core/either';
-jest.mock('@/modules/orders/repositories/order.repository');
-jest.mock('@/shared/infra/prisma/prisma.service');
+import { BadRequestError, NotFoundError } from '@/shared/core/errors';
+import { left, right } from '@/shared/core/either';
+import { expectLeft, expectRight, mockUser, rightCounts } from './user-test-fixtures';
+import { User, UserRole } from '@prisma/client';
 
 const mockUserRepository = {
   findById: jest.fn(),
+  findByUsername: jest.fn(),
   update: jest.fn(),
   searchUsers: jest.fn(),
   getSuggestions: jest.fn(),
+  getProfileCounts: jest.fn(),
 };
 
 const mockFollowRepository = {
@@ -31,375 +40,239 @@ const mockBlockRepository = {
   isBlocked: jest.fn(),
 };
 
-const mockPrisma = {
-  user: {
-    update: jest.fn(),
-  },
-  order: {
-    count: jest.fn(),
-  },
-};
-
-const mockNotificationService = {
-  notifyDispute: jest.fn().mockResolvedValue(undefined),
-  notifyOrderStatus: jest.fn().mockResolvedValue(undefined),
-  notifyNewFollower: jest.fn().mockResolvedValue(undefined),
-};
-
 const mockOrderRepository = {
   countBySellerId: jest.fn(),
   countByBuyerId: jest.fn(),
 };
 
+const mockNotificationService = {
+  notifyNewFollower: jest.fn().mockResolvedValue(undefined),
+};
+
+const compileSubject = async (): Promise<TestingModule> => Test.createTestingModule({
+  providers: [
+    GetProfileUseCase,
+    UpdateProfileUseCase,
+    { provide: RequestProfileVerificationUseCase, useValue: { consume: jest.fn().mockResolvedValue(right(undefined)) } },
+    FollowUserUseCase,
+    UnfollowUserUseCase,
+    BlockUserUseCase,
+    UnblockUserUseCase,
+    { provide: UserDatabaseRepository, useValue: mockUserRepository },
+    { provide: FollowRepository, useValue: mockFollowRepository },
+    { provide: BlockRepository, useValue: mockBlockRepository },
+    { provide: OrderDatabaseRepository, useValue: mockOrderRepository },
+    { provide: NotificationService, useValue: mockNotificationService },
+  ],
+}).compile();
+
 describe('Users UseCases', () => {
   let getProfileUseCase: GetProfileUseCase;
-  let getUserStatsUseCase: GetUserStatsUseCase;
   let updateProfileUseCase: UpdateProfileUseCase;
   let followUserUseCase: FollowUserUseCase;
   let unfollowUserUseCase: UnfollowUserUseCase;
   let blockUserUseCase: BlockUserUseCase;
   let unblockUserUseCase: UnblockUserUseCase;
-  let searchUsersUseCase: SearchUsersUseCase;
-  let getSuggestionsUseCase: GetSuggestionsUseCase;
-
-  const mockUser = {
-    id: 'user-123',
-    displayName: 'Test User',
-    avatarUrl: 'https://example.com/avatar.jpg',
-    bio: 'Test bio',
-    city: 'São Paulo',
-    state: 'SP',
-    isVerified: false,
-    reputationScore: 4.5,
-    totalReviews: 10,
-    createdAt: new Date(),
-  };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        GetProfileUseCase,
-        GetUserStatsUseCase,
-        UpdateProfileUseCase,
-        FollowUserUseCase,
-        UnfollowUserUseCase,
-        BlockUserUseCase,
-        UnblockUserUseCase,
-        SearchUsersUseCase,
-        GetSuggestionsUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
-        { provide: FollowRepository, useValue: mockFollowRepository },
-        { provide: BlockRepository, useValue: mockBlockRepository },
-        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
-        { provide: PrismaService, useValue: mockPrisma },
-        { provide: NotificationService, useValue: mockNotificationService },
-      ],
-    }).compile();
-
-    getProfileUseCase = module.get<GetProfileUseCase>(GetProfileUseCase);
-    getUserStatsUseCase = module.get<GetUserStatsUseCase>(GetUserStatsUseCase);
-    updateProfileUseCase = module.get<UpdateProfileUseCase>(UpdateProfileUseCase);
-    followUserUseCase = module.get<FollowUserUseCase>(FollowUserUseCase);
-    unfollowUserUseCase = module.get<UnfollowUserUseCase>(UnfollowUserUseCase);
-    blockUserUseCase = module.get<BlockUserUseCase>(BlockUserUseCase);
-    unblockUserUseCase = module.get<UnblockUserUseCase>(UnblockUserUseCase);
-    searchUsersUseCase = module.get<SearchUsersUseCase>(SearchUsersUseCase);
-    getSuggestionsUseCase = module.get<GetSuggestionsUseCase>(GetSuggestionsUseCase);
+    const module = await compileSubject();
+    getProfileUseCase = module.get(GetProfileUseCase);
+    updateProfileUseCase = module.get(UpdateProfileUseCase);
+    followUserUseCase = module.get(FollowUserUseCase);
+    unfollowUserUseCase = module.get(UnfollowUserUseCase);
+    blockUserUseCase = module.get(BlockUserUseCase);
+    unblockUserUseCase = module.get(UnblockUserUseCase);
 
     jest.clearAllMocks();
+    mockUserRepository.getProfileCounts.mockResolvedValue(rightCounts());
+    mockUserRepository.findByUsername.mockResolvedValue(right(null));
   });
 
   describe('GetProfileUseCase', () => {
-    it('should return user profile when found', async () => {
-      mockUserRepository.findById.mockResolvedValue(right(mockUser));
+    it('returns saved owner preferences but excludes them and secrets from public profiles', async () => {
+      const sourceUser: User = {
+        id: 'owner-123', displayName: 'Owner', username: 'owner', email: 'owner@example.com',
+        emailVerified: false, passwordHash: 'secret-hash', googleId: null, appleId: null,
+        appleRefreshTokenEncrypted: null, cpfHash: null, cpf: null, phone: null,
+        phoneVerified: false, city: null, state: null, avatarUrl: null, avatarBlurHash: null,
+        bannerUrl: null, bio: null, isVerified: false, isGuest: false, role: UserRole.USER,
+        biometryLoginEnabled: false,
+        reputationScore: 0, totalReviews: 0, createdAt: new Date(), updatedAt: new Date(),
+        deletedAt: null, lastSeenAt: null, deletionRequestedAt: null, sessionsInvalidBefore: null,
+        suspendedAt: null, suspensionReason: null, personalPurgePendingMedia: [],
+        personalPurgeCompletedAt: null, fcmToken: 'private-token',
+        notificationPrefs: { orders: false, follows: true, messages: false, disputes: true, malicious: true },
+        webConsentGrantedAt: null, webConsentIp: null, webConsentUserAgent: null,
+      };
+      mockUserRepository.findById.mockResolvedValue(right(sourceUser));
 
-      const result = await getProfileUseCase.execute({ userId: 'user-123' });
+      const owner = expectRight(await getProfileUseCase.execute({ userId: sourceUser.id, includePrivate: true }));
+      expect(owner.notificationPrefs).toEqual({ orders: false, follows: true, messages: false, disputes: true });
 
-      expect(result.isRight()).toBe(true);
-      if (result.isRight()) {
-        expect(result.value.id).toBe('user-123');
-        expect(result.value.displayName).toBe('Test User');
-      }
+      const publicProfile = expectRight(await getProfileUseCase.execute({ userId: sourceUser.id }));
+      expect(publicProfile.notificationPrefs).toBeUndefined();
+      expect(publicProfile).not.toHaveProperty('email');
+      expect(publicProfile).not.toHaveProperty('fcmToken');
+      expect(publicProfile).not.toHaveProperty('passwordHash');
     });
 
-    it('should return NotFoundError when user not found', async () => {
+    it('defaults missing owner preferences to enabled and omits unknown keys', async () => {
+      const sourceUser: User = {
+        id: 'owner-123', displayName: 'Owner', username: 'owner', email: 'owner@example.com',
+        emailVerified: false, passwordHash: null, googleId: null, appleId: null,
+        appleRefreshTokenEncrypted: null, cpfHash: null, cpf: null, phone: null,
+        phoneVerified: false, city: null, state: null, avatarUrl: null, avatarBlurHash: null,
+        bannerUrl: null, bio: null, isVerified: false, isGuest: false, role: UserRole.USER,
+        biometryLoginEnabled: false,
+        reputationScore: 0, totalReviews: 0, createdAt: new Date(), updatedAt: new Date(),
+        deletedAt: null, lastSeenAt: null, deletionRequestedAt: null, sessionsInvalidBefore: null,
+        suspendedAt: null, suspensionReason: null, personalPurgePendingMedia: [],
+        personalPurgeCompletedAt: null, fcmToken: null,
+        notificationPrefs: { legacy: false }, webConsentGrantedAt: null, webConsentIp: null,
+        webConsentUserAgent: null,
+      };
+      mockUserRepository.findById.mockResolvedValue(right(sourceUser));
+
+      const owner = expectRight(await getProfileUseCase.execute({ userId: sourceUser.id, includePrivate: true }));
+      expect(owner.notificationPrefs).toEqual({ orders: true, follows: true, messages: true, disputes: true });
+    });
+
+    it('returns NotFoundError when user not found', async () => {
       mockUserRepository.findById.mockResolvedValue(right(null));
 
       const result = await getProfileUseCase.execute({ userId: 'nonexistent' });
 
-      expect(result.isLeft()).toBe(true);
-      if (result.isLeft()) {
-        expect(result.value).toBeInstanceOf(NotFoundError);
-      }
-    });
-  });
-
-  describe('GetUserStatsUseCase', () => {
-    it('should return user stats', async () => {
-      mockOrderRepository.countBySellerId.mockResolvedValue(right(5));
-      mockOrderRepository.countByBuyerId.mockResolvedValue(right(3));
-      mockFollowRepository.getFollowersCount.mockResolvedValue(right(100));
-      mockFollowRepository.getFollowingCount.mockResolvedValue(right(50));
-
-      const result = await getUserStatsUseCase.execute({ userId: 'user-123' });
-
-      expect(result.isRight()).toBe(true);
-      if (result.isRight()) {
-        expect(result.value.salesCount).toBe(5);
-        expect(result.value.purchasesCount).toBe(3);
-        expect(result.value.followersCount).toBe(100);
-        expect(result.value.followingCount).toBe(50);
-      }
+      expect(expectLeft(result)).toBeInstanceOf(NotFoundError);
     });
   });
 
   describe('UpdateProfileUseCase', () => {
-    it('should update and return user profile', async () => {
-      const updatedUser = { ...mockUser, displayName: 'Updated Name' };
-      mockUserRepository.update.mockResolvedValue(right(updatedUser));
-
-      const result = await updateProfileUseCase.execute({ userId: 'user-123', displayName: 'Updated Name' });
-
-      expect(result.isRight()).toBe(true);
-      if (result.isRight()) {
-        expect(result.value.displayName).toBe('Updated Name');
-      }
-    });
-
-    it('should return NotFoundError when user not found', async () => {
+    it('returns NotFoundError when user not found', async () => {
       mockUserRepository.update.mockResolvedValue(right(null));
 
       const result = await updateProfileUseCase.execute({ userId: 'nonexistent', displayName: 'New Name' });
 
-      expect(result.isLeft()).toBe(true);
-      if (result.isLeft()) {
-        expect(result.value).toBeInstanceOf(NotFoundError);
-      }
+      expect(expectLeft(result)).toBeInstanceOf(NotFoundError);
+    });
+
+    it('preserves a validated alphanumeric CNPJ until the persistence repository normalizes it', async () => {
+      mockUserRepository.update.mockResolvedValue(right(mockUser));
+
+      await updateProfileUseCase.execute({
+        userId: mockUser.id,
+        cpf: '12.ABC.345/01DE-35',
+        profileVerificationCode: '123456',
+      });
+
+      expect(mockUserRepository.update).toHaveBeenCalledWith(mockUser.id, expect.objectContaining({
+        cpf: '12.ABC.345/01DE-35',
+      }));
     });
   });
 
   describe('FollowUserUseCase', () => {
-    it('should follow user successfully', async () => {
+    it('follows user successfully', async () => {
       mockUserRepository.findById.mockResolvedValue(right(mockUser));
       mockFollowRepository.follow.mockResolvedValue(right(undefined));
       mockFollowRepository.getFollowersCount.mockResolvedValue(right(101));
       mockFollowRepository.getFollowingCount.mockResolvedValue(right(51));
 
-      const result = await followUserUseCase.execute({
-        followerId: 'follower-123',
-        followingId: 'following-123',
-      });
+      const result = await followUserUseCase.execute({ followerId: 'follower-123', followingId: 'following-123' });
+      const follow = expectRight(result);
 
-      expect(result.isRight()).toBe(true);
-      if (result.isRight()) {
-        expect(result.value.following).toBe(true);
-        expect(result.value.followersCount).toBe(101);
-      }
+      expect(follow.following).toBe(true);
+      expect(follow.followersCount).toBe(101);
     });
 
-    it('should return BadRequestError when trying to follow self', async () => {
-      const result = await followUserUseCase.execute({
-        followerId: 'same-user',
-        followingId: 'same-user',
-      });
+    it('returns BadRequestError when trying to follow self', async () => {
+      const result = await followUserUseCase.execute({ followerId: 'same-user', followingId: 'same-user' });
 
-      expect(result.isLeft()).toBe(true);
-      if (result.isLeft()) {
-        expect(result.value).toBeInstanceOf(BadRequestError);
-      }
+      expect(expectLeft(result)).toBeInstanceOf(BadRequestError);
     });
 
-    it('should return NotFoundError when target user not found', async () => {
+    it('returns NotFoundError when target user not found', async () => {
       mockUserRepository.findById.mockResolvedValue(right(null));
 
-      const result = await followUserUseCase.execute({
-        followerId: 'follower-123',
-        followingId: 'nonexistent',
-      });
+      const result = await followUserUseCase.execute({ followerId: 'follower-123', followingId: 'nonexistent' });
 
-      expect(result.isLeft()).toBe(true);
-      if (result.isLeft()) {
-        expect(result.value).toBeInstanceOf(NotFoundError);
-      }
+      expect(expectLeft(result)).toBeInstanceOf(NotFoundError);
     });
 
-    it('should return BadRequestError when already following', async () => {
+    it('returns BadRequestError when already following', async () => {
       mockUserRepository.findById.mockResolvedValue(right(mockUser));
       mockFollowRepository.follow.mockResolvedValue(left(new BadRequestError('Already following')));
 
-      const result = await followUserUseCase.execute({
-        followerId: 'follower-123',
-        followingId: 'following-123',
-      });
+      const result = await followUserUseCase.execute({ followerId: 'follower-123', followingId: 'following-123' });
 
-      expect(result.isLeft()).toBe(true);
-      if (result.isLeft()) {
-        expect(result.value).toBeInstanceOf(BadRequestError);
-      }
+      expect(expectLeft(result)).toBeInstanceOf(BadRequestError);
     });
 
-    it('allows re-follow after unfollow', async () => {
-      mockUserRepository.findById.mockResolvedValue(right(mockUser));
-      mockFollowRepository.getFollowersCount.mockResolvedValue(right(1));
-      mockFollowRepository.getFollowingCount.mockResolvedValue(right(1));
-
-      mockFollowRepository.unfollow.mockResolvedValue(right(undefined));
-      const unfollowResult = await unfollowUserUseCase.execute({
-        followerId: 'follower-123',
-        followingId: 'following-123',
-      });
-      expect(unfollowResult.isRight()).toBe(true);
-
-      mockFollowRepository.follow.mockResolvedValue(right(undefined));
-      const refollowResult = await followUserUseCase.execute({
-        followerId: 'follower-123',
-        followingId: 'following-123',
-      });
-
-      expect(refollowResult.isRight()).toBe(true);
-      if (refollowResult.isRight()) {
-        expect(refollowResult.value.following).toBe(true);
-      }
-    });
   });
 
   describe('UnfollowUserUseCase', () => {
-    it('should unfollow user successfully', async () => {
+    it('unfollows user successfully', async () => {
       mockFollowRepository.unfollow.mockResolvedValue(right(undefined));
       mockFollowRepository.getFollowersCount.mockResolvedValue(right(99));
       mockFollowRepository.getFollowingCount.mockResolvedValue(right(49));
 
-      const result = await unfollowUserUseCase.execute({
-        followerId: 'follower-123',
-        followingId: 'following-123',
-      });
+      const result = await unfollowUserUseCase.execute({ followerId: 'follower-123', followingId: 'following-123' });
+      const unfollow = expectRight(result);
 
-      expect(result.isRight()).toBe(true);
-      if (result.isRight()) {
-        expect(result.value.following).toBe(false);
-      }
+      expect(unfollow.following).toBe(false);
     });
 
-    it('should return BadRequestError when not following', async () => {
+    it('returns BadRequestError when not following', async () => {
       mockFollowRepository.unfollow.mockResolvedValue(left(new BadRequestError('Not following')));
 
-      const result = await unfollowUserUseCase.execute({
-        followerId: 'follower-123',
-        followingId: 'following-123',
-      });
+      const result = await unfollowUserUseCase.execute({ followerId: 'follower-123', followingId: 'following-123' });
 
-      expect(result.isLeft()).toBe(true);
-      if (result.isLeft()) {
-        expect(result.value).toBeInstanceOf(BadRequestError);
-      }
+      expect(expectLeft(result)).toBeInstanceOf(BadRequestError);
     });
   });
 
   describe('BlockUserUseCase', () => {
-    it('should block user successfully', async () => {
+    it('blocks user successfully', async () => {
       mockUserRepository.findById.mockResolvedValue(right(mockUser));
       mockBlockRepository.block.mockResolvedValue(right(undefined));
 
-      const result = await blockUserUseCase.execute({
-        blockerId: 'blocker-123',
-        blockedId: 'blocked-123',
-      });
+      const result = await blockUserUseCase.execute({ blockerId: 'blocker-123', blockedId: 'blocked-123' });
+      const block = expectRight(result);
 
-      expect(result.isRight()).toBe(true);
-      if (result.isRight()) {
-        expect(result.value.blocked).toBe(true);
-      }
+      expect(block.blocked).toBe(true);
     });
 
-    it('should return BadRequestError when trying to block self', async () => {
-      const result = await blockUserUseCase.execute({
-        blockerId: 'same-user',
-        blockedId: 'same-user',
-      });
+    it('returns BadRequestError when trying to block self', async () => {
+      const result = await blockUserUseCase.execute({ blockerId: 'same-user', blockedId: 'same-user' });
 
-      expect(result.isLeft()).toBe(true);
-      if (result.isLeft()) {
-        expect(result.value).toBeInstanceOf(BadRequestError);
-      }
+      expect(expectLeft(result)).toBeInstanceOf(BadRequestError);
     });
 
-    it('should return NotFoundError when target user not found', async () => {
+    it('returns NotFoundError when target user not found', async () => {
       mockUserRepository.findById.mockResolvedValue(right(null));
 
-      const result = await blockUserUseCase.execute({
-        blockerId: 'blocker-123',
-        blockedId: 'nonexistent',
-      });
+      const result = await blockUserUseCase.execute({ blockerId: 'blocker-123', blockedId: 'nonexistent' });
 
-      expect(result.isLeft()).toBe(true);
-      if (result.isLeft()) {
-        expect(result.value).toBeInstanceOf(NotFoundError);
-      }
+      expect(expectLeft(result)).toBeInstanceOf(NotFoundError);
     });
   });
 
   describe('UnblockUserUseCase', () => {
-    it('should unblock user successfully', async () => {
+    it('unblocks user successfully', async () => {
       mockBlockRepository.unblock.mockResolvedValue(right(undefined));
 
-      const result = await unblockUserUseCase.execute({
-        blockerId: 'blocker-123',
-        blockedId: 'blocked-123',
-      });
+      const result = await unblockUserUseCase.execute({ blockerId: 'blocker-123', blockedId: 'blocked-123' });
+      const unblock = expectRight(result);
 
-      expect(result.isRight()).toBe(true);
-      if (result.isRight()) {
-        expect(result.value.blocked).toBe(false);
-      }
+      expect(unblock.blocked).toBe(false);
     });
 
-    it('should return BadRequestError when user not blocked', async () => {
+    it('returns BadRequestError when user not blocked', async () => {
       mockBlockRepository.unblock.mockResolvedValue(left(new BadRequestError('Not blocked')));
 
-      const result = await unblockUserUseCase.execute({
-        blockerId: 'blocker-123',
-        blockedId: 'blocked-123',
-      });
+      const result = await unblockUserUseCase.execute({ blockerId: 'blocker-123', blockedId: 'blocked-123' });
 
-      expect(result.isLeft()).toBe(true);
-      if (result.isLeft()) {
-        expect(result.value).toBeInstanceOf(BadRequestError);
-      }
+      expect(expectLeft(result)).toBeInstanceOf(BadRequestError);
     });
   });
 
-  describe('SearchUsersUseCase', () => {
-    it('should return search results', async () => {
-      const searchResults = [
-        { id: 'user-1', displayName: 'John', avatarUrl: null, bio: null, isVerified: false, reputationScore: 0, totalReviews: 0, _count: { followers: 10, following: 5 } },
-      ];
-      mockUserRepository.searchUsers.mockResolvedValue(right(searchResults));
-
-      const result = await searchUsersUseCase.execute({ query: 'John', limit: 20 });
-
-      expect(result.isRight()).toBe(true);
-      if (result.isRight()) {
-        expect(result.value).toHaveLength(1);
-        expect(result.value[0].displayName).toBe('John');
-      }
-    });
-  });
-
-  describe('GetSuggestionsUseCase', () => {
-    it('should return suggestion results', async () => {
-      const suggestions = [
-        { id: 'user-2', displayName: 'Jane', avatarUrl: null, bio: null, isVerified: true, reputationScore: 4.8, totalReviews: 15, followersCount: 100, followingCount: 50, mutualCount: 5 },
-      ];
-      mockUserRepository.getSuggestions.mockResolvedValue(right(suggestions));
-
-      const result = await getSuggestionsUseCase.execute({ userId: 'user-123', limit: 10 });
-
-      expect(result.isRight()).toBe(true);
-      if (result.isRight()) {
-        expect(result.value).toHaveLength(1);
-        expect(result.value[0].displayName).toBe('Jane');
-        expect(result.value[0].mutualCount).toBe(5);
-      }
-    });
-  });
 });

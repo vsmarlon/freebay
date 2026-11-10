@@ -1,44 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_router.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/onboarding/presentation/pages/onboarding_slides.dart';
 import 'package:freebay/shared/services/storage_service.dart';
-
-class _OnboardingSlide {
-  final IconData icon;
-  final String title;
-  final String body;
-
-  const _OnboardingSlide({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
-}
-
-const _slides = [
-  _OnboardingSlide(
-    icon: Icons.storefront_outlined,
-    title: 'COMPRE E VENDA',
-    body: 'Publique anúncios e encontre produtos perto de você em segundos.',
-  ),
-  _OnboardingSlide(
-    icon: Icons.forum_outlined,
-    title: 'CONVERSE DIRETO',
-    body: 'Negocie com compradores e vendedores pelo chat integrado.',
-  ),
-  _OnboardingSlide(
-    icon: Icons.shield_outlined,
-    title: 'PAGAMENTO PROTEGIDO',
-    body:
-        'O valor fica retido até a entrega ser confirmada. Sem dor de cabeça.',
-  ),
-];
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
@@ -58,126 +27,110 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   Future<void> _finish() async {
+    HapticFeedback.mediumImpact();
     await StorageService.setHasSeenOnboarding();
     ref.read(hasSeenOnboardingProvider.notifier).state = true;
+    routerRefreshNotifier.value++;
     if (!mounted) return;
-    context.go('/feed');
+    final user = ref.read(authControllerProvider).value;
+    if (context.mounted) context.go(user != null ? '/feed' : '/login');
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLast = _index == _slides.length - 1;
+    final slides = onboardingSlides(l10n(context));
+    final isLast = _index == slides.length - 1;
 
     return Scaffold(
-      backgroundColor: context.surfaceMidColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextButton(
-                  onPressed: _finish,
-                  child: Text(
-                    'PULAR',
-                    style: AppTypography.labelLarge.copyWith(
-                      color: context.textPrimary,
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const FreeBayLogo(width: 112),
+                    GestureDetector(
+                      onTap: _finish,
+                      child: Text(
+                        l10n(context).onboardingSkip,
+                        style: const TextStyle(
+                          fontFamily: AppTypography.fontFamily,
+                          color: AppColors.primaryContainer,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: slides.length,
+                  onPageChanged: (i) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _index = i);
+                  },
+                  itemBuilder: (context, i) => AnimatedBuilder(
+                    animation: _pageController,
+                    builder: (context, _) => OnboardingSlideView(
+                      slide: slides[i],
+                      pageOffset:
+                          i -
+                          (_pageController.hasClients
+                              ? (_pageController.page ?? _index.toDouble())
+                              : _index.toDouble()),
                     ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: _slides.length,
-                onPageChanged: (i) => setState(() => _index = i),
-                itemBuilder: (context, i) => _SlideView(slide: _slides[i]),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                _slides.length,
-                (i) => Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: 24,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: i == _index
-                        ? AppColors.primaryContainer
-                        : AppColors.outlineVariant,
-                    border: Border.all(color: context.borderColor, width: 2),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                height: 3,
+                child: ClipRRect(
+                  child: LinearProgressIndicator(
+                    value: (_index + 1) / slides.length,
+                    backgroundColor: context.borderSoftColor,
+                    valueColor: const AlwaysStoppedAnimation(
+                      AppColors.primaryContainer,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Spacing.vMd,
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: AppButton(
-                label: isLast ? 'COMEÇAR' : 'PRÓXIMO',
-                onPressed: () {
-                  if (isLast) {
-                    _finish();
-                  } else {
-                    _pageController.nextPage(
-                      duration: const Duration(milliseconds: 150),
-                      curve: Curves.linear,
-                    );
-                  }
-                },
+              Spacing.vSm,
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                child: AppButton(
+                  label: isLast
+                      ? l10n(context).onboardingGetStarted
+                      : l10n(context).onboardingNext,
+                  icon: isLast
+                      ? Icons.rocket_launch_outlined
+                      : Icons.arrow_forward,
+                  size: AppButtonSize.large,
+                  onPressed: () {
+                    if (isLast) {
+                      _finish();
+                    } else {
+                      _pageController.nextPage(
+                        duration: AppMotion.enter,
+                        curve: AppMotion.baseCurve,
+                      );
+                    }
+                  },
+                ),
               ),
-            ),
-            Spacing.vLg,
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _SlideView extends StatelessWidget {
-  final _OnboardingSlide slide;
-
-  const _SlideView({required this.slide});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHighest,
-              border: Border.all(color: context.borderColor, width: 3),
-            ),
-            child: Icon(
-              slide.icon,
-              size: 72,
-              color: AppColors.primaryContainer,
-            ),
-          ),
-          Spacing.vXl,
-          Text(
-            slide.title,
-            textAlign: TextAlign.center,
-            style: AppTypography.h2.copyWith(color: context.textPrimary),
-          ),
-          Spacing.vSm,
-          Text(
-            slide.body,
-            textAlign: TextAlign.center,
-            style: AppTypography.bodyLarge.copyWith(
-              color: context.textSecondary,
-            ),
-          ),
-        ],
       ),
     );
   }

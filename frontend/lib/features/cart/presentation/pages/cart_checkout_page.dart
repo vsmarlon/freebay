@@ -1,468 +1,323 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
-import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
+import 'package:freebay/shared/widgets/platform_wallet_payment_button.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
-class CartCheckoutPage extends ConsumerStatefulWidget {
+class CartCheckoutPage extends HookConsumerWidget {
   const CartCheckoutPage({super.key});
 
-  @override
-  ConsumerState<CartCheckoutPage> createState() => _CartCheckoutPageState();
-}
-
-class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
-  bool _isSubmitting = false;
-  CartCheckoutEntity? _checkout;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(cartProvider.notifier).loadCart();
-    });
+  Future<void> _submitCheckout(BuildContext context, WidgetRef ref) async {
+    final ok = await ref.read(cartProvider.notifier).checkout();
+    if (!ok && context.mounted) {
+      AppSnackbar.error(context, l10n(context).cartCheckoutFailed);
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = context.isDark;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
+    useEffect(() {
+      Future.microtask(() {
+        ref.read(cartProvider.notifier).loadCart();
+        ref.read(cartProvider.notifier).recoverCheckout();
+      });
+      return null;
+    }, const []);
     final state = ref.watch(cartProvider);
     final cart = state.cart;
-    final authState = ref.watch(authControllerProvider);
-    final user = authState.valueOrNull;
+    final hasUnavailableItems = cart.items.any(
+      (item) =>
+          item.product.status != ProductStatus.active ||
+          item.quantity > item.product.quantity - item.product.soldCount,
+    );
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'CHECKOUT',
-            leading: GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: strings.cartCheckoutTitle.toUpperCase(),
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
+                onTap: () => context.pop(),
               ),
             ),
-          ),
-          Expanded(
-            child: state.isLoading
-                ? const SkeletonPage(
-                    child: Column(
+            Expanded(
+              child: state.lastCheckout != null
+                  ? _buildResult(context, state.lastCheckout!)
+                  : state.isRecoveringCheckout
+                  ? const SkeletonPage(
+                      child: Column(
+                        children: [
+                          SizedBox(height: 16),
+                          ShimmerBlock(height: 80),
+                        ],
+                      ),
+                    )
+                  : state.checkoutPaid
+                  ? _buildPaidResult(context)
+                  : state.checkoutRecoveryRequired
+                  ? EmptyState.error(
+                      message: strings.paymentProviderConfirmationNote,
+                      onRetry: () =>
+                          ref.read(cartProvider.notifier).recoverCheckout(),
+                    )
+                  : state.isLoading
+                  ? const SkeletonPage(
+                      child: Column(
+                        children: [
+                          SizedBox(height: 16),
+                          ShimmerBlock(height: 80),
+                          SizedBox(height: 12),
+                          ShimmerBlock(height: 80),
+                          SizedBox(height: 12),
+                          ShimmerBlock(height: 80),
+                        ],
+                      ),
+                    )
+                  : state.error != null
+                  ? EmptyState.error(
+                      message: localizedFailureMessage(context, state.error),
+                      onRetry: () => ref.read(cartProvider.notifier).loadCart(),
+                    )
+                  : cart.items.isEmpty
+                  ? EmptyState(
+                      icon: Icons.shopping_cart_outlined,
+                      title: strings.cartEmptyTitle.toUpperCase(),
+                      subtitle: strings.cartEmptyBody,
+                    )
+                  : Column(
                       children: [
-                        SizedBox(height: 16),
-                        _CheckoutSkeletonItem(),
-                        SizedBox(height: 24),
-                        _CheckoutSkeletonItem(),
-                        SizedBox(height: 24),
-                        ShimmerBlock(height: 80),
-                        SizedBox(height: 16),
-                        ShimmerBlock(height: 60),
-                        SizedBox(height: 16),
-                        ShimmerBlock(height: 40),
-                        SizedBox(height: 16),
-                        ShimmerBlock(height: 48),
-                      ],
-                    ),
-                  )
-                : _checkout != null
-                    ? _buildCheckoutResult(context, isDark, _checkout!)
-                    : cart.items.isEmpty
-                        ? const EmptyState(
-                            icon: Icons.shopping_cart_outlined,
-                            title: 'CARRINHO VAZIO',
-                            subtitle:
-                                'Adicione produtos ao carrinho para continuar.',
-                          )
-                        : Column(
-                            children: [
-                              Expanded(
-                                child: ListView(
-                                  padding: const EdgeInsets.all(16),
+                        Expanded(
+                          child: ListView.separated(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: cart.items.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (context, i) {
+                              final item = cart.items[i];
+                              return Container(
+                                padding: const EdgeInsets.all(12),
+                                color: context.surfaceColor,
+                                child: Row(
                                   children: [
-                                    ...cart.items.map((item) {
-                                      final subtotal =
-                                          CurrencyUtils.formatCents(
-                                              item.subtotal);
-                                      return Container(
-                                        margin: const EdgeInsets.only(
-                                            bottom: Spacing.sm),
-                                        padding: const EdgeInsets.all(12),
-                                        color: isDark
-                                            ? AppColors.surfaceDark
-                                            : AppColors.white,
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
+                                    Expanded(
+                                      child: Text(
+                                        item.product.status !=
+                                                ProductStatus.active
+                                            ? strings.cartProductUnavailable(
                                                 item.product.title,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontFamily:
-                                                      AppTypography.fontFamily,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: isDark
-                                                      ? AppColors.white
-                                                      : AppColors.darkGray,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              '${item.quantity}x',
-                                              style: TextStyle(
-                                                fontFamily:
-                                                    AppTypography.fontFamily,
-                                                color: isDark
-                                                    ? AppColors.mediumGray
-                                                    : AppColors.mediumGray,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              'R\$ $subtotal',
-                                              style: TextStyle(
-                                                fontFamily: AppTypography
-                                                    .headlineFontFamily,
-                                                fontWeight: FontWeight.w700,
-                                                color: isDark
-                                                    ? AppColors.white
-                                                    : AppColors.darkGray,
-                                              ),
-                                            ),
-                                          ],
+                                              )
+                                            : item.quantity >
+                                                  item.product.quantity -
+                                                      item.product.soldCount
+                                            ? strings.cartInsufficientStock(
+                                                item.product.title,
+                                              )
+                                            : item.product.title,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: context.textPrimary,
                                         ),
-                                      );
-                                    }),
-                                    Spacing.vMd,
-                                    if (!(user?.hasCpf ?? false))
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        color: isDark
-                                            ? AppColors.surfaceContainerDark
-                                            : AppColors.surfaceContainerHighest,
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.warning_amber,
-                                                color: AppColors.warning,
-                                                size: 20),
-                                            Spacing.hSm,
-                                            Expanded(
-                                              child: Text(
-                                                'Adicione seu CPF no perfil antes de comprar.',
-                                                style: TextStyle(
-                                                  fontFamily:
-                                                      AppTypography.fontFamily,
-                                                  fontSize: 13,
-                                                  color: isDark
-                                                      ? AppColors.white
-                                                      : AppColors.darkGray,
-                                                ),
-                                              ),
-                                            ),
-                                            Spacing.hSm,
-                                            InkWell(
-                                              onTap: () =>
-                                                  context.push('/profile/edit'),
-                                              child: const Text(
-                                                'Adicionar',
-                                                style: TextStyle(
-                                                  fontFamily:
-                                                      AppTypography.fontFamily,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: AppColors
-                                                      .primaryContainer,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${item.quantity}x',
+                                      style: TextStyle(
+                                        color: context.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      CurrencyUtils.formatCents(item.subtotal),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        color: context.textPrimary,
+                                      ),
+                                    ),
                                   ],
                                 ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                color: isDark
-                                    ? AppColors.surfaceDark
-                                    : AppColors.white,
-                                child: SafeArea(
-                                  child: Row(
+                              );
+                            },
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          color: context.surfaceColor,
+                          child: SafeArea(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              'Total (${cart.totalItems} itens)',
-                                              style: TextStyle(
-                                                fontFamily:
-                                                    AppTypography.fontFamily,
-                                                color: isDark
-                                                    ? AppColors.mediumGray
-                                                    : AppColors.mediumGray,
-                                              ),
-                                            ),
-                                            Text(
-                                              CurrencyUtils.formatCents(
-                                                  cart.totalPrice),
-                                              style: TextStyle(
-                                                fontFamily: AppTypography
-                                                    .headlineFontFamily,
-                                                fontSize: 24,
-                                                fontWeight: FontWeight.w700,
-                                                color: isDark
-                                                    ? AppColors.white
-                                                    : AppColors.darkGray,
-                                              ),
-                                            ),
-                                          ],
+                                      Text(
+                                        strings.cartTotalItems(cart.totalItems),
+                                        style: TextStyle(
+                                          color: context.textSecondary,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: AppButton(
-                                          label: 'Gerar PIXs',
-                                          onPressed: _isSubmitting
-                                              ? null
-                                              : () => _submitCheckout(context),
-                                          isLoading: _isSubmitting,
+                                      Text(
+                                        CurrencyUtils.formatCents(
+                                          cart.totalPrice,
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w900,
+                                          color: context.textPrimary,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ),
-                            ],
+                                AppButton(
+                                  label: strings.cartGenerateCheckout,
+                                  isLoading: state.isCheckingOut,
+                                  onPressed:
+                                      hasUnavailableItems ||
+                                          state.checkoutRecoveryRequired ||
+                                          state.isRecoveringCheckout
+                                      ? null
+                                      : () => _submitCheckout(context, ref),
+                                ),
+                              ],
+                            ),
                           ),
-          ),
-        ],
+                        ),
+                      ],
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCheckoutResult(
-    BuildContext context,
-    bool isDark,
-    CartCheckoutEntity checkout,
-  ) {
+  Widget _buildResult(BuildContext context, CartCheckoutEntity checkout) {
+    final strings = l10n(context);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Container(
           padding: const EdgeInsets.all(16),
-          color: isDark
-              ? AppColors.surfaceContainerDark
-              : AppColors.surfaceContainer,
+          color: context.surfaceColor,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'CHECKOUT GERADO',
+                strings.cartCheckoutGenerated.toUpperCase(),
                 style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color:
-                      isDark ? AppColors.onPrimaryContainer : AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  color: context.textSecondary,
                 ),
               ),
-              const SizedBox(height: 12),
+              Spacing.vSm,
               Text(
-                '${checkout.totalOrders} pedidos criados',
+                strings.ordersCreatedCount(checkout.totalOrders),
                 style: TextStyle(
-                  fontFamily: AppTypography.headlineFontFamily,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.white : AppColors.onSurface,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: context.textPrimary,
                 ),
+              ),
+              Spacing.vSm,
+              Text(
+                strings.cartTotalAmount(
+                  CurrencyUtils.formatCents(checkout.totalAmount),
+                ),
+                style: TextStyle(fontSize: 16, color: context.textSecondary),
+              ),
+              Spacing.vMd,
+              if (checkout.checkoutUrl case final url?) ...[
+                AppButton(
+                  label: strings.cartPayNow,
+                  onPressed: () => _openCheckout(context, url),
+                ),
+                Spacing.vSm,
+              ] else if (checkout.paymentIntentClientSecret
+                  case final secret?) ...[
+                PlatformWalletPaymentButton(
+                  clientSecret: secret,
+                  amountCents: checkout.totalAmount,
+                  itemLabel: strings.cartCheckoutTitle,
+                  onSubmitted: () {},
+                ),
+                Spacing.vSm,
+              ],
+              Text(
+                strings.paymentProviderConfirmationNote,
+                style: AppTypography.bodySmall.copyWith(
+                  color: context.textSecondary,
+                ),
+              ),
+              Spacing.vSm,
+              AppButton(
+                label: strings.cartViewOrders,
+                onPressed: () => context.go(AppRoutes.orders),
               ),
             ],
-          ),
-        ),
-        Spacing.vMd,
-        ...checkout.items.map(
-          (item) => Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            color: isDark ? AppColors.surfaceDark : AppColors.white,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.productTitle,
-                  style: TextStyle(
-                    fontFamily: AppTypography.headlineFontFamily,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.white : AppColors.onSurface,
-                  ),
-                ),
-                Spacing.vSm,
-                Text(
-                  'Quantidade: ${item.quantity}',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    color: isDark
-                        ? AppColors.mediumGray
-                        : AppColors.onSurfaceVariant,
-                  ),
-                ),
-                Spacing.vSm,
-                Text(
-                  CurrencyUtils.formatCents(item.amount),
-                  style: TextStyle(
-                    fontFamily: AppTypography.headlineFontFamily,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.white : AppColors.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  color: isDark
-                      ? AppColors.surfaceContainerLowDark
-                      : AppColors.surfaceContainerLowest,
-                  child: SelectableText(
-                    item.pixQrCode,
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 13,
-                      height: 1.5,
-                      color: isDark ? AppColors.white : AppColors.onSurface,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () async {
-                          await Clipboard.setData(
-                            ClipboardData(text: item.pixQrCode),
-                          );
-                          if (!context.mounted) {
-                            return;
-                          }
-                          AppSnackbar.success(context, 'Codigo PIX copiado');
-                        },
-                        child: Container(
-                          height: 44,
-                          color: isDark
-                              ? AppColors.surfaceContainerDark
-                              : AppColors.surfaceContainerHighest,
-                          child: Center(
-                            child: Text(
-                              'Copiar',
-                              style: TextStyle(
-                                fontFamily: AppTypography.fontFamily,
-                                fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? AppColors.white
-                                    : AppColors.onSurface,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AppButton(
-                        label: 'Ver pedido',
-                        onPressed: () =>
-                            context.push('/orders/${item.orderId}'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
           ),
         ),
       ],
     );
   }
 
-  Future<void> _submitCheckout(BuildContext context) async {
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    final result = await ref.read(checkoutCartUsecaseProvider)();
-
-    result.fold(
-      (failure) {
-        if (!context.mounted) {
-          return;
-        }
-        AppSnackbar.error(context, failure.message);
-      },
-      (checkout) {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _checkout = checkout;
-        });
-        ref.read(cartProvider.notifier).loadCart();
-      },
-    );
-
-    if (mounted) {
-      setState(() {
-        _isSubmitting = false;
-      });
-    }
-  }
-}
-
-class _CheckoutSkeletonItem extends StatelessWidget {
-  const _CheckoutSkeletonItem();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
+  Widget _buildPaidResult(BuildContext context) {
+    final strings = l10n(context);
+    return ListView(
+      padding: const EdgeInsets.all(16),
       children: [
-        ShimmerBlock(width: 60, height: 60),
-        SizedBox(width: 12),
-        Expanded(
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: context.surfaceColor,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ShimmerBlock(height: 16, width: double.infinity),
-              SizedBox(height: 6),
-              ShimmerBlock(height: 14, width: 80),
+              Text(strings.orderStatusConfirmed.toUpperCase()),
+              Spacing.vMd,
+              AppButton(
+                label: strings.cartViewOrders,
+                onPressed: () => context.go(AppRoutes.orders),
+              ),
             ],
           ),
         ),
       ],
     );
+  }
+
+  Future<void> _openCheckout(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri?.scheme != 'https' || uri?.host != 'checkout.stripe.com') {
+      AppSnackbar.error(context, l10n(context).paymentInvalidLink);
+      return;
+    }
+    try {
+      final launched = await launchUrl(uri!, mode: LaunchMode.inAppWebView);
+      if (!launched && context.mounted) {
+        AppSnackbar.error(context, l10n(context).paymentOpenFailed);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        AppSnackbar.error(context, l10n(context).paymentOpenFailed);
+      }
+    }
   }
 }

@@ -7,4 +7,15 @@ class LastErrorInfo {
   const LastErrorInfo(this.message, this.route);
 }
 
-final lastErrorProvider = StateProvider<LastErrorInfo?>((ref) => null);
+class LastErrorNotifier extends Notifier<LastErrorInfo?> {
+  @override
+  LastErrorInfo? build() => null;
+
+  void setError(LastErrorInfo? info) {
+    state = info;
+  }
+}
+
+final lastErrorProvider = NotifierProvider<LastErrorNotifier, LastErrorInfo?>(
+  LastErrorNotifier.new,
+);

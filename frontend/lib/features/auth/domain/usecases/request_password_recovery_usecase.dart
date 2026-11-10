@@ -1,7 +1,7 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
-import 'package:freebay/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:freebay/features/auth/data/repositories/auth_repository.dart';
 
 class RequestPasswordRecoveryParams {
   final String email;
@@ -11,7 +11,7 @@ class RequestPasswordRecoveryParams {
 
 class RequestPasswordRecoveryUsecase
     implements Usecase<void, RequestPasswordRecoveryParams> {
-  final IAuthRepository _repository;
+  final AuthRepository _repository;
 
   RequestPasswordRecoveryUsecase(this._repository);
 

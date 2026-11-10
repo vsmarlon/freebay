@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/components/blur_hash_placeholder.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
 enum AppAvatarSize {
   small(32),
@@ -15,39 +16,48 @@ class UserAvatar extends StatelessWidget {
   final String? imageUrl;
   final bool isVerified;
   final AppAvatarSize size;
+  final double? dimension;
+  final String? heroTag;
+  final String? blurHash;
 
   const UserAvatar({
     super.key,
     this.imageUrl,
     this.isVerified = false,
     this.size = AppAvatarSize.medium,
+    this.dimension,
+    this.heroTag,
+    this.blurHash,
   });
 
   @override
   Widget build(BuildContext context) {
+    final avatarDimension = dimension ?? size.value;
     final borderColor = isVerified
         ? AppColors.primaryContainer
         : AppColors.onSurface.withValues(alpha: 0.15);
+    final image = imageUrl != null && imageUrl!.isNotEmpty
+        ? CachedNetworkImage(
+            imageUrl: imageUrl!,
+            fit: BoxFit.cover,
+            memCacheWidth: (avatarDimension * 2.5).toInt(),
+            memCacheHeight: (avatarDimension * 2.5).toInt(),
+            placeholder: (context, url) => _buildBlurHashPlaceholder(),
+            errorWidget: (context, url, error) => _buildPlaceholder(),
+          )
+        : _buildPlaceholder();
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Container(
-          width: size.value,
-          height: size.value,
+          width: avatarDimension,
+          height: avatarDimension,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.zero,
             color: AppColors.surfaceContainerLow,
             border: Border.all(color: borderColor, width: 2),
           ),
-          child: imageUrl != null && imageUrl!.isNotEmpty
-              ? CachedNetworkImage(
-                  imageUrl: imageUrl!,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => _buildPlaceholder(),
-                  errorWidget: (context, url, error) => _buildPlaceholder(),
-                )
-              : _buildPlaceholder(),
+          child: _hero(image),
         ),
         if (isVerified)
           Positioned(
@@ -57,11 +67,7 @@ class UserAvatar extends StatelessWidget {
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                 color: AppColors.onPrimary,
-                borderRadius: BorderRadius.zero,
-                border: Border.all(
-                  color: AppColors.primaryContainer,
-                  width: 2,
-                ),
+                border: Border.all(color: AppColors.primaryContainer, width: 2),
               ),
               child: Icon(
                 Icons.verified,
@@ -74,11 +80,17 @@ class UserAvatar extends StatelessWidget {
     );
   }
 
+  Widget _hero(Widget child) =>
+      heroTag == null ? child : Hero(tag: heroTag!, child: child);
+
   Widget _buildPlaceholder() {
     return Icon(
       Icons.person,
       color: AppColors.onSurfaceVariant,
-      size: size.value * 0.5,
+      size: (dimension ?? size.value) * 0.5,
     );
   }
+
+  Widget _buildBlurHashPlaceholder() =>
+      BlurHashPlaceholder(hash: blurHash, fallback: _buildPlaceholder());
 }

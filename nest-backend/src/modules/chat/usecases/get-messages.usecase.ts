@@ -1,40 +1,132 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
-import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { GetMessagesOutput } from '../dtos/chat.dto';
+import { Either, left, right } from '@/shared/core/either';
+import { AppError, NotFoundError } from '@/shared/core/errors';
+import { CursorPage, FIRST_PAGE, PageQuery } from '@/shared/core/pagination';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
+import { ConversationPreferenceDatabaseRepository } from '../data/repositories/conversation-preference-database.repository';
+import { ChatThreadAccessService } from '../services/chat-thread-access.service';
+import { ChatThreadType } from '@prisma/client';
+import { GetMessagesOutput, GetMessagesResult } from '../dtos/chat.dto';
+import { redactReplySummary } from '../dtos/conversation-response';
+import {
+  ChatMessageWithSender,
+  DirectMessageWithSender,
+} from '../types/conversation-payloads';
 
 @Injectable()
 export class GetMessagesUseCase {
-  constructor(private readonly conversationRepository: ConversationRepository) {}
+  constructor(
+    private readonly conversationRepository: ConversationDatabaseRepository,
+    private readonly preferenceRepository: ConversationPreferenceDatabaseRepository,
+    private readonly threadAccess: ChatThreadAccessService,
+  ) {}
 
-  async execute(conversationId: string, userId: string): Promise<Either<AppError, GetMessagesOutput[]>> {
-    const convResult = await this.conversationRepository.findDirectConversationById(conversationId);
-    if (isLeft(convResult)) return left(convResult.value);
-    const conversation = convResult.value;
+  async execute(
+    conversationId: string,
+    userId: string,
+    query: PageQuery = FIRST_PAGE,
+  ): Promise<Either<AppError, GetMessagesResult>> {
+    const resolved = await this.threadAccess.resolveThread(userId, conversationId);
+    if (resolved.isLeft()) return left(resolved.value);
 
-    if (!conversation) return left(new NotFoundError('Conversation'));
-    if (conversation.user1Id !== userId && conversation.user2Id !== userId) {
-      return left(new BadRequestError('Not authorized to view this conversation'));
+    const { orderId, directConversationId, otherUserId } = resolved.value;
+    const isOrderThread = Boolean(orderId);
+
+    const messages: GetMessagesOutput[] = [];
+    let page: CursorPage<DirectMessageWithSender | ChatMessageWithSender>;
+
+    if (isOrderThread) {
+      const msgsResult = await this.conversationRepository.findChatMessagesByOrder(orderId!, query);
+      if (msgsResult.isLeft()) return left(msgsResult.value);
+
+      const readResult = await this.conversationRepository.markChatMessagesRead(orderId!, userId);
+      if (readResult.isLeft()) return left(readResult.value);
+
+      page = msgsResult.value;
+    } else {
+      const msgsResult = await this.conversationRepository.findMessagesByConversation(
+        directConversationId!,
+        query,
+      );
+      if (msgsResult.isLeft()) return left(msgsResult.value);
+
+      const readResult = await this.conversationRepository.markMessagesRead(directConversationId!, userId);
+      if (readResult.isLeft()) return left(readResult.value);
+
+      page = msgsResult.value;
     }
 
-    const msgsResult = await this.conversationRepository.findMessagesByConversation(conversationId);
-    if (isLeft(msgsResult)) return left(msgsResult.value);
+    // Newest-first from the database, oldest-first for the transcript the client renders
+    messages.push(
+      ...[...page.items].reverse().map((msg) => this.toOutput(msg, conversationId)),
+    );
 
-    const readResult = await this.conversationRepository.markMessagesRead(conversationId, userId);
-    if (isLeft(readResult)) return left(readResult.value);
+    const preferenceResult = await this.preferenceRepository.findByAnyId(userId, conversationId);
+    if (preferenceResult.isLeft()) return left(preferenceResult.value);
+    const preference = preferenceResult.value;
 
-    const result: GetMessagesOutput[] = msgsResult.value.map(msg => ({
+    const otherUserResult = await this.conversationRepository.findUserById(otherUserId);
+    if (otherUserResult.isLeft()) return left(otherUserResult.value);
+    const otherUser = otherUserResult.value;
+    if (!otherUser) return left(new NotFoundError('User'));
+
+    return right({
+      messages,
+      hasMore: page.hasMore,
+      nextCursor: page.nextCursor,
+      threadType: isOrderThread ? ChatThreadType.ORDER : ChatThreadType.DIRECT,
+      otherUserId,
+      otherUser: {
+        id: otherUser.id,
+        displayName: otherUser.displayName,
+        avatarUrl: otherUser.avatarUrl,
+      },
+      preference: preference
+        ? {
+            isArchived: preference.isArchived,
+            theme: preference.theme,
+            backgroundUrl: preference.backgroundUrl,
+            muted: preference.muted,
+          }
+        : { isArchived: false, theme: 'DEFAULT', backgroundUrl: null, muted: false },
+    });
+  }
+
+  private toOutput(
+    msg: DirectMessageWithSender | ChatMessageWithSender,
+    conversationId: string,
+  ): GetMessagesOutput {
+    const isViewOnceHidden = msg.viewOnce && msg.readAt !== null;
+    const replyTo = msg.replyTo ? redactReplySummary(msg.replyTo) : null;
+
+    return {
       id: msg.id,
-      conversationId: msg.conversationId,
+      conversationId,
       senderId: msg.senderId,
-      content: msg.content ?? '',
+      content: isViewOnceHidden ? null : (msg.content ?? null),
       type: msg.type,
+      attachmentUrl: isViewOnceHidden ? null : (msg.attachmentUrl ?? null),
+      metadata: isViewOnceHidden ? null : ((msg.metadata as Record<string, unknown>) ?? null),
+      replyToId: msg.replyToId ?? null,
+      replyTo: replyTo
+        ? {
+            id: replyTo.id,
+            senderId: replyTo.senderId,
+            content: replyTo.content,
+            type: replyTo.type,
+            attachmentUrl: replyTo.attachmentUrl,
+            deletedAt: replyTo.deletedAt,
+            conversationId,
+            createdAt: replyTo.createdAt,
+            viewOnce: replyTo.viewOnce,
+            readAt: replyTo.readAt,
+          }
+        : null,
+      deletedAt: msg.deletedAt ?? null,
       readAt: msg.readAt,
       deliveredAt: msg.deliveredAt,
       createdAt: msg.createdAt,
-    }));
-
-    return right(result);
+      viewOnce: msg.viewOnce,
+    };
   }
 }

@@ -6,9 +6,10 @@ part of 'user_post_entry.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_UserPostEntry _$UserPostEntryFromJson(Map<String, dynamic> json) =>
-    _UserPostEntry(
+UserPostEntry _$UserPostEntryFromJson(Map<String, dynamic> json) =>
+    UserPostEntry(
       post: PostEntity.fromJson(json['post'] as Map<String, dynamic>),
+      repostId: json['repostId'] as String?,
       repostedAt: json['repostedAt'] == null
           ? null
           : DateTime.parse(json['repostedAt'] as String),
@@ -19,11 +20,12 @@ _UserPostEntry _$UserPostEntryFromJson(Map<String, dynamic> json) =>
       sharesCount: (json['sharesCount'] as num?)?.toInt(),
     );
 
-Map<String, dynamic> _$UserPostEntryToJson(_UserPostEntry instance) =>
+Map<String, dynamic> _$UserPostEntryToJson(UserPostEntry instance) =>
     <String, dynamic>{
-      'post': instance.post,
+      'post': instance.post.toJson(),
+      'repostId': instance.repostId,
       'repostedAt': instance.repostedAt?.toIso8601String(),
-      'repostedBy': instance.repostedBy,
+      'repostedBy': instance.repostedBy?.toJson(),
       'isReposted': instance.isReposted,
       'sharesCount': instance.sharesCount,
     };

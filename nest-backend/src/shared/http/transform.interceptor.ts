@@ -3,10 +3,10 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
-  Logger,
+  StreamableFile,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 export interface Response<T> {
   success: boolean;
@@ -14,22 +14,17 @@ export interface Response<T> {
 }
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
-  private readonly logger = new Logger(TransformInterceptor.name);
-
-  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
-    const request = context.switchToHttp().getRequest();
-    const { method, url } = request;
-    const now = Date.now();
-
+export class TransformInterceptor<T>
+  implements NestInterceptor<T, Response<T> | StreamableFile>
+{
+  intercept(
+    _context: ExecutionContext,
+    next: CallHandler<T | StreamableFile>,
+  ): Observable<Response<T> | StreamableFile> {
     return next.handle().pipe(
-      tap(() => {
-        this.logger.log(`${method} ${url} - ${Date.now() - now}ms`);
-      }),
-      map((data) => ({
-        success: true,
-        data,
-      })),
+      map((data) =>
+        data instanceof StreamableFile ? data : { success: true, data },
+      ),
     );
   }
 }

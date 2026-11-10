@@ -1,16 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { ProductRepository } from '../../domain/repositories/product.repository';
+import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
 import { ProductQueryDTO } from '../../dtos/product.dto';
 import { ProductListPayload } from '../../types/product.types';
+import { DEFAULT_PAGE_SIZE } from '@/shared/core/pagination';
 
 @Injectable()
 export class GetProductsUseCase {
-  constructor(private readonly productRepository: ProductRepository) {}
+  constructor(private readonly productRepository: ProductDatabaseRepository) {}
 
   async execute(query: ProductQueryDTO): Promise<Either<AppError, { products: ProductListPayload[]; nextCursor: string | null }>> {
-    const limit = query.limit ?? 20;
+    const limit = query.limit ?? DEFAULT_PAGE_SIZE;
     const result = await this.productRepository.findMany({
       cursor: query.cursor,
       limit,
@@ -18,6 +19,8 @@ export class GetProductsUseCase {
       categoryId: query.category,
       minPrice: query.minPrice,
       maxPrice: query.maxPrice,
+      condition: query.condition,
+      sort: query.sort,
     });
 
     if (result.isLeft()) return left(result.value);

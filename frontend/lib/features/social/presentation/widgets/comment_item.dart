@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/utils/time_utils.dart';
+import 'package:go_router/go_router.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
-import 'package:freebay/core/components/spacing.dart';
 
 class CommentItem extends StatelessWidget {
   final CommentEntity comment;
@@ -13,6 +14,13 @@ class CommentItem extends StatelessWidget {
   final VoidCallback onReply;
   final VoidCallback onLike;
   final VoidCallback? onUserTap;
+  final bool canApprove;
+  final bool isApproving;
+  final VoidCallback? onApprove;
+  final VoidCallback? onQuote;
+  final bool canDelete;
+  final bool isDeleting;
+  final VoidCallback? onDelete;
 
   const CommentItem({
     super.key,
@@ -23,106 +31,187 @@ class CommentItem extends StatelessWidget {
     required this.onReply,
     required this.onLike,
     this.onUserTap,
+    this.canApprove = false,
+    this.isApproving = false,
+    this.onApprove,
+    this.onQuote,
+    this.canDelete = false,
+    this.isDeleting = false,
+    this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: onUserTap,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: context.surfaceMidColor,
-                image: comment.user?.avatarUrl != null
-                    ? DecorationImage(
-                        image: NetworkImage(comment.user!.avatarUrl!),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-              ),
-              child: comment.user?.avatarUrl == null
-                  ? Icon(Icons.person, size: 16, color: context.textSecondary)
-                  : null,
-            ),
-          ),
-          Spacing.hSm,
-          Expanded(
-            child: Column(
+    return ColoredBox(
+      color: context.surfaceMidColor,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppDepth.borderThin),
+        child: ColoredBox(
+          color: context.surfaceColor,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 GestureDetector(
                   onTap: onUserTap,
-                  child: Text(
-                    comment.user?.displayName ?? 'Usuário',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: context.textPrimary,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: context.surfaceMidColor,
+                      image: comment.user?.avatarUrl != null
+                          ? DecorationImage(
+                              image: CachedNetworkImageProvider(
+                                comment.user!.avatarUrl!,
+                              ),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
                     ),
+                    child: comment.user?.avatarUrl == null
+                        ? Icon(
+                            Icons.person,
+                            size: 16,
+                            color: context.textSecondary,
+                          )
+                        : null,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  comment.content,
-                  style: TextStyle(fontSize: 14, color: context.textPrimary),
-                ),
-                Spacing.vXs,
-                Row(
-                  children: [
-                    Text(
-                      TimeUtils.timeAgo(comment.createdAt),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.mediumGray,
-                      ),
-                    ),
-                    Spacing.hMd,
-                    GestureDetector(
-                      onTap: onReply,
-                      child: const Text(
-                        'Responder',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryContainer,
+                Spacing.hSm,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: onUserTap,
+                        child: Text(
+                          comment.user?.displayName ??
+                              l10n(context).commonUnknownUser,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: context.textPrimary,
+                          ),
                         ),
                       ),
-                    ),
-                    Spacing.hMd,
-                    GestureDetector(
-                      onTap: onLike,
-                      child: Row(
+                      const SizedBox(height: 2),
+                      BrutalistHighlightedText(
+                        text: comment.content,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: context.textPrimary,
+                        ),
+                        onLinkTap: (url) =>
+                            showBrutalistSafeLinkDialog(context, url),
+                        onMentionTap: (mention) {
+                          final username = mention.replaceFirst('@', '');
+                          context.push(AppRoutes.peopleSearchWith(username));
+                        },
+                        onHashtagTap: (tag) {
+                          context.push(AppRoutes.postSearchWith(tag));
+                        },
+                      ),
+                      Spacing.vXs,
+                      Row(
                         children: [
-                          Icon(
-                            isLiked ? Icons.favorite : Icons.favorite_border,
-                            size: 14,
-                            color: isLiked ? Colors.red : AppColors.mediumGray,
+                          Text(
+                            localizedTimeAgo(context, comment.createdAt),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: context.textSecondary,
+                            ),
                           ),
-                          Spacing.hXs,
-                          if (likesCount > 0)
-                            Text(
-                              likesCount.toString(),
-                              style: TextStyle(
+                          Spacing.hMd,
+                          if (canApprove)
+                            AppButton(
+                              label: isApproving
+                                  ? l10n(context).commonLoading
+                                  : l10n(context).socialCommentApprovePending,
+                              variant: AppButtonVariant.ghost,
+                              size: AppButtonSize.compact,
+                              isLoading: isApproving,
+                              onPressed: isApproving ? null : onApprove,
+                            ),
+                          GestureDetector(
+                            onTap: onReply,
+                            child: Text(
+                              comment.replies.isNotEmpty
+                                  ? '${l10n(context).chatReply} • ${comment.replies.length}'
+                                  : l10n(context).chatReply,
+                              style: const TextStyle(
                                 fontSize: 12,
-                                color:
-                                    isLiked ? Colors.red : AppColors.mediumGray,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryContainer,
                               ),
                             ),
+                          ),
+                          if (canDelete) ...[
+                            Spacing.hMd,
+                            Semantics(
+                              button: true,
+                              label: l10n(context).commonDelete,
+                              child: GestureDetector(
+                                onTap: isDeleting ? null : onDelete,
+                                child: Icon(
+                                  Icons.delete_outline,
+                                  size: 16,
+                                  color: context.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                          Spacing.hMd,
+                          if (onQuote != null)
+                            Semantics(
+                              button: true,
+                              label: l10n(context).socialQuoteLabel,
+                              child: GestureDetector(
+                                onTap: onQuote,
+                                child: Icon(
+                                  Icons.format_quote,
+                                  size: 16,
+                                  color: context.textSecondary,
+                                ),
+                              ),
+                            ),
+                          if (onQuote != null) Spacing.hMd,
+                          GestureDetector(
+                            onTap: onLike,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isLiked
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  size: 14,
+                                  color: isLiked
+                                      ? AppColors.error
+                                      : context.textSecondary,
+                                ),
+                                Spacing.hXs,
+                                if (likesCount > 0)
+                                  Text(
+                                    likesCount.toString(),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isLiked
+                                          ? AppColors.error
+                                          : context.textSecondary,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

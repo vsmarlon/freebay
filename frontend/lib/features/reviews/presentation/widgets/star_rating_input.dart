@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/ui.dart';
 
 class StarRatingInput extends StatelessWidget {
   final int value;
@@ -29,14 +29,11 @@ class StarRatingInput extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: AnimatedScale(
               scale: isFilled ? 1.1 : 1.0,
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.linear,
+              duration: AppMotion.base,
               child: Icon(
                 isFilled ? Icons.star : Icons.star_outline,
                 size: size,
-                color: isFilled
-                    ? AppColors.warning
-                    : AppColors.outline,
+                color: isFilled ? AppColors.warning : AppColors.outline,
               ),
             ),
           ),

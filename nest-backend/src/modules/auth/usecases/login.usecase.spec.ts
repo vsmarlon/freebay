@@ -1,36 +1,33 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { LoginUseCase } from './login.usecase';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { InvalidCredentialsError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 import * as bcrypt from 'bcryptjs';
+import { Test } from '@nestjs/testing';
+import { SessionTokenService } from '../services/session-token.service';
 
 jest.mock('bcryptjs');
 
 describe('LoginUseCase', () => {
   let sut: LoginUseCase;
-  let mockUserRepository: jest.Mocked<Partial<UserRepository>>;
+  let mockUserRepository: jest.Mocked<Partial<UserDatabaseRepository>>;
 
   beforeEach(async () => {
     mockUserRepository = {
       findByEmail: jest.fn(),
-    } as jest.Mocked<Partial<UserRepository>>;
+    } as jest.Mocked<Partial<UserDatabaseRepository>>;
 
-    const module: TestingModule = await Test.createTestingModule({
+    const module = await Test.createTestingModule({
       providers: [
         LoginUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: SessionTokenService, useValue: { generate: jest.fn().mockReturnValue({ token: 'access', refreshToken: 'refresh' }) } },
       ],
     }).compile();
-
-    sut = module.get<LoginUseCase>(LoginUseCase);
+    sut = module.get(LoginUseCase);
   });
 
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should return error if user not found', async () => {
+  it('returns error if user not found', async () => {
     mockUserRepository.findByEmail = jest.fn().mockResolvedValue(right(null));
 
     const input = { email: 'notfound@example.com', password: 'password123' };
@@ -42,11 +39,11 @@ describe('LoginUseCase', () => {
     }
   });
 
-  it('should return error if password does not match', async () => {
+  it('returns error if password does not match', async () => {
     mockUserRepository.findByEmail = jest.fn().mockResolvedValue(right({
       id: 'user-123',
       email: 'john@example.com',
-      passwordHash: await bcrypt.hash('correctPassword', 12),
+      passwordHash: '$2a$12$somehashedpasswordstring',
     }));
 
     (bcrypt.compare as jest.Mock).mockResolvedValue(false);
@@ -60,13 +57,12 @@ describe('LoginUseCase', () => {
     }
   });
 
-  it('should return user data on successful login', async () => {
-    const hashedPassword = await bcrypt.hash('correctPassword', 12);
+  it('returns user data on successful login', async () => {
     mockUserRepository.findByEmail = jest.fn().mockResolvedValue(right({
       id: 'user-123',
       email: 'john@example.com',
       displayName: 'John Doe',
-      passwordHash: hashedPassword,
+      passwordHash: '$2a$12$somehashedpasswordstring',
     }));
 
     (bcrypt.compare as jest.Mock).mockResolvedValue(true);

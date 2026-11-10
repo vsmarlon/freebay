@@ -8,12 +8,12 @@ import {
   RecoveryCodeExpiredError,
   RecoveryCodeNotFoundError,
 } from '@/shared/core/errors';
-import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
+import { PasswordRecoveryDatabaseRepository } from '../data/repositories/password-recovery-database.repository';
 import { VerifyPasswordRecoveryCodeDTO } from '../dtos/password-recovery.dto';
 
 @Injectable()
 export class VerifyPasswordRecoveryCodeUseCase {
-  constructor(private readonly recoveryRepository: PasswordRecoveryRepository) {}
+  constructor(private readonly recoveryRepository: PasswordRecoveryDatabaseRepository) {}
 
   async execute(input: VerifyPasswordRecoveryCodeDTO): Promise<Either<AppError, void>> {
     const recoveryResult = await this.recoveryRepository.findLatestByEmail(input.email);
@@ -32,13 +32,16 @@ export class VerifyPasswordRecoveryCodeUseCase {
       return left(new RecoveryCodeExpiredError());
     }
 
-    if (recovery.attempts >= recovery.maxAttempts) {
-      return left(new RecoveryCodeAttemptsExceededError());
+    if (recovery.codeHash.startsWith('web-reset:')) {
+      return left(new RecoveryCodeNotFoundError());
     }
+
+    const reservation = await this.recoveryRepository.reserveAttempt(recovery.id);
+    if (reservation.isLeft()) return left(reservation.value);
+    if (!reservation.value) return left(new RecoveryCodeAttemptsExceededError());
 
     const matches = await bcrypt.compare(input.code, recovery.codeHash);
     if (!matches) {
-      await this.recoveryRepository.incrementAttempts(recovery.id);
       return left(new RecoveryCodeNotFoundError());
     }
 

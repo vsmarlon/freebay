@@ -1,56 +1,48 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma, ReversalState, TransferDeliveryState } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
-import { left, right, RepositoryResponse } from '@/shared/core/either';
-import { DatabaseError, Failure } from '@/shared/core/errors';
-import { TransactionRepository, TransactionWithOrder } from '../../domain/repositories/transaction.repository';
+import { RepositoryResponse } from '@/shared/core/either';
+import { CursorPage, DEFAULT_PAGE_SIZE } from '@/shared/core/pagination';
+import { ExpiredPendingTransaction, PaymentSessionAttemptData, RefundReservation, TransactionWithOrder, UpsertTransactionData } from '../../types/payment.types';
+import { ChargeRefundSnapshot } from '../../types/payment-provider.types';
+import { TransactionGuardedClaimsRepository } from './transaction-guarded-claims.repository';
+import { TransactionReconciliationRepository } from './transaction-reconciliation.repository';
+import { TransactionUpsertRepository } from './transaction-upsert.repository';
 
 @Injectable()
-export class TransactionDatabaseRepository implements TransactionRepository {
-  constructor(private readonly prisma: PrismaService) {}
+export class TransactionDatabaseRepository {
+  private readonly claims: TransactionGuardedClaimsRepository;
+  private readonly reconciliation: TransactionReconciliationRepository;
+  private readonly upsert: TransactionUpsertRepository;
 
-  async markAsPaid(id: string, tx?: Prisma.TransactionClient): RepositoryResponse<void> {
-    try {
-      const client = tx ?? this.prisma;
-      await client.transaction.update({
-        where: { id },
-        data: { status: 'PAID', paidAt: new Date() },
-      });
-      return right(undefined);
-    } catch {
-      return left(new DatabaseError('Failed to mark transaction as paid'));
-    }
+  constructor(private readonly prisma: PrismaService) {
+    this.claims = new TransactionGuardedClaimsRepository(prisma);
+    this.reconciliation = new TransactionReconciliationRepository(prisma);
+    this.upsert = new TransactionUpsertRepository(prisma);
   }
 
-  async markAsFailed(id: string, tx?: Prisma.TransactionClient): RepositoryResponse<void> {
-    try {
-      const client = tx ?? this.prisma;
-      await client.transaction.update({
-        where: { id },
-        data: { status: 'FAILED' },
-      });
-      return right(undefined);
-    } catch {
-      return left(new DatabaseError('Failed to mark transaction as failed'));
-    }
-  }
+  markAsPaid(id: string, chargeId: string | null, tx?: Prisma.TransactionClient): RepositoryResponse<{ count: number }> { return this.claims.markAsPaid(id, chargeId, tx); }
+  setChargeId(orderId: string, chargeId: string, tx?: Prisma.TransactionClient): RepositoryResponse<void> { return this.claims.setChargeId(orderId, chargeId, tx); }
+  claimTransfer(orderId: string, processingAt: Date, tx?: Prisma.TransactionClient): RepositoryResponse<{ count: number }> { return this.claims.claimTransfer(orderId, processingAt, tx); }
+  reclaimStaleTransfer(cutoff: Date, tx?: Prisma.TransactionClient): RepositoryResponse<{ count: number }> { return this.claims.reclaimStaleTransfer(cutoff, tx); }
+  finalizeTransfer(id: string, transferId: string, tx: Prisma.TransactionClient): RepositoryResponse<{ count: number }> { return this.claims.finalizeTransfer(id, transferId, tx); }
+  markTransferFailure(id: string, state: Extract<TransferDeliveryState, 'RETRYABLE' | 'TERMINAL'>, error: string, tx?: Prisma.TransactionClient): RepositoryResponse<{ count: number }> { return this.claims.markTransferFailure(id, state, error, tx); }
+  claimReversal(orderId: string, processingAt: Date, tx?: Prisma.TransactionClient): RepositoryResponse<{ count: number }> { return this.claims.claimReversal(orderId, processingAt, tx); }
+  finalizeReversal(id: string, reversalId: string, tx?: Prisma.TransactionClient): RepositoryResponse<{ count: number }> { return this.claims.finalizeReversal(id, reversalId, tx); }
+  markReversalFailure(id: string, state: Extract<ReversalState, 'RETRYABLE' | 'TERMINAL'>, error: string, tx?: Prisma.TransactionClient): RepositoryResponse<{ count: number }> { return this.claims.markReversalFailure(id, state, error, tx); }
+  reclaimStaleReversal(cutoff: Date, tx?: Prisma.TransactionClient): RepositoryResponse<{ count: number }> { return this.claims.reclaimStaleReversal(cutoff, tx); }
 
-  async findByIdempotencyKey(key: string): Promise<import('@/shared/core/either').Either<Failure, TransactionWithOrder | null>> {
-    try {
-      const transaction = await this.prisma.transaction.findFirst({
-        where: { idempotencyKey: key },
-        include: {
-          order: {
-            include: {
-              buyer: { select: { id: true, displayName: true } },
-              seller: { select: { id: true, displayName: true } },
-            },
-          },
-        },
-      });
-      return right(transaction as TransactionWithOrder | null);
-    } catch {
-      return left(new DatabaseError('Failed to find transaction'));
-    }
-  }
+  findTransferFailures(cursor: { updatedAt: Date; id: string } | null = null, limit = DEFAULT_PAGE_SIZE): RepositoryResponse<CursorPage<TransactionWithOrder>> { return this.reconciliation.findTransferFailures(cursor, limit); }
+  markAsFailed(id: string, tx?: Prisma.TransactionClient) { return this.reconciliation.markAsFailed(id, tx); }
+  findByIdempotencyKey(key: string) { return this.reconciliation.findByIdempotencyKey(key); }
+  findByChargeId(chargeId: string) { return this.reconciliation.findByChargeId(chargeId); }
+  findByOrderId(orderId: string) { return this.reconciliation.findByOrderId(orderId); }
+  findPendingRefundRecoveries() { return this.reconciliation.findPendingRefundRecoveries(); }
+  reserveRefund(orderId: string, amount: number, provider: ChargeRefundSnapshot): RepositoryResponse<RefundReservation> { return this.reconciliation.reserveRefund(orderId, amount, provider); }
+  recordRefundProviderId(orderId: string, operationId: string, refundId: string): RepositoryResponse<boolean> { return this.reconciliation.recordRefundProviderId(orderId, operationId, refundId); }
+
+  findExpiredPending(now: Date): RepositoryResponse<ExpiredPendingTransaction[]> { return this.upsert.findExpiredPending(now); }
+  upsertTransaction(data: UpsertTransactionData) { return this.upsert.upsertTransaction(data); }
+  reservePaymentSessionAttempt(data: PaymentSessionAttemptData) { return this.upsert.reservePaymentSessionAttempt(data); }
+  attachPaymentSession(data: Parameters<TransactionUpsertRepository['attachPaymentSession']>[0]) { return this.upsert.attachPaymentSession(data); }
 }

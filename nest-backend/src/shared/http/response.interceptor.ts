@@ -5,7 +5,8 @@ import {
   CallHandler,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { AppError } from '@/shared/core/errors';
+import { AppError, InternalServerError } from '@/shared/core/errors';
+import { Left, Right } from '@/shared/core/either';
 
 @Injectable()
 export class EitherInterceptor<T> implements NestInterceptor<T, T> {
@@ -13,31 +14,24 @@ export class EitherInterceptor<T> implements NestInterceptor<T, T> {
     return new Observable<T>((subscriber) => {
       next.handle().subscribe({
         next: (value) => {
-          if (value && typeof value === 'object' && '_tag' in value) {
-            const either = value as EitherShape;
-            if (either._tag === 'left') {
-              const error = either.value;
-              if (error instanceof AppError) {
-                subscriber.error(error);
-              } else {
-                const err = error as { code?: string; message?: string };
-                subscriber.error(new AppError(err?.code ?? 'UNKNOWN', err?.message ?? 'Erro desconhecido'));
-              }
-              return;
+          if (value instanceof Left) {
+            const error = value.value;
+            if (error instanceof AppError) {
+              subscriber.error(error);
+            } else {
+              subscriber.error(new InternalServerError());
             }
-            subscriber.next(either.value as T);
-          } else {
-            subscriber.next(value as T);
+            return;
           }
+          if (value instanceof Right) {
+            subscriber.next(value.value as T);
+            return;
+          }
+          subscriber.next(value as T);
         },
         error: (err) => subscriber.error(err),
         complete: () => subscriber.complete(),
       });
     });
   }
-}
-
-interface EitherShape {
-  _tag: 'left' | 'right';
-  value: { code?: string; message?: string } | AppError | Record<string, string | number | boolean | null | object | undefined> | string | number | boolean | null | undefined;
 }

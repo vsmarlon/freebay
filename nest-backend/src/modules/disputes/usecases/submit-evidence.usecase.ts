@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, BadRequestError } from '@/shared/core/errors';
-import { Prisma } from '@prisma/client';
-import { DisputeRepository } from '../domain/repositories/dispute.repository';
+import { DisputeStatus, Prisma } from '@prisma/client';
+import { DisputeDatabaseRepository } from '../data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 
 @Injectable()
 export class SubmitEvidenceUseCase {
   constructor(
-    private disputeRepo: DisputeRepository,
+    private disputeRepo: DisputeDatabaseRepository,
     private transitionPolicy: DisputeTransitionPolicy,
   ) {}
 
@@ -32,8 +32,8 @@ export class SubmitEvidenceUseCase {
     }
 
     const updateData = isBuyer
-      ? { buyerEvidence: input.evidence, status: 'AWAITING_SELLER' as const }
-      : { sellerEvidence: input.evidence, status: 'AWAITING_BUYER' as const };
+      ? { buyerEvidence: input.evidence, status: DisputeStatus.AWAITING_SELLER }
+      : { sellerEvidence: input.evidence, status: DisputeStatus.AWAITING_BUYER };
 
     const updateResult = await this.disputeRepo.update(input.disputeId, updateData);
     if (updateResult.isLeft()) return left(updateResult.value);

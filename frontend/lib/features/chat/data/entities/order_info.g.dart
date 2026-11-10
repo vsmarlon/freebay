@@ -6,8 +6,13 @@ part of 'order_info.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_OrderInfo _$OrderInfoFromJson(Map<String, dynamic> json) =>
-    _OrderInfo(status: json['status'] as String);
+_OrderInfo _$OrderInfoFromJson(Map<String, dynamic> json) => _OrderInfo(
+  status: json['status'] as String,
+  productTitle: json['productTitle'] as String?,
+);
 
 Map<String, dynamic> _$OrderInfoToJson(_OrderInfo instance) =>
-    <String, dynamic>{'status': instance.status};
+    <String, dynamic>{
+      'status': instance.status,
+      'productTitle': instance.productTitle,
+    };

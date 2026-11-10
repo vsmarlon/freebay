@@ -1,24 +1,31 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:json_annotation/json_annotation.dart';
 
-part 'user_post_entry.freezed.dart';
 part 'user_post_entry.g.dart';
 
-@freezed
-abstract class UserPostEntry with _$UserPostEntry {
-  const UserPostEntry._();
+@JsonSerializable()
+class UserPostEntry {
+  final PostEntity post;
+  final String? repostId;
+  final DateTime? repostedAt;
+  final UserEntity? repostedBy;
+  final bool isReposted;
+  final int? sharesCount;
 
-  const factory UserPostEntry({
-    required PostEntity post,
-    DateTime? repostedAt,
-    UserEntity? repostedBy,
-    @Default(false) bool isReposted,
-    int? sharesCount,
-  }) = _UserPostEntry;
+  const UserPostEntry({
+    required this.post,
+    this.repostId,
+    this.repostedAt,
+    this.repostedBy,
+    this.isReposted = false,
+    this.sharesCount,
+  });
 
   factory UserPostEntry.fromJson(Map<String, dynamic> json) =>
       _$UserPostEntryFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserPostEntryToJson(this);
 
   PostEntity toPostEntity() {
     return post.copyWith(

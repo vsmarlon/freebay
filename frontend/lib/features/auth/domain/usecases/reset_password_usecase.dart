@@ -1,7 +1,7 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
-import 'package:freebay/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:freebay/features/auth/data/repositories/auth_repository.dart';
 
 class ResetPasswordParams {
   final String email;
@@ -16,7 +16,7 @@ class ResetPasswordParams {
 }
 
 class ResetPasswordUsecase implements Usecase<void, ResetPasswordParams> {
-  final IAuthRepository _repository;
+  final AuthRepository _repository;
 
   ResetPasswordUsecase(this._repository);
 

@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class LocationPickerPage extends StatefulWidget {
   const LocationPickerPage({super.key});
@@ -16,13 +13,12 @@ class LocationPickerPage extends StatefulWidget {
 }
 
 class _LocationPickerPageState extends State<LocationPickerPage> {
-  final _mapController = MapController();
-  LatLng? _selectedPoint;
+  Position? _position;
+  Key _mapKey = UniqueKey();
   bool _isLoading = true;
   String? _errorMsg;
 
-  static const _initialCenter = LatLng(-15.7801, -47.9292); // Brasilia fallback
-  static const _initialZoom = 15.0;
+  static const _initialZoom = 16.0;
 
   @override
   void initState() {
@@ -31,102 +27,146 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
   }
 
   Future<void> _determinePosition() async {
+    setState(() {
+      _isLoading = true;
+      _errorMsg = null;
+    });
     try {
-      final status = await Permission.location.request();
-      if (!status.isGranted && !status.isLimited) {
-        if (mounted) {
-          setState(() {
-            _errorMsg = 'Permissão de localização negada';
-            _selectedPoint = _initialCenter;
-            _isLoading = false;
-          });
-        }
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!mounted) return;
+      if (!serviceEnabled) {
+        _setError(l10n(context).locationServiceRequired);
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition();
+      var permission = await Geolocator.checkPermission();
       if (!mounted) return;
-      final point = LatLng(position.latitude, position.longitude);
-      setState(() {
-        _selectedPoint = point;
-        _isLoading = false;
-      });
-      _mapController.move(point, _initialZoom);
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _selectedPoint = _initialCenter;
-          _isLoading = false;
-        });
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (!mounted) return;
       }
+      if (permission == LocationPermission.deniedForever) {
+        _setError(l10n(context).locationPermissionDeniedForever);
+        return;
+      }
+      if (permission == LocationPermission.denied) {
+        _setError(l10n(context).locationPermissionDenied);
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+      if (!mounted) return;
+      setState(() {
+        _position = position;
+        _isLoading = false;
+        // ponytail: remount only on a fresh fix so initialCenter recenters it.
+        _mapKey = UniqueKey();
+      });
+    } catch (_) {
+      if (mounted) _setError(l10n(context).locationUnavailable);
     }
   }
 
-  void _onMapTap(TapPosition tapPosition, LatLng latLng) {
-    setState(() => _selectedPoint = latLng);
+  void _setError(String message) {
+    if (!mounted) return;
+    setState(() {
+      _errorMsg = message;
+      _isLoading = false;
+      _position = null;
+    });
   }
 
-  void _sendLocation() {
-    if (_selectedPoint == null) return;
-    Navigator.pop(context, {
-      'lat': _selectedPoint!.latitude,
-      'lng': _selectedPoint!.longitude,
-      'address': null,
-    });
+  Future<void> _sendLocation() async {
+    final position = _position;
+    if (position == null || _isLoading) return;
+
+    setState(() => _isLoading = true);
+    if (!mounted) return;
+    if (mounted) {
+      Navigator.pop(context, {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'accuracyMeters': position.accuracy,
+        'capturedAt': DateTime.fromMillisecondsSinceEpoch(
+          position.timestamp.toUtc().millisecondsSinceEpoch,
+          isUtc: true,
+        ).toIso8601String(),
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final center = _selectedPoint ?? _initialCenter;
+    final strings = l10n(context);
+    final position = _position;
+    final center = position == null
+        ? null
+        : LatLng(position.latitude, position.longitude);
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'LOCALIZAÇÃO',
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: context.textPrimary),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          if (_errorMsg != null)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              color: AppColors.warning.withValues(alpha: 0.15),
-              child: Text(
-                _errorMsg!,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.warning,
-                  fontWeight: FontWeight.w600,
-                ),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: strings.chatLocation,
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
+                onTap: () => Navigator.pop(context),
               ),
             ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Stack(
-                    children: [
-                      FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: center,
-                          initialZoom: _initialZoom,
-                          onTap: _onMapTap,
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.freebay.app',
+            if (_errorMsg != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                color: AppColors.warning.withAlpha(40),
+                child: Text(
+                  _errorMsg!,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            Expanded(
+              child: _isLoading
+                  ? const ShimmerScope(
+                      child: ShimmerBlock(height: double.infinity),
+                    )
+                  : center == null
+                  ? Center(
+                      child: AppButton(
+                        label: strings.commonRetry.toUpperCase(),
+                        onPressed: _determinePosition,
+                      ),
+                    )
+                  : Stack(
+                      children: [
+                        FlutterMap(
+                          key: _mapKey,
+                          options: MapOptions(
+                            initialCenter: center,
+                            initialZoom: _initialZoom,
                           ),
-                          if (_selectedPoint != null)
+                          children: [
+                            TileLayer(
+                              urlTemplate:
+                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName: 'com.freebay.app',
+                            ),
                             MarkerLayer(
                               markers: [
                                 Marker(
-                                  point: _selectedPoint!,
+                                  point: center,
                                   width: 40,
                                   height: 40,
                                   child: const Icon(
@@ -137,28 +177,59 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                                 ),
                               ],
                             ),
-                        ],
+                          ],
+                        ),
+                        Positioned(
+                          right: 16,
+                          bottom: 16,
+                          child: BrutalistIconButton(
+                            icon: Icons.my_location,
+                            semanticLabel: strings.locationUseCurrent,
+                            size: 48,
+                            onTap: _determinePosition,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: context.surfaceColor,
+                border: Border(
+                  top: BorderSide(color: context.borderColor, width: 2),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_position != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          strings.locationAccuracy(
+                            _position!.accuracy.toStringAsFixed(0),
+                          ),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.textSecondary,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: context.surfaceColor,
-              border: Border(
-                top: BorderSide(color: context.borderColor, width: 2),
+                    AppButton(
+                      label: strings.chatConfirmSendLocation,
+                      onPressed: _position != null && !_isLoading
+                          ? _sendLocation
+                          : null,
+                    ),
+                  ],
+                ),
               ),
             ),
-            child: SafeArea(
-              top: false,
-              child: AppButton(
-                label: 'ENVIAR LOCALIZAÇÃO',
-                onPressed: _selectedPoint != null ? _sendLocation : null,
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

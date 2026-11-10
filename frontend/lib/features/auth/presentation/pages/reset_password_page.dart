@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/centered_form_wrapper.dart';
+import 'package:freebay/features/auth/presentation/widgets/auth_header.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
   final String token;
@@ -25,9 +21,9 @@ class ResetPasswordPage extends ConsumerStatefulWidget {
 }
 
 class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
-  final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -39,141 +35,133 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   }
 
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final strings = l10n(context);
+    if (!_formKey.currentState!.validate()) return;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    final result = await ref
-        .read(authRepositoryProvider)
+    final success = await ref
+        .read(authControllerProvider.notifier)
         .resetPassword(
-          widget.email,
-          widget.token,
-          _passwordController.text.trim(),
+          email: widget.email,
+          token: widget.token,
+          newPassword: _passwordController.text,
         );
-
-    result.fold(
-      (failure) {
-        if (mounted) {
-          setState(() => _errorMessage = failure.message);
-        }
-      },
-      (_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Senha redefinida com sucesso!')),
-          );
-          context.go('/login');
-        }
-      },
-    );
 
     if (mounted) {
       setState(() => _isLoading = false);
+      if (success) {
+        AppSnackbar.success(context, strings.authPasswordResetSuccess);
+        context.go(AppRoutes.login);
+      } else {
+        setState(() {
+          _errorMessage = strings.authResetPasswordFailed;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'REDEFINIR SENHA',
-            leading: GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: const Icon(Icons.arrow_back, size: 20),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              AuthHeader(
+                title: strings.authResetPassword.toUpperCase(),
+                onBack: () => context.pop(),
               ),
-            ),
-          ),
-          Expanded(
-            child: CenteredFormWrapper(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Crie uma nova senha',
-                      style: TextStyle(
-                        fontFamily: AppTypography.headlineFontFamily,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        color: context.textPrimary,
-                      ),
-                    ),
-                    Spacing.vSm,
-                    Text(
-                      'Escolha uma senha forte com pelo menos 8 caracteres.',
-                      style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontSize: 14,
-                        color: AppColors.mediumGray,
-                      ),
-                    ),
-                    Spacing.vXl,
-                    AppTextField(
-                      controller: _passwordController,
-                      label: 'Nova senha',
-                      hint: 'Mínimo 8 caracteres',
-                      obscureText: true,
-                      showPasswordToggle: true,
-                      prefixIcon: Icons.lock_outline,
-                      validator: (v) {
-                        if (v == null || v.isEmpty)
-                          return 'Informe a nova senha';
-                        if (v.length < 8) return 'Mínimo 8 caracteres';
-                        return null;
-                      },
-                    ),
-                    Spacing.vMd,
-                    AppTextField(
-                      controller: _confirmController,
-                      label: 'Confirmar nova senha',
-                      hint: 'Repita a nova senha',
-                      obscureText: true,
-                      showPasswordToggle: true,
-                      prefixIcon: Icons.lock_outline,
-                      validator: (v) {
-                        if (v == null || v.isEmpty)
-                          return 'Confirme a nova senha';
-                        if (v != _passwordController.text) {
-                          return 'As senhas não coincidem';
-                        }
-                        return null;
-                      },
-                    ),
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        _errorMessage!,
-                        style: const TextStyle(
-                          color: AppColors.error,
-                          fontSize: 13,
+              Expanded(
+                child: CenteredFormWrapper(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          strings.authCreateNewPassword,
+                          style: TextStyle(
+                            fontFamily: AppTypography.headlineFontFamily,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: context.textPrimary,
+                          ),
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                    Spacing.vLg,
-                    AppButton(
-                      label: 'Redefinir senha',
-                      isLoading: _isLoading,
-                      onPressed: _submit,
+                        Spacing.vSm,
+                        Text(
+                          strings.authStrongPasswordHint,
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontFamily,
+                            fontSize: 14,
+                            color: context.textSecondary,
+                          ),
+                        ),
+                        Spacing.vXl,
+                        AppTextField(
+                          controller: _passwordController,
+                          label: strings.authNewPassword,
+                          hint: strings.authPasswordMinLength,
+                          obscureText: true,
+                          showPasswordToggle: true,
+                          prefixIcon: Icons.lock_outline,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return strings.authNewPasswordRequired;
+                            }
+                            if (v.length < 8) {
+                              return strings.authPasswordMinLength;
+                            }
+                            return null;
+                          },
+                        ),
+                        Spacing.vMd,
+                        AppTextField(
+                          controller: _confirmController,
+                          label: strings.authConfirmNewPassword,
+                          hint: strings.authRepeatNewPassword,
+                          obscureText: true,
+                          showPasswordToggle: true,
+                          prefixIcon: Icons.lock_outline,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return strings.authConfirmNewPasswordRequired;
+                            }
+                            if (v != _passwordController.text) {
+                              return strings.authPasswordMismatch;
+                            }
+                            return null;
+                          },
+                        ),
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: AppColors.error,
+                              fontSize: 13,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                        Spacing.vLg,
+                        AppButton(
+                          label: strings.authResetPassword,
+                          isLoading: _isLoading,
+                          onPressed: _submit,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

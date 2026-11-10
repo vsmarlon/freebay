@@ -1,0 +1,1222 @@
+[
+  {
+    "file": "frontend/lib/core/components/app_card.dart",
+    "specifier": "package:freebay/features/product/domain/product_filters.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/components/app_shell.dart",
+    "specifier": "package:freebay/features/auth/data/entities/user_entity.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/components/app_shell.dart",
+    "specifier": "package:freebay/features/auth/presentation/controllers/auth_controller.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/components/app_shell.dart",
+    "specifier": "package:freebay/features/chat/presentation/providers/chat_socket_provider.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/components/app_shell.dart",
+    "specifier": "package:freebay/features/social/presentation/widgets/feed_drawer.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/components/image_picker_grid.dart",
+    "specifier": "package:freebay/features/social/presentation/widgets/local_image_inspector.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/components/username_field.dart",
+    "specifier": "package:freebay/features/auth/presentation/controllers/auth_controller.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/app_router.dart",
+    "specifier": "package:freebay/features/auth/data/entities/user_entity.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/app_router.dart",
+    "specifier": "package:freebay/features/auth/presentation/controllers/auth_controller.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/app_router.dart",
+    "specifier": "package:freebay/features/chat/presentation/pages/chat_list_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/app_router.dart",
+    "specifier": "package:freebay/features/product/presentation/pages/explorar_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/app_router.dart",
+    "specifier": "package:freebay/features/product/presentation/pages/product_list_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/app_router.dart",
+    "specifier": "package:freebay/features/profile/presentation/pages/profile_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/app_router.dart",
+    "specifier": "package:freebay/features/social/presentation/pages/feed_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/app_router.dart",
+    "specifier": "package:freebay/features/wallet/presentation/pages/wallet_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/auth_routes.dart",
+    "specifier": "package:freebay/features/auth/presentation/pages/complete_profile_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/auth_routes.dart",
+    "specifier": "package:freebay/features/auth/presentation/pages/login_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/auth_routes.dart",
+    "specifier": "package:freebay/features/auth/presentation/pages/password_recovery_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/auth_routes.dart",
+    "specifier": "package:freebay/features/auth/presentation/pages/register_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/auth_routes.dart",
+    "specifier": "package:freebay/features/auth/presentation/pages/reset_password_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/auth_routes.dart",
+    "specifier": "package:freebay/features/auth/presentation/pages/splash_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/auth_routes.dart",
+    "specifier": "package:freebay/features/onboarding/presentation/pages/onboarding_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/auth_routes.dart",
+    "specifier": "package:freebay/features/onboarding/presentation/pages/welcome_setup_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/chat_routes.dart",
+    "specifier": "package:freebay/features/chat/presentation/pages/archived_chats_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/chat_routes.dart",
+    "specifier": "package:freebay/features/chat/presentation/pages/chat_conversation_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/chat_routes.dart",
+    "specifier": "package:freebay/features/chat/presentation/pages/conversation_details_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/chat_routes.dart",
+    "specifier": "package:freebay/features/chat/presentation/pages/new_chat_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/chat_routes.dart",
+    "specifier": "package:freebay/features/media_editor/media_editor.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/order_routes.dart",
+    "specifier": "package:freebay/features/dispute/presentation/pages/create_dispute_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/order_routes.dart",
+    "specifier": "package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/order_routes.dart",
+    "specifier": "package:freebay/features/dispute/presentation/pages/dispute_list_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/order_routes.dart",
+    "specifier": "package:freebay/features/orders/presentation/pages/order_detail_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/order_routes.dart",
+    "specifier": "package:freebay/features/orders/presentation/pages/orders_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/product_routes.dart",
+    "specifier": "package:freebay/features/cart/presentation/pages/cart_checkout_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/product_routes.dart",
+    "specifier": "package:freebay/features/product/presentation/pages/cart_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/product_routes.dart",
+    "specifier": "package:freebay/features/product/presentation/pages/create_product_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/product_routes.dart",
+    "specifier": "package:freebay/features/product/presentation/pages/edit_product_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/product_routes.dart",
+    "specifier": "package:freebay/features/product/presentation/pages/product_detail_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/notifications/presentation/pages/notifications_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/payments/presentation/pages/payment_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/product/presentation/pages/my_products_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/profile/presentation/pages/blocked_users_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/profile/presentation/pages/close_friends_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/profile/presentation/pages/edit_profile_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/profile/presentation/pages/favorites_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/profile/presentation/pages/followers_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/profile/presentation/pages/following_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/profile/presentation/pages/privacy_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/profile/presentation/pages/purchases_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/profile/presentation/pages/saved_posts_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/reviews/presentation/pages/create_review_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/reviews/presentation/pages/user_reviews_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/social/presentation/pages/liked_posts_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/social/presentation/pages/my_posts_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/profile_routes.dart",
+    "specifier": "package:freebay/features/stories/stories.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/social_routes.dart",
+    "specifier": "package:freebay/features/profile/presentation/pages/user_profile_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/social_routes.dart",
+    "specifier": "package:freebay/features/social/data/entities/post_entity.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/social_routes.dart",
+    "specifier": "package:freebay/features/social/presentation/pages/comment_context_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/social_routes.dart",
+    "specifier": "package:freebay/features/social/presentation/pages/create_post_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/social_routes.dart",
+    "specifier": "package:freebay/features/social/presentation/pages/people_search_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/social_routes.dart",
+    "specifier": "package:freebay/features/social/presentation/pages/post_details_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/social_routes.dart",
+    "specifier": "package:freebay/features/social/presentation/pages/post_search_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/social_routes.dart",
+    "specifier": "package:freebay/features/stories/stories.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/support_routes.dart",
+    "specifier": "package:freebay/features/help/presentation/pages/faq_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/features/auth/domain/usecases/biometric_login_usecase.dart",
+    "specifier": "package:freebay/features/auth/data/repositories/auth_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "frontend/lib/features/auth/domain/usecases/complete_profile_usecase.dart",
+    "specifier": "package:freebay/features/auth/data/repositories/auth_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "frontend/lib/features/auth/domain/usecases/get_current_user_usecase.dart",
+    "specifier": "package:freebay/features/auth/data/repositories/auth_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "frontend/lib/features/auth/domain/usecases/google_auth_usecase.dart",
+    "specifier": "package:freebay/features/auth/data/repositories/auth_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "frontend/lib/features/auth/domain/usecases/login_usecase.dart",
+    "specifier": "package:freebay/features/auth/data/repositories/auth_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "frontend/lib/features/auth/domain/usecases/register_usecase.dart",
+    "specifier": "package:freebay/features/auth/data/repositories/auth_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "frontend/lib/features/auth/domain/usecases/request_password_recovery_usecase.dart",
+    "specifier": "package:freebay/features/auth/data/repositories/auth_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "frontend/lib/features/auth/domain/usecases/reset_password_usecase.dart",
+    "specifier": "package:freebay/features/auth/data/repositories/auth_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "frontend/lib/features/auth/domain/usecases/verify_password_recovery_code_usecase.dart",
+    "specifier": "package:freebay/features/auth/data/repositories/auth_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "frontend/lib/features/product/domain/usecases/create_product_usecase.dart",
+    "specifier": "package:freebay/features/product/data/repositories/product_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "frontend/lib/features/product/domain/usecases/get_products_usecase.dart",
+    "specifier": "package:freebay/features/product/data/repositories/product_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "frontend/lib/features/social/domain/usecases/get_post_details_usecase.dart",
+    "specifier": "package:freebay/features/social/data/repositories/social_repository.dart",
+    "rule": "F1"
+  },
+  {
+    "file": "nest-backend/src/modules/admin/admin.controller.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/admin/usecases/list-reports.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/admin/usecases/list-transfer-failures.usecase.ts",
+    "specifier": "@/modules/payments/data/repositories/transaction-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/admin/usecases/remove-content.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/admin/usecases/remove-content.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/admin/usecases/resolve-report.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/admin/usecases/suspend-user.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/auth/domain/repositories/magic-link.repository.ts",
+    "specifier": "@prisma/client",
+    "rule": "B5"
+  },
+  {
+    "file": "nest-backend/src/modules/auth/services/session-token.service.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/auth/usecases/apple-auth.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/auth/usecases/google-auth.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/auth/usecases/logout-session.usecase.ts",
+    "specifier": "@/modules/notifications/data/repositories/notification-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/auth/usecases/register.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/bug-reports/usecases/create-bug-report.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/add-to-cart.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/checkout-cart.usecase.ts",
+    "specifier": "@/modules/payments/data/repositories/payment-group-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/checkout-cart.usecase.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/checkout-cart.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/checkout-cart/checkout-cart-compensation.ts",
+    "specifier": "@/modules/payments/data/repositories/payment-group-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/checkout-cart/checkout-cart-compensation.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/checkout-cart/checkout-cart-compensation.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/checkout-cart/checkout-cart-planner.ts",
+    "specifier": "@/modules/payments/data/repositories/payment-group-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/checkout-cart/checkout-cart-planner.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/checkout-cart/checkout-cart-reservation.ts",
+    "specifier": "@/modules/payments/data/repositories/payment-group-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/checkout-cart/checkout-cart-reservation.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/get-checkout-recovery.usecase.ts",
+    "specifier": "@/modules/payments/data/repositories/payment-group-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/cart/usecases/get-checkout-recovery.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/category/usecases/get-category.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/chat.controller.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/chat.gateway.ts",
+    "specifier": "@/modules/users/data/repositories/block-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/services/chat-thread-access.service.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/accept-conversation.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/archive-conversation.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/chat-usecases.module.ts",
+    "specifier": "@/modules/users/data/repositories/block-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/delete-conversation.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/forward-messages.usecase.ts",
+    "specifier": "@/modules/users/data/repositories/block-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/forward-messages.usecase.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/forward-messages.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/get-conversation-media.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/get-messages.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/get-starred-messages.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/location-message-metadata.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/mark-as-read.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/send-message.usecase.ts",
+    "specifier": "@/modules/users/data/repositories/block-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/send-message.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/set-conversation-background.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/set-conversation-theme.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/set-conversation-theme.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/start-conversation.usecase.ts",
+    "specifier": "@/modules/users/data/repositories/block-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/start-conversation.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/test-fixtures.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/toggle-reaction.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/toggle-star.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/view-once.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/disputes.controller.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/services/dispute-resolution-execution.service.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/services/dispute-transition.policy.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/usecases/open-dispute.usecase.ts",
+    "specifier": "../../notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/usecases/open-dispute.usecase.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/usecases/open-dispute.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/usecases/resolve-dispute.usecase.ts",
+    "specifier": "../../notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/usecases/resolve-dispute.usecase.ts",
+    "specifier": "@/modules/payments/data/repositories/transaction-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/usecases/resolve-dispute.usecase.ts",
+    "specifier": "@/modules/payments/services/seller-payout.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/usecases/resolve-dispute.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/usecases/submit-evidence.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/disputes/usecases/withdraw-dispute.usecase.ts",
+    "specifier": "../../notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/media/services/media-access.service.ts",
+    "specifier": "@/modules/social/data/repositories/post-query-helpers",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/media/services/media-access.service.ts",
+    "specifier": "@/modules/stories/data/repositories/story-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/media/services/media-access.service.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/notifications/notifications.controller.ts",
+    "specifier": "./data/repositories/notification-database.repository",
+    "rule": "B3"
+  },
+  {
+    "file": "nest-backend/src/modules/notifications/services/notification.service.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/notifications/services/notification.service.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/notifications/usecases/get-notifications.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/orders.controller.ts",
+    "specifier": "./data/repositories/order-database.repository",
+    "rule": "B3"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/orders.controller.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/usecases/cancel-order.usecase.ts",
+    "specifier": "@/modules/notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/usecases/cancel-order.usecase.ts",
+    "specifier": "@/modules/payments/data/repositories/transaction-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/usecases/cancel-order.usecase.ts",
+    "specifier": "@/modules/payments/services/seller-payout.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/usecases/cancel-order.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/usecases/cancel-order.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/usecases/confirm-delivery.usecase.ts",
+    "specifier": "@/modules/payments/services/seller-payout.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/usecases/confirm-delivery.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/usecases/create-order.usecase.ts",
+    "specifier": "@/modules/notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/usecases/get-order.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/usecases/mark-as-delivered.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/orders/usecases/mark-as-shipped.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/payments.module.ts",
+    "specifier": "../orders/data/repositories/order-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/payments.module.ts",
+    "specifier": "../products/data/repositories/product-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/payments.module.ts",
+    "specifier": "../wallet/data/repositories/wallet-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/services/seller-payout.service.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/services/seller-payout.service.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/services/seller-payout.service.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/create-payment-intent.usecase.ts",
+    "specifier": "../../orders/data/repositories/order-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/create-payment-intent.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/create-payment-session.usecase.ts",
+    "specifier": "../../orders/data/repositories/order-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/create-payment-session.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/expire-checkout-group.usecase.ts",
+    "specifier": "../../orders/data/repositories/order-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/expire-checkout-group.usecase.ts",
+    "specifier": "../../products/data/repositories/product-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/expire-checkout-group.usecase.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-group-webhook.usecase.ts",
+    "specifier": "../../notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-group-webhook.usecase.ts",
+    "specifier": "../../orders/data/repositories/order-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-group-webhook.usecase.ts",
+    "specifier": "../../products/data/repositories/product-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-group-webhook.usecase.ts",
+    "specifier": "../../wallet/data/repositories/wallet-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-group-webhook.usecase.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-group-webhook.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-refund.usecase.ts",
+    "specifier": "../../orders/data/repositories/order-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-refund.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-webhook.usecase.ts",
+    "specifier": "../../notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-webhook.usecase.ts",
+    "specifier": "../../orders/data/repositories/order-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-webhook.usecase.ts",
+    "specifier": "../../products/data/repositories/product-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-webhook.usecase.ts",
+    "specifier": "../../wallet/data/repositories/wallet-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-webhook.usecase.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/payments/usecases/process-webhook.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/products/usecases/create-product/create-product.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/products/usecases/update-product/update-product.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/reports/usecases/create-report.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/reviews/reviews.controller.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/reviews/reviews.service.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/reviews/usecases/can-review-order/can-review-order.dto.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/reviews/usecases/can-review-order/can-review-order.usecase.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/reviews/usecases/can-review-order/can-review-order.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/reviews/usecases/create-review/create-review.dto.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/reviews/usecases/create-review/create-review.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/reviews/usecases/get-user-reviews/get-user-reviews.dto.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/reviews/usecases/get-user-reviews/get-user-reviews.usecase.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/social/social-write.controller.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/social/usecases/approve-comment.usecase.ts",
+    "specifier": "@/modules/notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/social/usecases/comment.usecase.ts",
+    "specifier": "@/modules/notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/social/usecases/comment.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/social/usecases/create-post.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/social/usecases/create-quote.usecase.ts",
+    "specifier": "@/modules/notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/social/usecases/manage-comment-interactions.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/social/usecases/manage-comment-visibility.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/social/usecases/share-post.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/stories/stories.controller.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/stories/usecases/create-story.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/account-deletion.task.ts",
+    "specifier": "@/modules/users/data/repositories/account-lifecycle-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/account-deletion.task.ts",
+    "specifier": "@/modules/users/usecases/request-account-deletion.usecase",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/checkout-expiry.task.ts",
+    "specifier": "@/modules/payments/usecases/expire-checkout-group.usecase",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/dispute-cleanup.task.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/escrow-release.task.ts",
+    "specifier": "@/modules/payments/services/seller-payout.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/escrow-release.task.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/escrow-release.task.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/magic-link-cleanup.task.ts",
+    "specifier": "../auth/data/repositories/magic-link-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/refund-recovery.task.ts",
+    "specifier": "@/modules/payments/usecases/process-refund.usecase",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/story-cleanup.task.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/tasks.module.ts",
+    "specifier": "../auth/data/repositories/magic-link-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/tasks.module.ts",
+    "specifier": "../disputes/services/dispute-resolution-execution.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/transfer-reconciliation.task.ts",
+    "specifier": "@/modules/payments/data/repositories/transaction-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/transfer-reconciliation.task.ts",
+    "specifier": "@/modules/payments/services/seller-payout.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/tasks/transfer-reconciliation.task.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/users/data/repositories/user-database.repository.ts",
+    "specifier": "@/modules/social/data/repositories/post-query-helpers",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/users/data/repositories/user-database.repository.ts",
+    "specifier": "@/modules/stories/data/repositories/story-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/users/usecases/get-user-stats.usecase.ts",
+    "specifier": "@/modules/orders/data/repositories/order-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/users/usecases/update-fcm-token.usecase.ts",
+    "specifier": "@/modules/notifications/data/repositories/notification-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/users/usecases/update-profile.usecase.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/users/usecases/user-test-fixtures.ts",
+    "specifier": "@prisma/client",
+    "rule": "B4"
+  },
+  {
+    "file": "nest-backend/src/modules/users/usecases/verify-phone.usecase.ts",
+    "specifier": "@/shared/infra/prisma/prisma.service",
+    "rule": "B2"
+  },
+  {
+    "file": "nest-backend/src/modules/users/users-account.controller.ts",
+    "specifier": "@/modules/users",
+    "rule": "B3"
+  },
+  {
+    "file": "nest-backend/src/modules/users/users-discovery.controller.ts",
+    "specifier": "./data/repositories/block-database.repository",
+    "rule": "B3"
+  },
+  {
+    "file": "nest-backend/src/modules/users/users.module.ts",
+    "specifier": "@/modules/orders/data/repositories/order-database.repository",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/wallet/domain/repositories/wallet.repository.ts",
+    "specifier": "@prisma/client",
+    "rule": "B5"
+  },
+  {
+    "file": "nest-backend/src/modules/wallet/wallet.controller.ts",
+    "specifier": "./data/repositories/wallet-database.repository",
+    "rule": "B3"
+  },
+  {
+    "file": "nest-backend/src/modules/chat/usecases/send-message.usecase.ts",
+    "specifier": "@/modules/notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/social/usecases/create-post.usecase.ts",
+    "specifier": "@/modules/notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "nest-backend/src/modules/users/usecases/follow-user.usecase.ts",
+    "specifier": "../../notifications/services/notification.service",
+    "rule": "B1"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/auth_routes.dart",
+    "specifier": "package:freebay/features/auth/presentation/pages/recovery_code_page.dart",
+    "rule": "F2"
+  },
+  {
+    "file": "frontend/lib/core/router/routes/chat_routes.dart",
+    "specifier": "package:freebay/features/chat/presentation/pages/chat_location_page.dart",
+    "rule": "F2"
+  }
+]

@@ -1,18 +1,25 @@
-import { Prisma } from '@prisma/client';
+import { Condition, Prisma, ProductStatus } from '@prisma/client';
 
 export const PRODUCT_LIST_INCLUDE = {
-  seller: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
-  images: { orderBy: { order: 'asc' as const }, take: 1 },
+  seller: { select: { id: true, displayName: true, avatarUrl: true, avatarBlurHash: true, isVerified: true } },
+  media: { orderBy: { order: 'asc' as const }, take: 1 },
 } satisfies Prisma.ProductInclude;
 
 export const PRODUCT_DETAIL_INCLUDE = {
-  seller: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true, bio: true, city: true, state: true, createdAt: true } },
+  seller: { select: { id: true, displayName: true, avatarUrl: true, avatarBlurHash: true, isVerified: true, bio: true, city: true, state: true, createdAt: true } },
   category: true,
-  images: { orderBy: { order: 'asc' as const } },
+  media: { orderBy: { order: 'asc' as const } },
 } satisfies Prisma.ProductInclude;
 
 export type ProductListPayload = Prisma.ProductGetPayload<{ include: typeof PRODUCT_LIST_INCLUDE }>;
 export type ProductDetailPayload = Prisma.ProductGetPayload<{ include: typeof PRODUCT_DETAIL_INCLUDE }>;
+
+export enum ProductSort {
+  RECENT = 'recent',
+  PRICE_ASC = 'price_asc',
+  PRICE_DESC = 'price_desc',
+  POPULAR = 'popular',
+}
 
 export interface FindManyParams {
   cursor?: string;
@@ -21,4 +28,9 @@ export interface FindManyParams {
   categoryId?: string;
   minPrice?: number;
   maxPrice?: number;
+  condition?: Condition;
+  sort?: ProductSort;
 }
+
+export const EDITABLE_PRODUCT_STATUSES = [ProductStatus.ACTIVE, ProductStatus.PAUSED] as const;
+export type EditableProductStatus = (typeof EDITABLE_PRODUCT_STATUSES)[number];

@@ -1,0 +1,14 @@
+{
+  "flow": "product_detail",
+  "device": null,
+  "recorded_at": null,
+  "thresholds": {
+    "p90_frame_build_ms": 8,
+    "worst_frame_build_ms": 32,
+    "p90_frame_rasterizer_ms": 8,
+    "worst_frame_rasterizer_ms": 32,
+    "missed_frame_budget_count": 0,
+    "regression_tolerance_pct": 20
+  },
+  "baseline": null
+}

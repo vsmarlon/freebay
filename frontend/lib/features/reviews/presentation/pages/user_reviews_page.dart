@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
 import 'package:freebay/features/reviews/domain/usecases/get_user_reviews_usecase.dart';
 import 'package:freebay/features/reviews/presentation/providers/review_providers.dart';
 import 'package:freebay/features/reviews/presentation/widgets/review_card.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 final userReviewsProvider = FutureProvider.family<ReviewListResponse, String>((
   ref,
@@ -19,10 +16,7 @@ final userReviewsProvider = FutureProvider.family<ReviewListResponse, String>((
 ) async {
   final usecase = ref.watch(getUserReviewsUsecaseProvider);
   final result = await usecase(GetUserReviewsParams(userId: userId));
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (response) => response,
-  );
+  return result.fold((failure) => throw failure, (response) => response);
 });
 
 class UserReviewsPage extends ConsumerStatefulWidget {
@@ -38,9 +32,9 @@ class UserReviewsPage extends ConsumerStatefulWidget {
 class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
   final List<ReviewEntity> _reviews = [];
   bool _isLoading = false;
-  bool _hasMore = true;
+  bool _hasMore = false;
   int _offset = 0;
-  final int _limit = 10;
+  static const int _limit = 20;
 
   @override
   void initState() {
@@ -48,12 +42,16 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
     _loadReviews();
   }
 
-  Future<void> _loadReviews() async {
-    if (_isLoading || !_hasMore) return;
-
+  Future<void> _loadReviews({bool refresh = false}) async {
+    if (_isLoading) return;
+    if (refresh) {
+      _offset = 0;
+      _reviews.clear();
+    }
     setState(() => _isLoading = true);
 
-    final result = await ref.read(getUserReviewsUsecaseProvider)(
+    final usecase = ref.read(getUserReviewsUsecaseProvider);
+    final result = await usecase(
       GetUserReviewsParams(
         userId: widget.userId,
         limit: _limit,
@@ -61,102 +59,76 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
       ),
     );
 
-    result.fold(
-      (failure) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(failure.message),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      },
-      (response) {
-        setState(() {
-          _reviews.addAll(response.reviews);
-          _hasMore = response.hasMore;
-          _offset += response.reviews.length;
-        });
-      },
-    );
+    if (!mounted) return;
+    setState(() => _isLoading = false);
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _refresh() async {
-    setState(() {
-      _reviews.clear();
-      _offset = 0;
-      _hasMore = true;
+    result.fold((failure) {}, (response) {
+      setState(() {
+        _reviews.addAll(response.reviews);
+        _hasMore = response.hasMore;
+        _offset += response.reviews.length;
+      });
     });
-    await _loadReviews();
   }
+
+  Future<void> _refresh() => _loadReviews(refresh: true);
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final isDark = context.isDark;
     return Scaffold(
-      backgroundColor: context.surfaceMidColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'AVALIAÇÕES',
-            subtitle: widget.userName,
-            leading: GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: strings.reviewsTitle.toUpperCase(),
+              subtitle: widget.userName,
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
+                onTap: () => context.pop(),
               ),
             ),
-          ),
-          BrutalistBreadcrumb(items: context.breadcrumbs),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _refresh,
-              color: AppColors.primaryContainer,
-              child: _buildContent(isDark),
+            BrutalistBreadcrumb(items: context.breadcrumbs),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                color: AppColors.primaryContainer,
+                child: _buildContent(isDark, context),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildContent(bool isDark) {
+  Widget _buildContent(bool isDark, BuildContext context) {
+    final strings = l10n(context);
     if (_reviews.isEmpty && _isLoading) {
       return SkeletonPage(
         child: SkeletonList(
           itemCount: 4,
-          itemBuilder: (_, i) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          itemBuilder: (_, i) => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     ShimmerBlock(width: 40, height: 40),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             ShimmerBlock(height: 14, width: 16),
-                            const SizedBox(width: 2),
+                            SizedBox(width: 2),
                             ShimmerBlock(height: 14, width: 16),
-                            const SizedBox(width: 2),
+                            SizedBox(width: 2),
                             ShimmerBlock(height: 14, width: 16),
                           ],
                         ),
@@ -164,9 +136,9 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                ShimmerBlock(height: 14, width: double.infinity),
-                const SizedBox(height: 4),
+                SizedBox(height: 8),
+                ShimmerBlock(height: 14),
+                SizedBox(height: 4),
                 ShimmerBlock(height: 14, width: 200),
               ],
             ),
@@ -176,10 +148,10 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
     }
 
     if (_reviews.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.rate_review_outlined,
-        title: 'NENHUMA AVALIAÇÃO',
-        subtitle: 'Este usuário ainda não recebeu avaliações.',
+        title: strings.reviewsEmptyTitle,
+        subtitle: strings.reviewsEmptyBody,
       );
     }
 
@@ -189,9 +161,11 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
       itemBuilder: (context, index) {
         if (index >= _reviews.length) {
           _loadReviews();
-          return const Padding(
-            padding: EdgeInsets.all(16),
-            child: ShimmerBlock(height: 60),
+          return const ShimmerScope(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: ShimmerBlock(height: 60),
+            ),
           );
         }
 
@@ -202,7 +176,7 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
             review: review,
             onTapUser: () {
               if (review.reviewer != null) {
-                context.push('/user/${review.reviewer!.id}');
+                context.push(AppRoutes.userPath(review.reviewer!.id));
               }
             },
           ),

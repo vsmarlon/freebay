@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterPhoneUseCase } from './register-phone.usecase';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { PhoneVerificationRepository } from '../domain/repositories/phone-verification.repository';
+import { UserDatabaseRepository } from '@/modules/users';
+import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { SmsService } from '../services/sms.service';
 import { right, left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { DatabaseError } from '@/shared/core/errors';
 
 const mockUserRepository = {
   update: jest.fn(),
@@ -29,8 +29,8 @@ describe('RegisterPhoneUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RegisterPhoneUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
-        { provide: PhoneVerificationRepository, useValue: mockPhoneVerificationRepository },
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: PhoneVerificationDatabaseRepository, useValue: mockPhoneVerificationRepository },
         { provide: SmsService, useValue: mockSmsService },
       ],
     }).compile();
@@ -89,7 +89,7 @@ describe('RegisterPhoneUseCase', () => {
   });
 
   it('propagates a repository failure', async () => {
-    mockPhoneVerificationRepository.create.mockResolvedValue(left(new AppError('DB_ERROR', 'fail')));
+    mockPhoneVerificationRepository.create.mockResolvedValue(left(new DatabaseError('fail')));
     const result = await sut.execute({ userId: 'user-1', phone: '11999999999' });
     expect(result.isLeft()).toBe(true);
   });

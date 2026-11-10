@@ -2,13 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-
-export interface ResolvedChatThread {
-  orderId?: string;
-  directConversationId?: string;
-  otherUserId: string;
-  orderStatus?: string;
-}
+import { ResolvedChatThread } from '../types/chat.types';
 
 @Injectable()
 export class ChatThreadAccessService {

@@ -1,102 +1,192 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/shared/utils/media_url.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/models/cursor_page.dart';
 
-final userPostsProvider = FutureProvider.family<List<PostEntity>, String>((
-  ref,
-  userId,
-) async {
-  final repository = ref.watch(socialRepositoryProvider);
-  final result = await repository.getPostsByUser(userId);
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (posts) => posts,
-  );
-});
+final userPostsProvider =
+    FutureProvider.family<CursorPage<PostEntity>, String?>((ref, userId) async {
+      if (userId == null) return const CursorPage.empty();
+      final repository = ref.watch(socialRepositoryProvider);
+      final result = await repository.getPostsByUser(userId);
+      return result.fold((failure) => throw failure, (page) => page);
+    });
 
-class MyPostsPage extends ConsumerWidget {
+class MyPostsPage extends HookConsumerWidget {
   final String userId;
 
   const MyPostsPage({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final postsAsync = ref.watch(userPostsProvider(userId));
+    final strings = l10n(context);
+    final authUserId = ref.watch(authControllerProvider).value?.id;
+    final targetUserId = userId == 'me' ? authUserId : userId;
+    final postsAsync = ref.watch(userPostsProvider(targetUserId));
+    final hiddenPosts = useState(<String>{});
+    final accumulated = useState(<PostEntity>[]);
+    final ownerGeneration = useRef(0);
+    final cursor = useState<String?>(null);
+    final hasMore = useState(true);
+    final loadingMore = useState(false);
+    final loadError = useState<String?>(null);
+    final currentUserId = authUserId;
+
+    useEffect(() {
+      ownerGeneration.value++;
+      hiddenPosts.value = {};
+      accumulated.value = [];
+      cursor.value = null;
+      hasMore.value = true;
+      loadingMore.value = false;
+      loadError.value = null;
+      return null;
+    }, [targetUserId]);
+
+    useEffect(() {
+      final firstPage = postsAsync.asData?.value;
+      if (firstPage != null) {
+        accumulated.value = firstPage.items;
+        cursor.value = firstPage.nextCursor;
+        hasMore.value = firstPage.hasMore && firstPage.nextCursor != null;
+      }
+      return null;
+    }, [postsAsync]);
+
+    Future<void> loadMore() async {
+      if (targetUserId == null ||
+          loadingMore.value ||
+          !hasMore.value ||
+          cursor.value == null) {
+        return;
+      }
+      final requestGeneration = ownerGeneration.value;
+      loadingMore.value = true;
+      loadError.value = null;
+      final result = await ref
+          .read(socialRepositoryProvider)
+          .getPostsByUser(targetUserId, cursor: cursor.value);
+      if (!context.mounted || requestGeneration != ownerGeneration.value) {
+        return;
+      }
+      result.fold((failure) => loadError.value = failure.message, (page) {
+        accumulated.value = [...accumulated.value, ...page.items];
+        cursor.value = page.nextCursor;
+        hasMore.value = page.hasMore && page.nextCursor != null;
+      });
+      loadingMore.value = false;
+    }
 
     return Scaffold(
       backgroundColor: context.bgColor,
       body: Column(
         children: [
           PageHeader(
-            text: 'MEUS POSTS',
-            leading: GestureDetector(
+            text: strings.feedMyPostsTitle,
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
+              semanticLabel: strings.accessibilityBack,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
             actions: [
               IconButton(
                 icon: Icon(Icons.add, color: context.textPrimary),
-                onPressed: () => context.push('/create-post'),
+                onPressed: () => context.push(AppRoutes.createPost),
               ),
             ],
           ),
           Expanded(
             child: postsAsync.when(
-              data: (posts) {
+              data: (page) {
+                final posts = accumulated.value.isEmpty
+                    ? page.items
+                    : accumulated.value;
+                final visiblePosts = posts
+                    .where((post) => !hiddenPosts.value.contains(post.id))
+                    .toList();
                 return Column(
                   children: [
                     BrutalistBreadcrumb(items: [...context.breadcrumbs]),
                     Expanded(
-                      child: posts.isEmpty
+                      child: visiblePosts.isEmpty
                           ? EmptyState(
                               icon: Icons.grid_view,
-                              title: 'NENHUM POST AINDA',
-                              subtitle: 'Crie seu primeiro post!',
+                              title: strings.profileNoPosts,
+                              subtitle: strings.feedNoPostsBody,
                               action: AppButton(
-                                label: 'Criar post',
+                                label: strings.feedCreatePost,
                                 icon: Icons.add,
-                                onPressed: () => context.push('/create-post'),
+                                onPressed: () =>
+                                    context.push(AppRoutes.createPost),
                               ),
                             )
                           : RefreshIndicator(
                               onRefresh: () async {
-                                ref.invalidate(userPostsProvider(userId));
+                                ownerGeneration.value++;
+                                accumulated.value = [];
+                                cursor.value = null;
+                                hasMore.value = true;
+                                loadingMore.value = false;
+                                loadError.value = null;
+                                ref.invalidate(userPostsProvider(targetUserId));
                               },
-                              child: GridView.builder(
-                                padding: const EdgeInsets.all(8),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 3,
-                                      crossAxisSpacing: 4,
-                                      mainAxisSpacing: 4,
-                                    ),
-                                itemCount: posts.length,
-                                itemBuilder: (context, index) {
-                                  final post = posts[index];
-                                  return _buildPostTile(context, post);
+                              child: NotificationListener<ScrollNotification>(
+                                onNotification: (notification) {
+                                  if (notification.metrics.extentAfter < 300) {
+                                    loadMore();
+                                  }
+                                  return false;
                                 },
+                                child: GridView.builder(
+                                  padding: const EdgeInsets.all(8),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        crossAxisSpacing: 4,
+                                        mainAxisSpacing: 4,
+                                      ),
+                                  itemCount:
+                                      visiblePosts.length +
+                                      (loadingMore.value ||
+                                              loadError.value != null
+                                          ? 1
+                                          : 0),
+                                  itemBuilder: (_, index) {
+                                    if (index == visiblePosts.length) {
+                                      return Center(
+                                        child: loadError.value != null
+                                            ? AppButton(
+                                                label: strings.commonRetry,
+                                                onPressed: loadMore,
+                                              )
+                                            : const Padding(
+                                                padding: EdgeInsets.all(16),
+                                                child: ShimmerBlock(height: 72),
+                                              ),
+                                      );
+                                    }
+                                    final post = visiblePosts[index];
+                                    return _buildPostTile(
+                                      context,
+                                      ref,
+                                      post,
+                                      hiddenPosts,
+                                      currentUserId == post.userId &&
+                                          post.repostedAt == null,
+                                    );
+                                  },
+                                ),
                               ),
                             ),
                     ),
@@ -143,22 +233,9 @@ class MyPostsPage extends ConsumerWidget {
                   ],
                 ),
               ),
-              error: (err, _) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: AppColors.error,
-                    ),
-                    Spacing.vMd,
-                    Text(
-                      'Erro ao carregar posts',
-                      style: TextStyle(color: context.textPrimary),
-                    ),
-                  ],
-                ),
+              error: (err, _) => EmptyState.error(
+                message: strings.commonError,
+                onRetry: () => ref.invalidate(userPostsProvider(targetUserId)),
               ),
             ),
           ),
@@ -167,13 +244,81 @@ class MyPostsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildPostTile(BuildContext context, PostEntity post) {
+  void _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    PostEntity post,
+    ValueNotifier<Set<String>> hiddenPosts,
+  ) {
+    final strings = l10n(context);
+    final repository = ref.read(socialRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+    showBrutalistSheet(
+      context: context,
+      title: strings.feedPostTitle.toUpperCase(),
+      builder: (sheetContext) => AppButton(
+        label: strings.feedDeletePost,
+        variant: AppButtonVariant.danger,
+        onPressed: () {
+          Navigator.pop(sheetContext);
+          hiddenPosts.value = {...hiddenPosts.value, post.id};
+          AppSnackbar.undoable(
+            context,
+            message: strings.feedPostDeletePending,
+            onUndo: () {
+              if (context.mounted) {
+                hiddenPosts.value = {...hiddenPosts.value}..remove(post.id);
+              }
+            },
+            onCommit: () async {
+              final result = await repository.deletePost(post.id);
+              result.fold(
+                (failure) {
+                  if (context.mounted) {
+                    hiddenPosts.value = {...hiddenPosts.value}..remove(post.id);
+                  }
+                  if (messenger.mounted) {
+                    AppSnackbar.errorOnMessenger(messenger, failure.message);
+                  }
+                },
+                (_) {
+                  container.invalidate(userPostsProvider(post.userId));
+                  container.invalidate(
+                    profileTimelineProvider(
+                      post.userId,
+                      kind: post.type == PostType.product
+                          ? 'products'
+                          : 'posts',
+                      viewerId: userId,
+                    ),
+                  );
+                  container.read(feedProvider.notifier).removePost(post.id);
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPostTile(
+    BuildContext context,
+    WidgetRef ref,
+    PostEntity post,
+    ValueNotifier<Set<String>> hiddenPosts,
+    bool isOwner,
+  ) {
     final content = post.content ?? '';
-    final imageUrl = post.imageUrl;
+    final imageUrl = post.firstMedia?.previewUrl;
     final isReposted = post.repostedAt != null;
 
     return GestureDetector(
-      onTap: () => context.push('/post/${post.id}'),
+      onTap: () => context.push(AppRoutes.postPath(post.id)),
+      onLongPress: isOwner
+          ? () => _confirmDelete(context, ref, post, hiddenPosts)
+          : null,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -186,12 +331,28 @@ class MyPostsPage extends ConsumerWidget {
               ),
             ),
             child: imageUrl != null && imageUrl.isNotEmpty
-                ? Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) =>
-                        const Icon(Icons.image, color: AppColors.mediumGray),
-                  )
+                ? isPrivateMedia(imageUrl)
+                      ? Image.network(
+                          imageUrl,
+                          headers: mediaAuthHeaders(imageUrl),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => const Icon(
+                            Icons.image,
+                            color: AppColors.mediumGray,
+                          ),
+                        )
+                      : CachedNetworkImage(
+                          imageUrl: imageUrl,
+                          fit: BoxFit.cover,
+                          memCacheWidth: 300,
+                          memCacheHeight: 300,
+                          placeholder: (_, _) =>
+                              Container(color: context.surfaceMidColor),
+                          errorWidget: (_, _, _) => const Icon(
+                            Icons.image,
+                            color: AppColors.mediumGray,
+                          ),
+                        )
                 : content.isNotEmpty
                 ? Center(
                     child: Padding(
@@ -231,8 +392,8 @@ class MyPostsPage extends ConsumerWidget {
                     ),
                     const SizedBox(width: 2),
                     Text(
-                      'Reposted',
-                      style: TextStyle(
+                      l10n(context).feedRepostedBadge,
+                      style: const TextStyle(
                         fontSize: 8,
                         fontWeight: FontWeight.bold,
                         color: AppColors.onPrimary,
@@ -241,6 +402,12 @@ class MyPostsPage extends ConsumerWidget {
                   ],
                 ),
               ),
+            ),
+          if (post.audience == PostAudience.closeFriends)
+            const Positioned(
+              bottom: 4,
+              left: 4,
+              child: Icon(Icons.group, color: AppColors.success, size: 22),
             ),
         ],
       ),

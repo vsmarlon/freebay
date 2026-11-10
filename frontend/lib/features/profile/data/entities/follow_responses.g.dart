@@ -6,69 +6,71 @@ part of 'follow_responses.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_FollowResponse _$FollowResponseFromJson(Map<String, dynamic> json) =>
-    _FollowResponse(
-      following: json['following'] as bool,
-      followersCount: (json['followersCount'] as num).toInt(),
-      followingCount: (json['followingCount'] as num).toInt(),
+FollowResponse _$FollowResponseFromJson(Map<String, dynamic> json) =>
+    FollowResponse(
+      following: json['following'] as bool? ?? false,
+      followersCount: (json['followersCount'] as num?)?.toInt() ?? 0,
+      followingCount: (json['followingCount'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$FollowResponseToJson(_FollowResponse instance) =>
+Map<String, dynamic> _$FollowResponseToJson(FollowResponse instance) =>
     <String, dynamic>{
       'following': instance.following,
       'followersCount': instance.followersCount,
       'followingCount': instance.followingCount,
     };
 
-_FollowStatusResponse _$FollowStatusResponseFromJson(
+FollowStatusResponse _$FollowStatusResponseFromJson(
   Map<String, dynamic> json,
-) => _FollowStatusResponse(
-  isFollowing: json['isFollowing'] as bool,
-  followersCount: (json['followersCount'] as num).toInt(),
-  followingCount: (json['followingCount'] as num).toInt(),
+) => FollowStatusResponse(
+  isFollowing: json['isFollowing'] as bool? ?? false,
+  followersCount: (json['followersCount'] as num?)?.toInt() ?? 0,
+  followingCount: (json['followingCount'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$FollowStatusResponseToJson(
-  _FollowStatusResponse instance,
+  FollowStatusResponse instance,
 ) => <String, dynamic>{
   'isFollowing': instance.isFollowing,
   'followersCount': instance.followersCount,
   'followingCount': instance.followingCount,
 };
 
-_FollowListUser _$FollowListUserFromJson(Map<String, dynamic> json) =>
-    _FollowListUser(
-      id: json['id'] as String,
-      displayName: json['displayName'] as String,
-      avatarUrl: json['avatarUrl'] as String?,
-      isVerified: json['isVerified'] as bool,
-      reputationScore: (json['reputationScore'] as num).toDouble(),
-    );
+UserBrief _$UserBriefFromJson(Map<String, dynamic> json) => UserBrief(
+  id: json['id'] as String,
+  displayName: json['displayName'] as String,
+  username: json['username'] as String?,
+  avatarUrl: json['avatarUrl'] as String?,
+  avatarBlurHash: json['avatarBlurHash'] as String?,
+  isVerified: json['isVerified'] as bool? ?? false,
+  reputationScore: (json['reputationScore'] as num?)?.toDouble() ?? 0.0,
+);
 
-Map<String, dynamic> _$FollowListUserToJson(_FollowListUser instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'displayName': instance.displayName,
-      'avatarUrl': instance.avatarUrl,
-      'isVerified': instance.isVerified,
-      'reputationScore': instance.reputationScore,
-    };
+Map<String, dynamic> _$UserBriefToJson(UserBrief instance) => <String, dynamic>{
+  'id': instance.id,
+  'displayName': instance.displayName,
+  'username': instance.username,
+  'avatarUrl': instance.avatarUrl,
+  'avatarBlurHash': instance.avatarBlurHash,
+  'isVerified': instance.isVerified,
+  'reputationScore': instance.reputationScore,
+};
 
-_FollowListResponse _$FollowListResponseFromJson(Map<String, dynamic> json) =>
-    _FollowListResponse(
+FollowListResponse _$FollowListResponseFromJson(Map<String, dynamic> json) =>
+    FollowListResponse(
       users:
           (json['users'] as List<dynamic>?)
-              ?.map((e) => FollowListUser.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => UserBrief.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
-      total: (json['total'] as num).toInt(),
-      limit: (json['limit'] as num).toInt(),
-      offset: (json['offset'] as num).toInt(),
+      total: (json['total'] as num?)?.toInt() ?? 0,
+      limit: (json['limit'] as num?)?.toInt() ?? 0,
+      offset: (json['offset'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$FollowListResponseToJson(_FollowListResponse instance) =>
+Map<String, dynamic> _$FollowListResponseToJson(FollowListResponse instance) =>
     <String, dynamic>{
-      'users': instance.users,
+      'users': instance.users.map((e) => e.toJson()).toList(),
       'total': instance.total,
       'limit': instance.limit,
       'offset': instance.offset,

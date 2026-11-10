@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { FollowRepository } from '../domain/repositories/follow.repository';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { FollowResponse } from '../mappers/user.mapper';
+import { FollowResponse } from '../dtos/user-response.class';
 import { FollowUserInput } from '../dtos/user.dto';
 
 @Injectable()
 export class FollowUserUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
+    private readonly userRepository: UserDatabaseRepository,
     private readonly followRepository: FollowRepository,
     private readonly notificationService: NotificationService,
   ) {}
@@ -21,7 +21,7 @@ export class FollowUserUseCase {
     }
 
     const targetResult = await this.userRepository.findById(input.followingId);
-    if (isLeft(targetResult)) {
+    if (targetResult.isLeft()) {
       return left(targetResult.value);
     }
     if (!targetResult.value) {
@@ -32,8 +32,12 @@ export class FollowUserUseCase {
     if (followResult.isLeft()) return left(followResult.value);
 
     const followerResult = await this.userRepository.findById(input.followerId);
-    if (!isLeft(followerResult) && followerResult.value) {
-      await this.notificationService.notifyNewFollower(input.followingId, followerResult.value.displayName);
+    if (!followerResult.isLeft() && followerResult.value) {
+      await this.notificationService.notifyNewFollower(
+        input.followingId,
+        followerResult.value.displayName,
+        input.followerId,
+      );
     }
 
     const [followersCountResult, followingCountResult] = await Promise.all([

@@ -1,11 +1,22 @@
+import { UserRole } from '@prisma/client';
+
+export enum JwtTokenType {
+  ACCESS = 'access',
+  REFRESH = 'refresh',
+  BIOMETRIC = 'biometric',
+}
+
 export interface JwtPayload {
   userId: string;
   email?: string;
-  role: string;
-  isGuest?: boolean;
-  type?: 'access' | 'refresh';
+  role: UserRole;
+  type?: JwtTokenType;
+  sid?: string;
   jti?: string;
   iat?: number;
+  issuedAtMs?: number;
+  sessionStartedAtMs?: number;
+  authenticatedAtMs?: number;
   exp?: number;
 }
 

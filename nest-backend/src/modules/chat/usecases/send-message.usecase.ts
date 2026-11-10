@@ -1,83 +1,295 @@
-import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Injectable, Logger } from '@nestjs/common';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { OgScraperService } from '../services/og-scraper.service';
-import { SendMessageInput, SendMessageOutput } from '../dtos/chat.dto';
-import { Prisma, DirectMessage, MessageType } from '@prisma/client';
+import { ChatThreadAccessService } from '../services/chat-thread-access.service';
+import { ConversationPreferenceDatabaseRepository } from '../data/repositories/conversation-preference-database.repository';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
+import { SendMessageInput, SendMessageInternalOutput, SendMessageOutput } from '../dtos/chat.dto';
+import { Prisma, DirectMessage, ChatMessage, MessageType, ChatThreadType } from '@prisma/client';
+import { DirectMessageWithSender, ChatMessageWithSender } from '../types/conversation-payloads';
+import {
+  readCanonicalLocationMetadata,
+  validateLocationMetadata,
+} from './location-message-metadata';
+import { isOwnedUpload } from '@/shared/utils/file.utils';
+import { withoutPinMetadata } from './message-pin-metadata';
 
 @Injectable()
 export class SendMessageUseCase {
+  private readonly logger = new Logger(SendMessageUseCase.name);
+
   constructor(
-    private readonly conversationRepository: ConversationRepository,
-    private readonly blockRepository: BlockRepository,
+    private readonly conversationRepository: ConversationDatabaseRepository,
+    private readonly blockRepository: BlockDatabaseRepository,
     private readonly ogScraper: OgScraperService,
+    private readonly threadAccess: ChatThreadAccessService,
+    private readonly preferenceRepository: ConversationPreferenceDatabaseRepository,
+    private readonly notifications: NotificationService,
   ) {}
 
-  async execute(input: SendMessageInput): Promise<Either<AppError, SendMessageOutput>> {
-    const conversationResult = await this.conversationRepository.findDirectConversationById(input.conversationId);
-    if (isLeft(conversationResult)) return left(conversationResult.value);
-    const conversation = conversationResult.value;
+  async execute(input: SendMessageInput): Promise<Either<AppError, SendMessageInternalOutput>> {
+    const resolved = await this.threadAccess.resolveThread(input.senderId, input.conversationId);
+    if (resolved.isLeft()) return left(resolved.value);
 
-    if (!conversation) return left(new NotFoundError('Conversation'));
+    const isOrder = !!resolved.value.orderId;
+    const result = await this.runMessagePipeline(input, {
+      threadId: resolved.value.orderId ?? input.conversationId,
+      otherUserId: resolved.value.otherUserId,
+      model: isOrder ? ChatThreadType.ORDER : ChatThreadType.DIRECT,
+      isOrder,
+    });
+    if (result.isLeft()) return result;
 
-    if (conversation.status === 'PENDING') {
-      const isParticipant = conversation.user1Id === input.senderId || conversation.user2Id === input.senderId;
-      if (!isParticipant) return left(new BadRequestError('Conversation is pending acceptance'));
+    let suppressPush = true;
+    try {
+      const preference = await this.preferenceRepository.findByUserAndThread(
+        result.value.recipientId,
+        result.value.message.conversationId,
+        isOrder ? ChatThreadType.ORDER : ChatThreadType.DIRECT,
+      );
+      if (preference.isRight()) suppressPush = preference.value?.muted ?? false;
+      else this.logMutePreferenceFailure(preference.value);
+    } catch {
+      this.logMutePreferenceFailure();
     }
 
-    const otherUserId = conversation.user1Id === input.senderId
-      ? conversation.user2Id
-      : conversation.user1Id;
+    try {
+      await this.notifications.notifyNewMessage(
+        result.value.recipientId,
+        result.value.senderName,
+        result.value.message.conversationId,
+        result.value.message.id,
+        { suppressPush },
+      );
+    } catch (error) {
+      this.logger.warn(`Chat notification failed: ${String(error)}`);
+    }
+    return result;
+  }
 
-    const [isBlockedResult, isBlockedByOtherResult] = await Promise.all([
-      this.blockRepository.isBlocked(input.senderId, otherUserId),
-      this.blockRepository.isBlocked(otherUserId, input.senderId),
-    ]);
-    if (isBlockedResult.isLeft()) return left(isBlockedResult.value);
-    if (isBlockedByOtherResult.isLeft()) return left(isBlockedByOtherResult.value);
-    if (isBlockedResult.value) return left(new ForbiddenError('Você bloqueou este usuário'));
-    if (isBlockedByOtherResult.value) return left(new ForbiddenError('Você foi bloqueado por este usuário'));
+  private logMutePreferenceFailure(error?: AppError): void {
+    const code = error?.code;
+    const safeCode = code && /^[A-Z0-9_]{1,64}$/.test(code) ? code : 'PREFERENCE_LOOKUP_FAILED';
+    this.logger.warn(`Chat mute preference lookup failed (${safeCode}); suppressing push`);
+  }
 
-    const messageType = (input.type ?? 'TEXT') as MessageType;
-    let metadata: Record<string, unknown> | null = input.metadata ?? null;
+  // ponytail: single shared pipeline for direct/order sends; only persistence branches.
+  private async runMessagePipeline(
+    input: SendMessageInput,
+    ctx: { threadId: string; otherUserId: string; model: ChatThreadType; isOrder: boolean },
+  ): Promise<Either<AppError, SendMessageInternalOutput>> {
+    const blockCheck = await this.assertNotBlocked(input.senderId, ctx.otherUserId);
+    if (blockCheck) return left(blockCheck);
 
-    if (messageType === 'TEXT' && input.content) {
-      const url = this.ogScraper.extractFirstUrl(input.content);
-      if (url) {
-        const og = await this.ogScraper.scrape(url);
-        if (og) metadata = og as unknown as Record<string, unknown>;
-      }
+    const messageType = input.type ?? MessageType.TEXT;
+    if (input.attachmentUrl && !isOwnedUpload(input.attachmentUrl, input.senderId, 'chat')) {
+      return left(new BadRequestError('Anexo inválido ou não pertence ao usuário'));
+    }
+
+    const locationMetadata = validateLocationMetadata(messageType, input.metadata);
+    if (locationMetadata.isLeft()) return left(locationMetadata.value);
+    const existingLocation = await this.findDelayedLocationRetry(
+      messageType,
+      locationMetadata.value,
+      ctx.threadId,
+      input.senderId,
+      ctx.isOrder,
+      input.clientMessageId,
+      ctx.otherUserId,
+    );
+    if (existingLocation) return existingLocation;
+
+    const productCardError = this.assertProductCardMetadata(messageType, input);
+    if (productCardError) return left(productCardError);
+
+    const metadata = await this.buildMetadata(messageType, input, locationMetadata.value);
+
+    const replyScope = await this.assertReplyInThread(
+      input.replyToId,
+      ctx.threadId,
+      ctx.model,
+    );
+    if (replyScope) return left(replyScope);
+
+    if (ctx.isOrder) {
+      const messageResult = await this.conversationRepository.createChatMessage({
+        order: { connect: { id: ctx.threadId } },
+        sender: { connect: { id: input.senderId } },
+        clientMessageId: input.clientMessageId ?? null,
+        content: input.content ?? null,
+        type: messageType,
+        attachmentUrl: input.attachmentUrl ?? null,
+        metadata: metadata ? (metadata as Prisma.InputJsonValue) : undefined,
+        replyTo: input.replyToId ? { connect: { id: input.replyToId } } : undefined,
+        viewOnce: input.viewOnce ?? false,
+      }, true);
+      if (messageResult.isLeft()) return left(messageResult.value);
+      return right(this.toInternalOutput(messageResult.value, ctx.threadId, ctx.otherUserId));
     }
 
     const messageResult = await this.conversationRepository.createDirectMessage({
-      conversation: { connect: { id: input.conversationId } },
+      conversation: { connect: { id: ctx.threadId } },
       sender: { connect: { id: input.senderId } },
+      clientMessageId: input.clientMessageId ?? null,
       content: input.content ?? null,
       type: messageType,
       attachmentUrl: input.attachmentUrl ?? null,
       metadata: metadata ? (metadata as Prisma.InputJsonValue) : undefined,
       replyTo: input.replyToId ? { connect: { id: input.replyToId } } : undefined,
+      viewOnce: input.viewOnce ?? false,
     }, true);
-    if (isLeft(messageResult)) return left(messageResult.value);
+    if (messageResult.isLeft()) return left(messageResult.value);
 
-    const updateResult = await this.conversationRepository.updateDirectConversation(input.conversationId, {
+    const updateResult = await this.conversationRepository.updateDirectConversation(ctx.threadId, {
       lastMessageAt: new Date(),
     });
-    if (isLeft(updateResult)) return left(updateResult.value);
+    if (updateResult.isLeft()) return left(updateResult.value);
 
-    const msg = messageResult.value as DirectMessage;
-    return right({
-      id: msg.id,
-      conversationId: msg.conversationId,
-      senderId: msg.senderId,
-      content: msg.content ?? null,
-      type: msg.type,
-      attachmentUrl: msg.attachmentUrl ?? null,
-      metadata: (msg.metadata as Record<string, unknown>) ?? null,
-      replyToId: msg.replyToId ?? null,
-      createdAt: msg.createdAt,
-    });
+    const msg = messageResult.value;
+    return right(this.toInternalOutput(msg, msg.conversationId, ctx.otherUserId));
+  }
+
+  private async assertReplyInThread(
+    replyToId: string | undefined,
+    threadId: string,
+    model: ChatThreadType,
+  ): Promise<AppError | null> {
+    if (!replyToId) return null;
+    const belongs = await this.conversationRepository.messageBelongsToThread(
+      replyToId,
+      threadId,
+      model,
+    );
+    if (belongs.isLeft()) return belongs.value;
+    if (!belongs.value) return new NotFoundError('Mensagem referenciada');
+    return null;
+  }
+
+  private async assertNotBlocked(senderId: string, otherUserId: string): Promise<AppError | null> {
+    const [isBlockedResult, isBlockedByOtherResult] = await Promise.all([
+      this.blockRepository.isBlocked(senderId, otherUserId),
+      this.blockRepository.isBlocked(otherUserId, senderId),
+    ]);
+    if (isBlockedResult.isLeft()) return isBlockedResult.value;
+    if (isBlockedByOtherResult.isLeft()) return isBlockedByOtherResult.value;
+    if (isBlockedResult.value) return new ForbiddenError('Você bloqueou este usuário');
+    if (isBlockedByOtherResult.value) return new ForbiddenError('Você foi bloqueado por este usuário');
+    return null;
+  }
+
+  private assertProductCardMetadata(messageType: MessageType, input: SendMessageInput): AppError | null {
+    if (messageType !== 'PRODUCT_CARD') return null;
+    const productId = input.metadata?.productId;
+    if (!productId || typeof productId !== 'string' || productId.trim().length === 0) {
+      return new BadRequestError('Product ID is required for product cards');
+    }
+    return null;
+  }
+
+  private async findDelayedLocationRetry(
+    messageType: MessageType,
+    metadata: Record<string, unknown> | null,
+    threadId: string,
+    senderId: string,
+    isOrder: boolean,
+    clientMessageId?: string,
+    recipientId = '',
+  ): Promise<Either<AppError, SendMessageInternalOutput> | null> {
+    if (
+      messageType !== 'LOCATION' ||
+      !metadata ||
+      typeof metadata.capturedAt !== 'string'
+    ) return null;
+
+    const capturedAt = new Date(metadata.capturedAt);
+    const now = Date.now();
+    const isFresh = capturedAt.getTime() >= now - 5 * 60 * 1000 &&
+        capturedAt.getTime() <= now + 60 * 1000;
+    if (isFresh) return null;
+    if (!clientMessageId) return left(new BadRequestError('Data da localização expirada'));
+
+    const existing = isOrder
+        ? await this.conversationRepository.findChatMessageByClientId(
+            threadId,
+            senderId,
+            clientMessageId,
+          )
+        : await this.conversationRepository.findDirectMessageByClientId(
+            threadId,
+            senderId,
+            clientMessageId,
+          );
+    if (existing.isLeft()) return left(existing.value);
+    if (!existing.value) return left(new BadRequestError('Data da localização expirada'));
+    const existingMetadata = readCanonicalLocationMetadata(existing.value.metadata);
+    const metadataMatches = existing.value.type === MessageType.LOCATION &&
+      existingMetadata !== null &&
+      existingMetadata.latitude === metadata.latitude &&
+      existingMetadata.longitude === metadata.longitude &&
+      existingMetadata.accuracyMeters === metadata.accuracyMeters &&
+      existingMetadata.capturedAt === metadata.capturedAt &&
+      (existingMetadata.address ?? null) === (metadata.address ?? null);
+    if (!metadataMatches) {
+      return left(new BadRequestError('Conflito de idempotência da localização'));
+    }
+    return right(this.toInternalOutput(existing.value, threadId, recipientId));
+  }
+
+  private toInternalOutput(
+    message: DirectMessage | ChatMessage | DirectMessageWithSender | ChatMessageWithSender,
+    conversationId: string,
+    recipientId: string,
+  ): SendMessageInternalOutput {
+    return {
+      message: this.toMessageOutput(message, conversationId),
+      recipientId,
+      senderName: 'sender' in message && message.sender ? message.sender.displayName || 'Alguém' : 'Alguém',
+    };
+  }
+
+  private toMessageOutput(
+    message: DirectMessage | ChatMessage,
+    conversationId: string,
+  ): SendMessageOutput {
+    return {
+      id: message.id,
+      conversationId,
+      senderId: message.senderId,
+      clientMessageId: message.clientMessageId ?? null,
+      content: message.content ?? null,
+      type: message.type,
+      attachmentUrl: message.attachmentUrl ?? null,
+      metadata: (message.metadata as Record<string, unknown>) ?? null,
+      replyToId: message.replyToId ?? null,
+      viewOnce: message.viewOnce,
+      createdAt: message.createdAt,
+    };
+  }
+
+  private async buildMetadata(
+    messageType: MessageType,
+    input: SendMessageInput,
+    validatedLocationMetadata: Record<string, unknown> | null,
+  ): Promise<Record<string, unknown> | null> {
+    let base: Record<string, unknown> | null = messageType === MessageType.LOCATION
+      ? validatedLocationMetadata
+      : input.metadata ?? null;
+
+    if (messageType === MessageType.TEXT && input.content) {
+      const url = this.ogScraper.extractFirstUrl(input.content);
+      if (url) {
+        const og = await this.ogScraper.scrape(url);
+        base = og ? { ...og } : base;
+      }
+    }
+
+    if (input.durationMs != null && messageType !== 'LOCATION') {
+      base = { ...(base ?? {}), durationMs: input.durationMs };
+    }
+
+    return withoutPinMetadata(base);
   }
 }

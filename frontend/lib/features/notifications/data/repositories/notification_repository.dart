@@ -1,63 +1,81 @@
+import 'package:freebay/shared/models/cursor_page.dart';
+import 'package:dio/dio.dart';
+import 'package:freebay/shared/either/either.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/http/request_either.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
-import 'package:freebay/features/notifications/domain/repositories/i_notification_repository.dart';
 
-class NotificationRepository implements INotificationRepository {
-  @override
-  Future<List<NotificationEntity>> getNotifications({
+class NotificationRepository {
+  final Dio client;
+
+  NotificationRepository({Dio? client})
+    : client = client ?? HttpClient.instance;
+
+  Future<CursorPage<NotificationEntity>> getNotifications({
+    String? cursor,
     int limit = 20,
-    int offset = 0,
   }) async {
-    final response = await HttpClient.instance.get(
-      '/notifications',
-      queryParameters: {'limit': limit, 'offset': offset},
+    final result = await requestEither(
+      () => client.get(
+        '/notifications',
+        queryParameters: {'cursor': ?cursor, 'limit': limit},
+      ),
+      decoder: (response) => Right(
+        parseCursorPage<NotificationEntity>(
+          response.data['data'],
+          NotificationEntity.fromJson,
+        ),
+      ),
     );
-
-    final payload = response.data;
-    final notifications =
-        payload['notifications'] as List<dynamic>? ??
-        (payload['data'] is List<dynamic>
-            ? payload['data'] as List<dynamic>
-            : <dynamic>[]);
-
-    return notifications
-        .map(
-          (json) => NotificationEntity.fromJson(json as Map<String, dynamic>),
-        )
-        .toList();
+    return result.rightOrNull ?? const CursorPage<NotificationEntity>.empty();
   }
 
-  @override
   Future<int> getUnreadCount() async {
-    final response = await HttpClient.instance.get(
-      '/notifications/unread-count',
+    final result = await requestEither(
+      () => client.get('/notifications/unread-count'),
+      decoder: (response) =>
+          Right((response.data['data']['count'] as int?) ?? 0),
     );
-    return response.data['data']['count'] as int;
+    return result.rightOrNull ?? 0;
   }
 
-  @override
   Future<void> markAsRead(String notificationId) async {
-    await HttpClient.instance.post('/notifications/$notificationId/read');
-  }
-
-  @override
-  Future<void> markAllAsRead() async {
-    await HttpClient.instance.post('/notifications/read-all');
-  }
-
-  @override
-  Future<void> updateFcmToken(String token) async {
-    await HttpClient.instance.patch(
-      '/users/me/fcm-token',
-      data: {'fcmToken': token},
+    await requestEither<void>(
+      () => client.patch('/notifications/$notificationId/read'),
+      decoder: (_) => const Right(null),
     );
   }
 
-  @override
+  Future<void> markAllAsRead() async {
+    await requestEither<void>(
+      () => client.post('/notifications/read-all'),
+      decoder: (_) => const Right(null),
+    );
+  }
+
+  Future<Either<Failure, void>> updateFcmToken(
+    String token, {
+    required String installationId,
+  }) {
+    // Let the auth interceptor own the access token: pinning a captured one
+    // 401s once it expires mid-session.
+    return requestEither<void>(
+      () => client.patch(
+        '/users/me/fcm-token',
+        data: {'fcmToken': token, 'installationId': installationId},
+      ),
+      decoder: (_) => const Right(null),
+    );
+  }
+
   Future<void> updateNotificationPrefs(Map<String, bool> prefs) async {
-    await HttpClient.instance.patch(
-      '/users/me/fcm-token',
-      data: {'notificationPrefs': prefs},
+    await requestEither<void>(
+      () => client.patch(
+        '/users/me/fcm-token',
+        data: {'notificationPrefs': prefs},
+      ),
+      decoder: (_) => const Right(null),
     );
   }
 }

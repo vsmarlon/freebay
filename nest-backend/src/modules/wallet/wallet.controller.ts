@@ -1,123 +1,34 @@
-import { Controller, Get, Post, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { GetWalletUseCase } from './usecases/get-wallet.usecase';
-import { WithdrawUseCase } from './usecases/withdraw.usecase';
-import { RegisterBankAccountUseCase } from './usecases/register-bank-account.usecase';
-import { WithdrawDTO, BankAccountDTO, WalletResponse } from './dtos/wallet.dto';
-import { WalletRepository } from './domain/repositories/wallet.repository';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { left, isLeft } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import { WalletResponse } from './dtos/wallet.dto';
+import { WalletDatabaseRepository } from './data/repositories/wallet-database.repository';
+import { GetAuth, CurrentUserId, Paginated, PAGINATION_QUERIES } from '@/shared/decorators';
+import { PageQuery } from '@/shared/core/pagination';
 
 @ApiTags('Wallet')
 @Controller('wallet')
-@UseGuards(JwtAuthGuard)
 export class WalletController {
   constructor(
     private readonly getWalletUseCase: GetWalletUseCase,
-    private readonly withdrawUseCase: WithdrawUseCase,
-    private readonly registerBankAccountUseCase: RegisterBankAccountUseCase,
-    private readonly walletRepository: WalletRepository,
-    private readonly prisma: PrismaService,
+    private readonly walletRepository: WalletDatabaseRepository,
   ) {}
 
-  @Get()
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth({
     summary: 'Get wallet',
     description: 'Returns current wallet balance, pending balance, and available balance',
-    auth: true,
     responseType: WalletResponse,
   })
-  async getWallet(@CurrentUser() user: AuthUser) {
-    const userId = user.userId;
-    const result = await this.getWalletUseCase.execute(userId);
-    if (isLeft(result)) return result;
-    return result.value;
+  async getWallet(@CurrentUserId() userId: string) {
+    return this.getWalletUseCase.execute(userId);
   }
 
-  @Post('withdraw')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Request withdrawal',
-    description: 'Request a PIX withdrawal from the wallet',
-    auth: true,
-    bodyType: WithdrawDTO,
-    responseStatus: 201,
-    errors: [{ status: 400, description: 'Insufficient balance or invalid data' }],
+  @GetAuth('transactions', {
+    summary: 'Get wallet statement',
+    description: 'Cursor-paginated ledger entries that make up the wallet balance, newest first',
+    queries: PAGINATION_QUERIES,
   })
-  async withdraw(@CurrentUser() user: AuthUser, @Body() body: WithdrawDTO) {
-    const userId = user.userId;
-    const result = await this.withdrawUseCase.execute({ userId, ...body });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
-  }
-
-  @Post('bank-account')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Register bank account',
-    description: 'Register a bank account for withdrawals',
-    auth: true,
-    bodyType: BankAccountDTO,
-    responseStatus: 201,
-  })
-  async registerBankAccount(@CurrentUser() user: AuthUser, @Body() body: BankAccountDTO) {
-    const userId = user.userId;
-    const result = await this.registerBankAccountUseCase.execute({ userId, ...body });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
-  }
-
-  @Get('transactions')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Get transactions',
-    description: 'Returns the transaction history for the wallet',
-    auth: true,
-  })
-  async getTransactions(@CurrentUser() user: AuthUser) {
-    const userId = user.userId;
-    const result = await this.walletRepository.getTransactions(userId);
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return { transactions: result.value };
-  }
-
-  @Get('withdrawals')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Get withdrawals',
-    description: 'Returns the withdrawal history for the wallet',
-    auth: true,
-  })
-  async getWithdrawals(@CurrentUser() user: AuthUser) {
-    const userId = user.userId;
-    const walletResult = await this.walletRepository.findByUserId(userId);
-    if (walletResult.isLeft()) {
-      return left(new AppError(walletResult.value.code, walletResult.value.message));
-    }
-    if (!walletResult.value) {
-      return { withdrawals: [] };
-    }
-
-    const withdrawals = await this.prisma.withdrawal.findMany({
-      where: { walletId: walletResult.value.id },
-      orderBy: { createdAt: 'desc' },
-    });
-    return { withdrawals };
+  async getTransactions(@CurrentUserId() userId: string, @Paginated() page: PageQuery) {
+    return this.walletRepository.getTransactions(userId, page);
   }
 }

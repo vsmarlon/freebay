@@ -6,14 +6,15 @@ part 'conversation_preference.g.dart';
 @freezed
 abstract class ConversationPreference with _$ConversationPreference {
   const factory ConversationPreference({
-    required String id,
-    required String userId,
+    @Default('') String id,
+    @Default('') String userId,
     String? orderId,
     String? directConversationId,
     @Default(false) bool isArchived,
     @Default(false) bool isDeleted,
     @Default('DEFAULT') String theme,
     String? backgroundUrl,
+    @Default(false) bool muted,
   }) = _ConversationPreference;
 
   factory ConversationPreference.fromJson(Map<String, dynamic> json) =>

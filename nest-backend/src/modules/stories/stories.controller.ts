@@ -1,131 +1,161 @@
 import {
   Controller,
-  Get,
-  Post,
-  Delete,
+  Body,
   Param,
-  UseGuards,
-  HttpCode,
   HttpStatus,
   UseInterceptors,
   UploadedFile,
-} from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
-import { StoriesService } from './stories.service';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { validateImageFile } from '@/shared/utils/image-upload.utils';
+  ParseUUIDPipe,
+} from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
+import { BoundedMultipartInterceptor } from "@/shared/interceptors/bounded-multipart.interceptor";
+import { deleteUpload, saveUpload } from "@/shared/utils/file.utils";
+import { StoriesService } from "./stories.service";
+import {
+  GetAuth,
+  PostAuth,
+  PatchAuth,
+  CurrentUserId,
+} from "@/shared/decorators";
+import { left } from "@/shared/core/either";
+import { BadRequestError } from "@/shared/core/errors";
+import { validateMediaFile } from "@/shared/utils/image-upload.utils";
+import {
+  CreateStoryMultipartDTO,
+  SaveStoryHighlightDTO,
+  parseStoryTextBlocks,
+  STORY_CAPTION_MAX_LENGTH,
+  STORY_TEXT_BLOCKS_PAYLOAD_MAX_LENGTH,
+} from "./dtos/stories.dto";
+import { MAX_MEDIA_SIZE } from "@/shared/utils/image-upload.utils";
+import { Prisma, StoryMediaType } from "@prisma/client";
 
-@ApiTags('Stories')
-@Controller('stories')
+@ApiTags("Stories")
+@Controller("stories")
 export class StoriesController {
-  constructor(
-    private readonly storiesService: StoriesService,
-  ) {}
+  constructor(private readonly storiesService: StoriesService) {}
 
-  @Get()
-  @ApiDoc({
-    summary: 'Get stories feed',
-    description: 'Returns active stories from followed users',
-  })
-  async getStories(@CurrentUser() user: AuthUser) {
-    const result = await this.storiesService.getStories(user?.userId);
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return { stories: result.value.stories, userHasStory: result.value.userHasStory };
+  @GetAuth('archive', { summary: 'List my stories, including expired stories' })
+  async getArchive(@CurrentUserId() userId: string) {
+    return this.storiesService.getArchive(userId);
   }
 
-  @Get('user/:userId')
-  @ApiDoc({
-    summary: 'Get user stories',
-    params: [{ name: 'userId', description: 'User UUID' }],
-  })
-  async getUserStories(@Param('userId') userId: string) {
-    const result = await this.storiesService.getUserStories(userId);
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return { stories: result.value };
+  @GetAuth('highlights/user/:userId', { summary: 'List public highlights for a user' })
+  async getHighlights(@Param('userId', ParseUUIDPipe) userId: string, @CurrentUserId() viewerId: string) {
+    return this.storiesService.getHighlights(userId, viewerId);
   }
 
-  @Post()
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: memoryStorage(),
-      limits: { fileSize: 5 * 1024 * 1024 },
-    }),
-  )
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Create a story',
-    description: 'Uploads an image that will be available for 24h',
-    auth: true,
+  @GetAuth('highlights/:id', { summary: 'View a public highlight' })
+  async getHighlight(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() viewerId: string) {
+    return this.storiesService.getHighlight(id, viewerId);
+  }
+
+  @PostAuth('highlights', { summary: 'Create a story highlight', bodyType: SaveStoryHighlightDTO, responseStatus: 201, httpCode: HttpStatus.CREATED })
+  async createHighlight(@CurrentUserId() userId: string, @Body() body: SaveStoryHighlightDTO) {
+    return this.storiesService.saveHighlight({ userId, ...body });
+  }
+
+  @PatchAuth('highlights/:id', { summary: 'Edit a story highlight', bodyType: SaveStoryHighlightDTO })
+  async updateHighlight(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string, @Body() body: SaveStoryHighlightDTO) {
+    return this.storiesService.saveHighlight({ id, userId, ...body });
+  }
+
+  @PatchAuth('highlights/:id/delete', { summary: 'Delete a story highlight' })
+  async deleteHighlight(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.storiesService.deleteHighlight(id, userId);
+  }
+
+  @GetAuth({ summary: "List active stories for explore/feed" })
+  async getFeed(@CurrentUserId() userId: string) {
+    return this.storiesService.getStories(userId);
+  }
+
+  @GetAuth("user/:userId", {
+    summary: "List active stories for a specific user",
+    params: [{ name: "userId", description: "User UUID" }],
+  })
+  async getUserStories(@Param("userId", ParseUUIDPipe) userId: string, @CurrentUserId() viewerId: string) {
+    return this.storiesService.getUserStories(userId, viewerId);
+  }
+
+  @PostAuth({
+    summary: "Create a story",
+    description: "Uploads an image or video that will be available for 24h",
     responseStatus: 201,
+    httpCode: HttpStatus.CREATED,
   })
+  @UseInterceptors(
+    BoundedMultipartInterceptor("image", 1, MAX_MEDIA_SIZE + 512 * 1024, STORY_TEXT_BLOCKS_PAYLOAD_MAX_LENGTH * 4, MAX_MEDIA_SIZE),
+  )
   async createStory(
-    @CurrentUser() user: AuthUser,
+    @CurrentUserId() userId: string,
     @UploadedFile() file?: Express.Multer.File,
+    @Body() body?: CreateStoryMultipartDTO,
   ) {
-    if (!file) {
-      return left(new AppError('BAD_REQUEST', 'Imagem é obrigatória'));
+    if (!file) return left(new BadRequestError("Imagem é obrigatória"));
+    if (
+      !file.mimetype.startsWith("image/") &&
+      !file.mimetype.startsWith("video/")
+    ) {
+      return left(new BadRequestError("Stories aceitam apenas imagens ou vídeos"));
     }
-
-    const mimeError = validateImageFile(file);
-    if (mimeError) {
-      return left(new AppError('BAD_REQUEST', mimeError));
+    const mimeError = validateMediaFile(file);
+    if (mimeError) return left(new BadRequestError(mimeError));
+    if (typeof body?.caption === "string" && body.caption.length > STORY_CAPTION_MAX_LENGTH) {
+      return left(
+        new BadRequestError("A legenda deve ter no máximo 500 caracteres"),
+      );
     }
+    if (
+      typeof body?.textBlocks === "string" &&
+      body.textBlocks.length > STORY_TEXT_BLOCKS_PAYLOAD_MAX_LENGTH
+    ) {
+      return left(
+        new BadRequestError("textBlocks excede o tamanho máximo permitido"),
+      );
+    }
+    const textBlocks = parseStoryTextBlocks(body?.textBlocks);
+    if ("error" in textBlocks)
+      return left(new BadRequestError(textBlocks.error));
+    const textBlocksForPersistence: Prisma.InputJsonValue =
+      textBlocks.value.map((block): Prisma.InputJsonObject => ({ ...block }));
 
-    const userId = user.userId;
+    const imageUrl = saveUpload(file, "story");
     const result = await this.storiesService.createStory({
       userId,
-      imageBase64: this.storiesService.toDataUri(file),
+      imageUrl,
+      mediaType: file.mimetype.startsWith("video/") ? StoryMediaType.VIDEO : StoryMediaType.IMAGE,
+      audience: body?.audience,
+      caption: typeof body?.caption === "string" ? body.caption : undefined,
+      textBlocks: textBlocksForPersistence,
     });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    if (result.isLeft()) deleteUpload(imageUrl);
+    return result;
   }
 
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Delete a story',
-    auth: true,
-    params: [{ name: 'id', description: 'Story UUID' }],
+  @PatchAuth(":id/delete", {
+    summary: "Soft-delete a story",
+    params: [{ name: "id", description: "Story UUID" }],
   })
-  async deleteStory(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.storiesService.deleteStory({ storyId: id, userId: user.userId });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+  async deleteStory(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.storiesService.deleteStory({ storyId: id, userId });
   }
 
-  @Post(':id/view')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'View a story',
-    description: 'Marks a story as viewed by the current user',
-    params: [{ name: 'id', description: 'Story UUID' }],
+  @PostAuth(":id/view", {
+    summary: "View a story",
+    description: "Marks a story as viewed by the current user",
+    params: [{ name: "id", description: "Story UUID" }],
   })
-  async viewStory(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.storiesService.viewStory({ storyId: id, viewerId: user?.userId || '' });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+  async viewStory(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUserId() viewerId: string,
+  ) {
+    return this.storiesService.viewStory({
+      storyId: id,
+      viewerId: viewerId || "",
+    });
   }
 }

@@ -1,23 +1,23 @@
-import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { LikeRepository } from '../domain/repositories/like.repository';
+import { Injectable } from "@nestjs/common";
+import { Either, left, right } from "@/shared/core/either";
+import { AppError, NotFoundError } from "@/shared/core/errors";
+import { CommentDatabaseRepository } from "../data/repositories/comment-database.repository";
+import { MutationState } from "../types/social.types";
 
 @Injectable()
 export class LikeCommentUseCase {
-  constructor(private readonly likeRepository: LikeRepository) {}
+  constructor(private readonly commentRepository: CommentDatabaseRepository) {}
 
-  async execute(input: { userId: string; commentId: string }): Promise<Either<AppError, void>> {
-    const existingResult = await this.likeRepository.findCommentLike(input.userId, input.commentId);
-    if (isLeft(existingResult)) return left(existingResult.value);
-    if (existingResult.value) return right(undefined);
-
-    const createResult = await this.likeRepository.createCommentLike({
-      user: { connect: { id: input.userId } },
-      comment: { connect: { id: input.commentId } },
-    });
-    if (isLeft(createResult)) return left(createResult.value);
-
-    return right(undefined);
+  async execute(input: {
+    userId: string;
+    commentId: string;
+  }): Promise<Either<AppError, MutationState>> {
+    const result = await this.commentRepository.setCommentLike(
+      input.userId,
+      input.commentId,
+      true,
+    );
+    if (result.isLeft()) return left(result.value);
+    return result.value ? right(result.value) : left(new NotFoundError('Comentário'));
   }
 }

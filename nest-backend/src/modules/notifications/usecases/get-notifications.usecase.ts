@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { Either, right } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { GetNotificationsOutput } from '../dtos/notification.dto';
+import { CursorPage, PageQuery } from '@/shared/core/pagination';
+import { Notification } from '@prisma/client';
+import { NotificationDatabaseRepository } from '../data/repositories/notification-database.repository';
 
 @Injectable()
 export class GetNotificationsUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly notificationRepository: NotificationDatabaseRepository) {}
 
-  async execute(userId: string, limit = 20): Promise<Either<AppError, GetNotificationsOutput>> {
-    const notifications = await this.prisma.notification.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
-
-    return right(notifications);
+  async execute(
+    userId: string,
+    page: PageQuery,
+  ): Promise<Either<AppError, CursorPage<Notification>>> {
+    const result = await this.notificationRepository.findByUserId(userId, page);
+    if (result.isLeft()) return left(result.value);
+    return right(result.value);
   }
 }

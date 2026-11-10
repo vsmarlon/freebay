@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
 class StatColumn extends StatelessWidget {
   final String label;
@@ -10,6 +7,8 @@ class StatColumn extends StatelessWidget {
   final VoidCallback? onTap;
   final bool usePrimaryColor;
   final bool uppercaseLabel;
+  final double? size;
+  final IconData? icon;
 
   const StatColumn({
     super.key,
@@ -18,6 +17,8 @@ class StatColumn extends StatelessWidget {
     this.onTap,
     this.usePrimaryColor = false,
     this.uppercaseLabel = false,
+    this.size,
+    this.icon,
   });
 
   @override
@@ -33,30 +34,38 @@ class StatColumn extends StatelessWidget {
           value,
           style: TextStyle(
             fontFamily: AppTypography.headlineFontFamily,
-            fontSize: 20,
+            fontSize: size ?? 20,
             fontWeight: FontWeight.bold,
             color: textColor,
           ),
         ),
         Spacing.vXs,
-        Text(
-          uppercaseLabel ? label.toUpperCase() : label,
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontSize: uppercaseLabel ? 10 : 12,
-            fontWeight: uppercaseLabel ? FontWeight.w600 : FontWeight.normal,
-            letterSpacing: uppercaseLabel ? 0.5 : 0,
-            color: AppColors.mediumGray,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: context.textSecondary),
+              Spacing.hXs,
+            ],
+            Text(
+              uppercaseLabel ? label.toUpperCase() : label,
+              style: TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                fontSize: uppercaseLabel ? 10 : 12,
+                fontWeight: uppercaseLabel
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+                letterSpacing: uppercaseLabel ? 0.5 : 0,
+                color: context.textSecondary,
+              ),
+            ),
+          ],
         ),
       ],
     );
 
     if (onTap != null) {
-      return InkWell(
-        onTap: onTap,
-        child: content,
-      );
+      return InkWell(onTap: onTap, child: content);
     }
 
     return content;

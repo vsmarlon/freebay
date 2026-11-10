@@ -3,20 +3,23 @@ import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
+  OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Namespace, Socket } from 'socket.io';
+import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
-import { ConversationRepository } from './domain/repositories/conversation.repository';
+import { ConversationDatabaseRepository } from './data/repositories/conversation-database.repository';
+import { redactReplySummary } from './dtos/conversation-response';
 import { SendMessageUseCase } from './usecases/send-message.usecase';
 import { DeleteMessageUseCase } from './usecases/delete-message.usecase';
 import { ToggleReactionUseCase } from './usecases/toggle-reaction.usecase';
 import { ChatThreadAccessService } from './services/chat-thread-access.service';
-import { NotificationService } from '../notifications/services/notification.service';
-import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { configuredAllowedOrigins, isAllowedOrigin } from '@/shared/http/origin-policy';
 
 interface AuthenticatedUser {
   userId: string;
@@ -24,58 +27,71 @@ interface AuthenticatedUser {
 }
 
 @WebSocketGateway({
-  cors: { origin: '*' },
+  cors: {
+    origin: (origin, callback) => callback(null, isAllowedOrigin(origin, configuredAllowedOrigins())),
+  },
+  allowRequest: (request, callback) => callback(null, isAllowedOrigin(request.headers.origin, configuredAllowedOrigins())),
   namespace: '/chat',
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(ChatGateway.name);
 
   @WebSocketServer()
-  server: Server;
+  server: Namespace;
 
   private connectedUsers = new Map<string, AuthenticatedUser>();
-  private userSockets = new Map<string, string>();
-
+  private authenticatedSockets = new WeakMap<Socket, AuthenticatedUser>();
+  private joinedRooms = new Map<string, Set<string>>();
   constructor(
     private tokenValidator: JwtTokenValidatorService,
-    private conversationRepository: ConversationRepository,
+    private conversationRepository: ConversationDatabaseRepository,
     private sendMessageUseCase: SendMessageUseCase,
     private deleteMessageUseCase: DeleteMessageUseCase,
     private toggleReactionUseCase: ToggleReactionUseCase,
     private threadAccess: ChatThreadAccessService,
-    private notificationService: NotificationService,
-    private blockRepository: BlockRepository,
+    private blockRepository: BlockDatabaseRepository,
   ) {}
 
-  async handleConnection(client: Socket) {
-    try {
-      const token = client.handshake.auth.token || client.handshake.headers.authorization?.replace('Bearer ', '');
-      if (!token) {
-        client.disconnect();
-        return;
+  afterInit(namespace: Namespace) {
+    namespace.use(async (client, next) => {
+      try {
+        const token = client.handshake.auth.token || client.handshake.headers.authorization?.replace('Bearer ', '');
+        if (!token) return next(new Error('jwt unauthorized'));
+        const payload = await this.tokenValidator.verifyAndValidate(token, [JwtTokenType.ACCESS]);
+        this.authenticatedSockets.set(client, { userId: payload.userId, email: payload.email });
+        next();
+      } catch (error) {
+        this.logger.warn(`WebSocket authentication failed: ${String(error)}`);
+        next(new Error('jwt unauthorized'));
       }
+    });
+  }
 
-      const payload = await this.tokenValidator.verifyAndValidate(token, ['access']);
-      this.connectedUsers.set(client.id, { userId: payload.userId, email: payload.email });
-      this.userSockets.set(payload.userId, client.id);
-      this.logger.log(`Client connected: ${client.id}, userId: ${payload.userId}`);
+  handleConnection(client: Socket) {
+    const user = this.authenticatedSockets.get(client);
+    if (!user) return client.disconnect(true);
+    this.connectedUsers.set(client.id, user);
+    this.logger.log(`Client connected: ${client.id}, userId: ${user.userId}`);
 
-      client.broadcast.emit('user_online', { userId: payload.userId, lastSeenAt: null });
-    } catch (error) {
-      this.logger.error('WebSocket authentication failed', error);
-      client.disconnect();
-    }
   }
 
   async handleDisconnect(client: Socket) {
     const user = this.connectedUsers.get(client.id);
     if (user) {
-      this.userSockets.delete(user.userId);
-      const now = new Date();
-      client.broadcast.emit('user_offline', { userId: user.userId, lastSeenAt: now.toISOString() });
+      for (const room of this.joinedRooms.get(client.id) ?? []) {
+        if (!this.hasOtherDeviceInRoom(user.userId, room, client.id)) {
+          this.server.to(room).emit('user_offline', { userId: user.userId, lastSeenAt: new Date().toISOString() });
+        }
+      }
     }
+    this.joinedRooms.delete(client.id);
     this.connectedUsers.delete(client.id);
     this.logger.log(`Client disconnected: ${client.id}`);
+  }
+
+  private hasOtherDeviceInRoom(userId: string, room: string, clientId: string): boolean {
+    return [...(this.server.adapter.rooms.get(room) ?? [])]
+      .some((id) => id !== clientId && this.connectedUsers.get(id)?.userId === userId);
   }
 
   @SubscribeMessage('join_conversation')
@@ -101,11 +117,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const blockedByOther = !blockedByOtherResult.isLeft() && blockedByOtherResult.value;
     const userBlockedOther = !userBlockedOtherResult.isLeft() && userBlockedOtherResult.value;
 
-    if (blockedByOther || userBlockedOther) {
+    if (blockedByOtherResult.isLeft() || userBlockedOtherResult.isLeft() || blockedByOther || userBlockedOther) {
       return { error: 'You cannot join this conversation' };
     }
 
-    client.join(`conversation:${data.conversationId}`);
+    const room = `conversation:${data.conversationId}`;
+    if (client.rooms.has(room)) return { event: 'joined', data: { conversationId: data.conversationId } };
+    const alreadyOnline = this.hasOtherDeviceInRoom(user.userId, room, client.id);
+    const occupants = [...(this.server.adapter.rooms.get(room) ?? [])]
+      .map((id) => this.connectedUsers.get(id)?.userId)
+      .filter((id): id is string => !!id && id !== user.userId);
+    client.join(room);
+    const rooms = this.joinedRooms.get(client.id) ?? new Set<string>();
+    rooms.add(room);
+    this.joinedRooms.set(client.id, rooms);
+    for (const userId of new Set(occupants)) {
+      client.emit('user_online', { userId, lastSeenAt: null });
+    }
+    if (!alreadyOnline) client.to(room).emit('user_online', { userId: user.userId, lastSeenAt: null });
     this.logger.log(`User ${user.userId} joined conversation ${data.conversationId}`);
 
     return { event: 'joined', data: { conversationId: data.conversationId } };
@@ -119,25 +148,47 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const user = this.connectedUsers.get(client.id);
     if (!user) return;
 
-    client.leave(`conversation:${data.conversationId}`);
+    const room = `conversation:${data.conversationId}`;
+    if (!client.rooms.has(room)) return;
+    client.leave(room);
+    this.joinedRooms.get(client.id)?.delete(room);
+    if (!this.hasOtherDeviceInRoom(user.userId, room, client.id)) {
+      client.to(room).emit('user_offline', { userId: user.userId, lastSeenAt: new Date().toISOString() });
+    }
     return { event: 'left', data: { conversationId: data.conversationId } };
   }
 
   @SubscribeMessage('send_message')
   async handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { conversationId: string; content: string },
+    @MessageBody() data: { conversationId: string; content: string; replyToId?: string },
   ) {
     const user = this.connectedUsers.get(client.id);
     if (!user) return { error: 'Unauthorized' };
 
-    const message = await this.sendMessage(user.userId, data.conversationId, data.content);
+    const message = await this.sendMessage(
+      user.userId,
+      data.conversationId,
+      data.content,
+      data.replyToId,
+    );
 
     if (message) {
       this.server.to(`conversation:${data.conversationId}`).emit('new_message', message);
     }
 
     return { event: 'message_sent', data: message };
+  }
+
+  broadcastNewMessage(conversationId: string, message: unknown) {
+    this.server.to(`conversation:${conversationId}`).emit('new_message', message);
+  }
+
+  broadcastMessagesRead(conversationId: string, readerId: string) {
+    this.server.to(`conversation:${conversationId}`).emit('messages_read', {
+      conversationId,
+      readerId,
+    });
   }
 
   @SubscribeMessage('typing')
@@ -148,6 +199,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const user = this.connectedUsers.get(client.id);
     if (!user) return;
 
+    if (!client.rooms.has(`conversation:${data.conversationId}`)) return;
     client.to(`conversation:${data.conversationId}`).emit('user_typing', { userId: user.userId });
   }
 
@@ -159,6 +211,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const user = this.connectedUsers.get(client.id);
     if (!user) return;
 
+    if (!client.rooms.has(`conversation:${data.conversationId}`)) return;
     client.to(`conversation:${data.conversationId}`).emit('user_stopped_typing', { userId: user.userId });
   }
 
@@ -193,7 +246,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       userId: user.userId,
       messageId: data.messageId,
       emoji: data.emoji,
-      messageModel: 'DIRECT',
+      conversationId: data.conversationId,
     });
     if (result.isLeft()) return { error: result.value.message };
 
@@ -204,29 +257,35 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { event: 'reaction_updated', data: result.value };
   }
 
-  private async sendMessage(userId: string, conversationId: string, content: string) {
-    const result = await this.sendMessageUseCase.execute({ senderId: userId, conversationId, content });
+  private async sendMessage(
+    userId: string,
+    conversationId: string,
+    content: string,
+    replyToId?: string,
+  ) {
+    const result = await this.sendMessageUseCase.execute({
+      senderId: userId,
+      conversationId,
+      content,
+      replyToId,
+    });
     if (result.isLeft()) {
       return null;
     }
 
-    const convResult = await this.conversationRepository.findDirectConversationById(conversationId);
-    if (convResult.isLeft() || !convResult.value) return null;
-
-    const conversation = convResult.value;
-
-    const otherUserId = conversation.user1Id === userId ? conversation.user2Id : conversation.user1Id;
     const resultValue = result.value;
 
-    const senderName = await this.getSenderName(userId);
-    await this.notificationService.notifyNewMessage(otherUserId, senderName, conversationId);
+    let replyTo = null;
+    if (resultValue.message.replyToId) {
+      const replyResult = await this.conversationRepository.findReplyToSummary(resultValue.message.replyToId);
+      if (!replyResult.isLeft() && replyResult.value) {
+        replyTo =
+          replyResult.value.conversationId === resultValue.message.conversationId
+            ? redactReplySummary(replyResult.value)
+            : null;
+      }
+    }
 
-    return resultValue;
-  }
-
-  private async getSenderName(userId: string): Promise<string> {
-    const userResult = await this.conversationRepository.findUserById(userId);
-    if (userResult.isLeft() || !userResult.value) return 'Alguém';
-    return userResult.value.displayName || 'Alguém';
+    return { ...resultValue.message, replyTo };
   }
 }

@@ -1,13 +1,87 @@
-import { IsString, IsUUID, IsOptional } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  ArrayNotEmpty,
+  ArrayMaxSize,
+  Matches,
+  IsEnum,
+  IsIn,
+  IsInt,
+  Max,
+  Min,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
+import { STORED_MEDIA_PATH } from '@/shared/utils/file.utils';
+import { ChatTheme, ChatThreadType, ConversationStatus, MessageType } from '@prisma/client';
 
-export type ChatThreadTypeParam = 'ORDER' | 'DIRECT';
+export const FORWARD_MESSAGE_MAX_COUNT = 50;
+export const AUDIO_DURATION_MAX_MS = 60_000;
+export const FILTERED_MESSAGES_DEFAULT_LIMIT = 50;
+
+export class VerifyUrlDTO {
+  @ApiProperty({ example: 'https://google.com' })
+  @IsString()
+  readonly url: string;
+}
+
+export class SetMessagePinDTO {
+  @ApiProperty({ description: 'Whether the message is pinned for this conversation' })
+  @Transform(({ obj }: { obj: Record<string, unknown> }) => obj.pinned, { toClassOnly: true })
+  @IsBoolean()
+  readonly pinned: boolean;
+}
+
+export class ForwardMessagesDTO {
+  @ApiProperty({ type: [String], example: ['550e8400-e29b-41d4-a716-446655440000'] })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @ArrayNotEmpty()
+  @ArrayMaxSize(FORWARD_MESSAGE_MAX_COUNT)
+  readonly messageIds: string[];
+
+  @ApiProperty({ type: [String], example: ['550e8400-e29b-41d4-a716-446655440001'] })
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayNotEmpty()
+  readonly targetConversationIds: string[];
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002', required: false })
+  @IsOptional()
+  @IsString()
+  readonly sourceConversationId?: string;
+}
 
 export class StartConversationDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
   readonly targetUserId: string;
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', required: false })
+  @IsOptional()
+  @IsUUID()
+  readonly productId?: string;
+}
+
+export class MarkMessagesReadDTO {
+  @ApiProperty({ required: false, description: 'Only this message was explicitly opened; omitted means ordinary messages only' })
+  @IsOptional()
+  @IsUUID('4')
+  readonly messageId?: string;
+}
+
+export class ViewOnceOpeningDTO {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  @IsUUID('4')
+  readonly openingKey: string;
 }
 
 export class SendMessageDTO {
@@ -17,14 +91,25 @@ export class SendMessageDTO {
   @SanitizeText()
   readonly content?: string;
 
-  @ApiProperty({ enum: ['TEXT', 'IMAGE', 'GIF', 'LOCATION', 'PRODUCT_CARD'], default: 'TEXT', required: false })
+  @ApiProperty({ required: false, description: 'Client-generated id for optimistic reconciliation and idempotency' })
   @IsString()
   @IsOptional()
-  readonly type?: 'TEXT' | 'IMAGE' | 'GIF' | 'LOCATION' | 'PRODUCT_CARD';
+  readonly clientMessageId?: string;
 
-  @ApiProperty({ example: '/uploads/chat/abc.jpg', required: false })
+  @ApiProperty({ enum: MessageType, default: MessageType.TEXT, required: false })
+  @IsEnum(MessageType)
+  @IsOptional()
+  readonly type?: MessageType;
+
+  @ApiProperty({
+    example: '/media/chat/550e8400-e29b-41d4-a716-446655440000.jpg',
+    required: false,
+  })
   @IsString()
   @IsOptional()
+  @Matches(STORED_MEDIA_PATH, {
+    message: 'attachmentUrl deve ser um caminho de upload válido',
+  })
   readonly attachmentUrl?: string;
 
   @ApiProperty({ required: false })
@@ -34,59 +119,18 @@ export class SendMessageDTO {
   @ApiProperty({ required: false })
   @IsOptional()
   readonly metadata?: Record<string, unknown>;
-}
 
-export class ConversationResponse {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly id: string;
+  @ApiProperty({ required: false, description: 'Audio duration in milliseconds' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(AUDIO_DURATION_MAX_MS)
+  readonly durationMs?: number;
 
-  @ApiProperty({
-    example: { id: 'uuid', displayName: 'John Doe', avatarUrl: null, isVerified: true },
-  })
-  readonly otherUser: {
-    id: string;
-    displayName: string;
-    avatarUrl: string | null;
-    isVerified: boolean;
-  };
-
-  @ApiProperty({ example: { content: 'Last message', createdAt: '2026-06-17T12:00:00.000Z' }, nullable: true })
-  readonly lastMessage: { content: string; createdAt: Date } | null;
-
-  @ApiProperty({ example: 3 })
-  readonly unreadCount: number;
-
-  @ApiProperty({ example: 'ACTIVE' })
-  readonly status: 'ACTIVE' | 'PENDING';
-
-  @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
-  readonly createdAt: Date;
-}
-
-export class MessageResponse {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly id: string;
-
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly conversationId: string;
-
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly senderId: string;
-
-  @ApiProperty({ example: 'Olá, ainda tem disponível?' })
-  readonly content: string | null;
-
-  @ApiProperty({ example: 'TEXT' })
-  readonly type: string;
-
-  @ApiProperty({ example: null, nullable: true })
-  readonly readAt: Date | null;
-
-  @ApiProperty({ example: null, nullable: true })
-  readonly deliveredAt: Date | null;
-
-  @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
-  readonly createdAt: Date;
+  @ApiProperty({ required: false, description: 'Message self-destructs after being seen' })
+  @IsBoolean()
+  @IsOptional()
+  readonly viewOnce?: boolean;
 }
 
 export class StartConversationOutput {
@@ -95,6 +139,22 @@ export class StartConversationOutput {
 
   @ApiProperty({ example: 'PENDING' })
   readonly status: string;
+  readonly threadType: ChatThreadType;
+  readonly otherUser: ConversationCounterpartSummary;
+  readonly product: ProductConversationSummary | null;
+}
+
+export interface ConversationCounterpartSummary {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface ProductConversationSummary {
+  id: string;
+  title: string;
+  imageUrl: string | null;
+  status: string;
 }
 
 export class AcceptConversationOutput {
@@ -105,27 +165,34 @@ export class AcceptConversationOutput {
 export interface SendMessageInput {
   senderId: string;
   conversationId: string;
+  clientMessageId?: string;
   content?: string;
-  type?: 'TEXT' | 'IMAGE' | 'GIF' | 'LOCATION' | 'PRODUCT_CARD';
+  type?: MessageType;
   attachmentUrl?: string;
   replyToId?: string;
   metadata?: Record<string, unknown>;
+  viewOnce?: boolean;
+  durationMs?: number;
 }
 
 export interface SendMessageOutput {
   id: string;
   conversationId: string;
   senderId: string;
+  clientMessageId: string | null;
   content: string | null;
   type: string;
   attachmentUrl: string | null;
   metadata: Record<string, unknown> | null;
   replyToId: string | null;
+  viewOnce: boolean;
   createdAt: Date;
 }
 
-export interface GetConversationsInput {
-  userId: string;
+export interface SendMessageInternalOutput {
+  message: SendMessageOutput;
+  recipientId: string;
+  senderName: string;
 }
 
 export interface ConversationWithStatus {
@@ -141,13 +208,21 @@ export interface ConversationWithStatus {
     createdAt: Date;
   } | null;
   unreadCount: number;
-  status: 'ACTIVE' | 'PENDING';
+  status: ConversationStatus;
   createdAt: Date;
 }
 
-export interface GetMessagesInput {
+export interface ReplyToOutput {
+  id: string;
+  senderId: string;
+  content: string | null;
+  type: string;
+  attachmentUrl: string | null;
+  deletedAt: Date | null;
   conversationId: string;
-  userId: string;
+  createdAt: Date;
+  viewOnce: boolean;
+  readAt: Date | null;
 }
 
 export interface GetMessagesOutput {
@@ -156,14 +231,54 @@ export interface GetMessagesOutput {
   senderId: string;
   content: string | null;
   type: string;
+  attachmentUrl: string | null;
+  metadata: Record<string, unknown> | null;
+  replyToId: string | null;
+  replyTo: ReplyToOutput | null;
+  deletedAt: Date | null;
   readAt: Date | null;
   deliveredAt: Date | null;
   createdAt: Date;
+  viewOnce: boolean;
+}
+
+export interface GetFilteredMessagesInput {
+  conversationId: string;
+  userId: string;
+  type?: MessageType | 'LINK';
+  limit?: number;
+  cursor?: string;
+}
+
+export class FilteredMessagesQueryDTO {
+  @ApiPropertyOptional({ enum: ['IMAGE', 'GIF', 'VIDEO', 'LINK'] })
+  @IsOptional()
+  @IsIn(['IMAGE', 'GIF', 'VIDEO', 'LINK'])
+  readonly type?: MessageType | 'LINK';
+
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  readonly limit?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  readonly cursor?: string;
+}
+
+export interface GetFilteredMessagesResult {
+  messages: GetMessagesOutput[];
+  nextCursor: string | null;
 }
 
 export interface StartConversationInput {
   initiatorId: string;
   targetUserId: string;
+  productId?: string;
 }
 
 export interface AcceptConversationInput {
@@ -171,21 +286,65 @@ export interface AcceptConversationInput {
   userId: string;
 }
 
+@ValidatorConstraint({ name: 'hasPreferenceField', async: false })
+class HasPreferenceFieldConstraint implements ValidatorConstraintInterface {
+  validate(_value: unknown, args: ValidationArguments): boolean {
+    const preference: unknown = args.object;
+    return typeof preference === 'object' && preference !== null &&
+      ('theme' in preference && preference.theme !== undefined || 'muted' in preference && preference.muted !== undefined);
+  }
+
+  defaultMessage(): string {
+    return 'At least one of theme or muted must be provided';
+  }
+}
+
 export class UpdatePreferenceDTO {
-  @ApiProperty({ enum: ['DEFAULT', 'CRIMSON', 'COBALT', 'FOREST', 'AMBER', 'SLATE'], example: 'DEFAULT' })
-  @IsString()
-  readonly theme: string;
+  @ApiProperty({ enum: ChatTheme, example: ChatTheme.DEFAULT, required: false })
+  @IsOptional()
+  @IsEnum(ChatTheme)
+  readonly theme?: ChatTheme;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  readonly muted?: boolean;
+
+  @Validate(HasPreferenceFieldConstraint)
+  private readonly preferencePatchValid?: boolean;
 }
 
 export interface ConversationPreferenceSummary {
   isArchived: boolean;
   theme: string;
   backgroundUrl: string | null;
+  muted: boolean;
+}
+
+export interface ConversationOtherUserSummary {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
 }
 
 export interface GetMessagesResult {
   messages: GetMessagesOutput[];
-  threadType: ChatThreadTypeParam;
+  hasMore: boolean;
+  nextCursor: string | null;
+  threadType: ChatThreadType;
   otherUserId: string;
+  otherUser: ConversationOtherUserSummary;
   preference: ConversationPreferenceSummary | null;
+}
+
+export interface ForwardMessagesInput {
+  userId: string;
+  messageIds: string[];
+  targetConversationIds: string[];
+  sourceConversationId?: string;
+}
+
+export interface ForwardMessagesOutput {
+  forwardedCount: number;
+  messages: SendMessageOutput[];
 }

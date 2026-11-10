@@ -10,14 +10,15 @@ abstract class UserEntity with _$UserEntity {
   const factory UserEntity({
     required String id,
     String? displayName,
+    String? username,
     String? email,
     String? avatarUrl,
+    String? avatarBlurHash,
     String? bannerUrl,
     String? bio,
     String? city,
     String? state,
     @Default(false) bool isVerified,
-    @Default(false) bool isGuest,
     @Default(false) bool hasCpf,
     String? cpf,
     @Default(0) num reputationScore,
@@ -29,11 +30,12 @@ abstract class UserEntity with _$UserEntity {
     @Default(0) int postsCount,
     @Default(0) int productsCount,
     @Default(false) bool hasActiveStory,
+    @Default(false) bool biometryLoginEnabled,
+    DateTime? deletionRequestedAt,
   }) = _UserEntity;
 
   factory UserEntity.fromJson(Map<String, dynamic> json) =>
       _$UserEntityFromJson(json);
 
-  String get displayNameOrDefault =>
-      displayName ?? (isGuest ? 'Convidado' : 'Usuário');
+  String get displayNameOrDefault => displayName ?? 'Usuário';
 }

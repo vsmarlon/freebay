@@ -11,6 +11,7 @@ abstract class ReviewUserInfo with _$ReviewUserInfo {
     required String id,
     String? displayName,
     String? avatarUrl,
+    String? avatarBlurHash,
   }) = _ReviewUserInfo;
 
   factory ReviewUserInfo.fromJson(Map<String, dynamic> json) =>

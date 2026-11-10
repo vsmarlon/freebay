@@ -1,55 +1,110 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:json_annotation/json_annotation.dart';
 
-part 'follow_responses.freezed.dart';
 part 'follow_responses.g.dart';
 
-@freezed
-abstract class FollowResponse with _$FollowResponse {
-  const factory FollowResponse({
-    required bool following,
-    required int followersCount,
-    required int followingCount,
-  }) = _FollowResponse;
+@JsonSerializable()
+class FollowResponse {
+  @JsonKey(defaultValue: false)
+  final bool following;
+  @JsonKey(defaultValue: 0)
+  final int followersCount;
+  @JsonKey(defaultValue: 0)
+  final int followingCount;
+
+  const FollowResponse({
+    required this.following,
+    required this.followersCount,
+    required this.followingCount,
+  });
 
   factory FollowResponse.fromJson(Map<String, dynamic> json) =>
       _$FollowResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FollowResponseToJson(this);
 }
 
-@freezed
-abstract class FollowStatusResponse with _$FollowStatusResponse {
-  const factory FollowStatusResponse({
-    required bool isFollowing,
-    required int followersCount,
-    required int followingCount,
-  }) = _FollowStatusResponse;
+@JsonSerializable()
+class FollowStatusResponse {
+  @JsonKey(defaultValue: false)
+  final bool isFollowing;
+  @JsonKey(defaultValue: 0)
+  final int followersCount;
+  @JsonKey(defaultValue: 0)
+  final int followingCount;
+
+  const FollowStatusResponse({
+    required this.isFollowing,
+    required this.followersCount,
+    required this.followingCount,
+  });
 
   factory FollowStatusResponse.fromJson(Map<String, dynamic> json) =>
       _$FollowStatusResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FollowStatusResponseToJson(this);
+
+  FollowStatusResponse copyWith({
+    bool? isFollowing,
+    int? followersCount,
+    int? followingCount,
+  }) {
+    return FollowStatusResponse(
+      isFollowing: isFollowing ?? this.isFollowing,
+      followersCount: followersCount ?? this.followersCount,
+      followingCount: followingCount ?? this.followingCount,
+    );
+  }
 }
 
-@freezed
-abstract class FollowListUser with _$FollowListUser {
-  const factory FollowListUser({
-    required String id,
-    required String displayName,
-    String? avatarUrl,
-    required bool isVerified,
-    required double reputationScore,
-  }) = _FollowListUser;
+@JsonSerializable()
+class UserBrief {
+  final String id;
+  final String displayName;
+  final String? username;
+  final String? avatarUrl;
+  final String? avatarBlurHash;
+  @JsonKey(defaultValue: false)
+  final bool isVerified;
+  @JsonKey(defaultValue: 0.0)
+  final double reputationScore;
 
-  factory FollowListUser.fromJson(Map<String, dynamic> json) =>
-      _$FollowListUserFromJson(json);
+  const UserBrief({
+    required this.id,
+    required this.displayName,
+    this.username,
+    this.avatarUrl,
+    this.avatarBlurHash,
+    required this.isVerified,
+    required this.reputationScore,
+  });
+
+  factory UserBrief.fromJson(Map<String, dynamic> json) =>
+      _$UserBriefFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserBriefToJson(this);
 }
 
-@freezed
-abstract class FollowListResponse with _$FollowListResponse {
-  const factory FollowListResponse({
-    @Default([]) List<FollowListUser> users,
-    required int total,
-    required int limit,
-    required int offset,
-  }) = _FollowListResponse;
+typedef FollowListUser = UserBrief;
+
+@JsonSerializable()
+class FollowListResponse {
+  final List<FollowListUser> users;
+  @JsonKey(defaultValue: 0)
+  final int total;
+  @JsonKey(defaultValue: 0)
+  final int limit;
+  @JsonKey(defaultValue: 0)
+  final int offset;
+
+  const FollowListResponse({
+    this.users = const [],
+    required this.total,
+    required this.limit,
+    required this.offset,
+  });
 
   factory FollowListResponse.fromJson(Map<String, dynamic> json) =>
       _$FollowListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FollowListResponseToJson(this);
 }

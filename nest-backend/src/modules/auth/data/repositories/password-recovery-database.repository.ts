@@ -1,92 +1,114 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, PasswordRecoveryCode, PrismaClient } from '@prisma/client';
-import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { PasswordRecoveryRepository } from '../../domain/repositories/password-recovery.repository';
+import { Prisma, PasswordRecoveryCode } from '@prisma/client';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
+import { RepositoryResponse } from '@/shared/core/either';
+import { AuthSessionStateDatabaseRepository } from '@/shared/infra/prisma/auth-session-state-database.repository';
 
 @Injectable()
-export class PasswordRecoveryDatabaseRepository implements PasswordRecoveryRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+export class PasswordRecoveryDatabaseRepository {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authSessionState: AuthSessionStateDatabaseRepository,
+  ) {
+  }
 
   async create(data: Prisma.PasswordRecoveryCodeCreateInput): RepositoryResponse<PasswordRecoveryCode> {
-    try {
-      return right(await this.prisma.passwordRecoveryCode.create({ data }));
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao criar código de recuperação'));
-    }
+    return repositoryResponse(
+      () => this.prisma.passwordRecoveryCode.create({ data }),
+      'Erro ao criar código de recuperação',
+    );
   }
 
   async findLatestActiveByEmail(email: string): RepositoryResponse<PasswordRecoveryCode | null> {
-    try {
-      return right(
-        await this.prisma.passwordRecoveryCode.findFirst({
+    return repositoryResponse(
+      () =>
+        this.prisma.passwordRecoveryCode.findFirst({
           where: { user: { email }, usedAt: null, expiresAt: { gt: new Date() } },
           orderBy: { requestedAt: 'desc' },
         }),
-      );
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar código de recuperação'));
-    }
+      'Erro ao buscar código de recuperação',
+    );
   }
 
   async findLatestByEmail(email: string): RepositoryResponse<PasswordRecoveryCode | null> {
-    try {
-      return right(
-        await this.prisma.passwordRecoveryCode.findFirst({
+    return repositoryResponse(
+      () =>
+        this.prisma.passwordRecoveryCode.findFirst({
           where: { user: { email } },
           orderBy: { requestedAt: 'desc' },
         }),
-      );
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar código de recuperação'));
-    }
+      'Erro ao buscar código de recuperação',
+    );
   }
 
-  async incrementAttempts(id: string): RepositoryResponse<PasswordRecoveryCode> {
-    try {
-      return right(
-        await this.prisma.passwordRecoveryCode.update({
-          where: { id },
-          data: { attempts: { increment: 1 } },
-        }),
-      );
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao incrementar tentativas'));
-    }
+  async reserveAttempt(id: string): RepositoryResponse<boolean> {
+    return repositoryResponse(async () => {
+      const recovery = await this.prisma.passwordRecoveryCode.findUnique({ where: { id }, select: { maxAttempts: true } });
+      if (!recovery) return false;
+      const result = await this.prisma.passwordRecoveryCode.updateMany({
+        where: { id, usedAt: null, attempts: { lt: recovery.maxAttempts }, expiresAt: { gt: new Date() } },
+        data: { attempts: { increment: 1 } },
+      });
+      return result.count === 1;
+    }, 'Erro ao reservar tentativa de recuperação');
   }
 
   async markSent(id: string, resendMessageId?: string | null): RepositoryResponse<PasswordRecoveryCode> {
-    try {
-      return right(
-        await this.prisma.passwordRecoveryCode.update({
+    return repositoryResponse(
+      () =>
+        this.prisma.passwordRecoveryCode.update({
           where: { id },
           data: { sentAt: new Date(), resendMessageId: resendMessageId ?? undefined },
         }),
-      );
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao marcar código como enviado'));
-    }
+      'Erro ao marcar código como enviado',
+    );
   }
 
   async markUsed(id: string): RepositoryResponse<PasswordRecoveryCode> {
-    try {
-      return right(
-        await this.prisma.passwordRecoveryCode.update({
+    return repositoryResponse(
+      () =>
+        this.prisma.passwordRecoveryCode.update({
           where: { id },
           data: { usedAt: new Date() },
         }),
-      );
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao marcar código como usado'));
-    }
+      'Erro ao marcar código como usado',
+    );
+  }
+
+  async findByCodeHash(codeHash: string): RepositoryResponse<PasswordRecoveryCode | null> {
+    return repositoryResponse(
+      () => this.prisma.passwordRecoveryCode.findFirst({ where: { codeHash }, orderBy: { requestedAt: 'desc' } }),
+      'Erro ao buscar credencial de recuperação',
+    );
+  }
+
+  async delete(id: string): RepositoryResponse<void> {
+    return repositoryResponse(async () => {
+      await this.prisma.passwordRecoveryCode.delete({ where: { id } });
+    }, 'Erro ao invalidar código de recuperação');
+  }
+
+  async consumeAndUpdatePassword(id: string, userId: string, passwordHash: string): RepositoryResponse<boolean> {
+    return repositoryResponse(async () => this.prisma.$transaction(async (tx) => {
+      const cutoff = new Date();
+      const claimed = await tx.passwordRecoveryCode.updateMany({
+        where: { id, userId, usedAt: null, expiresAt: { gt: new Date() } },
+        data: { usedAt: new Date() },
+      });
+      if (claimed.count !== 1) return false;
+      await tx.user.update({ where: { id: userId }, data: { passwordHash } });
+      await this.authSessionState.advanceInvalidBeforeInTransaction(tx, userId, cutoff);
+      return true;
+    }), 'Erro ao consumir código e atualizar senha');
   }
 
   async deleteManyForUser(userId: string): RepositoryResponse<void> {
-    try {
-      await this.prisma.passwordRecoveryCode.deleteMany({ where: { userId } });
-      return right(undefined);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao limpar códigos de recuperação'));
-    }
+    return repositoryResponse(
+      async () => {
+        await this.prisma.passwordRecoveryCode.deleteMany({ where: { userId } });
+      },
+      'Erro ao limpar códigos de recuperação',
+    );
   }
 }

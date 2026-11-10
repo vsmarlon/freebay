@@ -1,41 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:freebay/core/router/app_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class GuestProfileView extends ConsumerWidget {
   const GuestProfileView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     return Scaffold(
-      backgroundColor: context.bgColor,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          PageHeader(
-            text: 'PERFIL',
-            actions: [
-              GestureDetector(
-                onTap: () => ref.read(themeModeProvider.notifier).toggleTheme(),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: context.borderColor, width: 2),
-                  ),
-                  child: Icon(
-                    context.isDark ? Icons.light_mode : Icons.brightness_6,
-                    color: context.textPrimary,
-                    size: 20,
+          ShellScrollHeader(
+            child: PageHeader(
+              text: 'PERFIL',
+              actions: [
+                GestureDetector(
+                  onTap: () =>
+                      ref.read(themeModeProvider.notifier).toggleTheme(),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: context.borderColor, width: 2),
+                    ),
+                    child: Icon(
+                      context.isDark ? Icons.light_mode : Icons.brightness_6,
+                      color: context.textPrimary,
+                      size: 20,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           Expanded(
             child: Center(
@@ -51,7 +54,7 @@ class GuestProfileView extends ConsumerWidget {
                     ),
                     Spacing.vLg,
                     Text(
-                      'Bem-vindo ao FreeBay!',
+                      strings.profileWelcome,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -60,30 +63,33 @@ class GuestProfileView extends ConsumerWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Faça login ou cadastre-se para\nter acesso completo ao app',
-                      style:
-                          TextStyle(fontSize: 16, color: AppColors.mediumGray),
+                    Text(
+                      strings.profileGuestDescription,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: AppColors.mediumGray,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     Spacing.vXl,
                     SizedBox(
                       width: double.infinity,
                       child: AppButton(
-                        label: 'Entrar',
-                        onPressed: () => context.push('/login'),
+                        label: strings.authLogin,
+                        onPressed: () => context.push(loginPathFrom(context)),
                       ),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: InkWell(
-                        onTap: () => context.push('/register'),
+                        onTap: () => context.push(AppRoutes.register),
                         child: Container(
                           height: 52,
                           decoration: BoxDecoration(
-                            border:
-                                Border.all(color: AppColors.primaryContainer),
+                            border: Border.all(
+                              color: AppColors.primaryContainer,
+                            ),
                           ),
                           child: const Center(
                             child: Text(

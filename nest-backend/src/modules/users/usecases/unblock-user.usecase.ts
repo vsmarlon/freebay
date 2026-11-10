@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { BlockRepository } from '../domain/repositories/block.repository';
-import { BlockResponse } from '../mappers/user.mapper';
+import { BlockResponse } from '../dtos/user-response.class';
 import { BlockUserInput } from '../dtos/user.dto';
 
 @Injectable()

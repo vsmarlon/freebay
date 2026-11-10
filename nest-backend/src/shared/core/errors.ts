@@ -4,6 +4,7 @@ export class AppError extends Error {
     public readonly code: string,
     message: string,
     public readonly statusCode: number = 400,
+    public readonly detail?: string,
   ) {
     super(message);
     this.message = message;
@@ -25,6 +26,12 @@ export class EmailAlreadyExistsError extends AppError {
   }
 }
 
+export class UsernameAlreadyExistsError extends AppError {
+  constructor() {
+    super('USERNAME_ALREADY_EXISTS', 'Este nome de usuário já está em uso', 409);
+  }
+}
+
 export class UnauthorizedError extends AppError {
   constructor(message = 'Não autorizado') {
     super('UNAUTHORIZED', message, 401);
@@ -43,25 +50,14 @@ export class ForbiddenError extends AppError {
   }
 }
 
-export class InsufficientBalanceError extends AppError {
-  constructor() {
-    super('INSUFFICIENT_BALANCE', 'Saldo insuficiente para saque', 422);
-  }
-}
-
-export class NoRecipientError extends AppError {
-  constructor() {
-    super(
-      'NO_RECIPIENT',
-      'Nenhuma conta bancária cadastrada, configure seu recipient primeiro',
-      422,
-    );
-  }
-}
-
 export class InvalidOrderStateError extends AppError {
-  constructor(expected: string, current: string) {
-    super('INVALID_ORDER_STATE', `Pedido deveria estar ${expected}, mas está ${current}`, 422);
+  constructor(expected: string, current?: string) {
+    super(
+      'INVALID_ORDER_STATE',
+      'Este pedido não permite essa ação agora',
+      422,
+      `expected=${expected} current=${current ?? 'n/a'}`,
+    );
   }
 }
 
@@ -74,12 +70,6 @@ export class ValidationError extends AppError {
 export class BadRequestError extends AppError {
   constructor(message = 'Requisição inválida') {
     super('BAD_REQUEST', message, 400);
-  }
-}
-
-export class AlreadyExistsError extends AppError {
-  constructor(resource: string) {
-    super('ALREADY_EXISTS', `${resource} já existe`, 409);
   }
 }
 
@@ -131,14 +121,138 @@ export class PhoneCodeAlreadyUsedError extends AppError {
   }
 }
 
+export class InvalidPhoneError extends AppError {
+  constructor(message = 'Telefone inválido. Informe o DDD e o número.') {
+    super('INVALID_PHONE', message, 400);
+  }
+}
+
 export class DatabaseError extends AppError {
-  constructor(message = 'Database error') {
+  constructor(message = 'Erro no banco de dados') {
     super('DB_ERROR', message, 500);
   }
 }
 
-export class NotImplementedError extends AppError {
-  constructor(feature: string) {
-    super('NOT_IMPLEMENTED', `${feature} is not yet implemented`, 501);
+export class InternalServerError extends AppError {
+  constructor(message = 'Erro interno do servidor') {
+    super('INTERNAL_ERROR', message, 500);
+  }
+}
+
+export class InvalidTokenError extends AppError {
+  constructor(message = 'Token inválido') {
+    super('INVALID_TOKEN', message, 401);
+  }
+}
+
+export class SessionExpiredError extends AppError {
+  constructor(message = 'Sessão expirada. Faça login novamente.') {
+    super('SESSION_EXPIRED', message, 401);
+  }
+}
+
+export class InvalidGoogleTokenError extends AppError {
+  constructor(message = 'Token Google inválido') {
+    super('INVALID_GOOGLE_TOKEN', message, 401);
+  }
+}
+
+export class InvalidAppleTokenError extends AppError {
+  constructor(message = 'Token Apple inválido ou expirado') {
+    super('INVALID_APPLE_TOKEN', message, 401);
+  }
+}
+
+export class AppleEmailCollisionError extends AppError {
+  constructor() {
+    super('APPLE_EMAIL_COLLISION', 'Este e-mail já pertence a outra conta. Entre com esse método antes de vincular Apple.', 409);
+  }
+}
+
+export class AppleRevocationRequiredError extends AppError {
+  constructor(message = 'Não foi possível revogar o vínculo Apple. Tente novamente antes de excluir a conta.') {
+    super('APPLE_REVOCATION_REQUIRED', message, 409);
+  }
+}
+
+export class AppleUnavailableError extends AppError {
+  constructor() {
+    super('APPLE_UNAVAILABLE', 'O login com Apple não está configurado ou disponível', 503);
+  }
+}
+
+export class FreshAuthenticationRequiredError extends AppError {
+  constructor() {
+    super('FRESH_AUTH_REQUIRED', 'Entre novamente para cancelar a exclusão da conta', 401);
+  }
+}
+
+export class UnverifiedGoogleEmailError extends AppError {
+  constructor(
+    message = 'A conta Google precisa ter o e-mail verificado para ser vinculada a uma conta existente',
+  ) {
+    super('UNVERIFIED_GOOGLE_EMAIL', message, 403);
+  }
+}
+
+export class EmailVerificationRequiredError extends AppError {
+  constructor(message = 'Verifique seu e-mail para continuar') {
+    super('EMAIL_VERIFICATION_REQUIRED', message, 403);
+  }
+}
+
+export class EmailVerificationCodeNotFoundError extends AppError {
+  constructor() {
+    super('EMAIL_VERIFICATION_CODE_NOT_FOUND', 'Código de verificação de e-mail inválido ou expirado', 404);
+  }
+}
+
+export class EmailVerificationCodeAttemptsExceededError extends AppError {
+  constructor() {
+    super('EMAIL_VERIFICATION_CODE_ATTEMPTS_EXCEEDED', 'Limite de tentativas de verificação de e-mail excedido', 429);
+  }
+}
+
+export class UserNotFoundError extends AppError {
+  constructor(message = 'Usuário não encontrado') {
+    super('USER_NOT_FOUND', message, 404);
+  }
+}
+
+export class PaymentProviderError extends AppError {
+  constructor(message = 'Erro no provedor de pagamento', statusCode = 500) {
+    super('PAYMENT_PROVIDER_ERROR', message, statusCode);
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message = 'Conflito de dados') {
+    super('CONFLICT', message, 409);
+  }
+}
+
+export class EmailDeliveryFailedError extends AppError {
+  constructor(message = 'Falha ao enviar e-mail') {
+    super('EMAIL_DELIVERY_FAILED', message, 500);
+  }
+}
+
+export class AccountDeletionBlockedError extends AppError {
+  constructor(reasons: string[]) {
+    super(
+      'ACCOUNT_DELETION_BLOCKED',
+      `Não é possível excluir a conta agora: ${reasons.join('; ')}`,
+      409,
+    );
+  }
+}
+
+export class AccountSuspendedError extends AppError {
+  constructor(reason?: string | null) {
+    super(
+      'ACCOUNT_SUSPENDED',
+      reason ? `Conta suspensa: ${reason}` : 'Conta suspensa',
+      403,
+    );
   }
 }

@@ -1,22 +1,19 @@
 import 'dart:async';
+import 'package:freebay/core/router/app_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_refresh_indicator.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/features/orders/data/entities/order_entity.dart';
+import 'package:freebay/features/chat/presentation/pages/chat_list_states.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_list_loading_tile.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_list_tile.dart';
-import 'package:freebay/features/chat/presentation/widgets/chat_search_bar.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ChatListPage extends ConsumerStatefulWidget {
   const ChatListPage({super.key});
@@ -26,71 +23,63 @@ class ChatListPage extends ConsumerStatefulWidget {
 }
 
 class _ChatListPageState extends ConsumerState<ChatListPage>
-    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
-  late AnimationController _animationController;
   final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
   Timer? _debounceTimer;
-  String _searchQuery = '';
-  String _sortBy = 'recent';
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
-    _animationController.forward();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
     _searchController.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 400) {
+      ref.read(liveChatListProvider.notifier).fetchMore();
+    }
   }
 
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      setState(() => _searchQuery = value.trim().toLowerCase());
+      ref.read(chatListQueryProvider.notifier).state = value.trim();
     });
-  }
-
-  List<ChatEntity> _filterAndSortChats(List<ChatEntity> chats) {
-    var filtered = chats.where((chat) {
-      if (_searchQuery.isEmpty) return true;
-      return chat.otherName.toLowerCase().contains(_searchQuery);
-    }).toList();
-
-    if (_sortBy == 'name') {
-      filtered.sort((a, b) => a.otherName.compareTo(b.otherName));
-    } else {
-      filtered.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    }
-
-    return filtered;
   }
 
   bool _canModifyOrderChat(ChatEntity chat) {
     if (chat.threadType == ChatThreadType.direct) return true;
-    return chat.orderStatus == 'COMPLETED' || chat.orderStatus == 'CANCELLED';
+    return chat.orderStatusEnum == OrderStatus.completed ||
+        chat.orderStatusEnum == OrderStatus.cancelled;
   }
 
   Future<void> _archiveChat(ChatEntity chat) async {
-    final usecase = ref.read(archiveChatUsecaseProvider);
-    final result = await usecase(chat.id, chat.threadType, !chat.isArchived);
-    result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
+    final result = await ref
+        .read(chatRepositoryProvider)
+        .archiveChat(chat.id, chat.threadType, !chat.isArchived);
+    result.fold((failure) => AppSnackbar.handleFailure(context, failure), (_) {
       ref.invalidate(chatsProvider);
       ref.invalidate(liveChatListProvider);
-      ref.invalidate(archivedChatsProvider);
+      ref.invalidate(archivedChatListProvider);
       AppSnackbar.success(
         context,
-        chat.isArchived ? 'Conversa restaurada' : 'Conversa arquivada',
+        chat.isArchived
+            ? l10n(context).chatConversationRestored
+            : l10n(context).chatConversationArchived,
       );
     });
   }
@@ -99,23 +88,21 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Excluir conversa'),
-        content: const Text(
-          'Esta ação não pode ser desfeita. A conversa será ocultada para você.',
-        ),
+        title: Text(l10n(ctx).chatDeleteConversation),
+        content: Text(l10n(ctx).chatDeleteUndoExplanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(l10n(ctx).commonCancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              _deleteChat(chat);
+              _queueDeleteChat(chat);
             },
-            child: const Text(
-              'Excluir',
-              style: TextStyle(color: AppColors.error),
+            child: Text(
+              l10n(ctx).commonDelete,
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -123,27 +110,54 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     );
   }
 
-  Future<void> _deleteChat(ChatEntity chat) async {
-    final usecase = ref.read(deleteChatUsecaseProvider);
-    final result = await usecase(chat.id, chat.threadType);
-    result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
-      ref.invalidate(chatsProvider);
-      ref.invalidate(liveChatListProvider);
-      ref.invalidate(archivedChatsProvider);
-      AppSnackbar.success(context, 'Conversa excluída');
-    });
+  void _queueDeleteChat(ChatEntity chat) {
+    final repository = ref.read(chatRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+    AppSnackbar.undoable(
+      context,
+      message: l10n(context).chatDeleteConversationUndo,
+      onUndo: () {
+        if (messenger.mounted) {
+          AppSnackbar.infoOnMessenger(
+            messenger,
+            l10n(messenger.context).chatDeleteCancelled,
+          );
+        }
+      },
+      onCommit: () async {
+        final result = await repository.deleteChat(chat.id, chat.threadType);
+        result.fold(
+          (failure) {
+            if (messenger.mounted) {
+              AppSnackbar.errorOnMessenger(
+                messenger,
+                localizedFailureMessage(messenger.context, failure),
+              );
+            }
+          },
+          (_) {
+            container.invalidate(chatsProvider);
+            container.invalidate(liveChatListProvider);
+            container.invalidate(archivedChatListProvider);
+          },
+        );
+      },
+    );
   }
 
   void _showContextMenu(ChatEntity chat) {
     showBrutalistSheet(
       context: context,
-      title: 'OPÇÕES DE CONVERSA',
+      title: l10n(context).chatConversationOptions,
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
             leading: Icon(chat.isArchived ? Icons.unarchive : Icons.archive),
-            title: Text(chat.isArchived ? 'Restaurar' : 'Arquivar'),
+            title: Text(
+              chat.isArchived ? l10n(ctx).chatUnarchive : l10n(ctx).chatArchive,
+            ),
             enabled: _canModifyOrderChat(chat),
             onTap: () {
               Navigator.pop(ctx);
@@ -152,9 +166,9 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
           ),
           ListTile(
             leading: const Icon(Icons.delete_outline, color: AppColors.error),
-            title: const Text(
-              'Excluir',
-              style: TextStyle(color: AppColors.error),
+            title: Text(
+              l10n(ctx).commonDelete,
+              style: const TextStyle(color: AppColors.error),
             ),
             enabled: _canModifyOrderChat(chat),
             onTap: () {
@@ -163,11 +177,11 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
             },
           ),
           if (!_canModifyOrderChat(chat))
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Text(
-                'Ações disponíveis apenas após o pedido ser concluído ou cancelado.',
-                style: TextStyle(fontSize: 12, color: AppColors.mediumGray),
+                l10n(ctx).chatOrderModifyRule,
+                style: TextStyle(fontSize: 12, color: context.textSecondary),
               ),
             ),
         ],
@@ -178,147 +192,106 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final strings = l10n(context);
     final isDark = context.isDark;
     final authState = ref.watch(authControllerProvider);
-    final user = authState.valueOrNull;
-    final isGuest = user == null || user.isGuest;
+    final user = authState.value;
 
-    return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(text: 'MENSAGENS'),
-          Expanded(
-            child: isGuest
-                ? Column(
-                    children: [
-                      _buildSearchBar(isDark),
-                      _buildEmptyState(isDark, true),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      _buildSearchBar(isDark),
-                      ref
-                          .watch(liveChatListProvider)
-                          .when(
-                            data: (chats) {
-                              final filteredChats = _filterAndSortChats(chats);
-                              if (filteredChats.isEmpty) {
-                                return _buildEmptyState(isDark, chats.isEmpty);
-                              }
-                              return Expanded(
-                                child: AppRefreshIndicator(
-                                  onRefresh: () async {
-                                    ref.invalidate(chatsProvider);
-                                    ref.invalidate(liveChatListProvider);
-                                  },
-                                  child: ListView.builder(
-                                    itemCount: filteredChats.length,
-                                    itemBuilder: (context, index) {
-                                      final chat = filteredChats[index];
-                                      return ChatListTile(
-                                        chat: chat,
-                                        isDark: isDark,
-                                        canSwipe: _canModifyOrderChat(chat),
-                                        onTap: () {
-                                          context.push(
-                                            '/chat/${chat.id}',
-                                            extra: {
-                                              'orderName': chat.otherName,
-                                              'orderAvatarUrl':
-                                                  chat.otherAvatarUrl,
-                                              'chatType': chat.threadType.name,
-                                            },
-                                          );
-                                        },
-                                        onLongPress: () =>
-                                            _showContextMenu(chat),
-                                        onArchive: () => _archiveChat(chat),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              );
-                            },
-                            loading: () => Expanded(
-                              child: ListView.builder(
-                                itemCount: 5,
-                                itemBuilder: (context, index) =>
-                                    ChatListLoadingTile(isDark: isDark),
-                              ),
-                            ),
-                            error: (error, stack) => _buildErrorState(isDark),
-                          ),
-                    ],
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(bool isDark) {
-    return ChatSearchBar(
-      controller: _searchController,
-      onChanged: _onSearchChanged,
-      hasQuery: _searchQuery.isNotEmpty,
-      onClear: () {
-        _searchController.clear();
-        setState(() => _searchQuery = '');
-      },
-      sortBy: _sortBy,
-      onSortChanged: (value) => setState(() => _sortBy = value),
-      onArchiveTap: () => context.push('/chat/archived'),
-      onNewChatTap: () => context.push('/chat/new'),
-      isDark: isDark,
-    );
-  }
-
-  Widget _buildEmptyState(bool isDark, bool noData) {
-    return Expanded(
-      child: EmptyState(
-        icon: noData ? Icons.chat_bubble_outline : Icons.search_off,
-        title: noData ? 'SEM CONVERSAS' : 'NENHUM RESULTADO',
-        subtitle: noData
-            ? 'Crie uma conversa ou receba uma mensagem para visualizar aqui.'
-            : 'Tente buscar por outro nome',
-      ),
-    );
-  }
-
-  Widget _buildErrorState(bool isDark) {
-    return Expanded(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    if (user == null) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
           children: [
-            Icon(Icons.error_outline, size: 64, color: AppColors.error),
-            Spacing.vMd,
-            Text(
-              'Erro ao carregar conversas',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.white : AppColors.darkGray,
+            ShellScrollHeader(
+              child: PageHeader(text: strings.chatTitle.toUpperCase()),
+            ),
+            Expanded(
+              child: GuestGateView(
+                icon: Icons.chat_bubble_outline,
+                title: strings.chatPrivateMessages,
+                description: strings.chatGuestDescription,
+                onLoginPressed: () => context.push(loginPathFrom(context)),
+                onRegisterPressed: () => context.push(AppRoutes.register),
               ),
-            ),
-            Spacing.vSm,
-            Text(
-              'Não foi possível carregar suas conversas. Verifique sua conexão.',
-              style: TextStyle(color: AppColors.mediumGray),
-              textAlign: TextAlign.center,
-            ),
-            Spacing.vMd,
-            AppButton(
-              label: 'Tentar novamente',
-              onPressed: () {
-                ref.invalidate(chatsProvider);
-                ref.invalidate(liveChatListProvider);
-              },
             ),
           ],
         ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Column(
+        children: [
+          ShellScrollHeader(
+            child: PageHeader(text: strings.chatTitle.toUpperCase()),
+          ),
+          Expanded(
+            child: Column(
+              children: [
+                buildChatSearchBar(
+                  context,
+                  ref,
+                  _searchController,
+                  _onSearchChanged,
+                  isDark,
+                ),
+                (() {
+                  final listState = ref.watch(liveChatListProvider);
+                  final query = ref.watch(chatListQueryProvider);
+                  if (listState.isLoading) {
+                    return Expanded(
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: 5,
+                        itemBuilder: (context, index) =>
+                            ChatListLoadingTile(isDark: isDark),
+                      ),
+                    );
+                  }
+                  if (listState.error != null && listState.items.isEmpty) {
+                    return buildChatErrorState(context, ref);
+                  }
+                  final chats = listState.items;
+                  final loadingMore = listState.isLoadingMore;
+                  if (chats.isEmpty) {
+                    return buildChatEmptyState(context, query.isNotEmpty);
+                  }
+                  return Expanded(
+                    child: AppRefreshIndicator(
+                      onRefresh: () async {
+                        await ref
+                            .read(liveChatListProvider.notifier)
+                            .refreshRecent();
+                      },
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        controller: _scrollController,
+                        itemCount: chats.length + (loadingMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == chats.length) {
+                            return ChatListLoadingTile(isDark: isDark);
+                          }
+                          final chat = chats[index];
+                          return ChatListTile(
+                            key: ValueKey('${chat.threadType}:${chat.id}'),
+                            chat: chat,
+                            isDark: isDark,
+                            canSwipe: _canModifyOrderChat(chat),
+                            onTap: () =>
+                                context.push(AppRoutes.chatPath(chat.id)),
+                            onLongPress: () => _showContextMenu(chat),
+                            onArchive: () => _archiveChat(chat),
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                })(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -9,10 +9,15 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
+import { configuredAllowedOrigins, isAllowedOrigin } from '@/shared/http/origin-policy';
 
 @WebSocketGateway({
-  cors: { origin: '*' },
+  cors: {
+    origin: (origin, callback) => callback(null, isAllowedOrigin(origin, configuredAllowedOrigins())),
+  },
+  allowRequest: (request, callback) => callback(null, isAllowedOrigin(request.headers.origin, configuredAllowedOrigins())),
   namespace: '/notifications',
 })
 export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -35,7 +40,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         return;
       }
 
-      const payload = await this.tokenValidator.verifyAndValidate(token, ['access']);
+      const payload = await this.tokenValidator.verifyAndValidate(token, [JwtTokenType.ACCESS]);
       const userId = payload.userId;
 
       if (!this.userSockets.has(userId)) {
@@ -68,6 +73,14 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       sockets.forEach(socketId => {
         this.server.to(socketId).emit('notification', notification);
       });
+    }
+  }
+
+  sendPrivateContentInvalidated(userIds: Iterable<string>) {
+    for (const userId of new Set(userIds)) {
+      for (const socketId of this.userSockets.get(userId) ?? []) {
+        this.server.to(socketId).emit('private_content_invalidated', {});
+      }
     }
   }
 

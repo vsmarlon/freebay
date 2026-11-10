@@ -1,97 +1,118 @@
+import 'package:dio/dio.dart';
 import 'package:freebay/shared/either/either.dart';
 
+import 'package:freebay/shared/http/request_either.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 
 class FollowService {
-  Future<Either<Failure, FollowResponse>> follow(String userId) async {
-    try {
-      final response = await HttpClient.instance.post('/users/$userId/follow');
+  final Dio client;
 
-      if (response.statusCode == 201 && response.data != null) {
-        return Right(FollowResponse.fromJson(response.data['data']));
-      } else {
-        return const Left(ServerFailure('Erro na requisição'));
+  FollowService({Dio? client}) : client = client ?? HttpClient.instance;
+
+  Future<Either<Failure, FollowResponse>> _toggle(
+    String userId, {
+    required bool following,
+    required Future<Response> Function() request,
+    required String expectedError,
+  }) async {
+    try {
+      final res = await request();
+      final root = res.data;
+      final extracted = root is Map && root.containsKey('data')
+          ? root['data']
+          : root;
+      if (extracted is Map) {
+        return Right(
+          FollowResponse.fromJson(Map<String, dynamic>.from(extracted)),
+        );
       }
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
+      return const Left(ServerFailure('Resposta inválida do servidor.'));
+    } on DioException catch (e) {
+      final msg = _errorMessage(e);
+      if (e.response?.statusCode == 400 &&
+          (msg == expectedError || (msg?.contains(expectedError) ?? false))) {
+        final statusRes = await getFollowStatus(userId);
+        return statusRes.fold(
+          (_) => Right(
+            FollowResponse(
+              following: following,
+              followersCount: 0,
+              followingCount: 0,
+            ),
+          ),
+          (s) => Right(
+            FollowResponse(
+              following: following,
+              followersCount: s.followersCount,
+              followingCount: s.followingCount,
+            ),
+          ),
+        );
+      }
+      return Left(mapDioExceptionToFailure(e));
+    } catch (_) {
+      return const Left(UnknownFailure());
     }
   }
 
-  Future<Either<Failure, FollowResponse>> unfollow(String userId) async {
-    try {
-      final response = await HttpClient.instance.delete(
-        '/users/$userId/follow',
-      );
+  Future<Either<Failure, FollowResponse>> follow(String userId) => _toggle(
+    userId,
+    following: true,
+    expectedError: 'Already following',
+    request: () => client.post('/users/$userId/follow'),
+  );
 
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(FollowResponse.fromJson(response.data['data']));
-      } else {
-        return const Left(ServerFailure('Erro na requisição'));
-      }
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
+  Future<Either<Failure, FollowResponse>> unfollow(String userId) => _toggle(
+    userId,
+    following: false,
+    expectedError: 'Not following',
+    request: () => client.patch('/users/$userId/unfollow'),
+  );
+
+  String? _errorMessage(DioException error) {
+    final data = error.response?.data;
+    if (data is! Map) return null;
+    final nestedError = data['error'];
+    if (nestedError is Map && nestedError['message'] != null) {
+      return nestedError['message'].toString();
     }
+    return data['message']?.toString();
   }
 
   Future<Either<Failure, FollowStatusResponse>> getFollowStatus(
-    String userId,
-  ) async {
-    try {
-      final response = await HttpClient.instance.get(
-        '/users/$userId/is-following',
-      );
+    String userId, {
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.get('/users/$userId/is-following', cancelToken: cancelToken),
+    decoder: (response) =>
+        Right(FollowStatusResponse.fromJson(response.data['data'])),
+  );
 
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(FollowStatusResponse.fromJson(response.data['data']));
-      } else {
-        return const Left(ServerFailure('Erro na requisição'));
-      }
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
-    }
-  }
+  Future<Either<Failure, FollowListResponse>> _getList(
+    String userId, {
+    required String relation,
+    required int limit,
+    required int offset,
+  }) => requestEither(
+    () => client.get(
+      '/users/$userId/$relation',
+      queryParameters: {'limit': limit, 'offset': offset},
+    ),
+    decoder: (response) =>
+        Right(FollowListResponse.fromJson(response.data['data'])),
+  );
 
   Future<Either<Failure, FollowListResponse>> getFollowers(
     String userId, {
     int limit = 20,
     int offset = 0,
-  }) async {
-    try {
-      final response = await HttpClient.instance.get(
-        '/users/$userId/followers',
-        queryParameters: {'limit': limit, 'offset': offset},
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(FollowListResponse.fromJson(response.data['data']));
-      } else {
-        return const Left(ServerFailure('Erro na requisição'));
-      }
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
-    }
-  }
+  }) => _getList(userId, relation: 'followers', limit: limit, offset: offset);
 
   Future<Either<Failure, FollowListResponse>> getFollowing(
     String userId, {
     int limit = 20,
     int offset = 0,
-  }) async {
-    try {
-      final response = await HttpClient.instance.get(
-        '/users/$userId/following',
-        queryParameters: {'limit': limit, 'offset': offset},
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(FollowListResponse.fromJson(response.data['data']));
-      } else {
-        return const Left(ServerFailure('Erro na requisição'));
-      }
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
-    }
-  }
+  }) => _getList(userId, relation: 'following', limit: limit, offset: offset);
 }

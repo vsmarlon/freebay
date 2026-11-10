@@ -1,23 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/utils/time_utils.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/router/app_link.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final notificationsAsync = ref.watch(notificationsProvider);
     final theme = Theme.of(context);
 
@@ -25,37 +21,31 @@ class NotificationsPage extends ConsumerWidget {
       body: Column(
         children: [
           PageHeader(
-            text: 'NOTIFICAÇÕES',
-            leading: GestureDetector(
+            text: strings.notificationsTitle.toUpperCase(),
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
+              semanticLabel: strings.accessibilityBack,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
             actions: [
               InkWell(
                 onTap: () {
                   ref.read(notificationsProvider.notifier).markAllAsRead();
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Icon(
-                    Icons.done_all,
-                    color: theme.brightness == Brightness.dark
-                        ? AppColors.white
-                        : AppColors.onSurface,
+                child: Semantics(
+                  button: true,
+                  label: strings.notificationsMarkAllRead,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Icon(
+                      Icons.done_all,
+                      color: theme.brightness == Brightness.dark
+                          ? AppColors.white
+                          : AppColors.onSurface,
+                    ),
                   ),
                 ),
               ),
@@ -66,24 +56,21 @@ class NotificationsPage extends ConsumerWidget {
               loading: () => SkeletonPage(
                 child: SkeletonList(
                   itemCount: 6,
-                  itemBuilder: (_, i) => Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 16,
-                    ),
+                  itemBuilder: (_, i) => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ShimmerBlock(width: 40, height: 40),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ShimmerBlock(height: 16, width: 180),
-                              const SizedBox(height: 6),
-                              ShimmerBlock(height: 14, width: double.infinity),
-                              const SizedBox(height: 4),
+                              SizedBox(height: 6),
+                              ShimmerBlock(height: 14),
+                              SizedBox(height: 4),
                               ShimmerBlock(height: 12, width: 80),
                             ],
                           ),
@@ -93,66 +80,33 @@ class NotificationsPage extends ConsumerWidget {
                   ),
                 ),
               ),
-              error: (error, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.notifications_off_outlined,
-                        size: 48,
-                        color: theme.colorScheme.outline,
-                      ),
-                      Spacing.vMd,
-                      Text(
-                        'Não foi possível carregar suas notificações.',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.brightness == Brightness.dark
-                              ? AppColors.white
-                              : AppColors.onSurface,
-                          fontFamily: AppTypography.headlineFontFamily,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      Text(
-                        'Puxe para atualizar ou tente novamente em instantes.',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.outline,
-                        ),
-                      ),
-                      Spacing.vMd,
-                      AppButton(
-                        label: 'Tentar novamente',
-                        onPressed: () =>
-                            ref.read(notificationsProvider.notifier).refresh(),
-                      ),
-                    ],
-                  ),
-                ),
+              error: (error, _) => EmptyState.error(
+                message: strings.notificationsLoadFailed,
+                onRetry: () =>
+                    ref.read(notificationsProvider.notifier).refresh(),
               ),
               data: (notifications) {
                 if (notifications.isEmpty) {
-                  return const EmptyState(
+                  return EmptyState(
                     icon: Icons.notifications_none,
-                    title: 'NENHUMA NOTIFICAÇÃO',
-                    subtitle:
-                        'Você será notificado sobre pedidos, mensagens e muito mais.',
+                    title: strings.notificationsNone,
+                    subtitle: strings.notificationsEmptyBody,
                   );
                 }
 
                 return RefreshIndicator(
                   onRefresh: () =>
                       ref.read(notificationsProvider.notifier).refresh(),
-                  child: ListView.builder(
-                    itemCount: notifications.length,
-                    itemBuilder: (context, index) {
-                      final notification = notifications[index];
-                      return _NotificationTile(notification: notification);
-                    },
+                  child: InfiniteScrollListener(
+                    onLoadMore: () =>
+                        ref.read(notificationsProvider.notifier).loadMore(),
+                    child: ListView.builder(
+                      itemCount: notifications.length,
+                      itemBuilder: (context, index) {
+                        final notification = notifications[index];
+                        return _NotificationTile(notification: notification);
+                      },
+                    ),
                   ),
                 );
               },
@@ -172,7 +126,7 @@ class _NotificationTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final timeAgo = TimeUtils.timeAgo(notification.createdAt);
+    final timeAgo = localizedTimeAgo(context, notification.createdAt);
 
     return ListTile(
       leading: Container(
@@ -218,62 +172,46 @@ class _NotificationTile extends ConsumerWidget {
       ref.read(notificationsProvider.notifier).markAsRead(notification.id);
     }
 
-    switch (notification.type) {
-      case 'ORDER':
-        if (notification.orderId != null) {
-          context.push('/orders/${notification.orderId}');
-        }
-        break;
-      case 'FOLLOW':
-        if (notification.senderId != null) {
-          context.push('/user/${notification.senderId}');
-        }
-        break;
-      case 'MESSAGE':
-        if (notification.conversationId != null) {
-          context.push('/chat/${notification.conversationId}');
-        } else if (notification.orderId != null) {
-          context.push('/chat/${notification.orderId}');
-        }
-        break;
-      case 'DISPUTE':
-        if (notification.orderId != null) {
-          context.push('/orders/${notification.orderId}');
-        }
-        break;
-    }
+    final data = <String, dynamic>{
+      ...?notification.data,
+      'type': notification.type.wireValue,
+    };
+    final destination = AppLink.fromNotification(data);
+    if (destination != AppRoutes.notifications) context.push(destination);
   }
 
-  IconData _getIcon(String type) {
+  IconData _getIcon(NotificationType type) {
     switch (type) {
-      case 'ORDER':
+      case NotificationType.order:
         return Icons.shopping_bag;
-      case 'FOLLOW':
+      case NotificationType.follow:
         return Icons.person_add;
-      case 'MESSAGE':
+      case NotificationType.message:
         return Icons.chat_bubble;
-      case 'DISPUTE':
+      case NotificationType.dispute:
         return Icons.warning;
-      case 'PAYMENT':
+      case NotificationType.payment:
         return Icons.payments;
-      default:
+      case NotificationType.mention:
+      case NotificationType.unknown:
         return Icons.notifications;
     }
   }
 
-  Color _getIconColor(String type) {
+  Color _getIconColor(NotificationType type) {
     switch (type) {
-      case 'ORDER':
+      case NotificationType.order:
         return AppColors.success;
-      case 'FOLLOW':
+      case NotificationType.follow:
         return AppColors.info;
-      case 'MESSAGE':
+      case NotificationType.message:
         return AppColors.primaryContainer;
-      case 'DISPUTE':
+      case NotificationType.dispute:
         return AppColors.error;
-      case 'PAYMENT':
+      case NotificationType.payment:
         return AppColors.warning;
-      default:
+      case NotificationType.mention:
+      case NotificationType.unknown:
         return AppColors.onSurfaceVariant;
     }
   }

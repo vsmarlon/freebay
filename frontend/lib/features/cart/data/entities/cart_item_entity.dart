@@ -9,8 +9,8 @@ abstract class CartItemEntity with _$CartItemEntity {
   const factory CartItemEntity({
     required String id,
     required String productId,
-    required int quantity,
-    required int subtotal,
+    @Default(1) int quantity,
+    @Default(0) int subtotal,
     required ProductEntity product,
   }) = _CartItemEntity;
 

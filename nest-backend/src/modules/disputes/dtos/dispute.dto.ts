@@ -1,6 +1,7 @@
 import { IsUUID, IsString, MinLength, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Dispute, Order, User, Product, Prisma } from '@prisma/client';
+import { Dispute, DisputeStatus, Order, User, Product, Prisma } from '@prisma/client';
+import { DisputeWinner } from '../dispute.constants';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
 export class OpenDisputeDTO {
@@ -23,8 +24,8 @@ export class ResolveDisputeDTO {
   readonly resolution: string;
 
   @ApiProperty({ enum: ['BUYER', 'SELLER'] })
-  @IsIn(['BUYER', 'SELLER'])
-  readonly winner: 'BUYER' | 'SELLER';
+  @IsIn(Object.values(DisputeWinner))
+  readonly winner: DisputeWinner;
 }
 
 export class OpenDisputeOutput {
@@ -41,28 +42,13 @@ export class OpenDisputeOutput {
   readonly reason: string;
 
   @ApiProperty({ example: 'OPEN' })
-  readonly status: string;
+  readonly status: DisputeStatus;
 
   @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
   readonly createdAt: Date;
 
   @ApiProperty({ example: '2026-07-17T12:00:00.000Z' })
   readonly expiresAt: Date;
-}
-
-export class SubmitEvidenceOutput {
-  @ApiProperty({ example: true })
-  readonly submitted: boolean;
-}
-
-export class ResolveDisputeOutput {
-  @ApiProperty({ example: true })
-  readonly resolved: boolean;
-}
-
-export class WithdrawDisputeOutput {
-  @ApiProperty({ example: true })
-  readonly withdrawn: boolean;
 }
 
 export interface OpenDisputeInput {
@@ -80,7 +66,7 @@ export interface SubmitEvidenceInput {
 export interface ResolveDisputeInput {
   disputeId: string;
   resolution: string;
-  winner: 'BUYER' | 'SELLER';
+  winner: DisputeWinner;
 }
 
 export type GetDisputeOutput = Dispute & {

@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ConversationPreference {
 
- String get id; String get userId; String? get orderId; String? get directConversationId; bool get isArchived; bool get isDeleted; String get theme; String? get backgroundUrl;
+ String get id; String get userId; String? get orderId; String? get directConversationId; bool get isArchived; bool get isDeleted; String get theme; String? get backgroundUrl; bool get muted;
 /// Create a copy of ConversationPreference
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ConversationPreferenceCopyWith<ConversationPreference> get copyWith => _$Conver
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationPreference&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.orderId, orderId) || other.orderId == orderId)&&(identical(other.directConversationId, directConversationId) || other.directConversationId == directConversationId)&&(identical(other.isArchived, isArchived) || other.isArchived == isArchived)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.backgroundUrl, backgroundUrl) || other.backgroundUrl == backgroundUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationPreference&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.orderId, orderId) || other.orderId == orderId)&&(identical(other.directConversationId, directConversationId) || other.directConversationId == directConversationId)&&(identical(other.isArchived, isArchived) || other.isArchived == isArchived)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.backgroundUrl, backgroundUrl) || other.backgroundUrl == backgroundUrl)&&(identical(other.muted, muted) || other.muted == muted));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,orderId,directConversationId,isArchived,isDeleted,theme,backgroundUrl);
+int get hashCode => Object.hash(runtimeType,id,userId,orderId,directConversationId,isArchived,isDeleted,theme,backgroundUrl,muted);
 
 @override
 String toString() {
-  return 'ConversationPreference(id: $id, userId: $userId, orderId: $orderId, directConversationId: $directConversationId, isArchived: $isArchived, isDeleted: $isDeleted, theme: $theme, backgroundUrl: $backgroundUrl)';
+  return 'ConversationPreference(id: $id, userId: $userId, orderId: $orderId, directConversationId: $directConversationId, isArchived: $isArchived, isDeleted: $isDeleted, theme: $theme, backgroundUrl: $backgroundUrl, muted: $muted)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ConversationPreferenceCopyWith<$Res>  {
   factory $ConversationPreferenceCopyWith(ConversationPreference value, $Res Function(ConversationPreference) _then) = _$ConversationPreferenceCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String? orderId, String? directConversationId, bool isArchived, bool isDeleted, String theme, String? backgroundUrl
+ String id, String userId, String? orderId, String? directConversationId, bool isArchived, bool isDeleted, String theme, String? backgroundUrl, bool muted
 });
 
 
@@ -65,7 +65,7 @@ class _$ConversationPreferenceCopyWithImpl<$Res>
 
 /// Create a copy of ConversationPreference
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? orderId = freezed,Object? directConversationId = freezed,Object? isArchived = null,Object? isDeleted = null,Object? theme = null,Object? backgroundUrl = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? orderId = freezed,Object? directConversationId = freezed,Object? isArchived = null,Object? isDeleted = null,Object? theme = null,Object? backgroundUrl = freezed,Object? muted = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -75,7 +75,8 @@ as String?,isArchived: null == isArchived ? _self.isArchived : isArchived // ign
 as bool,isDeleted: null == isDeleted ? _self.isDeleted : isDeleted // ignore: cast_nullable_to_non_nullable
 as bool,theme: null == theme ? _self.theme : theme // ignore: cast_nullable_to_non_nullable
 as String,backgroundUrl: freezed == backgroundUrl ? _self.backgroundUrl : backgroundUrl // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,muted: null == muted ? _self.muted : muted // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -160,10 +161,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String? orderId,  String? directConversationId,  bool isArchived,  bool isDeleted,  String theme,  String? backgroundUrl)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String? orderId,  String? directConversationId,  bool isArchived,  bool isDeleted,  String theme,  String? backgroundUrl,  bool muted)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationPreference() when $default != null:
-return $default(_that.id,_that.userId,_that.orderId,_that.directConversationId,_that.isArchived,_that.isDeleted,_that.theme,_that.backgroundUrl);case _:
+return $default(_that.id,_that.userId,_that.orderId,_that.directConversationId,_that.isArchived,_that.isDeleted,_that.theme,_that.backgroundUrl,_that.muted);case _:
   return orElse();
 
 }
@@ -181,10 +182,10 @@ return $default(_that.id,_that.userId,_that.orderId,_that.directConversationId,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String? orderId,  String? directConversationId,  bool isArchived,  bool isDeleted,  String theme,  String? backgroundUrl)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String? orderId,  String? directConversationId,  bool isArchived,  bool isDeleted,  String theme,  String? backgroundUrl,  bool muted)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationPreference():
-return $default(_that.id,_that.userId,_that.orderId,_that.directConversationId,_that.isArchived,_that.isDeleted,_that.theme,_that.backgroundUrl);case _:
+return $default(_that.id,_that.userId,_that.orderId,_that.directConversationId,_that.isArchived,_that.isDeleted,_that.theme,_that.backgroundUrl,_that.muted);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +202,10 @@ return $default(_that.id,_that.userId,_that.orderId,_that.directConversationId,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String? orderId,  String? directConversationId,  bool isArchived,  bool isDeleted,  String theme,  String? backgroundUrl)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String? orderId,  String? directConversationId,  bool isArchived,  bool isDeleted,  String theme,  String? backgroundUrl,  bool muted)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationPreference() when $default != null:
-return $default(_that.id,_that.userId,_that.orderId,_that.directConversationId,_that.isArchived,_that.isDeleted,_that.theme,_that.backgroundUrl);case _:
+return $default(_that.id,_that.userId,_that.orderId,_that.directConversationId,_that.isArchived,_that.isDeleted,_that.theme,_that.backgroundUrl,_that.muted);case _:
   return null;
 
 }
@@ -216,17 +217,18 @@ return $default(_that.id,_that.userId,_that.orderId,_that.directConversationId,_
 @JsonSerializable()
 
 class _ConversationPreference implements ConversationPreference {
-  const _ConversationPreference({required this.id, required this.userId, this.orderId, this.directConversationId, this.isArchived = false, this.isDeleted = false, this.theme = 'DEFAULT', this.backgroundUrl});
+  const _ConversationPreference({this.id = '', this.userId = '', this.orderId, this.directConversationId, this.isArchived = false, this.isDeleted = false, this.theme = 'DEFAULT', this.backgroundUrl, this.muted = false});
   factory _ConversationPreference.fromJson(Map<String, dynamic> json) => _$ConversationPreferenceFromJson(json);
 
-@override final  String id;
-@override final  String userId;
+@override@JsonKey() final  String id;
+@override@JsonKey() final  String userId;
 @override final  String? orderId;
 @override final  String? directConversationId;
 @override@JsonKey() final  bool isArchived;
 @override@JsonKey() final  bool isDeleted;
 @override@JsonKey() final  String theme;
 @override final  String? backgroundUrl;
+@override@JsonKey() final  bool muted;
 
 /// Create a copy of ConversationPreference
 /// with the given fields replaced by the non-null parameter values.
@@ -241,16 +243,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationPreference&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.orderId, orderId) || other.orderId == orderId)&&(identical(other.directConversationId, directConversationId) || other.directConversationId == directConversationId)&&(identical(other.isArchived, isArchived) || other.isArchived == isArchived)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.backgroundUrl, backgroundUrl) || other.backgroundUrl == backgroundUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationPreference&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.orderId, orderId) || other.orderId == orderId)&&(identical(other.directConversationId, directConversationId) || other.directConversationId == directConversationId)&&(identical(other.isArchived, isArchived) || other.isArchived == isArchived)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.theme, theme) || other.theme == theme)&&(identical(other.backgroundUrl, backgroundUrl) || other.backgroundUrl == backgroundUrl)&&(identical(other.muted, muted) || other.muted == muted));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,orderId,directConversationId,isArchived,isDeleted,theme,backgroundUrl);
+int get hashCode => Object.hash(runtimeType,id,userId,orderId,directConversationId,isArchived,isDeleted,theme,backgroundUrl,muted);
 
 @override
 String toString() {
-  return 'ConversationPreference(id: $id, userId: $userId, orderId: $orderId, directConversationId: $directConversationId, isArchived: $isArchived, isDeleted: $isDeleted, theme: $theme, backgroundUrl: $backgroundUrl)';
+  return 'ConversationPreference(id: $id, userId: $userId, orderId: $orderId, directConversationId: $directConversationId, isArchived: $isArchived, isDeleted: $isDeleted, theme: $theme, backgroundUrl: $backgroundUrl, muted: $muted)';
 }
 
 
@@ -261,7 +263,7 @@ abstract mixin class _$ConversationPreferenceCopyWith<$Res> implements $Conversa
   factory _$ConversationPreferenceCopyWith(_ConversationPreference value, $Res Function(_ConversationPreference) _then) = __$ConversationPreferenceCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String? orderId, String? directConversationId, bool isArchived, bool isDeleted, String theme, String? backgroundUrl
+ String id, String userId, String? orderId, String? directConversationId, bool isArchived, bool isDeleted, String theme, String? backgroundUrl, bool muted
 });
 
 
@@ -278,7 +280,7 @@ class __$ConversationPreferenceCopyWithImpl<$Res>
 
 /// Create a copy of ConversationPreference
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? orderId = freezed,Object? directConversationId = freezed,Object? isArchived = null,Object? isDeleted = null,Object? theme = null,Object? backgroundUrl = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? orderId = freezed,Object? directConversationId = freezed,Object? isArchived = null,Object? isDeleted = null,Object? theme = null,Object? backgroundUrl = freezed,Object? muted = null,}) {
   return _then(_ConversationPreference(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -288,7 +290,8 @@ as String?,isArchived: null == isArchived ? _self.isArchived : isArchived // ign
 as bool,isDeleted: null == isDeleted ? _self.isDeleted : isDeleted // ignore: cast_nullable_to_non_nullable
 as bool,theme: null == theme ? _self.theme : theme // ignore: cast_nullable_to_non_nullable
 as String,backgroundUrl: freezed == backgroundUrl ? _self.backgroundUrl : backgroundUrl // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,muted: null == muted ? _self.muted : muted // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

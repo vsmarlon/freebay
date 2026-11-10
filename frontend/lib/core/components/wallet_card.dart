@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
+import 'package:freebay/core/components/app_background.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class WalletCard extends StatefulWidget {
   final int availableBalanceInCents;
@@ -63,71 +62,79 @@ class _WalletCardState extends State<WalletCard> {
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          gradient: AppColors.brutalistGradient,
-          borderRadius: BorderRadius.zero,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: context.borderColor,
+            width: AppDepth.borderThin,
+          ),
+          boxShadow: AppDepth.hard(context.borderColor),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: AppBackground(
+          forceDark: true,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      l10n(context).walletTotalBalance.toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: AppTypography.fontFamily,
+                        color: AppColors.onPrimary.withValues(alpha: 0.70),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _toggleHidden,
+                      child: Icon(
+                        _valuesHidden
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: AppColors.onPrimary.withValues(alpha: 0.70),
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+                Spacing.vSm,
                 Text(
-                  'SALDO TOTAL',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    color: AppColors.onPrimary.withValues(alpha: 0.70),
-                    fontSize: 10,
+                  _masked(total),
+                  style: const TextStyle(
+                    fontFamily: AppTypography.headlineFontFamily,
+                    color: AppColors.onPrimary,
+                    fontSize: 40,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.0,
+                    letterSpacing: -0.5,
                   ),
                 ),
-                GestureDetector(
-                  onTap: _toggleHidden,
-                  child: Icon(
-                    _valuesHidden
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: AppColors.onPrimary.withValues(alpha: 0.70),
-                    size: 20,
-                  ),
-                ),
-              ],
-            ),
-            Spacing.vSm,
-            Text(
-              _masked(total),
-              style: const TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                color: AppColors.onPrimary,
-                fontSize: 40,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildBalanceItem(
-                    'DISPONÍVEL',
-                    _masked(available),
-                    solid: true,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildBalanceItem(
-                    'PENDENTE',
-                    _masked(pending),
-                    solid: false,
-                  ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildBalanceItem(
+                        l10n(context).walletAvailable.toUpperCase(),
+                        _masked(available),
+                        solid: true,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildBalanceItem(
+                        l10n(context).walletPending.toUpperCase(),
+                        _masked(pending),
+                        solid: false,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -138,17 +145,13 @@ class _WalletCardState extends State<WalletCard> {
       onTap: widget.onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.surfaceColor,
-          borderRadius: BorderRadius.zero,
-        ),
+        decoration: BoxDecoration(color: context.surfaceColor),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: AppColors.primaryContainer.withAlpha(25),
-                borderRadius: BorderRadius.zero,
               ),
               child: const Icon(
                 Icons.account_balance_wallet_outlined,
@@ -161,7 +164,10 @@ class _WalletCardState extends State<WalletCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Saldo', style: AppTypography.bodySmall),
+                  Text(
+                    l10n(context).walletBalanceLabel,
+                    style: AppTypography.bodySmall,
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     _masked(
@@ -175,10 +181,10 @@ class _WalletCardState extends State<WalletCard> {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: AppColors.mediumGray,
+              color: context.textSecondary,
             ),
           ],
         ),

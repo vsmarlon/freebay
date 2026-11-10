@@ -16,7 +16,7 @@
 
 Current unit tests (`dispute.usecase.spec.ts`) mock `PrismaService` via `jest.mock` + `useValue`. They verify "did I call the mock correctly," not real behavior — a mock `$transaction` callback that returns hardcoded values never exercises the actual Prisma query engine, foreign-key constraints, or wallet balance arithmetic.
 
-The existing integration test setup (`npm run test:integration`, `jest.config.integration.js`, `test/setup-integration.ts`) hits a real Postgres via `.env.test` + `prisma db push --accept-data-loss`, but:
+The existing integration test setup (`npm run test:integration`, `jest.config.integration.js`, `test/setup-integration.ts`) hits a real Postgres via `.env.test` + the guarded Prisma schema sync, but:
 - It's not the default test target — devs reach for `npm test` (unit), so integration coverage stays thin.
 - Time-dependent logic (48h dispute window, 72h auto-expiry) is tested with `jest.useFakeTimers` or not tested at all — both are flaky or skipped.
 - There's no way to compose *real* DB access with *fake* side effects (notifications, FCM) at the type level.
@@ -39,9 +39,9 @@ The migration path is **not** "rip out Either everywhere." Pilot on one bounded 
 ## Existing test infrastructure (reuse this)
 
 - **`jest.config.integration.js`** — `maxWorkers: 1`, matches `*.integration-spec.ts`, 30s timeout, runs `setup-integration.ts` before tests
-- **`test/setup-integration.ts`** — connects `PrismaClient` against `.env.test`, checks `NODE_ENV=test` + `freebay_test` DB, truncates all tables in `afterEach` (ordered by FK constraints)
-- **`.env.test`** — DATABASE_URL pointing to `freebay_test` Postgres; REDIS_URL for cache
-- **`npm run test:integration`** — runs `prisma db push --accept-data-loss` then Jest
+- **`test/setup-integration.ts`** — connects `PrismaClient` against `.env.test`, checks `NODE_ENV=test` + `freebay_test_db` DB, truncates all tables in `afterEach`
+- **`.env.test`** — DATABASE_URL pointing to `freebay_test_db` Postgres; REDIS_URL for cache
+- **`npm run test:integration`** — runs the guarded test-only Prisma schema sync then Jest
 
 Do NOT invent a new DB setup. The `effect`-based tests should reuse this — either by importing the shared `prisma` from `test/setup-integration.ts` or by wrapping the `PrismaClient` in an Effect `Layer` that connects once per suite.
 

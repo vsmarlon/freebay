@@ -1,50 +1,58 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { PostRepository } from '../domain/repositories/post.repository';
-import { CommentRepository } from '../domain/repositories/comment.repository';
+import { createHash, randomUUID } from 'node:crypto';
+import { Either, left, right } from '@/shared/core/either';
+import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
+import { CommentDatabaseRepository } from '../data/repositories/comment-database.repository';
+import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
 import { CreateCommentInput, CreateCommentOutput } from '../dtos/social.dto';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
+import { StoryAudience } from '@prisma/client';
 
 @Injectable()
 export class CommentUseCase {
   constructor(
-    private readonly commentRepository: CommentRepository,
-    private readonly postRepository: PostRepository,
+    private readonly commentRepository: CommentDatabaseRepository,
     private readonly notificationService: NotificationService,
+    private readonly postRepository: PostDatabaseRepository,
   ) {}
 
   async execute(input: CreateCommentInput): Promise<Either<AppError, CreateCommentOutput>> {
-    const result = await this.commentRepository.create({
+    const post = await this.postRepository.findById(input.postId, input.userId);
+    if (post.isLeft()) return left(post.value);
+    if (!post.value) return left(new NotFoundError('Post'));
+    if (post.value.audience === StoryAudience.CLOSE_FRIENDS && input.mentionIds?.length) {
+      return left(new BadRequestError('Não é possível mencionar pessoas em comentários privados'));
+    }
+    const uniqueMentions = [...new Set(input.mentionIds ?? [])].filter((id) => id !== input.userId).sort();
+    const requestId = input.clientRequestId ?? randomUUID();
+    const media = input.media?.map((file) => ({
+      buffer: file.buffer,
+      mimetype: file.mimetype,
+      size: file.size,
+      sha256: createHash('sha256').update(file.buffer).digest('hex'),
+    }));
+    const digestPayload = {
+      postId: input.postId, content: input.content, parentId: input.parentId ?? null, mentionIds: uniqueMentions,
+      ...(media?.length ? { media: media.map(({ mimetype, size, sha256 }) => ({ mimetype, size, sha256 })) } : {}),
+    };
+    const digest = createHash('sha256').update(JSON.stringify(digestPayload)).digest('hex');
+    const result = await this.commentRepository.createIdempotent({
       content: input.content,
       post: { connect: { id: input.postId } },
       user: { connect: { id: input.userId } },
       ...(input.parentId ? { parent: { connect: { id: input.parentId } } } : {}),
-    });
-    if (isLeft(result)) return left(result.value);
-
-    await this.postRepository.update(input.postId, { commentsCount: { increment: 1 } });
-
-    if (input.mentionIds && input.mentionIds.length > 0) {
-      const uniqueIds = [...new Set(input.mentionIds)].filter((id) => id !== input.userId);
-      if (uniqueIds.length > 0) {
-        await this.commentRepository.createMentions(result.value.id, uniqueIds);
-
-        const authorName = result.value.user?.displayName ?? 'Alguém';
-        for (const mentionedId of uniqueIds) {
-          this.notificationService
-            .notifyMention(mentionedId, `@${authorName} te mencionou em um comentário`, result.value.id)
-            .catch(() => {});
-        }
-      }
-    }
+    }, { postId: input.postId, userId: input.userId, requestId, digest, mentionIds: uniqueMentions, media });
+    if (result.isLeft()) return left(result.value);
+    for (const notification of result.value.notifications) this.notificationService.deliverPersisted(notification.userId, notification.id, notification.type, notification.data);
 
     return right({
-      id: result.value.id,
+      id: result.value.comment.id,
       postId: input.postId,
       userId: input.userId,
-      content: input.content,
-      createdAt: result.value.createdAt,
+      content: result.value.comment.content,
+      createdAt: result.value.comment.createdAt,
+      commentsCount: result.value.commentsCount,
+      ...(result.value.comment.media?.length ? { media: result.value.comment.media } : {}),
     });
   }
 }

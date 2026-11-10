@@ -1,164 +1,296 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/data/entities/cart_entity.dart';
 import 'package:freebay/features/cart/data/repositories/cart_repository.dart';
-import 'package:freebay/features/cart/data/services/cart_service.dart';
-import 'package:freebay/features/cart/domain/repositories/i_cart_repository.dart';
-import 'package:freebay/features/cart/domain/usecases/add_to_cart_usecase.dart';
-import 'package:freebay/features/cart/domain/usecases/checkout_cart_usecase.dart';
-import 'package:freebay/features/cart/domain/usecases/clear_cart_usecase.dart';
-import 'package:freebay/features/cart/domain/usecases/get_cart_usecase.dart';
-import 'package:freebay/features/cart/domain/usecases/remove_from_cart_usecase.dart';
-import 'package:freebay/features/cart/domain/usecases/update_cart_quantity_usecase.dart';
+import 'package:freebay/features/cart/domain/repositories/cart_repository.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
+import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 
-final cartServiceProvider = Provider((ref) => CartService());
-
-final cartRepositoryProvider = Provider<ICartRepository>((ref) {
-  return CartRepository(ref.watch(cartServiceProvider));
-});
-
-final getCartUsecaseProvider = Provider(
-  (ref) => GetCartUsecase(ref.watch(cartRepositoryProvider)),
-);
-final addToCartUsecaseProvider = Provider(
-  (ref) => AddToCartUsecase(ref.watch(cartRepositoryProvider)),
-);
-final updateCartQuantityUsecaseProvider = Provider(
-  (ref) => UpdateCartQuantityUsecase(ref.watch(cartRepositoryProvider)),
-);
-final removeFromCartUsecaseProvider = Provider(
-  (ref) => RemoveFromCartUsecase(ref.watch(cartRepositoryProvider)),
-);
-final clearCartUsecaseProvider = Provider(
-  (ref) => ClearCartUsecase(ref.watch(cartRepositoryProvider)),
-);
-final checkoutCartUsecaseProvider = Provider(
-  (ref) => CheckoutCartUsecase(ref.watch(cartRepositoryProvider)),
+final cartRepositoryProvider = Provider<CartRepository>(
+  (ref) => CartRepositoryImpl(client: HttpClient.instance),
 );
 
 class CartState {
   final bool isLoading;
+  final bool isCheckingOut;
+  final bool isRecoveringCheckout;
+  final bool checkoutRecoveryRequired;
+  final bool checkoutPaid;
   final CartEntity cart;
-  final String? error;
+  final CartCheckoutEntity? lastCheckout;
+  final Failure? error;
+
+  /// Product ids with a quantity change in flight; their +/- controls ignore
+  /// further taps until the request settles.
+  final Set<String> pendingProductIds;
 
   const CartState({
     this.isLoading = false,
-    this.cart = const CartEntity(items: [], totalItems: 0, totalPrice: 0),
+    this.isCheckingOut = false,
+    this.isRecoveringCheckout = false,
+    this.checkoutRecoveryRequired = false,
+    this.checkoutPaid = false,
+    this.cart = const CartEntity(),
+    this.lastCheckout,
     this.error,
+    this.pendingProductIds = const {},
   });
 
   CartState copyWith({
     bool? isLoading,
+    bool? isCheckingOut,
+    bool? isRecoveringCheckout,
+    bool? checkoutRecoveryRequired,
+    bool? checkoutPaid,
     CartEntity? cart,
-    String? error,
+    CartCheckoutEntity? lastCheckout,
+    Failure? error,
+    Set<String>? pendingProductIds,
   }) {
     return CartState(
       isLoading: isLoading ?? this.isLoading,
+      isCheckingOut: isCheckingOut ?? this.isCheckingOut,
+      isRecoveringCheckout: isRecoveringCheckout ?? this.isRecoveringCheckout,
+      checkoutRecoveryRequired:
+          checkoutRecoveryRequired ?? this.checkoutRecoveryRequired,
+      checkoutPaid: checkoutPaid ?? this.checkoutPaid,
       cart: cart ?? this.cart,
+      lastCheckout: lastCheckout ?? this.lastCheckout,
       error: error,
+      pendingProductIds: pendingProductIds ?? this.pendingProductIds,
     );
   }
 }
 
-class CartNotifier extends StateNotifier<CartState> {
-  final GetCartUsecase _getCartUsecase;
-  final AddToCartUsecase _addToCartUsecase;
-  final UpdateCartQuantityUsecase _updateCartQuantityUsecase;
-  final RemoveFromCartUsecase _removeFromCartUsecase;
-  final ClearCartUsecase _clearCartUsecase;
+class CartNotifier extends Notifier<CartState> {
+  int _sessionGeneration = 0;
+  int _recoveryGeneration = 0;
+  int _cartLoadGeneration = 0;
+  bool _isAdding = false;
 
-  CartNotifier(
-    this._getCartUsecase,
-    this._addToCartUsecase,
-    this._updateCartQuantityUsecase,
-    this._removeFromCartUsecase,
-    this._clearCartUsecase,
-  ) : super(const CartState());
+  @override
+  CartState build() => const CartState();
+
+  void resetForSessionChange() {
+    _sessionGeneration++;
+    _recoveryGeneration++;
+    _cartLoadGeneration++;
+    state = const CartState();
+  }
+
+  Future<void> recoverCheckout() async {
+    final generation = _sessionGeneration;
+    final request = ++_recoveryGeneration;
+    state = state.copyWith(
+      isRecoveringCheckout: true,
+      checkoutRecoveryRequired: true,
+    );
+    final result = await ref
+        .read(cartRepositoryProvider)
+        .recoverCheckout(hosted: kIsWeb);
+    if (!ref.mounted ||
+        generation != _sessionGeneration ||
+        request != _recoveryGeneration) {
+      return;
+    }
+    result.fold(
+      (_) => state = state.copyWith(
+        isRecoveringCheckout: false,
+        checkoutRecoveryRequired: false,
+      ),
+      (attempt) {
+        if (attempt == null) {
+          state = CartState(cart: state.cart);
+          return;
+        }
+        if (attempt.status == 'PAID') {
+          state = state.copyWith(
+            isRecoveringCheckout: false,
+            checkoutRecoveryRequired: false,
+            checkoutPaid: state.cart.items.isEmpty,
+          );
+          return;
+        }
+        final secret = attempt.paymentIntentClientSecret;
+        final url = attempt.checkoutUrl;
+        if (attempt.status == 'CHECKING' && (url != null || secret != null)) {
+          state = state.copyWith(
+            isRecoveringCheckout: false,
+            checkoutRecoveryRequired: false,
+            lastCheckout: CartCheckoutEntity(
+              paymentGroupId: attempt.paymentGroupId,
+              totalOrders: attempt.orderIds.length,
+              totalAmount: attempt.totalAmount,
+              checkoutUrl: url,
+              paymentIntentClientSecret: secret,
+            ),
+          );
+        } else {
+          state = state.copyWith(
+            isRecoveringCheckout: false,
+            checkoutRecoveryRequired: false,
+          );
+        }
+      },
+    );
+  }
 
   Future<void> loadCart() async {
-    state = state.copyWith(isLoading: true, error: null);
-    final result = await _getCartUsecase();
+    final generation = _sessionGeneration;
+    final request = ++_cartLoadGeneration;
+    state = state.copyWith(isLoading: true);
+    final result = await ref.read(cartRepositoryProvider).getCart();
+    if (!ref.mounted ||
+        generation != _sessionGeneration ||
+        request != _cartLoadGeneration) {
+      return;
+    }
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
+      (failure) => state = state.copyWith(isLoading: false, error: failure),
       (cart) => state = state.copyWith(
         isLoading: false,
         cart: cart,
+        checkoutPaid: cart.items.isEmpty ? state.checkoutPaid : false,
       ),
     );
   }
 
+  /// A second add is ignored while the first is in flight, so a double tap
+  /// cannot enqueue two adds.
   Future<bool> addToCart(String productId, {int quantity = 1}) async {
-    final result = await _addToCartUsecase(
-      AddToCartParams(productId: productId, quantity: quantity),
-    );
-    return result.fold(
-      (failure) {
-        state = state.copyWith(error: failure.message);
-        return false;
-      },
-      (_) async {
-        await loadCart();
-        return true;
-      },
-    );
+    if (_isAdding) return false;
+    _isAdding = true;
+    try {
+      final generation = _sessionGeneration;
+      final result = await ref
+          .read(cartRepositoryProvider)
+          .addToCart(productId, quantity: quantity);
+      if (!ref.mounted || generation != _sessionGeneration) return false;
+      return result.fold(
+        (failure) {
+          state = state.copyWith(error: failure);
+          return false;
+        },
+        (_) async {
+          state = CartState(cart: state.cart);
+          await loadCart();
+          return ref.mounted && generation == _sessionGeneration;
+        },
+      );
+    } finally {
+      _isAdding = false;
+    }
   }
 
   Future<bool> updateQuantity(String productId, int quantity) async {
-    final result = await _updateCartQuantityUsecase(
-      UpdateCartQuantityParams(productId: productId, quantity: quantity),
+    if (state.pendingProductIds.contains(productId)) return false;
+    state = state.copyWith(
+      pendingProductIds: {...state.pendingProductIds, productId},
     );
-    return result.fold(
-      (failure) {
-        state = state.copyWith(error: failure.message);
-        return false;
-      },
-      (_) async {
-        await loadCart();
-        return true;
-      },
-    );
+    try {
+      final generation = _sessionGeneration;
+      final result = await ref
+          .read(cartRepositoryProvider)
+          .updateQuantity(productId, quantity);
+      if (!ref.mounted || generation != _sessionGeneration) return false;
+      return result.fold(
+        (failure) {
+          state = state.copyWith(error: failure);
+          return false;
+        },
+        (_) async {
+          await loadCart();
+          return ref.mounted && generation == _sessionGeneration;
+        },
+      );
+    } finally {
+      if (ref.mounted) {
+        state = state.copyWith(
+          pendingProductIds: {...state.pendingProductIds}..remove(productId),
+        );
+      }
+    }
   }
 
   Future<bool> removeFromCart(String productId) async {
-    final result = await _removeFromCartUsecase(productId);
+    final generation = _sessionGeneration;
+    final result = await ref
+        .read(cartRepositoryProvider)
+        .removeFromCart(productId);
+    if (!ref.mounted || generation != _sessionGeneration) return false;
     return result.fold(
       (failure) {
-        state = state.copyWith(error: failure.message);
+        state = state.copyWith(error: failure);
         return false;
       },
       (_) async {
         await loadCart();
-        return true;
+        return ref.mounted && generation == _sessionGeneration;
       },
     );
   }
 
   Future<bool> clearCart() async {
-    final result = await _clearCartUsecase();
+    final generation = _sessionGeneration;
+    final result = await ref.read(cartRepositoryProvider).clearCart();
+    if (!ref.mounted || generation != _sessionGeneration) return false;
     return result.fold(
       (failure) {
-        state = state.copyWith(error: failure.message);
+        state = state.copyWith(error: failure);
         return false;
       },
       (_) async {
         await loadCart();
-        return true;
+        return ref.mounted && generation == _sessionGeneration;
       },
     );
   }
+
+  Future<bool> checkout() async {
+    if (state.checkoutRecoveryRequired || state.isRecoveringCheckout) {
+      return false;
+    }
+    final generation = _sessionGeneration;
+    state = state.copyWith(isCheckingOut: true);
+    final result = await ref
+        .read(cartRepositoryProvider)
+        .checkoutCart(hosted: kIsWeb);
+    if (!ref.mounted || generation != _sessionGeneration) return false;
+    final success = result.fold(
+      (failure) {
+        state = state.copyWith(
+          isCheckingOut: false,
+          checkoutRecoveryRequired: true,
+          error: failure,
+        );
+        return false;
+      },
+      (checkout) {
+        state = state.copyWith(
+          isCheckingOut: false,
+          lastCheckout: checkout,
+          checkoutPaid: false,
+        );
+        return true;
+      },
+    );
+    if (!success) await recoverCheckout();
+    if (success) {
+      ref.invalidate(purchasesListProvider);
+      ref.invalidate(salesListProvider);
+      ref.invalidate(myProductsProvider);
+      await loadCart();
+    }
+    return success && ref.mounted && generation == _sessionGeneration;
+  }
 }
 
-final cartProvider = StateNotifierProvider<CartNotifier, CartState>((ref) {
-  return CartNotifier(
-    ref.watch(getCartUsecaseProvider),
-    ref.watch(addToCartUsecaseProvider),
-    ref.watch(updateCartQuantityUsecaseProvider),
-    ref.watch(removeFromCartUsecaseProvider),
-    ref.watch(clearCartUsecaseProvider),
-  );
-});
+final cartProvider = NotifierProvider<CartNotifier, CartState>(
+  CartNotifier.new,
+);
 
 final cartItemCountProvider = Provider<int>((ref) {
   return ref.watch(cartProvider).cart.totalItems;

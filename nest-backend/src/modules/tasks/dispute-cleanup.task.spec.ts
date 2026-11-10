@@ -32,30 +32,17 @@ describe('DisputeCleanupTask', () => {
     jest.clearAllMocks();
   });
 
-  it('should delegate seller-favor wallet/order mutation to DisputeResolutionExecutionService', async () => {
+  it('keeps expired disputes held for manual review instead of awarding the seller', async () => {
     const dispute = { id: 'dispute-1', order: { id: 'order-1', sellerId: 'seller-1', sellerAmount: 9000 } };
     mockPrisma.dispute.findMany.mockResolvedValue([dispute]);
-    mockPrisma.$transaction.mockImplementation(async (cb) => {
-      const tx = {
-        dispute: {
-          update: jest.fn().mockResolvedValue({}),
-          findUnique: jest.fn().mockResolvedValue({ status: 'OPEN' }),
-        },
-      };
-      return cb(tx);
-    });
-
     await sut.cleanupExpiredDisputes();
 
     expect(mockPrisma.dispute.findMany).toHaveBeenCalled();
-    expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(mockResolutionExecution.resolveInFavorOfSeller).toHaveBeenCalledWith(
-      expect.anything(),
-      dispute,
-    );
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    expect(mockResolutionExecution.resolveInFavorOfSeller).not.toHaveBeenCalled();
   });
 
-  it('should do nothing when no expired disputes', async () => {
+  it('does nothing when no expired disputes', async () => {
     mockPrisma.dispute.findMany.mockResolvedValue([]);
     await sut.cleanupExpiredDisputes();
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();

@@ -1,114 +1,99 @@
-import 'package:freebay/shared/either/either.dart';
-import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'package:freebay/shared/either/either.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/http/request_either.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/image_upload_service.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
-import 'package:freebay/shared/errors/failures/failures.dart';
-import 'package:freebay/features/profile/domain/repositories/i_profile_repository.dart';
 import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
-import 'package:freebay/features/profile/data/entities/follower_entity.dart';
+import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 
-class ProfileRepository implements IProfileRepository {
-  @override
-  Future<Either<Failure, UserEntity>> getProfile(String userId) async {
-    try {
-      final response = await HttpClient.instance.get('/users/$userId');
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(UserEntity.fromJson(response.data['data']));
-      } else {
-        return const Left(ServerFailure('Não foi possível carregar o perfil.'));
-      }
-    } catch (e) {
-      return const Left(ServerFailure());
-    }
-  }
+typedef CloseFriendCandidate = ({UserBrief user, bool isCloseFriend});
+typedef ProfileVerificationChallenge = ({int expiresIn, int resendAfter});
 
-  @override
-  Future<Either<Failure, UserStatsEntity>> getProfileStats() async {
-    try {
-      final response = await HttpClient.instance.get('/users/me/stats');
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(UserStatsEntity.fromJson(response.data['data']));
-      } else {
-        return const Left(
-          ServerFailure('Não foi possível carregar as estatísticas.'),
-        );
-      }
-    } catch (e) {
-      return const Left(ServerFailure());
-    }
-  }
+class ProfileRepository {
+  final Dio client;
 
-  @override
-  Future<Either<Failure, List<FollowerEntity>>> getFollowers(
-    String userId,
-  ) async {
-    try {
-      final response = await HttpClient.instance.get(
-        '/users/$userId/followers',
-      );
+  ProfileRepository({Dio? client}) : client = client ?? HttpClient.instance;
 
-      if (kDebugMode) {
-        debugPrint('[PROFILE] getFollowers status: ${response.statusCode}');
-        debugPrint('[PROFILE] getFollowers data: ${response.data}');
-      }
+  Future<Either<Failure, List<CloseFriendCandidate>>> getCloseFriendCandidates({
+    String search = '',
+    bool selected = false,
+    int offset = 0,
+    int limit = 20,
+  }) => requestEither(
+    () => client.get(
+      '/users/me/close-friends/candidates',
+      queryParameters: {
+        'q': search,
+        if (selected) 'selected': 'true',
+        'offset': offset,
+        'limit': limit,
+      },
+    ),
+    decoder: (response) => Right([
+      for (final value in response.data['data']['users'] as List)
+        (
+          user: UserBrief.fromJson(Map<String, dynamic>.from(value as Map)),
+          isCloseFriend: value['isCloseFriend'] == true,
+        ),
+    ]),
+  );
 
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] as Map<String, dynamic>?;
-        final usersData = (data?['users'] as List?) ?? [];
-        final followers = usersData
-            .map(
-              (json) => FollowerEntity.fromJson(json as Map<String, dynamic>),
-            )
-            .toList();
-        return Right(followers);
-      }
-      return const Left(ServerFailure('Não foi possível carregar seguidores.'));
-    } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('[PROFILE] getFollowers error: $e');
-        debugPrint('[PROFILE] getFollowers stack: $stack');
-      }
-      return const Left(ServerFailure());
-    }
-  }
+  Future<Either<Failure, void>> setCloseFriend(
+    String memberId, {
+    required bool add,
+  }) => requestEither<void>(
+    () => add
+        ? client.post('/users/me/close-friends/$memberId')
+        : client.patch('/users/me/close-friends/$memberId/remove'),
+    decoder: (_) => const Right(null),
+  );
 
-  @override
-  Future<Either<Failure, List<FollowerEntity>>> getFollowing(
-    String userId,
-  ) async {
-    try {
-      final response = await HttpClient.instance.get(
-        '/users/$userId/following',
-      );
+  Future<Either<Failure, UserEntity>> getProfile(
+    String userId, {
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.get('/users/$userId', cancelToken: cancelToken),
+    decoder: (response) => Right(UserEntity.fromJson(response.data['data'])),
+  );
 
-      if (kDebugMode) {
-        debugPrint('[PROFILE] getFollowing status: ${response.statusCode}');
-        debugPrint('[PROFILE] getFollowing data: ${response.data}');
-      }
+  Future<Either<Failure, UserStatsEntity>> getProfileStats() => requestEither(
+    () => client.get('/users/me/stats'),
+    decoder: (response) =>
+        Right(UserStatsEntity.fromJson(response.data['data'])),
+  );
 
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] as Map<String, dynamic>?;
-        final usersData = (data?['users'] as List?) ?? [];
-        final following = usersData
-            .map(
-              (json) => FollowerEntity.fromJson(json as Map<String, dynamic>),
-            )
-            .toList();
-        return Right(following);
-      }
-      return const Left(ServerFailure('Não foi possível carregar seguindo.'));
-    } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('[PROFILE] getFollowing error: $e');
-        debugPrint('[PROFILE] getFollowing stack: $stack');
-      }
-      return const Left(ServerFailure());
-    }
-  }
+  Future<Either<Failure, FollowListResponse>> getFollowers(
+    String userId, {
+    int limit = 20,
+    int offset = 0,
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.get(
+      '/users/$userId/followers',
+      queryParameters: {'limit': limit, 'offset': offset},
+      cancelToken: cancelToken,
+    ),
+    decoder: (response) =>
+        Right(FollowListResponse.fromJson(response.data['data'])),
+  );
 
-  @override
+  Future<Either<Failure, FollowListResponse>> getFollowing(
+    String userId, {
+    int limit = 20,
+    int offset = 0,
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.get(
+      '/users/$userId/following',
+      queryParameters: {'limit': limit, 'offset': offset},
+      cancelToken: cancelToken,
+    ),
+    decoder: (response) =>
+        Right(FollowListResponse.fromJson(response.data['data'])),
+  );
+
   Future<Either<Failure, UserEntity>> updateAvatar(String imagePath) async {
     try {
       final data = FormData.fromMap({
@@ -117,60 +102,60 @@ class ProfileRepository implements IProfileRepository {
           filename: 'avatar.jpg',
         ),
       });
-
-      final response = await HttpClient.instance.post(
-        '/users/me/avatar',
-        data: data,
-        options: Options(contentType: 'multipart/form-data'),
+      return requestEither(
+        () => client.post(
+          '/users/me/avatar',
+          data: data,
+          options: Options(contentType: 'multipart/form-data'),
+        ),
+        decoder: (response) =>
+            Right(UserEntity.fromJson(response.data['data'])),
       );
-
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(UserEntity.fromJson(response.data['data']));
-      }
-      return const Left(ServerFailure('Não foi possível atualizar a foto.'));
-    } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint('[PROFILE] updateAvatar DioException: ${e.type}');
-      }
-      return Left(mapDioExceptionToFailure(e));
-    } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('[PROFILE] updateAvatar error: $e');
-        debugPrint('[PROFILE] updateAvatar stack: $stack');
-      }
+    } catch (_) {
       return const Left(UnknownFailure());
     }
   }
 
-  @override
   Future<Either<Failure, UserEntity>> updateProfile({
     String? displayName,
+    String? username,
     String? bio,
     String? city,
     String? state,
     String? cpf,
-  }) async {
-    try {
-      final response = await HttpClient.instance.patch(
-        '/users/me',
-        data: {
-          'displayName': ?displayName,
-          'bio': ?bio,
-          'city': ?city,
-          'state': ?state,
-          'cpf': ?cpf,
+    String? profileVerificationCode,
+  }) => requestEither(
+    () => client.patch(
+      '/users/me',
+      data: {
+        'displayName': ?displayName,
+        'username': ?username,
+        'bio': ?bio,
+        'city': ?city,
+        'state': ?state,
+        'cpf': ?cpf,
+        'profileVerificationCode': ?profileVerificationCode,
+      },
+    ),
+    decoder: (response) => Right(UserEntity.fromJson(response.data['data'])),
+  );
+
+  Future<Either<Failure, ProfileVerificationChallenge>>
+  requestProfileVerification({required String cpf, String? locale}) =>
+      requestEither(
+        () => client.post(
+          '/users/me/profile-verification',
+          data: {'cpf': cpf, 'locale': ?locale},
+        ),
+        decoder: (response) {
+          final data = Map<String, dynamic>.from(response.data['data'] as Map);
+          return Right((
+            expiresIn: data['expiresIn'] as int,
+            resendAfter: data['resendAfter'] as int,
+          ));
         },
       );
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(UserEntity.fromJson(response.data['data']));
-      }
-      return const Left(ServerFailure('Não foi possível atualizar o perfil.'));
-    } catch (e) {
-      return const Left(ServerFailure());
-    }
-  }
 
-  @override
   Future<Either<Failure, UserEntity>> updateBanner(String imagePath) async {
     try {
       final data = FormData.fromMap({
@@ -179,84 +164,67 @@ class ProfileRepository implements IProfileRepository {
           filename: 'banner.jpg',
         ),
       });
-
-      final response = await HttpClient.instance.post(
-        '/users/me/banner',
-        data: data,
-        options: Options(contentType: 'multipart/form-data'),
+      return requestEither(
+        () => client.post(
+          '/users/me/banner',
+          data: data,
+          options: Options(contentType: 'multipart/form-data'),
+        ),
+        decoder: (response) =>
+            Right(UserEntity.fromJson(response.data['data'])),
       );
-
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(UserEntity.fromJson(response.data['data']));
-      }
-      return const Left(
-        ServerFailure('Não foi possível atualizar a imagem de fundo.'),
-      );
-    } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint('[PROFILE] updateBanner DioException: ${e.type}');
-      }
-      return Left(mapDioExceptionToFailure(e));
-    } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('[PROFILE] updateBanner error: $e');
-        debugPrint('[PROFILE] updateBanner stack: $stack');
-      }
+    } catch (_) {
       return const Left(UnknownFailure());
     }
   }
 
-  @override
-  Future<Either<Failure, void>> registerPhone(String phone) async {
-    try {
-      final response = await HttpClient.instance.post(
-        '/users/me/phone',
-        data: {'phone': phone},
+  Future<Either<Failure, void>> registerPhone(String phone) =>
+      requestEither<void>(
+        () => client.post('/users/me/phone', data: {'phone': phone}),
+        decoder: (_) => const Right(null),
       );
-      if (response.statusCode == 200) {
-        return const Right(null);
-      }
-      return const Left(
-        ServerFailure('Não foi possível solicitar código de verificação.'),
-      );
-    } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint('[PROFILE] registerPhone DioException: ${e.type}');
-      }
-      return Left(mapDioExceptionToFailure(e));
-    } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('[PROFILE] registerPhone error: $e');
-        debugPrint('[PROFILE] registerPhone stack: $stack');
-      }
-      return const Left(UnknownFailure());
-    }
-  }
 
-  @override
-  Future<Either<Failure, UserEntity>> verifyPhone(String code) async {
-    try {
-      final response = await HttpClient.instance.post(
-        '/users/me/phone/verify',
-        data: {'code': code},
-      );
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(UserEntity.fromJson(response.data['data']));
-      }
-      return const Left(
-        ServerFailure('Código de verificação incorreto ou expirado.'),
-      );
-    } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint('[PROFILE] verifyPhone DioException: ${e.type}');
-      }
-      return Left(mapDioExceptionToFailure(e));
-    } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('[PROFILE] verifyPhone error: $e');
-        debugPrint('[PROFILE] verifyPhone stack: $stack');
-      }
-      return const Left(UnknownFailure());
-    }
-  }
+  Future<Either<Failure, UserEntity>> verifyPhone(String code) => requestEither(
+    () => client.post('/users/me/phone/verify', data: {'code': code}),
+    decoder: (response) => Right(UserEntity.fromJson(response.data['data'])),
+  );
+
+  Future<Either<Failure, Map<String, dynamic>>> exportMyData({
+    required String stepUpToken,
+  }) => requestEither(
+    () => client.get(
+      '/users/me/export',
+      options: Options(headers: {'x-step-up-token': stepUpToken}),
+    ),
+    decoder: (response) =>
+        Right(Map<String, dynamic>.from(response.data['data'] as Map)),
+  );
+
+  Future<Either<Failure, DateTime>> requestAccountDeletion({
+    required String stepUpToken,
+  }) => requestEither(
+    () => client.delete(
+      '/users/me',
+      options: Options(headers: {'x-step-up-token': stepUpToken}),
+    ),
+    decoder: (response) => Right(
+      DateTime.parse(response.data['data']['deletionRequestedAt'] as String),
+    ),
+  );
+
+  Future<Either<Failure, void>> cancelAccountDeletion() => requestEither<void>(
+    () => client.patch('/users/me/deletion/cancel'),
+    decoder: (_) => const Right(null),
+  );
+
+  Future<Either<Failure, void>> reportUser(
+    String userId, {
+    required String reason,
+  }) => requestEither<void>(
+    () => client.post(
+      '/reports',
+      data: {'targetType': 'USER', 'targetId': userId, 'reason': reason},
+    ),
+    decoder: (_) => const Right(null),
+  );
 }

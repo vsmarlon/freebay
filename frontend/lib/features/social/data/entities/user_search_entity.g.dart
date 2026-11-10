@@ -10,7 +10,9 @@ _UserSearchEntity _$UserSearchEntityFromJson(Map<String, dynamic> json) =>
     _UserSearchEntity(
       id: json['id'] as String,
       displayName: json['displayName'] as String,
+      username: json['username'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
+      avatarBlurHash: json['avatarBlurHash'] as String?,
       bio: json['bio'] as String?,
       isVerified: json['isVerified'] as bool? ?? false,
       reputationScore: (json['reputationScore'] as num?)?.toDouble() ?? 0.0,
@@ -23,7 +25,9 @@ Map<String, dynamic> _$UserSearchEntityToJson(_UserSearchEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
       'displayName': instance.displayName,
+      'username': instance.username,
       'avatarUrl': instance.avatarUrl,
+      'avatarBlurHash': instance.avatarBlurHash,
       'bio': instance.bio,
       'isVerified': instance.isVerified,
       'reputationScore': instance.reputationScore,

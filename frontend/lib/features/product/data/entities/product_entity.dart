@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/product/data/entities/product_image_entity.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 
 part 'product_entity.freezed.dart';
 part 'product_entity.g.dart';
@@ -12,10 +13,14 @@ abstract class ProductEntity with _$ProductEntity {
   const factory ProductEntity({
     required String id,
     required String title,
-    required String description,
-    required int price,
-    required String condition,
-    required String status,
+    @Default('') String description,
+    @Default(0) int price,
+    @ProductConditionConverter()
+    @Default(ProductCondition.isNew)
+    ProductCondition condition,
+    @ProductStatusConverter()
+    @Default(ProductStatus.active)
+    ProductStatus status,
     required String sellerId,
     String? postId,
     UserEntity? seller,
@@ -31,4 +36,6 @@ abstract class ProductEntity with _$ProductEntity {
   String? get sellerAvatar => seller?.avatarUrl;
   String? get imageUrl =>
       (images != null && images!.isNotEmpty) ? images!.first.url : null;
+  String? get imageBlurHash =>
+      (images != null && images!.isNotEmpty) ? images!.first.blurHash : null;
 }

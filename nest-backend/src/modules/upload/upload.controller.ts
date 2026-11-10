@@ -1,68 +1,76 @@
 import {
   Controller,
-  Post,
   Query,
   UploadedFile,
   UseInterceptors,
   BadRequestException,
-  UseGuards,
-  HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { mkdirSync } from 'fs';
-import { v4 as uuidv4 } from 'uuid';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { ApiTags } from '@nestjs/swagger';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import { BoundedMultipartInterceptor } from '@/shared/interceptors/bounded-multipart.interceptor';
+import { CurrentUserId, PostAuth } from '@/shared/decorators';
+import { THROTTLE_TTL_MINUTE_MS } from '@/shared/http/throttle.constants';
+import { generateImageBlurHash } from '@/shared/utils/blurhash.utils';
+import {
+  MAX_MEDIA_SIZE,
+  validateMediaFile,
+} from '@/shared/utils/image-upload.utils';
+import {
+  isPrivateContext,
+  UploadContext,
+  saveUpload,
+} from '@/shared/utils/file.utils';
 
-const VALID_CONTEXTS = ['chat', 'background', 'post', 'avatar'] as const;
-const VALID_MIMETYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+const VALID_CONTEXTS = [
+  'chat',
+  'background',
+  'post',
+  'avatar',
+  'product',
+  'privatepost',
+] as const satisfies readonly UploadContext[];
+
+export function isValidContext(context: unknown): context is (typeof VALID_CONTEXTS)[number] {
+  return typeof context === 'string' && (VALID_CONTEXTS as readonly string[]).includes(context);
+}
 
 @ApiTags('Upload')
 @Controller('uploads')
-@UseGuards(JwtAuthGuard)
 export class UploadController {
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiDoc({ summary: 'Upload a file to disk', auth: true, responseStatus: 201 })
+  @PostAuth({
+    summary: 'Upload a file (image, audio, video)',
+    responseStatus: 201,
+    httpCode: HttpStatus.CREATED,
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_MINUTE_MS } },
+  })
   @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (req, _file, cb) => {
-          const context = (req.query.context as string) || 'misc';
-          const dir = join(process.cwd(), 'uploads', context);
-          mkdirSync(dir, { recursive: true });
-          cb(null, dir);
-        },
-        filename: (_req, file, cb) => {
-          const ext = extname(file.originalname).toLowerCase() || '.jpg';
-          cb(null, `${uuidv4()}${ext}`);
-        },
-      }),
-      limits: { fileSize: MAX_SIZE },
-      fileFilter: (_req, file, cb) => {
-        cb(null, VALID_MIMETYPES.includes(file.mimetype));
-      },
-    }),
+    BoundedMultipartInterceptor('file', 1, MAX_MEDIA_SIZE + 512 * 1024, 4 * 1024, MAX_MEDIA_SIZE),
   )
-  upload(
-    @UploadedFile() file: Express.Multer.File,
+  async upload(
+    @UploadedFile() file: Express.Multer.File | undefined,
     @Query('context') context: string,
-  ): { url: string } {
+    @CurrentUserId() userId: string,
+  ): Promise<{ url: string; blurHash?: string }> {
     if (!file) {
       throw new BadRequestException(
-        'Arquivo ausente ou tipo não permitido (aceitos: jpeg, png, gif, webp)',
+        'Arquivo ausente ou formato não suportado (aceitos: JPEG, PNG, GIF, WebP, MP3, M4A, AAC, OGG, WAV, MP4, MOV, WebM, PDF, TXT)',
       );
     }
-    if (!(VALID_CONTEXTS as readonly string[]).includes(context)) {
+    if (!isValidContext(context)) {
       throw new BadRequestException(
         `Context inválido. Use: ${VALID_CONTEXTS.join(', ')}`,
       );
     }
-    return { url: `/uploads/${context}/${file.filename}` };
+
+    const validationError = validateMediaFile(file);
+    if (validationError) {
+      throw new BadRequestException(validationError);
+    }
+
+    const url = saveUpload(file, context, userId);
+    const blurHash = file.mimetype.startsWith('image/') && !isPrivateContext(context)
+      ? await generateImageBlurHash(file.buffer)
+      : undefined;
+    return { url, ...(blurHash ? { blurHash } : {}) };
   }
 }

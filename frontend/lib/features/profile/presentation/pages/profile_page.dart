@@ -1,18 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_refresh_indicator.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/profile/presentation/widgets/guest_profile_view.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
+import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
+import 'package:freebay/features/social/presentation/widgets/suggestions_section.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -27,95 +29,163 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   bool get wantKeepAlive => true;
 
   @override
+  void initState() {
+    super.initState();
+    final suggestions = ref.read(suggestionsProvider);
+    if (suggestions.users.isNotEmpty || suggestions.isLoading) return;
+
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(suggestionsProvider.notifier).loadSuggestions();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
     final authState = ref.watch(authControllerProvider);
-    final isGuest = authState.valueOrNull?.isGuest ?? false;
+    final strings = l10n(context);
 
-    if (isGuest) {
+    // Auth still loading — show skeleton, not guest view
+    if (authState.isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
+            ShellScrollHeader(child: PageHeader(text: strings.navProfile)),
+            const Expanded(
+              child: SkeletonPage(
+                child: Column(
+                  children: [
+                    SizedBox(height: 16),
+                    ShimmerBlock(height: 80, width: 80),
+                    SizedBox(height: 12),
+                    ShimmerBlock(height: 20, width: 160),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (authState.value == null) {
       return const GuestProfileView();
     }
 
-    final profileAsync = ref.watch(profileFutureProvider('me'));
+    final profileAsync = ref.watch(profileFirstPaintProvider('me'));
     final statsAsync = ref.watch(profileStatsProvider);
 
     return Scaffold(
-      backgroundColor: context.bgColor,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          PageHeader(
-            text: 'PERFIL',
-            actions: [
-              IconButton(
-                icon: Icon(Icons.settings_outlined, color: context.textPrimary),
-                onPressed: () => showProfileSettingsSheet(context),
-              ),
-              IconButton(
-                icon: Icon(
-                  context.isDark ? Icons.light_mode : Icons.brightness_6,
-                  color: context.textPrimary,
+          ShellScrollHeader(
+            child: PageHeader(
+              text: strings.navProfile,
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    Icons.add_box_outlined,
+                    color: context.textPrimary,
+                  ),
+                  tooltip: strings.feedCreatePost,
+                  onPressed: () => context.push(AppRoutes.createPost),
                 ),
-                onPressed: () {
-                  ref.read(themeModeProvider.notifier).toggleTheme();
-                },
-              ),
-            ],
+                IconButton(
+                  icon: Icon(
+                    Icons.settings_outlined,
+                    color: context.textPrimary,
+                  ),
+                  tooltip: strings.profileSettings,
+                  onPressed: () => showProfileSettingsSheet(context),
+                ),
+                IconButton(
+                  icon: Icon(
+                    context.isDark ? Icons.light_mode : Icons.brightness_6,
+                    color: context.textPrimary,
+                  ),
+                  tooltip: context.isDark
+                      ? strings.profileSwitchToLight
+                      : strings.profileSwitchToDark,
+                  onPressed: () {
+                    ref.read(themeModeProvider.notifier).toggleTheme();
+                  },
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: profileAsync.when(
-              data: (profileUser) {
-                final u = profileUser;
-                return AppRefreshIndicator(
-                  onRefresh: () async =>
-                      ref.refresh(profileFutureProvider('me').future),
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        statsAsync.when(
-                          data: (stats) => ProfileHeader(
-                            user: u,
-                            followersCount: stats.followersCount,
-                            followingCount: stats.followingCount,
+              data: (firstPaint) {
+                final u = firstPaint.user;
+                return ProfileRefresh(
+                  onRefresh: _refreshProfile,
+                  child: ProfileTabs(
+                    user: u,
+                    headerSlivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.all(16),
+                        sliver: SliverToBoxAdapter(
+                          child: statsAsync.when(
+                            data: (stats) => ProfileHeader(
+                              user: u,
+                              followersCount: stats.followersCount,
+                              followingCount: stats.followingCount,
+                            ),
+                            loading: () => ProfileHeader(user: u),
+                            error: (_, _) => ProfileHeader(user: u),
                           ),
-                          loading: () => ProfileHeader(user: u),
-                          error: (_, _) => ProfileHeader(user: u),
                         ),
-                        Spacing.vMd,
-                        Container(
-                          width: double.infinity,
-                          height: 1,
-                          color: context.isDark
-                              ? AppColors.outlineVariant.withAlpha(40)
-                              : AppColors.surfaceContainerHigh,
+                      ),
+                      if (firstPaint.isStale)
+                        SliverToBoxAdapter(
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Container(
+                              color: context.surfaceMidColor,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: Spacing.md,
+                                vertical: Spacing.sm,
+                              ),
+                              child: Text(
+                                firstPaint.error == null
+                                    ? l10n(context).profileCacheRefreshing
+                                    : l10n(context).profileCacheRefreshFailed,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: context.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                        ProfileTabs(user: u),
-                      ],
-                    ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                      const SuggestionsSection(),
+                    ],
                   ),
                 );
               },
-              loading: () => SkeletonPage(
+              loading: () => const SkeletonPage(
                 child: Column(
                   children: [
-                    const SizedBox(height: 16),
-                    const ShimmerBlock(height: 80, width: 80),
-                    const SizedBox(height: 12),
-                    const ShimmerBlock(height: 20, width: 160),
-                    const SizedBox(height: 6),
-                    const ShimmerBlock(height: 14, width: 100),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
+                    ShimmerBlock(height: 80, width: 80),
+                    SizedBox(height: 12),
+                    ShimmerBlock(height: 20, width: 160),
+                    SizedBox(height: 6),
+                    ShimmerBlock(height: 14, width: 100),
+                    SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const ShimmerBlock(height: 20, width: 40),
-                              const SizedBox(height: 4),
-                              const ShimmerBlock(height: 12, width: 60),
+                              ShimmerBlock(height: 20, width: 40),
+                              SizedBox(height: 4),
+                              ShimmerBlock(height: 12, width: 60),
                             ],
                           ),
                         ),
@@ -123,9 +193,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const ShimmerBlock(height: 20, width: 40),
-                              const SizedBox(height: 4),
-                              const ShimmerBlock(height: 12, width: 60),
+                              ShimmerBlock(height: 20, width: 40),
+                              SizedBox(height: 4),
+                              ShimmerBlock(height: 12, width: 60),
                             ],
                           ),
                         ),
@@ -133,63 +203,66 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const ShimmerBlock(height: 20, width: 40),
-                              const SizedBox(height: 4),
-                              const ShimmerBlock(height: 12, width: 60),
+                              ShimmerBlock(height: 20, width: 40),
+                              SizedBox(height: 4),
+                              ShimmerBlock(height: 12, width: 60),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    const ShimmerBlock(height: 40),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 24),
+                    ShimmerBlock(height: 40),
+                    SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(child: ShimmerBlock(height: 120)),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(child: ShimmerBlock(height: 120)),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(child: ShimmerBlock(height: 120)),
                       ],
                     ),
                   ],
                 ),
               ),
-              error: (err, stack) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: AppColors.error,
-                      ),
-                      Spacing.vMd,
-                      Text(
-                        'Erro ao carregar perfil',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: context.textPrimary,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      const Text(
-                        'Não foi possível carregar suas informações. Verifique sua conexão.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.mediumGray),
-                      ),
-                    ],
-                  ),
-                ),
+              error: (_, _) => EmptyState.error(
+                message: l10n(context).profileLoadError,
+                onRetry: _refreshProfile,
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _refreshProfile() async {
+    final userId = ref.read(authControllerProvider).asData?.value?.id;
+    final provider = profileFirstPaintProvider('me');
+    final refreshed = Completer<void>();
+    final subscription = ref.listenManual<AsyncValue<ProfileFirstPaint>>(
+      provider,
+      (_, next) {
+        final data = next.asData?.value;
+        if (next.hasError ||
+            (data != null && (!data.isStale || data.error != null))) {
+          if (!refreshed.isCompleted) refreshed.complete();
+        }
+      },
+    );
+    ref.invalidate(provider);
+    ref.invalidate(profileStatsProvider);
+    try {
+      await Future.wait([
+        refreshed.future,
+        ref
+            .read(profileStatsProvider.future)
+            .then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+        if (userId != null) refreshProfileTimelines(ref, userId),
+      ]);
+    } finally {
+      subscription.close();
+    }
   }
 }

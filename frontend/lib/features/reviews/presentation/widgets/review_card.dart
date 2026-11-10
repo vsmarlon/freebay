@@ -1,11 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/components/reputation_stars.dart';
-import 'package:freebay/core/components/full_screen_image_viewer.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
-import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 import 'package:intl/intl.dart';
 
 class ReviewCard extends StatelessWidget {
@@ -17,6 +15,7 @@ class ReviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
+    final strings = l10n(context);
     final dateFormat = DateFormat('dd/MM/yyyy');
 
     return Container(
@@ -31,6 +30,7 @@ class ReviewCard extends StatelessWidget {
                 onTap: onTapUser,
                 child: UserAvatar(
                   imageUrl: review.reviewer?.avatarUrl,
+                  blurHash: review.reviewer?.avatarBlurHash,
                   size: AppAvatarSize.small,
                 ),
               ),
@@ -42,7 +42,8 @@ class ReviewCard extends StatelessWidget {
                     GestureDetector(
                       onTap: onTapUser,
                       child: Text(
-                        review.reviewer?.displayNameOrDefault ?? 'Usuário',
+                        review.reviewer?.displayName ??
+                            strings.commonUnknownUser,
                         style: TextStyle(
                           fontFamily: AppTypography.headlineFontFamily,
                           fontSize: 14,
@@ -55,8 +56,8 @@ class ReviewCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _getReviewTypeLabel(),
-                      style: TextStyle(
+                      _getReviewTypeLabel(context),
+                      style: const TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontSize: 12,
                         color: AppColors.outline,
@@ -67,7 +68,7 @@ class ReviewCard extends StatelessWidget {
               ),
               Text(
                 dateFormat.format(review.createdAt),
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   color: AppColors.outline,
@@ -106,17 +107,25 @@ class ReviewCard extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: () =>
-                        showFullScreenImage(context, review.images[index]),
+                        showAppImageViewer(context, review.images[index]),
                     child: Container(
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
                         border: Border.all(color: AppColors.outline, width: 2),
                       ),
-                      child: Image.network(
-                        review.images[index],
+                      child: CachedNetworkImage(
+                        imageUrl: review.images[index],
+                        httpHeaders: mediaAuthHeaders(review.images[index]),
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => Container(
+                        memCacheWidth: 250,
+                        memCacheHeight: 250,
+                        placeholder: (_, _) => Container(
+                          color: isDark
+                              ? AppColors.surfaceDark
+                              : AppColors.surface,
+                        ),
+                        errorWidget: (_, _, _) => Container(
                           color: isDark
                               ? AppColors.surfaceDark
                               : AppColors.surface,
@@ -137,9 +146,10 @@ class ReviewCard extends StatelessWidget {
     );
   }
 
-  String _getReviewTypeLabel() {
+  String _getReviewTypeLabel(BuildContext context) {
+    final strings = l10n(context);
     return review.type == ReviewType.buyerReviewingSeller
-        ? 'Comprador'
-        : 'Vendedor';
+        ? strings.reviewTypeBuyer
+        : strings.reviewTypeSeller;
   }
 }

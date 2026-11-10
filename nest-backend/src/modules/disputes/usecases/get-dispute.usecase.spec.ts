@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetDisputeUseCase } from './get-dispute.usecase';
-import { DisputeRepository } from '../domain/repositories/dispute.repository';
+import { DisputeDatabaseRepository } from '../data/repositories/dispute-database.repository';
 import { NotFoundError, UnauthorizedError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 
@@ -30,14 +30,14 @@ describe('GetDisputeUseCase', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GetDisputeUseCase, { provide: DisputeRepository, useValue: mockDisputeRepo }],
+      providers: [GetDisputeUseCase, { provide: DisputeDatabaseRepository, useValue: mockDisputeRepo }],
     }).compile();
 
     sut = module.get<GetDisputeUseCase>(GetDisputeUseCase);
     jest.clearAllMocks();
   });
 
-  it('should return dispute when found', async () => {
+  it('returns dispute when found', async () => {
     mockDisputeRepo.findByIdWithDetails.mockResolvedValue(right(mockDispute));
 
     const result = await sut.execute('dispute-123', 'buyer-123');
@@ -45,7 +45,7 @@ describe('GetDisputeUseCase', () => {
     expect(result.isRight()).toBe(true);
   });
 
-  it('should return NotFoundError when dispute not found', async () => {
+  it('returns NotFoundError when dispute not found', async () => {
     mockDisputeRepo.findByIdWithDetails.mockResolvedValue(right(null));
 
     const result = await sut.execute('nonexistent', 'buyer-123');
@@ -56,7 +56,7 @@ describe('GetDisputeUseCase', () => {
     }
   });
 
-  it('should return UnauthorizedError when user is not a participant', async () => {
+  it('returns UnauthorizedError when user is not a participant', async () => {
     mockDisputeRepo.findByIdWithDetails.mockResolvedValue(right(mockDispute));
 
     const result = await sut.execute('dispute-123', 'stranger-123');

@@ -2,7 +2,7 @@ import { Context } from 'effect';
 import { PrismaClient } from '@prisma/client';
 
 export interface NotificationServiceShape {
-  notifyDispute(userId: string, disputeId: string, message: string): Promise<void>;
+  notifyDispute(userId: string, disputeId: string, orderId: string, message: string): Promise<void>;
   notifyOrderStatus(userId: string, orderId: string, status: string): Promise<void>;
   create(data: {
     userId: string;

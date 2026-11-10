@@ -1,125 +1,314 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
-import { ChatService } from './api/chat.service';
-import { StartConversationDTO, SendMessageDTO, UpdatePreferenceDTO } from './dtos/chat.dto';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import { Controller, Body, Param, Query, HttpStatus, ParseUUIDPipe } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import {
+  GetAuth,
+  PostAuth,
+  PatchAuth,
+  CurrentUserId,
+  Paginated,
+  PAGINATION_QUERIES,
+} from '@/shared/decorators';
+import { PageQuery } from '@/shared/core/pagination';
+import { StartConversationDTO, SendMessageDTO, UpdatePreferenceDTO, VerifyUrlDTO, ForwardMessagesDTO, ViewOnceOpeningDTO, FilteredMessagesQueryDTO, SetMessagePinDTO } from './dtos/chat.dto';
+import { SetMessagePinUseCase } from './usecases/set-message-pin.usecase';
+import { GetUnifiedConversationsUseCase } from './usecases/get-unified-conversations.usecase';
+import { GetConversationsUseCase } from './usecases/get-conversations.usecase';
+import { StartConversationUseCase } from './usecases/start-conversation.usecase';
+import { AcceptConversationUseCase } from './usecases/accept-conversation.usecase';
+import { GetMessagesUseCase } from './usecases/get-messages.usecase';
+import { GetConversationMediaUseCase } from './usecases/get-conversation-media.usecase';
+import { SendMessageUseCase } from './usecases/send-message.usecase';
+import { MarkMessagesReadDTO } from './dtos/chat.dto';
+import { ArchiveConversationUseCase } from './usecases/archive-conversation.usecase';
+import { DeleteConversationUseCase } from './usecases/delete-conversation.usecase';
+import { SetConversationThemeUseCase } from './usecases/set-conversation-theme.usecase';
+import { SetConversationBackgroundUseCase } from './usecases/set-conversation-background.usecase';
+import { DeleteMessageUseCase } from './usecases/delete-message.usecase';
+import { ToggleReactionUseCase } from './usecases/toggle-reaction.usecase';
+import { ToggleStarUseCase } from './usecases/toggle-star.usecase';
+import { GetStarredMessagesUseCase } from './usecases/get-starred-messages.usecase';
+import { VerifyUrlSafetyUseCase } from './usecases/verify-url-safety.usecase';
+import { ForwardMessagesUseCase } from './usecases/forward-messages.usecase';
+import { MarkAsReadUseCase } from './usecases/mark-as-read.usecase';
+import { ChatGateway } from './chat.gateway';
+import { ViewOnceUseCase } from './usecases/view-once.usecase';
+import { right } from '@/shared/core/either';
 
 @ApiTags('Chat')
 @Controller('chat')
-@UseGuards(JwtAuthGuard, NonGuestGuard)
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly getUnifiedConversations: GetUnifiedConversationsUseCase,
+    private readonly getConversationsUseCase: GetConversationsUseCase,
+    private readonly startConversationUseCase: StartConversationUseCase,
+    private readonly acceptConversationUseCase: AcceptConversationUseCase,
+    private readonly getMessagesUseCase: GetMessagesUseCase,
+    private readonly getConversationMediaUseCase: GetConversationMediaUseCase,
+    private readonly sendMessageUseCase: SendMessageUseCase,
+    private readonly archiveConversationUseCase: ArchiveConversationUseCase,
+    private readonly deleteConversationUseCase: DeleteConversationUseCase,
+    private readonly setThemeUseCase: SetConversationThemeUseCase,
+    private readonly setBackgroundUseCase: SetConversationBackgroundUseCase,
+    private readonly deleteMessageUseCase: DeleteMessageUseCase,
+    private readonly setMessagePinUseCase: SetMessagePinUseCase,
+    private readonly toggleReactionUseCase: ToggleReactionUseCase,
+    private readonly toggleStarUseCase: ToggleStarUseCase,
+    private readonly getStarredMessagesUseCase: GetStarredMessagesUseCase,
+    private readonly verifyUrlSafetyUseCase: VerifyUrlSafetyUseCase,
+    private readonly forwardMessagesUseCase: ForwardMessagesUseCase,
+    private readonly markAsReadUseCase: MarkAsReadUseCase,
+    private readonly chatGateway: ChatGateway,
+    private readonly viewOnceUseCase: ViewOnceUseCase,
+  ) {}
 
-  @Get('conversations')
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Get all conversations (direct + order)', auth: true })
-  async getConversations(@CurrentUser() user: AuthUser, @Query('q') query?: string) {
-    return this.chatService.getConversations(user.userId, query);
+  @GetAuth('conversations', {
+    summary: 'Get all conversations (direct + order)',
+    queries: [
+      ...PAGINATION_QUERIES,
+      { name: 'q', description: 'Search by contact name or message text' },
+    ],
+  })
+  async getConversations(
+    @CurrentUserId() userId: string,
+    @Query('q') query?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.getUnifiedConversations.execute(userId, query, false, {
+      cursor,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
-  @Get('direct')
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Get only direct conversations (legacy)', auth: true })
-  async getDirectConversations(@CurrentUser() user: AuthUser) {
-    return this.chatService.getDirectConversations(user.userId);
+  @GetAuth('direct', 'Get only direct conversations')
+  async getDirectConversations(@CurrentUserId() userId: string) {
+    return this.getConversationsUseCase.execute(userId);
   }
 
-  @Get('archived')
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Get archived conversations', auth: true })
-  async getArchivedConversations(@CurrentUser() user: AuthUser) {
-    return this.chatService.getConversations(user.userId, undefined, true);
+  @GetAuth('archived', {
+    summary: 'Get archived conversations',
+    queries: PAGINATION_QUERIES,
+  })
+  async getArchivedConversations(
+    @CurrentUserId() userId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.getUnifiedConversations.execute(userId, undefined, true, {
+      cursor,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
-  @Post('conversations')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Start a conversation', auth: true, bodyType: StartConversationDTO, responseStatus: 201 })
-  async startConversation(@CurrentUser() user: AuthUser, @Body() body: StartConversationDTO) {
-    return this.chatService.startConversation(user.userId, body);
+  @PostAuth('conversations', { summary: 'Start a conversation', bodyType: StartConversationDTO, responseStatus: 201, httpCode: HttpStatus.CREATED })
+  async startConversation(@CurrentUserId() userId: string, @Body() body: StartConversationDTO) {
+    return this.startConversationUseCase.execute(userId, body.targetUserId, body.productId);
   }
 
-  @Post('conversations/:id/accept')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Accept conversation', auth: true })
-  async acceptConversation(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.chatService.acceptConversation(id, user.userId);
+  @PostAuth('conversations/:id/accept', { summary: 'Accept conversation', params: [{ name: 'id', description: 'Conversation UUID' }] })
+  async acceptConversation(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.acceptConversationUseCase.execute(id, userId);
   }
 
-  @Get('conversations/:id')
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Get conversation messages', auth: true })
-  async getConversation(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.chatService.getMessages(id, user.userId);
+  @GetAuth('conversations/:id', {
+    summary: 'Get conversation messages',
+    description:
+      'Returns the newest page of the transcript, oldest-first. Follow nextCursor to load older messages.',
+    params: [{ name: 'id', description: 'Conversation UUID' }],
+    queries: PAGINATION_QUERIES,
+  })
+  async getConversation(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+    @Paginated() page: PageQuery,
+  ) {
+    return this.getMessagesUseCase.execute(id, userId, page);
   }
 
-  @Post('conversations/:id/messages')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Send a message', auth: true, bodyType: SendMessageDTO, responseStatus: 201 })
-  async sendMessage(@Param('id') id: string, @Body() body: SendMessageDTO, @CurrentUser() user: AuthUser) {
-    return this.chatService.sendMessage(user.userId, id, body);
+  @GetAuth('conversations/:id/messages', { summary: 'Get filtered messages by type (media)', params: [{ name: 'id', description: 'Conversation UUID' }] })
+  async getFilteredMessages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+    @Query() query: FilteredMessagesQueryDTO,
+  ) {
+    return this.getConversationMediaUseCase.execute({
+      userId,
+      conversationId: id,
+      type: query.type,
+      limit: query.limit,
+      cursor: query.cursor,
+    });
   }
 
-  @Patch('conversations/:id/archive')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Archive or unarchive a conversation', auth: true })
-  async archiveConversation(@Param('id') id: string, @Body() body: { archived: boolean }, @CurrentUser() user: AuthUser) {
-    return this.chatService.archiveConversation(user.userId, id, body.archived);
+  @PostAuth('conversations/:id/messages', { summary: 'Send a message', bodyType: SendMessageDTO, responseStatus: 201, httpCode: HttpStatus.CREATED, params: [{ name: 'id', description: 'Conversation UUID' }] })
+  async sendMessage(@Param('id', ParseUUIDPipe) id: string, @Body() body: SendMessageDTO, @CurrentUserId() userId: string) {
+    const result = await this.sendMessageUseCase.execute({
+      conversationId: id,
+      senderId: userId,
+      clientMessageId: body.clientMessageId,
+      content: body.content,
+      type: body.type,
+      attachmentUrl: body.attachmentUrl,
+      replyToId: body.replyToId,
+      metadata: body.metadata,
+      viewOnce: body.viewOnce,
+      durationMs: body.durationMs,
+    });
+    if (result.isRight()) {
+      this.chatGateway.broadcastNewMessage(id, result.value.message);
+      return result.value.message;
+    }
+    return result;
   }
 
-  @Delete('conversations/:id')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Soft-delete a conversation', auth: true })
-  async deleteConversation(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.chatService.deleteConversation(user.userId, id);
+  @PatchAuth('conversations/:id/archive', { summary: 'Archive or unarchive a conversation', params: [{ name: 'id', description: 'Conversation UUID' }] })
+  async archiveConversation(@Param('id', ParseUUIDPipe) id: string, @Body() body: { archived: boolean }, @CurrentUserId() userId: string) {
+    return this.archiveConversationUseCase.execute(userId, id, body.archived);
   }
 
-  @Patch('conversations/:id/theme')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Set conversation theme', auth: true })
-  async setTheme(@Param('id') id: string, @Body() body: UpdatePreferenceDTO, @CurrentUser() user: AuthUser) {
-    return this.chatService.setTheme(user.userId, id, body.theme);
+  @PatchAuth('conversations/:id/delete', { summary: 'Soft-delete a conversation', params: [{ name: 'id', description: 'Conversation UUID' }] })
+  async deleteConversation(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.deleteConversationUseCase.execute(userId, id);
   }
 
-  @Patch('conversations/:id/background')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Set conversation background', auth: true })
-  async setBackground(@Param('id') id: string, @Body() body: { backgroundUrl: string }, @CurrentUser() user: AuthUser) {
-    return this.chatService.setBackground(user.userId, id, body.backgroundUrl);
+  @PatchAuth('conversations/:id/read', {
+    summary: 'Mark conversation messages as read',
+    bodyType: MarkMessagesReadDTO,
+    params: [{ name: 'id', description: 'Conversation UUID' }],
+  })
+  async markAsRead(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+    @Body() body: MarkMessagesReadDTO = {},
+  ) {
+    const result = await this.markAsReadUseCase.execute(id, userId, body.messageId);
+    if (result.isLeft()) return result;
+    if (result.value > 0) this.chatGateway.broadcastMessagesRead(id, userId);
+    return right(undefined);
   }
 
-  @Delete('conversations/:convId/messages/:msgId')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Soft-delete a message (sender only)', auth: true })
+  @PostAuth('conversations/:conversationId/messages/:messageId/view-once/open', { summary: 'Open view-once message media', bodyType: ViewOnceOpeningDTO })
+  async openViewOnce(
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Param('messageId', ParseUUIDPipe) messageId: string,
+    @CurrentUserId() userId: string,
+    @Body() body: ViewOnceOpeningDTO,
+  ) {
+    return this.viewOnceUseCase.open(conversationId, messageId, userId, body.openingKey);
+  }
+
+  @PostAuth('conversations/:conversationId/messages/:messageId/view-once/close', { summary: 'Close view-once message media', bodyType: ViewOnceOpeningDTO })
+  async closeViewOnce(
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Param('messageId', ParseUUIDPipe) messageId: string,
+    @CurrentUserId() userId: string,
+    @Body() body: ViewOnceOpeningDTO,
+  ) {
+    return this.viewOnceUseCase.close(conversationId, messageId, userId, body.openingKey);
+  }
+
+  @PatchAuth('conversations/:id/theme', { summary: 'Set conversation theme', params: [{ name: 'id', description: 'Conversation UUID' }] })
+  async setTheme(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdatePreferenceDTO, @CurrentUserId() userId: string) {
+    return this.setThemeUseCase.execute(userId, id, body.theme, body.muted);
+  }
+
+  @PatchAuth('conversations/:id/background', { summary: 'Set conversation background', params: [{ name: 'id', description: 'Conversation UUID' }] })
+  async setBackground(@Param('id', ParseUUIDPipe) id: string, @Body() body: { backgroundUrl: string }, @CurrentUserId() userId: string) {
+    return this.setBackgroundUseCase.execute(userId, id, body.backgroundUrl);
+  }
+
+  @PatchAuth('conversations/:convId/messages/:msgId/delete', {
+    summary: 'Soft-delete a message (sender only)',
+    params: [
+      { name: 'convId', description: 'Conversation UUID' },
+      { name: 'msgId', description: 'Message UUID' },
+    ],
+  })
   async deleteMessage(
-    @Param('convId') convId: string,
-    @Param('msgId') msgId: string,
-    @CurrentUser() user: AuthUser,
+    @Param('convId', ParseUUIDPipe) convId: string,
+    @Param('msgId', ParseUUIDPipe) msgId: string,
+    @CurrentUserId() userId: string,
   ) {
-    return this.chatService.deleteMessage(user.userId, msgId, convId);
+    return this.deleteMessageUseCase.execute({
+      userId,
+      messageId: msgId,
+      conversationId: convId,
+    });
   }
 
-  @Post('conversations/:convId/messages/:msgId/react')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiDoc({ summary: 'Toggle a reaction on a message', auth: true })
-  async reactToMessage(
-    @Param('convId') convId: string,
-    @Param('msgId') msgId: string,
-    @Body() body: { emoji: string },
-    @CurrentUser() user: AuthUser,
+  @PatchAuth('conversations/:convId/messages/:msgId/pin', { summary: 'Pin or unpin an ordinary message for this conversation', bodyType: SetMessagePinDTO })
+  async setMessagePin(
+    @Param('convId', ParseUUIDPipe) conversationId: string,
+    @Param('msgId', ParseUUIDPipe) messageId: string,
+    @Body() body: SetMessagePinDTO,
+    @CurrentUserId() userId: string,
   ) {
-    return this.chatService.toggleReaction(user.userId, msgId, body.emoji, 'DIRECT');
+    return this.setMessagePinUseCase.execute({ userId, conversationId, messageId, pinned: body.pinned });
+  }
+
+  @PostAuth('conversations/:convId/messages/:msgId/react', {
+    summary: 'Toggle a reaction on a message',
+    params: [
+      { name: 'convId', description: 'Conversation UUID' },
+      { name: 'msgId', description: 'Message UUID' },
+    ],
+  })
+  async reactToMessage(
+    @Param('convId', ParseUUIDPipe) convId: string,
+    @Param('msgId', ParseUUIDPipe) msgId: string,
+    @Body() body: { emoji: string },
+    @CurrentUserId() userId: string,
+  ) {
+    return this.toggleReactionUseCase.execute({
+      userId,
+      messageId: msgId,
+      emoji: body.emoji,
+      conversationId: convId,
+    });
+  }
+
+  @PostAuth('conversations/:convId/messages/:msgId/star', {
+    summary: 'Star or unstar a message',
+    params: [
+      { name: 'convId', description: 'Conversation UUID' },
+      { name: 'msgId', description: 'Message UUID' },
+    ],
+  })
+  async toggleStar(
+    @Param('convId', ParseUUIDPipe) convId: string,
+    @Param('msgId', ParseUUIDPipe) msgId: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.toggleStarUseCase.execute({
+      userId,
+      messageId: msgId,
+      conversationId: convId,
+    });
+  }
+
+  @GetAuth('conversations/:id/starred', {
+    summary: 'Get starred messages in a conversation',
+    params: [{ name: 'id', description: 'Conversation UUID' }],
+  })
+  async getStarredMessages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.getStarredMessagesUseCase.execute(id, userId);
+  }
+
+  @PostAuth('security/verify-url', { summary: 'Verify safety of external URL', bodyType: VerifyUrlDTO })
+  async verifyUrl(@Body() body: VerifyUrlDTO) {
+    return this.verifyUrlSafetyUseCase.execute(body.url);
+  }
+
+  @PostAuth('messages/forward', { summary: 'Forward messages to one or more conversations', bodyType: ForwardMessagesDTO, responseStatus: 201, httpCode: HttpStatus.CREATED })
+  async forwardMessages(@CurrentUserId() userId: string, @Body() body: ForwardMessagesDTO) {
+    return this.forwardMessagesUseCase.execute({
+      userId,
+      messageIds: body.messageIds,
+      targetConversationIds: body.targetConversationIds,
+      sourceConversationId: body.sourceConversationId,
+    });
   }
 }

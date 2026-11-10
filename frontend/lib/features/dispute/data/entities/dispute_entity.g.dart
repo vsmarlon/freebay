@@ -39,5 +39,5 @@ Map<String, dynamic> _$DisputeEntityToJson(_DisputeEntity instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'expiresAt': instance.expiresAt.toIso8601String(),
       'resolvedAt': instance.resolvedAt?.toIso8601String(),
-      'openedBy': instance.openedBy,
+      'openedBy': instance.openedBy?.toJson(),
     };

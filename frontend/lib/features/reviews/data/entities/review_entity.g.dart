@@ -37,5 +37,5 @@ Map<String, dynamic> _$ReviewEntityToJson(_ReviewEntity instance) =>
       'comment': instance.comment,
       'images': instance.images,
       'createdAt': instance.createdAt.toIso8601String(),
-      'reviewer': instance.reviewer,
+      'reviewer': instance.reviewer?.toJson(),
     };

@@ -1,0 +1,18 @@
+---
+name: freebay-flutter-feature
+description: Use when adding or changing a FreeBay Flutter feature, provider, repository, use case, page, widget, or route.
+---
+
+# Flutter feature slice
+
+Read root [`AGENTS.md`](../../../AGENTS.md), [`freebay-design-system`](../freebay-design-system/SKILL.md), and `docs/FEATURE_TRUTH.md` for capability work. Inspect the existing feature layout first: some legacy features do not have all three layers; do not add folders for uniformity.
+
+- Concrete repositories in `data/repositories` call backend HTTP only via shared Dio and `requestEither<T>`; they map responses/failures into immutable models. Domain repository contracts stay where present.
+- Domain use cases are for actual validation, logic, orchestration or mapping. Do not create a one-call pass-through wrapper. Data entities may be imported by domain logic; domain must not import data repositories. Shared/server state belongs in Riverpod; local state is ephemeral.
+- Use generated Freezed/JSON artifacts through build_runner, not manual generated-file edits. No `any`/unsafe type escape hatches; narrow JSON input.
+- Register routes with `AppRoutes` constants/builders; never raw route literals. Keep tab indexes, shell gestures, accessibility and keyboard behavior intact.
+- Use design-system exports/components and `frontend/DESIGN.md` tokens. Do not prescribe fixed animation milliseconds or conditional dark-mode colors.
+- Visible copy uses generated `AppLocalizations` from `lib/shared/l10n/`; leave protocol values, IDs, logs and backend contracts untranslated. Shared/server state uses Riverpod code generation (`@riverpod`), preferring `AsyncNotifier` for mutable async state and generated `FutureProvider` for read-only async values. Do not add `StateProvider`/`StateNotifier`; migrate touched legacy providers unless a documented compatibility constraint blocks it. Watch in build, read in callbacks, listen for effects, and select only needed fields.
+- Export cross-feature APIs at their owning feature boundary; never reach into another feature's presentation internals.
+
+For behavior changes, follow the evidence policy in `AGENTS.md`. Verify the focused real boundary, then Flutter format, analyze and build; save repeatable device evidence in `docs/test-runs/<date>/` and label unavailable checks blocked. Do not add Flutter tests.

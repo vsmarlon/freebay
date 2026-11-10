@@ -1,30 +1,25 @@
-import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/social_post.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/comment_input.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/features/social/presentation/controllers/post_details_controller.dart';
-import 'package:freebay/features/social/presentation/providers/post_details_provider.dart';
-import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
-import 'package:freebay/features/social/presentation/providers/saves_provider.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
-import 'package:freebay/features/social/presentation/providers/reposts_provider.dart';
-import 'package:freebay/features/social/presentation/providers/comment_likes_provider.dart';
-import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
-import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:animated_tree_view/animated_tree_view.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
-import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freebay/features/social/presentation/controllers/post_details_controller.dart';
+import 'package:freebay/features/social/presentation/providers/comment_likes_provider.dart';
+import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
+import 'package:freebay/features/social/presentation/providers/post_details_provider.dart';
+import 'package:freebay/features/social/presentation/providers/reposts_provider.dart';
+import 'package:freebay/features/social/presentation/providers/saves_provider.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
+import 'package:freebay/features/social/presentation/widgets/post_details_post_section.dart';
+import 'package:freebay/features/social/presentation/widgets/post_details_skeleton.dart';
+import 'package:freebay/features/social/presentation/widgets/post_overflow.dart';
+import 'package:freebay/features/social/presentation/widgets/mention_suggestions.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PostDetailsPage extends ConsumerStatefulWidget {
   final String postId;
@@ -37,309 +32,242 @@ class PostDetailsPage extends ConsumerStatefulWidget {
 
 class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
   final _commentController = TextEditingController();
-  final _replyController = TextEditingController();
-  final _replyFocusNode = FocusNode();
+  final _commentFocus = FocusNode();
   bool _isCommentSending = false;
-  bool _isReplySending = false;
-  String? _replyToId;
+  final Set<String> _approvingCommentIds = {};
+  final Set<String> _deletingCommentIds = {};
 
   @override
   void dispose() {
     _commentController.dispose();
-    _replyController.dispose();
-    _replyFocusNode.dispose();
+    _commentFocus.dispose();
     super.dispose();
   }
 
   Future<void> _sendComment() async {
-    final isReply = _replyToId != null;
-    if (isReply ? _isReplySending : _isCommentSending) return;
-
-    final activeController = isReply ? _replyController : _commentController;
-
-    setState(() {
-      if (isReply) {
-        _isReplySending = true;
-      } else {
-        _isCommentSending = true;
-      }
-    });
-    final controller = ref.read(postDetailsControllerProvider(widget.postId));
-    final sent = await controller.sendComment(
-      context,
-      activeController,
-      parentId: _replyToId,
-    );
-
-    if (sent && mounted) {
-      setState(() => _replyToId = null);
-      _replyController.clear();
+    if (_isCommentSending || _commentController.text.characters.length > 280) {
+      return;
     }
+    setState(() => _isCommentSending = true);
+    await ref
+        .read(postDetailsControllerProvider(widget.postId))
+        .sendComment(context, _commentController);
     if (mounted) {
-      setState(() {
-        if (isReply) {
-          _isReplySending = false;
-        } else {
-          _isCommentSending = false;
-        }
-      });
+      setState(() => _isCommentSending = false);
     }
   }
 
-  void _setReplyTo(CommentEntity comment) {
-    setState(() => _replyToId = comment.id);
-    // Seed only the reply controller, leaving the main input untouched.
-    final username = comment.user?.displayName ?? 'usuário';
-    _replyController.text = '@$username ';
-    _replyController.selection = TextSelection.fromPosition(
-      TextPosition(offset: _replyController.text.length),
+  List<CommentEntity> _flattenComments(List<CommentEntity> roots) {
+    final result = <CommentEntity>[];
+    void append(List<CommentEntity> comments) {
+      for (final comment in comments) {
+        result.add(comment);
+        append(comment.replies);
+      }
+    }
+
+    append(roots);
+    return result;
+  }
+
+  Set<String> _hiddenCommentsWithHiddenParent(List<CommentEntity> comments) {
+    final result = <String>{};
+    void visit(List<CommentEntity> nodes, bool parentIsHidden) {
+      for (final comment in nodes) {
+        if (parentIsHidden) result.add(comment.id);
+        visit(comment.replies, comment.isHidden);
+      }
+    }
+
+    visit(comments, false);
+    return result;
+  }
+
+  List<CommentEntity> _visibleComments(
+    List<CommentEntity> comments,
+    String? viewerId,
+    String postOwnerId,
+  ) => comments
+      .where(
+        (comment) =>
+            !comment.isHidden ||
+            viewerId == postOwnerId ||
+            viewerId == comment.userId,
+      )
+      .map(
+        (comment) => comment.copyWith(
+          replies: _visibleComments(comment.replies, viewerId, postOwnerId),
+        ),
+      )
+      .toList();
+
+  Future<void> _approveComment(CommentEntity comment, String ownerId) async {
+    if (_approvingCommentIds.contains(comment.id)) return;
+    final viewerId = ref.read(authControllerProvider).value?.id;
+    if (viewerId != ownerId || !comment.isHidden) return;
+    setState(() => _approvingCommentIds.add(comment.id));
+    final result = await ref
+        .read(socialRepositoryProvider)
+        .approveComment(comment.id);
+    if (!mounted) return;
+    final currentViewerId = ref.read(authControllerProvider).value?.id;
+    if (widget.postId != comment.postId || currentViewerId != viewerId) {
+      setState(() => _approvingCommentIds.remove(comment.id));
+      return;
+    }
+    await result.fold(
+      (failure) async {
+        AppSnackbar.error(context, failure.message);
+      },
+      (_) async {
+        await ref.read(postDetailsProvider(widget.postId).notifier).refresh();
+      },
     );
-    // Bring up keyboard focused on the reply field.
-    Future.microtask(() => _replyFocusNode.requestFocus());
+    if (mounted) {
+      setState(() => _approvingCommentIds.remove(comment.id));
+    }
   }
 
-  TreeNode<CommentEntity> _buildTree(List<CommentEntity> rootComments) {
-    final root = TreeNode<CommentEntity>.root();
-    for (final comment in rootComments) {
-      root.add(_createNode(comment));
-    }
-    return root;
-  }
-
-  TreeNode<CommentEntity> _createNode(CommentEntity comment) {
-    final node = TreeNode<CommentEntity>(key: comment.id, data: comment);
-    for (final reply in comment.replies) {
-      node.add(_createNode(reply));
-    }
-    return node;
+  Future<void> _deleteComment(CommentEntity comment) async {
+    if (_deletingCommentIds.contains(comment.id)) return;
+    final strings = l10n(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final repository = ref.read(socialRepositoryProvider);
+    final notifier = ref.read(postDetailsProvider(widget.postId).notifier);
+    await AppDialog.show(
+      context: context,
+      icon: Icons.delete_outline,
+      iconColor: AppColors.error,
+      title: strings.feedComment,
+      dismissText: strings.commonCancel,
+      okText: strings.commonDelete,
+      isError: true,
+      onOk: () async {
+        setState(() => _deletingCommentIds.add(comment.id));
+        final result = await repository.deleteComment(comment.id);
+        result.fold(
+          (failure) {
+            if (messenger.mounted) {
+              AppSnackbar.errorOnMessenger(messenger, failure.message);
+            }
+          },
+          (_) async {
+            notifier.incrementCommentCount(-1);
+            await notifier.refreshComments();
+          },
+        );
+        if (mounted) setState(() => _deletingCommentIds.remove(comment.id));
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(postDetailsProvider(widget.postId));
-
+    final strings = l10n(context);
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          const PageHeader(text: 'POST'),
-          BrutalistBreadcrumb(items: context.breadcrumbs),
-          Expanded(child: _buildBody(context, state)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSkeleton() {
-    return const SkeletonPage(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ShimmerBlock(height: 48),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              ShimmerBlock(width: 48, height: 48),
-              SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ShimmerBlock(height: 14, width: 120),
-                  SizedBox(height: 8),
-                  ShimmerBlock(height: 12, width: 80),
-                ],
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: strings.feedPostTitle,
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
+                onTap: () => context.pop(),
               ),
-            ],
-          ),
-          SizedBox(height: 16),
-          ShimmerBlock(height: 300),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              ShimmerBlock(width: 24, height: 24),
-              SizedBox(width: 16),
-              ShimmerBlock(width: 24, height: 24),
-              SizedBox(width: 16),
-              ShimmerBlock(width: 24, height: 24),
-            ],
-          ),
-          SizedBox(height: 24),
-          _CommentSkeletonRow(),
-          SizedBox(height: 12),
-          _CommentSkeletonRow(),
-          SizedBox(height: 12),
-          _CommentSkeletonRow(),
-        ],
+            ),
+            BrutalistBreadcrumb(items: context.breadcrumbs),
+            Expanded(child: _buildBody(context, state)),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildBody(BuildContext context, PostDetailsState state) {
-    if (state.isLoading) {
-      return _buildSkeleton();
-    }
-
+    if (state.isLoading) return const PostDetailsSkeleton();
     if (state.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-            Spacing.vMd,
-            Text(state.error!, style: TextStyle(color: context.textPrimary)),
-            Spacing.vMd,
-            AppButton(
-              label: 'Tentar novamente',
-              onPressed: () => ref
-                  .read(postDetailsProvider(widget.postId).notifier)
-                  .refresh(),
-            ),
-          ],
-        ),
+      return EmptyState.error(
+        message: state.error,
+        onRetry: () =>
+            ref.read(postDetailsProvider(widget.postId).notifier).refresh(),
       );
     }
-
     if (state.post == null) {
-      return const Center(child: Text('Post não encontrado'));
+      return Center(child: Text(l10n(context).feedPostNotFound));
     }
 
     final post = state.post!;
-    final treeNode = _buildTree(state.comments);
-
-    final likesState = ref.watch(likesProvider);
-    final isLiked = likesState.getLikedOverride(post.id) ?? post.isLiked;
-    final likesCount = likesState.getCountOverride(post.id) ?? post.likesCount;
-
-    final savesState = ref.watch(savesProvider);
-    final isSaved = savesState.getSavedOverride(post.id) ?? post.isSaved;
-
-    final repostsState = ref.watch(repostsProvider);
-    final isReposted =
-        repostsState.getRepostedOverride(post.id) ?? post.hasReposted;
-    final sharesCount =
-        repostsState.getCountOverride(post.id) ?? post.sharesCount;
-
-    return RefreshIndicator(
+    final likes = ref.watch(
+      likesProvider.select(
+        (state) => (
+          isLiked: state.getLikedOverride(post.id),
+          count: state.getCountOverride(post.id),
+        ),
+      ),
+    );
+    final isSaved = ref.watch(
+      savesProvider.select((state) => state.getSavedOverride(post.id)),
+    );
+    final reposts = ref.watch(
+      repostsProvider.select(
+        (state) => (
+          isReposted: state.getRepostedOverride(post.id),
+          count: state.getCountOverride(post.id),
+        ),
+      ),
+    );
+    final viewerId = ref.watch(authControllerProvider).value?.id;
+    final visibleComments = _visibleComments(
+      state.comments,
+      viewerId,
+      post.user.id,
+    );
+    final flattenedComments = _flattenComments(visibleComments);
+    final hiddenParents = _hiddenCommentsWithHiddenParent(visibleComments);
+    return AppRefreshIndicator(
       onRefresh: () =>
           ref.read(postDetailsProvider(widget.postId).notifier).refresh(),
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: SocialPost(
-              userId: post.user.id,
-              userName: post.user.displayNameOrDefault,
-              userAvatarUrl: post.user.avatarUrl,
-              content: post.content,
-              imageUrl: post.imageUrl,
-              likesCount: likesCount,
-              commentsCount: post.commentsCount,
-              sharesCount: sharesCount,
-              isLiked: isLiked,
-              isSaved: isSaved,
-              isReposted: isReposted,
-              isVerified: post.user.isVerified,
-              createdAt: post.createdAt,
-              onUserTap: () => context.push('/user/${post.user.id}'),
-              onLike: () async {
-                final user = ref.read(authControllerProvider).valueOrNull;
-                if (user == null || user.isGuest) {
-                  if (context.mounted) {
-                    AppSnackbar.warning(context, 'Faça login para curtir');
-                  }
-                  return false;
-                }
-                final success = await ref
-                    .read(likesProvider.notifier)
-                    .toggleLike(
-                      post.id,
-                      initialIsLiked: post.isLiked,
-                      initialCount: post.likesCount,
-                    );
-                if (success) {
-                  final newLikesState = ref.read(likesProvider);
-                  ref
-                      .read(feedProvider.notifier)
-                      .updatePostLike(
-                        post.id,
-                        newLikesState.getLikedOverride(post.id) ?? post.isLiked,
-                        newLikesState.getCountOverride(post.id) ??
-                            post.likesCount,
-                      );
-                }
-                return success;
-              },
-              onSave: () async {
-                final user = ref.read(authControllerProvider).valueOrNull;
-                if (user == null || user.isGuest) {
-                  if (context.mounted) {
-                    AppSnackbar.warning(context, 'Faça login para salvar');
-                  }
-                  return false;
-                }
-                return ref
-                    .read(savesProvider.notifier)
-                    .toggleSave(post.id, initialIsSaved: post.isSaved);
-              },
-              onRepost: () async {
-                final user = ref.read(authControllerProvider).valueOrNull;
-                if (user == null || user.isGuest) {
-                  if (context.mounted) {
-                    AppSnackbar.warning(context, 'Faça login para repostar');
-                  }
-                  return false;
-                }
-                final success = await ref
-                    .read(repostsProvider.notifier)
-                    .toggleRepost(
-                      post.id,
-                      initialIsReposted: post.hasReposted,
-                      initialCount: post.sharesCount,
-                    );
-                if (success) {
-                  final newRepostsState = ref.read(repostsProvider);
-                  ref
-                      .read(feedProvider.notifier)
-                      .updateSharesCount(
-                        post.id,
-                        newRepostsState.getCountOverride(post.id) ??
-                            post.sharesCount,
-                      );
-                }
-                return success;
-              },
+            child: PostDetailsPostSection(
+              post: post,
+              likesCount: likes.count ?? post.likesCount,
+              sharesCount: reposts.count ?? post.sharesCount,
+              isLiked: likes.isLiked ?? post.isLiked,
+              isSaved: isSaved ?? post.isSaved,
+              isReposted: reposts.isReposted ?? post.hasReposted,
+              onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
+              onLike: () => _toggleLike(post.id, post.isLiked, post.likesCount),
+              onSave: () => _toggleSave(post.id, post.isSaved),
+              onRepost: () =>
+                  _toggleRepost(post.id, post.hasReposted, post.sharesCount),
               onComment: () => FocusScope.of(context).unfocus(),
-              onShare: () async {
-                final user = ref.read(authControllerProvider).valueOrNull;
-                if (user == null || user.isGuest) {
-                  if (context.mounted) {
-                    AppSnackbar.warning(
-                      context,
-                      'Faça login para compartilhar',
-                    );
-                  }
-                  return;
-                }
-                final result = await ref
-                    .read(socialRepositoryProvider)
-                    .sharePost(post.id, null);
-                if (!context.mounted) return;
-                result.fold(
-                  (failure) => AppSnackbar.error(
-                    context,
-                    'Não foi possível compartilhar',
-                  ),
-                  (_) {
-                    AppSnackbar.success(context, 'Compartilhado no seu perfil');
-                  },
-                );
-              },
+              onShare: () => _sharePost(context, post.id),
+              onQuote: post.isQuote || post.audience != PostAudience.everyone
+                  ? null
+                  : () => context.push(
+                      AppRoutes.createPost,
+                      extra: QuoteSource.post(id: post.id, post: post),
+                    ),
+              onMore: () => showPostOverflowMenu(
+                context,
+                ref,
+                postId: post.id,
+                authorId: post.user.id,
+                viewerId: viewerId,
+                onDeleted: () => context.pop(),
+              ),
             ),
           ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
-                'Comentários',
+                l10n(context).feedComments,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -353,42 +281,35 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: CommentInput(
                 controller: _commentController,
+                focusNode: _commentFocus,
                 isSending: _isCommentSending,
                 onSend: _sendComment,
+                suggestions: MentionSuggestions(
+                  controller: _commentController,
+                  focusNode: _commentFocus,
+                ),
               ),
             ),
           ),
-          if (state.comments.isEmpty)
+          if (visibleComments.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: const EmptyState(
+              child: EmptyState(
                 icon: Icons.chat_bubble_outline,
-                title: 'NENHUM COMENTÁRIO',
-                subtitle: 'Seja o primeiro a comentar!',
+                title: l10n(context).feedNoComments,
+                subtitle: l10n(context).feedFirstComment,
               ),
             )
           else
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.6,
-                child: TreeView.simple<CommentEntity>(
-                  tree: treeNode,
-                  showRootNode: false,
-                  expansionIndicatorBuilder: (context, node) =>
-                      ChevronIndicator.rightDown(
-                        tree: node,
-                        color: context.textPrimary,
-                        padding: const EdgeInsets.all(8),
-                      ),
-                  indentation: const Indentation(
-                    style: IndentStyle.squareJoint,
-                  ),
-                  builder: (context, node) {
-                    final comment = node.data;
-                    if (comment == null) return const SizedBox.shrink();
-                    return _buildCommentNode(context, comment);
-                  },
-                ),
+            SliverList.builder(
+              itemCount: flattenedComments.length,
+              itemBuilder: (context, index) => _buildCommentNode(
+                context,
+                flattenedComments[index],
+                post.user.id,
+                viewerId,
+                hiddenParents,
+                post.audience == PostAudience.everyone,
               ),
             ),
         ],
@@ -396,27 +317,97 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
     );
   }
 
-  Widget _buildCommentNode(BuildContext context, CommentEntity comment) {
-    final isReplying = _replyToId == comment.id;
-    final commentLikesState = ref.watch(commentLikesProvider);
-    final isCommentLiked =
-        commentLikesState.getLikedOverride(comment.id) ?? comment.isLiked;
-    final commentLikesCount =
-        commentLikesState.getCountOverride(comment.id) ?? comment.likesCount;
+  Future<bool> _toggleLike(String id, bool initial, int count) async {
+    final user = ref.read(authControllerProvider).value;
+    if (user == null) {
+      if (mounted) AppSnackbar.warning(context, l10n(context).feedLoginToLike);
+      return false;
+    }
+    final success = await ref
+        .read(likesProvider.notifier)
+        .toggleLike(id, initialIsLiked: initial, initialCount: count);
+    return success;
+  }
 
+  Future<bool> _toggleSave(String id, bool initial) async {
+    if (ref.read(authControllerProvider).value == null) {
+      if (mounted) AppSnackbar.warning(context, l10n(context).feedLoginToSave);
+      return false;
+    }
+    return ref
+        .read(savesProvider.notifier)
+        .toggleSave(id, initialIsSaved: initial);
+  }
+
+  Future<bool> _toggleRepost(String id, bool initial, int count) async {
+    if (ref.read(authControllerProvider).value == null) {
+      if (mounted) {
+        AppSnackbar.warning(context, l10n(context).feedLoginToRepost);
+      }
+      return false;
+    }
+    final success = await ref
+        .read(repostsProvider.notifier)
+        .toggleRepost(id, initialIsReposted: initial, initialCount: count);
+    return success;
+  }
+
+  Future<void> _sharePost(BuildContext context, String id) async {
+    if (ref.read(authControllerProvider).value == null) {
+      if (mounted) {
+        AppSnackbar.warning(context, l10n(context).feedLoginToShare);
+      }
+      return;
+    }
+    final result = await ref.read(socialRepositoryProvider).sharePost(id, null);
+    if (!context.mounted) return;
+    result.fold(
+      (_) => AppSnackbar.error(context, l10n(context).feedShareFailed),
+      (_) => AppSnackbar.success(context, l10n(context).feedShareSuccess),
+    );
+  }
+
+  Widget _buildCommentNode(
+    BuildContext context,
+    CommentEntity comment,
+    String postOwnerId,
+    String? viewerId,
+    Set<String> hiddenParents,
+    bool isPublicPost,
+  ) {
+    final likes = ref.watch(commentLikesProvider);
     return Column(
       children: [
         CommentItem(
           comment: comment,
-          isReplying: isReplying,
-          isLiked: isCommentLiked,
-          likesCount: commentLikesCount,
-          onReply: () => _setReplyTo(comment),
+          isReplying: false,
+          isLiked: likes.getLikedOverride(comment.id) ?? comment.isLiked,
+          likesCount: likes.getCountOverride(comment.id) ?? comment.likesCount,
+          canApprove:
+              viewerId == postOwnerId &&
+              comment.isHidden &&
+              !hiddenParents.contains(comment.id),
+          isApproving: _approvingCommentIds.contains(comment.id),
+          onApprove: () => _approveComment(comment, postOwnerId),
+          canDelete: viewerId != null && comment.user?.id == viewerId,
+          isDeleting: _deletingCommentIds.contains(comment.id),
+          onDelete: () => _deleteComment(comment),
+          onQuote: comment.isHidden || comment.user == null || !isPublicPost
+              ? null
+              : () => context.push(
+                  AppRoutes.createPost,
+                  extra: QuoteSource.comment(
+                    id: comment.id,
+                    postId: comment.postId,
+                    comment: comment,
+                  ),
+                ),
+          onReply: () =>
+              context.push(AppRoutes.commentPath(widget.postId, comment.id)),
           onLike: () async {
-            final user = ref.read(authControllerProvider).valueOrNull;
-            if (user == null || user.isGuest) {
+            if (ref.read(authControllerProvider).value == null) {
               if (context.mounted) {
-                AppSnackbar.warning(context, 'Faça login para curtir');
+                AppSnackbar.warning(context, l10n(context).feedLoginToLike);
               }
               return;
             }
@@ -429,42 +420,8 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                 );
           },
           onUserTap: comment.user != null
-              ? () => context.push('/user/${comment.user!.id}')
+              ? () => context.push(AppRoutes.userPath(comment.user!.id))
               : null,
-        ),
-        if (isReplying)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: CommentInput(
-              controller: _replyController,
-              focusNode: _replyFocusNode,
-              isSending: _isReplySending,
-              onSend: _sendComment,
-              hint: 'Respondendo...',
-              compact: true,
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _CommentSkeletonRow extends StatelessWidget {
-  const _CommentSkeletonRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        ShimmerBlock(width: 32, height: 32),
-        SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ShimmerBlock(height: 14, width: 100),
-            SizedBox(height: 6),
-            ShimmerBlock(height: 12, width: 160),
-          ],
         ),
       ],
     );

@@ -1,0 +1,7 @@
+[mcp_servers.dart]
+command = "dart"
+args = ["mcp-server"]
+
+[mcp_servers.flutter-profile]
+command = "dart"
+args = ["pub", "global", "run", "flutter_profile_mcp:flutter_devtools_mcp"]

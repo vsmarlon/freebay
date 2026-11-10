@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenDisputeUseCase } from './open-dispute.usecase';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { DisputeRepository } from '../domain/repositories/dispute.repository';
+import { DisputeDatabaseRepository } from '../data/repositories/dispute-database.repository';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { NotFoundError, BadRequestError, UnauthorizedError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
@@ -16,6 +16,7 @@ const mockPrisma = {
     findUnique: jest.fn(),
     update: jest.fn(),
   },
+  $transaction: jest.fn(),
 };
 
 const mockDisputeRepo = {
@@ -50,16 +51,19 @@ describe('OpenDisputeUseCase', () => {
       providers: [
         OpenDisputeUseCase,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: DisputeRepository, useValue: mockDisputeRepo },
+        { provide: DisputeDatabaseRepository, useValue: mockDisputeRepo },
         { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
 
     sut = module.get<OpenDisputeUseCase>(OpenDisputeUseCase);
     jest.clearAllMocks();
+    mockPrisma.$transaction.mockImplementation((work) => work({
+      order: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    }));
   });
 
-  it('should open a dispute successfully', async () => {
+  it('opens a dispute successfully', async () => {
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
     mockDisputeRepo.create.mockResolvedValue(right(mockDispute));
     mockPrisma.order.update.mockResolvedValue({ ...mockOrder, status: 'DISPUTED' });
@@ -73,7 +77,7 @@ describe('OpenDisputeUseCase', () => {
     expect(result.isRight()).toBe(true);
   });
 
-  it('should return NotFoundError when order not found', async () => {
+  it('returns NotFoundError when order not found', async () => {
     mockPrisma.order.findUnique.mockResolvedValue(null);
 
     const result = await sut.execute({
@@ -88,7 +92,7 @@ describe('OpenDisputeUseCase', () => {
     }
   });
 
-  it('should return UnauthorizedError when user is not participant', async () => {
+  it('returns UnauthorizedError when user is not participant', async () => {
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
 
     const result = await sut.execute({
@@ -103,7 +107,7 @@ describe('OpenDisputeUseCase', () => {
     }
   });
 
-  it('should return BadRequestError when dispute already exists', async () => {
+  it('returns BadRequestError when dispute already exists', async () => {
     mockPrisma.order.findUnique.mockResolvedValue({ ...mockOrder, dispute: mockDispute });
 
     const result = await sut.execute({
@@ -118,7 +122,7 @@ describe('OpenDisputeUseCase', () => {
     }
   });
 
-  it('should reject when more than 48 hours have passed since deliveryConfirmedAt', async () => {
+  it('rejects when more than 48 hours have passed since deliveryConfirmedAt', async () => {
     const now = new Date('2026-01-03T00:00:00.000Z');
     const deliveryConfirmedAt = new Date(now.getTime() - 49 * 60 * 60 * 1000);
     mockPrisma.order.findUnique.mockResolvedValue({ ...mockOrder, deliveryConfirmedAt });
@@ -135,7 +139,7 @@ describe('OpenDisputeUseCase', () => {
     expect(mockDisputeRepo.create).not.toHaveBeenCalled();
   });
 
-  it('should fall back to order.createdAt when deliveryConfirmedAt is null, and still apply the 48h window', async () => {
+  it('falls back to order.createdAt when deliveryConfirmedAt is null, and still applies the 48h window', async () => {
     const now = new Date('2026-01-03T00:00:00.000Z');
     const createdAt = new Date(now.getTime() - 49 * 60 * 60 * 1000);
     mockPrisma.order.findUnique.mockResolvedValue({ ...mockOrder, deliveryConfirmedAt: null, createdAt });
@@ -150,5 +154,44 @@ describe('OpenDisputeUseCase', () => {
       expect(result.value).toBeInstanceOf(BadRequestError);
     }
     expect(mockDisputeRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('allows a stale SHIPPED order into manual dispute review without using order creation as delivery time', async () => {
+    const now = new Date('2026-01-03T00:00:00.000Z');
+    mockPrisma.order.findUnique.mockResolvedValue({
+      ...mockOrder,
+      status: 'SHIPPED',
+      deliveryConfirmedAt: null,
+      createdAt: new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000),
+    });
+    mockDisputeRepo.create.mockResolvedValue(right(mockDispute));
+    mockPrisma.order.update.mockResolvedValue({ ...mockOrder, status: 'DISPUTED' });
+
+    const result = await sut.execute(
+      { orderId: 'order-123', userId: 'buyer-123', reason: 'Never arrived' },
+      now,
+    );
+
+    expect(result.isRight()).toBe(true);
+    expect(mockDisputeRepo.create).toHaveBeenCalled();
+  });
+
+  it('does not create a dispute when the atomic order claim loses to cancellation or release', async () => {
+    mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
+    mockDisputeRepo.create.mockResolvedValue(right(mockDispute));
+    const orderUpdateMany = jest.fn().mockResolvedValue({ count: 0 });
+    const disputeCreate = jest.fn();
+    mockPrisma.$transaction.mockImplementation(async (work) => work({
+      order: { updateMany: orderUpdateMany },
+      dispute: { create: disputeCreate },
+    }));
+
+    const result = await sut.execute({
+      orderId: 'order-123', userId: 'buyer-123', reason: 'Item not received',
+    });
+
+    expect(result.isLeft()).toBe(true);
+    expect(orderUpdateMany).toHaveBeenCalled();
+    expect(disputeCreate).not.toHaveBeenCalled();
   });
 });

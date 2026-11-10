@@ -9,14 +9,15 @@ part of 'user_entity.dart';
 _UserEntity _$UserEntityFromJson(Map<String, dynamic> json) => _UserEntity(
   id: json['id'] as String,
   displayName: json['displayName'] as String?,
+  username: json['username'] as String?,
   email: json['email'] as String?,
   avatarUrl: json['avatarUrl'] as String?,
+  avatarBlurHash: json['avatarBlurHash'] as String?,
   bannerUrl: json['bannerUrl'] as String?,
   bio: json['bio'] as String?,
   city: json['city'] as String?,
   state: json['state'] as String?,
   isVerified: json['isVerified'] as bool? ?? false,
-  isGuest: json['isGuest'] as bool? ?? false,
   hasCpf: json['hasCpf'] as bool? ?? false,
   cpf: json['cpf'] as String?,
   reputationScore: json['reputationScore'] as num? ?? 0,
@@ -28,20 +29,25 @@ _UserEntity _$UserEntityFromJson(Map<String, dynamic> json) => _UserEntity(
   postsCount: (json['postsCount'] as num?)?.toInt() ?? 0,
   productsCount: (json['productsCount'] as num?)?.toInt() ?? 0,
   hasActiveStory: json['hasActiveStory'] as bool? ?? false,
+  biometryLoginEnabled: json['biometryLoginEnabled'] as bool? ?? false,
+  deletionRequestedAt: json['deletionRequestedAt'] == null
+      ? null
+      : DateTime.parse(json['deletionRequestedAt'] as String),
 );
 
 Map<String, dynamic> _$UserEntityToJson(_UserEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
       'displayName': instance.displayName,
+      'username': instance.username,
       'email': instance.email,
       'avatarUrl': instance.avatarUrl,
+      'avatarBlurHash': instance.avatarBlurHash,
       'bannerUrl': instance.bannerUrl,
       'bio': instance.bio,
       'city': instance.city,
       'state': instance.state,
       'isVerified': instance.isVerified,
-      'isGuest': instance.isGuest,
       'hasCpf': instance.hasCpf,
       'cpf': instance.cpf,
       'reputationScore': instance.reputationScore,
@@ -53,4 +59,6 @@ Map<String, dynamic> _$UserEntityToJson(_UserEntity instance) =>
       'postsCount': instance.postsCount,
       'productsCount': instance.productsCount,
       'hasActiveStory': instance.hasActiveStory,
+      'biometryLoginEnabled': instance.biometryLoginEnabled,
+      'deletionRequestedAt': instance.deletionRequestedAt?.toIso8601String(),
     };

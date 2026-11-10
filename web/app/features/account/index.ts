@@ -1,0 +1,11 @@
+export { default as ProfilePage } from './profile';
+export { default as EditProfilePage } from './edit-profile';
+export { default as ConnectionsPage } from './connections';
+export { default as PeoplePage } from './people';
+export { default as SettingsPage } from './settings';
+export { default as PrivacyPage } from './privacy';
+export { default as CloseFriendsPage } from './close-friends';
+export { default as SafetyListPage } from './safety-list';
+export { default as NotificationsPage } from './notifications';
+export { default as HelpPage } from './help';
+export { default as BugReportPage } from './bug-report';

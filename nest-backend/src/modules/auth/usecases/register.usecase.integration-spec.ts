@@ -1,33 +1,50 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { right } from '@/shared/core/either';
 import { RegisterUseCase } from './register.usecase';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory } from '../../../../test/factories';
-import { isLeft, isRight } from '@/shared/core/either';
 import { RegisterDTO } from '../dtos/auth.dto';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { SessionTokenService } from '../services/session-token.service';
+import { RequestEmailVerificationUseCase } from './request-email-verification.usecase';
+import { CpfProtectionService } from '@/shared/utils/cpf-protection.service';
+import { ConfigService } from '@nestjs/config';
 
 describe('RegisterUseCase Integration', () => {
   let sut: RegisterUseCase;
-  let userRepository: UserDatabaseRepository;
   let userFactory: UserFactory;
 
-  beforeEach(() => {
-    userRepository = new UserDatabaseRepository(prisma);
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        RegisterUseCase,
+        UserDatabaseRepository,
+        { provide: PrismaService, useValue: prisma },
+        CpfProtectionService,
+        { provide: ConfigService, useValue: { get: (key: string) => process.env[key] } },
+        { provide: SessionTokenService, useValue: { generate: () => ({ token: 'access', refreshToken: 'refresh' }) } },
+        { provide: RequestEmailVerificationUseCase, useValue: { execute: jest.fn().mockResolvedValue(right(undefined)) } },
+      ],
+    }).compile();
+
     userFactory = new UserFactory(prisma);
-    sut = new RegisterUseCase(userRepository);
+    sut = module.get(RegisterUseCase);
   });
 
   describe('Business Rules', () => {
-    it('should register a new user successfully', async () => {
+    it('registers a new user successfully', async () => {
       const input: RegisterDTO = {
         email: 'newuser@example.com',
         password: 'password123',
         displayName: 'New User',
+        username: 'new_user',
       };
 
       const result = await sut.execute(input);
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         expect(result.value.user).toBeDefined();
         expect(result.value.user.displayName).toBe(input.displayName);
         expect(result.value.user.reputationScore).toBe(0);
@@ -41,27 +58,28 @@ describe('RegisterUseCase Integration', () => {
       }
     });
 
-    it('should hash the password before storing', async () => {
+    it('hashes the password before storing', async () => {
       const input: RegisterDTO = {
         email: 'secure@example.com',
         password: 'mySecretPassword',
         displayName: 'Secure User',
+        username: 'secure_user',
       };
 
       const result = await sut.execute(input);
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const dbUser = await prisma.user.findUnique({
           where: { email: input.email },
         });
 
         expect(dbUser?.passwordHash).not.toBe(input.password);
-        expect(dbUser?.passwordHash.length).toBeGreaterThan(20);
+        expect(dbUser?.passwordHash?.length).toBeGreaterThan(20);
       }
     });
 
-    it('should return error if email already exists', async () => {
+    it('returns error if email already exists', async () => {
       const existingUser = await userFactory.create({
         email: 'duplicate@example.com',
       });
@@ -70,30 +88,53 @@ describe('RegisterUseCase Integration', () => {
         email: existingUser.email,
         password: 'password123',
         displayName: 'Another User',
+        username: 'another_user',
       };
 
       const result = await sut.execute(input);
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('EMAIL_ALREADY_EXISTS');
         expect(result.value.message).toContain('já está em uso');
       }
     });
 
-    it('should register user with optional city and state', async () => {
+    it('returns error if username already exists', async () => {
+      const existingUser = await userFactory.create({
+        username: 'takenname',
+      });
+
+      const input: RegisterDTO = {
+        email: 'brandnew@example.com',
+        password: 'password123',
+        displayName: 'Yet Another User',
+        username: existingUser.username!,
+      };
+
+      const result = await sut.execute(input);
+
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
+        expect(result.value.code).toBe('USERNAME_ALREADY_EXISTS');
+        expect(result.value.message).toContain('já está em uso');
+      }
+    });
+
+    it('registers user with optional city and state', async () => {
       const input: RegisterDTO = {
         email: 'location@example.com',
         password: 'password123',
         displayName: 'User with Location',
+        username: 'location_user',
         city: 'São Paulo',
         state: 'SP',
       };
 
       const result = await sut.execute(input);
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const dbUser = await prisma.user.findUnique({
           where: { email: input.email },
         });
@@ -103,17 +144,18 @@ describe('RegisterUseCase Integration', () => {
       }
     });
 
-    it('should initialize reputation score to 0', async () => {
+    it('initializes reputation score to 0', async () => {
       const input: RegisterDTO = {
         email: 'newbie@example.com',
         password: 'password123',
         displayName: 'Newbie',
+        username: 'newbie',
       };
 
       const result = await sut.execute(input);
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         expect(result.value.user.reputationScore).toBe(0);
         expect(result.value.user.totalReviews).toBe(0);
 
@@ -125,16 +167,16 @@ describe('RegisterUseCase Integration', () => {
       }
     });
 
-    it('should create multiple users with unique emails', async () => {
+    it('creates multiple users with unique emails', async () => {
       const users = [
-        { email: 'user1@example.com', password: 'pass123', displayName: 'User 1' },
-        { email: 'user2@example.com', password: 'pass123', displayName: 'User 2' },
-        { email: 'user3@example.com', password: 'pass123', displayName: 'User 3' },
+        { email: 'user1@example.com', password: 'pass123', displayName: 'User 1', username: 'user_one' },
+        { email: 'user2@example.com', password: 'pass123', displayName: 'User 2', username: 'user_two' },
+        { email: 'user3@example.com', password: 'pass123', displayName: 'User 3', username: 'user_three' },
       ];
 
       const results = await Promise.all(users.map((user) => sut.execute(user)));
 
-      expect(results.every(isRight)).toBe(true);
+      expect(results.every((r) => r.isRight())).toBe(true);
 
       const dbUsers = await prisma.user.findMany({
         where: {

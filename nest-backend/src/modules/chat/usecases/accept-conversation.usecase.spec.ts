@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AcceptConversationUseCase } from './accept-conversation.usecase';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 
@@ -16,36 +16,36 @@ describe('AcceptConversationUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AcceptConversationUseCase,
-        { provide: ConversationRepository, useValue: mockRepo },
+        { provide: ConversationDatabaseRepository, useValue: mockRepo },
       ],
     }).compile();
 
-    sut = module.get<AcceptConversationUseCase>(AcceptConversationUseCase);
+    sut = module.get(AcceptConversationUseCase);
     jest.clearAllMocks();
   });
 
-  it('should return error if conversation not found', async () => {
+  it('returns error if conversation not found', async () => {
     mockRepo.findDirectConversationById.mockResolvedValue(right(null));
     const result = await sut.execute('conv-1', 'user-1');
     expect(result.isLeft()).toBe(true);
     if (result.isLeft()) expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
-  it('should return error if user is not a participant', async () => {
+  it('returns error if user is not a participant', async () => {
     mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'a', user2Id: 'b', status: 'PENDING' }));
     const result = await sut.execute('conv-1', 'stranger');
     expect(result.isLeft()).toBe(true);
     if (result.isLeft()) expect(result.value).toBeInstanceOf(BadRequestError);
   });
 
-  it('should return error if conversation is not PENDING', async () => {
+  it('returns error if conversation is not PENDING', async () => {
     mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE' }));
     const result = await sut.execute('conv-1', 'user-1');
     expect(result.isLeft()).toBe(true);
     if (result.isLeft()) expect(result.value).toBeInstanceOf(BadRequestError);
   });
 
-  it('should accept conversation successfully', async () => {
+  it('accepts conversation successfully', async () => {
     mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'PENDING' }));
     mockRepo.updateDirectConversation.mockResolvedValue(right({ id: 'conv-1', status: 'ACTIVE' }));
 

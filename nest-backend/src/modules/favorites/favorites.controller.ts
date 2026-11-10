@@ -1,50 +1,40 @@
-import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
-import { FavoritesService } from './favorites.service';
+import { Controller, Param, ParseUUIDPipe } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { GetAuth, PostAuth, CurrentUserId } from '@/shared/decorators';
+import { GetFavoritesUseCase } from './usecases/get-favorites.usecase';
+import { CheckFavoriteUseCase } from './usecases/check-favorite.usecase';
+import { ToggleFavoriteUseCase } from './usecases/toggle-favorite.usecase';
 import { FavoritesResponse, CheckFavoriteResponse, ToggleFavoriteResponse } from './dtos/favorite.dto';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
 @ApiTags('Favorites')
 @Controller('favorites')
 export class FavoritesController {
-  constructor(private readonly favoritesService: FavoritesService) {}
+  constructor(
+    private readonly getFavoritesUseCase: GetFavoritesUseCase,
+    private readonly checkFavoriteUseCase: CheckFavoriteUseCase,
+    private readonly toggleFavoriteUseCase: ToggleFavoriteUseCase,
+  ) {}
 
-  @Get()
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth({
     summary: 'Get user favorites',
-    auth: true,
     responseType: FavoritesResponse,
   })
-  async getFavorites(@CurrentUser() user: AuthUser) {
-    return this.favoritesService.getFavorites(user.userId);
+  async getFavorites(@CurrentUserId() userId: string) {
+    return this.getFavoritesUseCase.execute(userId);
   }
 
-  @Get('check/:productId')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth('check/:productId', {
     summary: 'Check if product is favorited',
-    auth: true,
     params: [{ name: 'productId', description: 'Product UUID' }],
     responseType: CheckFavoriteResponse,
   })
-  async checkFavorite(@Param('productId') productId: string, @CurrentUser() user: AuthUser) {
-    return this.favoritesService.checkFavorite(user.userId, productId);
+  async checkFavorite(@Param('productId', ParseUUIDPipe) productId: string, @CurrentUserId() userId: string) {
+    return this.checkFavoriteUseCase.execute(userId, productId);
   }
 
-  @Post(':productId')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PostAuth(':productId', {
     summary: 'Toggle favorite',
     description: 'Add or remove a product from favorites',
-    auth: true,
     params: [{ name: 'productId', description: 'Product UUID' }],
     responseType: ToggleFavoriteResponse,
     errors: [
@@ -52,7 +42,8 @@ export class FavoritesController {
       { status: 403, description: 'Cannot favorite own product' },
     ],
   })
-  async toggleFavorite(@Param('productId') productId: string, @CurrentUser() user: AuthUser) {
-    return this.favoritesService.toggleFavorite(user.userId, productId);
+  async toggleFavorite(@Param('productId', ParseUUIDPipe) productId: string, @CurrentUserId() userId: string) {
+    return this.toggleFavoriteUseCase.execute(userId, productId);
   }
 }
+

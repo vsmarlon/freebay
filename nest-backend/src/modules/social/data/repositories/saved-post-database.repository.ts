@@ -1,45 +1,88 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { SavedPostRepository } from '../../domain/repositories/saved-post.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
+import { RepositoryResponse } from '@/shared/core/either';
+import { CursorPage } from '@/shared/core/pagination';
+import { PostResponse, postIncludeForViewer, SavedPostsRepositoryQuery } from '../../types/social.types';
+import { normalizePostsForViewer, postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
-export class PrismaSavedPostRepository implements SavedPostRepository {
-  constructor(private readonly prisma: PrismaService) {}
+export class SavedPostDatabaseRepository {
+  constructor(private readonly prisma: PrismaService) {
+  }
 
   async findByUserAndPost(userId: string, postId: string): RepositoryResponse<{ id: string } | null> {
-    try {
-      const saved = await this.prisma.savedPost.findUnique({
-        where: { userId_postId: { userId, postId } },
-        select: { id: true },
-      });
-      return right(saved);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar post salvo'));
-    }
+    return repositoryResponse(() => this.prisma.savedPost.findUnique({
+      where: { userId_postId: { userId, postId } },
+      select: { id: true },
+    }), 'Erro ao buscar post salvo');
   }
 
   async save(userId: string, postId: string): RepositoryResponse<{ id: string }> {
-    try {
-      const saved = await this.prisma.savedPost.create({
-        data: { userId, postId },
-        select: { id: true },
-      });
-      return right(saved);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao salvar post'));
-    }
+    return repositoryResponse(() => this.prisma.savedPost.create({
+      data: { userId, postId },
+      select: { id: true },
+    }), 'Erro ao salvar post');
   }
 
   async unsave(userId: string, postId: string): RepositoryResponse<void> {
-    try {
-      await this.prisma.savedPost.delete({
-        where: { userId_postId: { userId, postId } },
+    return repositoryResponse(async () => {
+      await this.prisma.savedPost.delete({ where: { userId_postId: { userId, postId } } });
+    }, 'Erro ao remover post salvo');
+  }
+
+  async setSaved(userId: string, postId: string, active: boolean): RepositoryResponse<{ active: boolean }> {
+    return repositoryResponse(() => this.prisma.$transaction(async (tx) => {
+      const existing = await tx.savedPost.findUnique({ where: { userId_postId: { userId, postId } } });
+      if (active && !existing) await tx.savedPost.create({ data: { userId, postId } });
+      if (!active && existing) await tx.savedPost.delete({ where: { userId_postId: { userId, postId } } });
+      return { active };
+    }), 'Erro ao atualizar post salvo');
+  }
+
+  async findSaved(
+    query: SavedPostsRepositoryQuery,
+  ): RepositoryResponse<CursorPage<PostResponse>> {
+    return repositoryResponse(async () => {
+      const limit = query.limit ?? 20;
+      const saved = await this.prisma.savedPost.findMany({
+        where: {
+          userId: query.userId,
+          post: {
+            deletedAt: null,
+            AND: [postVisibilityWhere(query.userId)],
+          },
+          ...(query.cursor
+            ? {
+                OR: [
+                  { createdAt: { lt: new Date(query.cursor.createdAt) } },
+                  {
+                    createdAt: new Date(query.cursor.createdAt),
+                    id: { lt: query.cursor.savedPostId },
+                  },
+                ],
+              }
+            : {}),
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: limit + 1,
+        include: { post: { include: postIncludeForViewer(query.userId) } },
       });
-      return right(void 0);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao remover post salvo'));
-    }
+      const hasMore = saved.length > limit;
+      const page = saved.slice(0, limit);
+      const last = page[page.length - 1];
+      return {
+        items: await normalizePostsForViewer(page.map(({ post }) => post), query.userId, this.prisma),
+        hasMore,
+        nextCursor: hasMore && last
+          ? Buffer.from(JSON.stringify({
+              scope: 'saved-posts',
+              userId: query.userId,
+              createdAt: last.createdAt.toISOString(),
+              savedPostId: last.id,
+            }), 'utf8').toString('base64url')
+          : null,
+      };
+    }, 'Erro ao buscar posts salvos');
   }
 }

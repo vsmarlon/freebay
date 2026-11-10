@@ -1,69 +1,89 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { ShareRepository, ShareWithPost } from '../../domain/repositories/share.repository';
-import { POST_INCLUDE_FULL } from '../../types/social.types';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
+import { RepositoryResponse } from '@/shared/core/either';
+import { postIncludeForViewer, ShareWithPost, MutationState } from '../../types/social.types';
+import { normalizePostsForViewer, visiblePostAuthor, postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
-export class PrismaShareRepository implements ShareRepository {
-  constructor(private readonly prisma: PrismaService) {}
-
-  async findByUserAndPost(userId: string, postId: string): RepositoryResponse<{ id: string } | null> {
-    try {
-      const share = await this.prisma.share.findUnique({
-        where: { userId_postId: { userId, postId } },
-        select: { id: true },
-      });
-      return right(share);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar compartilhamento'));
-    }
+export class ShareDatabaseRepository {
+  constructor(private readonly prisma: PrismaService) {
   }
 
-  async create(data: Record<string, unknown>): RepositoryResponse<{ id: string }> {
-    try {
-      const share = await this.prisma.share.create({ data: data as Prisma.ShareCreateInput, select: { id: true } });
-      return right(share);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao compartilhar'));
-    }
+  async findByUserAndPost(userId: string, postId: string): RepositoryResponse<{ id: string } | null> {
+    return repositoryResponse(() => this.prisma.share.findUnique({
+      where: { userId_postId: { userId, postId } },
+      select: { id: true },
+    }), 'Erro ao buscar compartilhamento');
+  }
+
+  async create(data: Prisma.ShareCreateInput): RepositoryResponse<{ id: string }> {
+    return repositoryResponse(() => this.prisma.share.create({
+      data,
+      select: { id: true },
+    }), 'Erro ao compartilhar');
   }
 
   async delete(userId: string, postId: string): RepositoryResponse<void> {
-    try {
+    return repositoryResponse(async () => {
       await this.prisma.share.delete({ where: { userId_postId: { userId, postId } } });
-      return right(void 0);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao remover compartilhamento'));
-    }
+    }, 'Erro ao remover compartilhamento');
   }
 
-  async findPostsRepostedByUser(userId: string, params: { limit?: number; cursor?: string }): RepositoryResponse<ShareWithPost[]> {
-    try {
+  async setPostShare(userId: string, postId: string, active: boolean): RepositoryResponse<MutationState> {
+    return repositoryResponse(async () => {
+      try {
+        return await this.applyPostShare(userId, postId, active);
+      } catch (error) {
+        // ponytail: unique-index race from a double tap — same one-retry idempotency
+        // as setPostLike.
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          return await this.applyPostShare(userId, postId, active);
+        }
+        throw error;
+      }
+    }, 'Erro ao atualizar compartilhamento');
+  }
+
+  private async applyPostShare(userId: string, postId: string, active: boolean): Promise<MutationState> {
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.share.findUnique({ where: { userId_postId: { userId, postId } } });
+      if (active && !existing) {
+        await tx.share.create({ data: { userId, postId } });
+        await tx.post.update({ where: { id: postId }, data: { sharesCount: { increment: 1 } } });
+      } else if (!active && existing) {
+        await tx.share.delete({ where: { userId_postId: { userId, postId } } });
+        await tx.post.updateMany({ where: { id: postId, sharesCount: { gt: 0 } }, data: { sharesCount: { decrement: 1 } } });
+      }
+      const post = await tx.post.findUnique({ where: { id: postId }, select: { sharesCount: true } });
+      return { active, count: post?.sharesCount ?? 0 };
+    });
+  }
+
+  async findPostsRepostedByUser(userId: string, params: { viewerId?: string; limit?: number; cursor?: string }): RepositoryResponse<ShareWithPost[]> {
+    return repositoryResponse(async () => {
       const shares = await this.prisma.share.findMany({
-        where: { userId },
+        where: {
+          userId,
+          ...(params.viewerId ? { user: visiblePostAuthor(params.viewerId) } : {}),
+          post: { deletedAt: null, AND: [postVisibilityWhere(params.viewerId)] },
+        },
         orderBy: { createdAt: 'desc' },
         take: params.limit ?? 20,
         ...(params.cursor ? { skip: 1, cursor: { id: params.cursor } } : {}),
         include: {
-          post: { include: POST_INCLUDE_FULL },
+          post: { include: postIncludeForViewer(params.viewerId) },
           user: { select: { id: true, displayName: true, avatarUrl: true } },
         },
       });
-      return right(shares as ShareWithPost[]);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar reposts'));
-    }
+      const normalizedPosts = await normalizePostsForViewer(shares.map((share) => share.post), params.viewerId, this.prisma);
+      const byPostId = new Map(normalizedPosts.map((post) => [post.id, post]));
+      return shares.map((share) => ({
+        ...share,
+        post: byPostId.get(share.post.id)!,
+      }));
+    }, 'Erro ao buscar reposts');
   }
 
-  async exists(userId: string, postId: string): RepositoryResponse<boolean> {
-    try {
-      const count = await this.prisma.share.count({ where: { userId, postId } });
-      return right(count > 0);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao verificar compartilhamento'));
-    }
-  }
 }

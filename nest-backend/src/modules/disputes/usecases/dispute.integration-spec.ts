@@ -1,20 +1,31 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { Module, Provider, Type } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
 import { Effect, Layer, TestClock, Clock, TestContext } from 'effect';
+import { ClsModule } from 'nestjs-cls';
+import { ClsPluginTransactional } from '@nestjs-cls/transactional';
+import { TransactionHost } from '@nestjs-cls/transactional';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory, OrderFactory } from '../../../../test/factories';
-import { isLeft, isRight } from '@/shared/core/either';
+;
 import { BadRequestError, UnauthorizedError, NotFoundError } from '@/shared/core/errors';
 import { OpenDisputeUseCase } from './open-dispute.usecase';
 import { ResolveDisputeUseCase } from './resolve-dispute.usecase';
 import { SubmitEvidenceUseCase } from './submit-evidence.usecase';
 import { WithdrawDisputeUseCase } from './withdraw-dispute.usecase';
-import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
+import { DisputeDatabaseRepository } from '../data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
-import { PrismaTag, NotificationTag } from '../effect-harness/tags';
+import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
+import { PrismaTag, NotificationTag, NotificationServiceShape } from '../effect-harness/tags';
 import { TestNotificationsLayer, RecordedNotification } from '../effect-harness/test-notifications.layer';
-import type { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import type { NotificationService } from '@/modules/notifications/services/notification.service';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { DisputeCleanupTask } from '@/modules/tasks/dispute-cleanup.task';
+import { TransactionDatabaseRepository } from '@/modules/payments/data/repositories/transaction-database.repository';
+import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
+import { right } from '@/shared/core/either';
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -47,12 +58,71 @@ describe('Disputes Effect Integration', () => {
     );
   }
 
-  function prismaAsService(): PrismaService {
-    return prisma as unknown as PrismaService;
+  async function buildUsecase<T>(
+    usecase: Type<T>,
+    overrides: Provider[] = [],
+    prismaClient: PrismaClient = prisma,
+  ): Promise<T> {
+    @Module({
+      providers: [{ provide: PrismaService, useValue: prismaClient }],
+      exports: [PrismaService],
+    })
+    class FakePrismaModule {}
+
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        ClsModule.forRoot({
+          global: true,
+          plugins: [
+            new ClsPluginTransactional({
+              adapter: new TransactionalAdapterPrisma({ prismaInjectionToken: PrismaService }),
+              imports: [FakePrismaModule],
+            }),
+          ],
+        }),
+      ],
+      providers: [
+        usecase,
+        DisputeDatabaseRepository,
+        DisputeTransitionPolicy,
+        DisputeResolutionExecutionService,
+        TransactionDatabaseRepository,
+        { provide: PrismaService, useValue: prismaClient },
+        { provide: NotificationService, useValue: notificationDouble() },
+        ...overrides,
+      ],
+    }).compile();
+
+    return module.get(usecase);
   }
 
-  function disputeRepoFor(prismaService: PrismaService): PrismaDisputeRepository {
-    return new PrismaDisputeRepository(prismaService);
+  async function buildTransactionContext(prismaClient: PrismaClient = prisma) {
+    @Module({ providers: [{ provide: PrismaService, useValue: prismaClient }], exports: [PrismaService] })
+    class FakePrismaModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [ClsModule.forRoot({
+        global: true,
+        plugins: [new ClsPluginTransactional({
+          adapter: new TransactionalAdapterPrisma({ prismaInjectionToken: PrismaService }),
+          imports: [FakePrismaModule],
+        })],
+      })],
+      providers: [DisputeDatabaseRepository, { provide: PrismaService, useValue: prismaClient }],
+    }).compile();
+    return {
+      module,
+      repository: module.get(DisputeDatabaseRepository),
+      transactionHost: module.get(TransactionHost<TransactionalAdapterPrisma>),
+    };
+  }
+
+  function notificationDouble(): NotificationServiceShape {
+    return {
+      notifyDispute: jest.fn().mockResolvedValue(undefined),
+      notifyOrderStatus: jest.fn().mockResolvedValue(undefined),
+      create: jest.fn().mockResolvedValue({ id: 'mock-notification-id' }),
+    };
   }
 
   describe('OpenDisputeUseCase — 48h window', () => {
@@ -65,11 +135,15 @@ describe('Disputes Effect Integration', () => {
         return { db, buyer, seller, product };
       });
 
-    function makeUsecase(prismaService: PrismaService, notif: NotificationService) {
-      return new OpenDisputeUseCase(prismaService, disputeRepoFor(prismaService), notif);
+    function makeUsecase(prismaClient: PrismaClient, notif: NotificationServiceShape) {
+      return buildUsecase(
+        OpenDisputeUseCase,
+        [{ provide: NotificationService, useValue: notif }],
+        prismaClient,
+      );
     }
 
-    it('should succeed 47h59m after delivery', async () => {
+    it('succeeds 47h59m after delivery', async () => {
       const program = Effect.gen(function* () {
         const { db, buyer, product } = yield* seed();
         const deliveryTime = new Date(Date.now() - (47 * ONE_HOUR_MS + 59 * 60 * 1000));
@@ -82,7 +156,7 @@ describe('Disputes Effect Integration', () => {
         );
 
         const notif = yield* NotificationTag;
-        const uc = makeUsecase(db as unknown as PrismaService, notif as unknown as NotificationService);
+        const uc = yield* Effect.promise(() => makeUsecase(db, notif));
         const result = yield* Effect.promise(() =>
           uc.execute(
             { orderId: order.id, userId: buyer.id, reason: 'Within window' },
@@ -90,7 +164,7 @@ describe('Disputes Effect Integration', () => {
           ),
         );
 
-        expect(isRight(result)).toBe(true);
+        expect(result.isRight()).toBe(true);
         expect(notifications.length).toBe(3);
         expect(notifications.filter(n => n.method === 'notifyDispute').length).toBe(1);
         expect(notifications.filter(n => n.method === 'notifyOrderStatus').length).toBe(2);
@@ -98,7 +172,7 @@ describe('Disputes Effect Integration', () => {
       await run(program);
     });
 
-    it('should reject 48h01m after delivery', async () => {
+    it('rejects 48h01m after delivery', async () => {
       const program = Effect.gen(function* () {
         const { db, buyer, product } = yield* seed();
         const deliveryTime = new Date(Date.now() - (48 * ONE_HOUR_MS + ONE_HOUR_MS));
@@ -111,7 +185,7 @@ describe('Disputes Effect Integration', () => {
         );
 
         const notif = yield* NotificationTag;
-        const uc = makeUsecase(db as unknown as PrismaService, notif as unknown as NotificationService);
+        const uc = yield* Effect.promise(() => makeUsecase(db, notif));
         const result = yield* Effect.promise(() =>
           uc.execute(
             { orderId: order.id, userId: buyer.id, reason: 'Too late' },
@@ -119,8 +193,8 @@ describe('Disputes Effect Integration', () => {
           ),
         );
 
-        expect(isLeft(result)).toBe(true);
-        if (isLeft(result)) {
+        expect(result.isLeft()).toBe(true);
+        if (result.isLeft()) {
           expect(result.value).toBeInstanceOf(BadRequestError);
         }
 
@@ -132,7 +206,7 @@ describe('Disputes Effect Integration', () => {
       await run(program);
     });
 
-    it('should reject non-participant', async () => {
+    it('rejects non-participant', async () => {
       const program = Effect.gen(function* () {
         const { db, buyer, product } = yield* seed();
         const stranger = yield* Effect.promise(() => userFactory.create());
@@ -145,13 +219,13 @@ describe('Disputes Effect Integration', () => {
         );
 
         const notif = yield* NotificationTag;
-        const uc = makeUsecase(db as unknown as PrismaService, notif as unknown as NotificationService);
+        const uc = yield* Effect.promise(() => makeUsecase(db, notif));
         const result = yield* Effect.promise(() =>
           uc.execute({ orderId: order.id, userId: stranger.id, reason: 'Hacker' }),
         );
 
-        expect(isLeft(result)).toBe(true);
-        if (isLeft(result)) {
+        expect(result.isLeft()).toBe(true);
+        if (result.isLeft()) {
           expect(result.value).toBeInstanceOf(UnauthorizedError);
         }
       });
@@ -183,6 +257,20 @@ describe('Disputes Effect Integration', () => {
         status: 'DISPUTED',
         escrowStatus: 'HELD',
       });
+      await prisma.transaction.create({
+        data: {
+          orderId: order.id,
+          externalId: 'pi_dispute_test',
+          chargeId: 'ch_dispute_test',
+          amount: order.amount,
+          platformFee: order.platformFee,
+          sellerAmount: order.sellerAmount,
+          paymentMethod: 'CREDIT_CARD',
+          provider: 'STRIPE',
+          status: 'PAID',
+          idempotencyKey: `dispute-test-${order.id}`,
+        },
+      });
       const dispute = await prisma.dispute.create({
         data: {
           orderId: order.id,
@@ -196,24 +284,38 @@ describe('Disputes Effect Integration', () => {
     }
 
     function makeUsecase() {
-      return new ResolveDisputeUseCase(
-        prismaAsService(),
-        disputeRepoFor(prismaAsService()),
-        { notifyDispute: jest.fn(), notifyOrderStatus: jest.fn() } as unknown as NotificationService,
-        new DisputeTransitionPolicy(),
-        new DisputeResolutionExecutionService(),
-      );
+      return buildUsecase(ResolveDisputeUseCase, [
+        {
+          provide: SellerPayoutService,
+          useValue: { payoutForOrder: jest.fn(), reverseForOrder: jest.fn() },
+        },
+        {
+          provide: StripeProvider,
+          useValue: {
+            retrieveChargeRefunds: jest.fn().mockResolvedValue(right({
+              id: 'ch_dispute_test', amount: 10000, amountRefunded: 0, refunds: [],
+            })),
+            refundPayment: jest.fn().mockImplementation(async (payment: {
+              orderId: string; amount: number; chargeId?: string; operationId: string;
+            }) => right({
+              id: `re_${payment.orderId}`, chargeId: payment.chargeId ?? 'ch_dispute_test',
+              amount: payment.amount, status: 'succeeded', orderId: payment.orderId,
+              operationId: payment.operationId,
+            })),
+          },
+        },
+      ]);
     }
 
-    it('should resolve in seller favor and update wallet', async () => {
+    it('resolves in seller favor and updates wallet', async () => {
       const { seller, dispute } = await seed();
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         resolution: 'Seller wins',
         winner: 'SELLER',
       });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const wallet = await prisma.wallet.findUnique({ where: { userId: seller.id } });
       expect(wallet?.availableBalance).toBe(2000 + 9000);
@@ -221,34 +323,34 @@ describe('Disputes Effect Integration', () => {
       expect(wallet?.totalEarned).toBe(9000);
     });
 
-    it('should resolve in buyer favor and refund wallet', async () => {
+    it('resolves in buyer favor without crediting the buyer wallet a second time', async () => {
       const { buyer, dispute } = await seed();
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         resolution: 'Buyer wins',
         winner: 'BUYER',
       });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const wallet = await prisma.wallet.findUnique({ where: { userId: buyer.id } });
-      expect(wallet?.availableBalance).toBe(5000 + 10000);
+      expect(wallet?.availableBalance).toBe(5000);
 
       const dbOrder = await prisma.order.findUnique({ where: { id: dispute.orderId } });
       expect(dbOrder?.status).toBe('CANCELLED');
       expect(dbOrder?.escrowStatus).toBe('REFUNDED');
     });
 
-    it('should reject resolving an already-resolved dispute (BUG FIX)', async () => {
+    it('rejects resolving an already-resolved dispute', async () => {
       const { seller, dispute } = await seed();
-      const uc = makeUsecase();
+      const uc = await makeUsecase();
 
       const first = await uc.execute({
         disputeId: dispute.id,
         resolution: 'Seller wins',
         winner: 'SELLER',
       });
-      expect(isRight(first)).toBe(true);
+      expect(first.isRight()).toBe(true);
 
       const second = await uc.execute({
         disputeId: dispute.id,
@@ -256,8 +358,8 @@ describe('Disputes Effect Integration', () => {
         winner: 'SELLER',
       });
 
-      expect(isLeft(second)).toBe(true);
-      if (isLeft(second)) {
+      expect(second.isLeft()).toBe(true);
+      if (second.isLeft()) {
         expect(second.value).toBeInstanceOf(BadRequestError);
       }
 
@@ -266,18 +368,18 @@ describe('Disputes Effect Integration', () => {
       expect(wallet?.pendingBalance).toBe(0);
     });
 
-    it('should reject resolving a withdrawn (CANCELLED) dispute', async () => {
+    it('rejects resolving a withdrawn (CANCELLED) dispute', async () => {
       const { seller, dispute } = await seed();
       await prisma.dispute.update({ where: { id: dispute.id }, data: { status: 'CANCELLED' } });
 
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         resolution: 'Seller wins',
         winner: 'SELLER',
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(BadRequestError);
       }
 
@@ -309,92 +411,92 @@ describe('Disputes Effect Integration', () => {
     }
 
     function makeUsecase() {
-      return new SubmitEvidenceUseCase(disputeRepoFor(prismaAsService()), new DisputeTransitionPolicy());
+      return buildUsecase(SubmitEvidenceUseCase);
     }
 
-    it('should set AWAITING_SELLER when buyer submits', async () => {
+    it('sets AWAITING_SELLER when buyer submits', async () => {
       const { dispute } = await seed();
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         userId: dispute.openedById,
         evidence: { message: 'Buyer evidence' },
       });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const db = await prisma.dispute.findUnique({ where: { id: dispute.id } });
       expect(db?.status).toBe('AWAITING_SELLER');
       expect(db?.buyerEvidence).toEqual({ message: 'Buyer evidence' });
     });
 
-    it('should set AWAITING_BUYER when seller submits', async () => {
+    it('sets AWAITING_BUYER when seller submits', async () => {
       const { dispute, seller } = await seed();
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         userId: seller.id,
         evidence: { message: 'Seller evidence' },
       });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const db = await prisma.dispute.findUnique({ where: { id: dispute.id } });
       expect(db?.status).toBe('AWAITING_BUYER');
       expect(db?.sellerEvidence).toEqual({ message: 'Seller evidence' });
     });
 
-    it('should reject non-participant', async () => {
+    it('rejects non-participant', async () => {
       const { dispute } = await seed();
       const stranger = await userFactory.create();
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         userId: stranger.id,
         evidence: { message: 'Hacker' },
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(UnauthorizedError);
       }
     });
 
-    it('should reject evidence after dispute is resolved', async () => {
+    it('rejects evidence after dispute is resolved', async () => {
       const { dispute } = await seed();
       await prisma.dispute.update({
         where: { id: dispute.id },
         data: { status: 'RESOLVED', resolution: 'Done', resolvedAt: new Date() },
       });
 
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         userId: dispute.openedById,
         evidence: { message: 'Too late' },
       });
 
-      expect(isLeft(result)).toBe(true);
+      expect(result.isLeft()).toBe(true);
     });
 
-    it('should reject evidence after dispute is withdrawn (CANCELLED)', async () => {
+    it('rejects evidence after dispute is withdrawn (CANCELLED)', async () => {
       const { dispute } = await seed();
       await prisma.dispute.update({
         where: { id: dispute.id },
         data: { status: 'CANCELLED' },
       });
 
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         userId: dispute.openedById,
         evidence: { message: 'Too late' },
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(BadRequestError);
       }
     });
   });
 
   describe('DisputeCleanupTask — auto-expiry', () => {
-    it('should auto-resolve expired dispute in seller favor', async () => {
+    it('keeps expired dispute and escrow held for manual review on repeated cleanup runs', async () => {
       const buyer = await userFactory.createWithWallet({}, { availableBalance: 5000 });
       const seller = await userFactory.createWithWallet({}, { pendingBalance: 9000, availableBalance: 2000 });
       const product = await productFactory.create(seller.id, { price: 10000 });
@@ -412,30 +514,31 @@ describe('Disputes Effect Integration', () => {
         },
       });
 
-      const task = new DisputeCleanupTask(prismaAsService(), new DisputeResolutionExecutionService());
+      const task = await buildUsecase(DisputeCleanupTask);
+      await task.cleanupExpiredDisputes();
       await task.cleanupExpiredDisputes();
 
       const dbDispute = await prisma.dispute.findFirst({
         where: { orderId: order.id },
         orderBy: { createdAt: 'desc' },
       });
-      expect(dbDispute?.status).toBe('RESOLVED');
-      expect(dbDispute?.resolution).toContain('Auto-resolved');
+      expect(dbDispute?.status).toBe('OPEN');
+      expect(dbDispute?.resolution).toBeNull();
 
       const dbOrder = await prisma.order.findUnique({ where: { id: order.id } });
-      expect(dbOrder?.status).toBe('COMPLETED');
-      expect(dbOrder?.escrowStatus).toBe('RELEASED');
+      expect(dbOrder?.status).toBe('DISPUTED');
+      expect(dbOrder?.escrowStatus).toBe('HELD');
 
       const sellerWallet = await prisma.wallet.findUnique({ where: { userId: seller.id } });
-      expect(sellerWallet?.pendingBalance).toBe(0);
-      expect(sellerWallet?.availableBalance).toBe(2000 + 9000);
-      expect(sellerWallet?.totalEarned).toBe(9000);
+      expect(sellerWallet?.pendingBalance).toBe(9000);
+      expect(sellerWallet?.availableBalance).toBe(2000);
+      expect(sellerWallet?.totalEarned).toBe(0);
 
       const buyerWallet = await prisma.wallet.findUnique({ where: { userId: buyer.id } });
       expect(buyerWallet?.availableBalance).toBe(5000);
     });
 
-    it('should not touch non-expired disputes', async () => {
+    it('does not touch non-expired disputes', async () => {
       const buyer = await userFactory.createWithWallet();
       const seller = await userFactory.createWithWallet();
       const product = await productFactory.create(seller.id);
@@ -452,7 +555,7 @@ describe('Disputes Effect Integration', () => {
         },
       });
 
-      const task = new DisputeCleanupTask(prismaAsService(), new DisputeResolutionExecutionService());
+      const task = await buildUsecase(DisputeCleanupTask);
       await task.cleanupExpiredDisputes();
 
       const db = await prisma.dispute.findFirst({
@@ -485,20 +588,15 @@ describe('Disputes Effect Integration', () => {
     }
 
     function makeUsecase() {
-      return new WithdrawDisputeUseCase(
-        prismaAsService(),
-        disputeRepoFor(prismaAsService()),
-        new DisputeTransitionPolicy(),
-        { notifyDispute: jest.fn(), notifyOrderStatus: jest.fn() } as unknown as NotificationService,
-      );
+      return buildUsecase(WithdrawDisputeUseCase);
     }
 
-    it('should withdraw dispute, cancel it, and restore order to DELIVERED with escrow HELD', async () => {
+    it('withdraws dispute, cancels it, and restores order to DELIVERED with escrow HELD', async () => {
       const { buyer, order, dispute } = await seed();
 
-      const result = await makeUsecase().execute({ disputeId: dispute.id, userId: buyer.id });
+      const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: buyer.id });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const dbDispute = await prisma.dispute.findUnique({ where: { id: dispute.id } });
       expect(dbDispute?.status).toBe('CANCELLED');
@@ -508,49 +606,113 @@ describe('Disputes Effect Integration', () => {
       expect(dbOrder?.escrowStatus).toBe('HELD');
     });
 
-    it('should return UnauthorizedError when userId is not the dispute opener', async () => {
+    it('returns UnauthorizedError when userId is not the dispute opener', async () => {
       const { seller, dispute } = await seed();
 
-      const result = await makeUsecase().execute({ disputeId: dispute.id, userId: seller.id });
+      const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: seller.id });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(UnauthorizedError);
       }
     });
 
-    it('should return BadRequestError when dispute is already RESOLVED', async () => {
+    it('returns BadRequestError when dispute is already RESOLVED', async () => {
       const { buyer, dispute } = await seed();
       await prisma.dispute.update({ where: { id: dispute.id }, data: { status: 'RESOLVED' } });
 
-      const result = await makeUsecase().execute({ disputeId: dispute.id, userId: buyer.id });
+      const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: buyer.id });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(BadRequestError);
       }
     });
 
-    it('should return BadRequestError when dispute is already CANCELLED (double-withdraw guard)', async () => {
+    it('returns BadRequestError when dispute is already CANCELLED (double-withdraw guard)', async () => {
       const { buyer, dispute } = await seed();
       await prisma.dispute.update({ where: { id: dispute.id }, data: { status: 'CANCELLED' } });
 
-      const result = await makeUsecase().execute({ disputeId: dispute.id, userId: buyer.id });
+      const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: buyer.id });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(BadRequestError);
       }
     });
 
-    it('should return NotFoundError when dispute does not exist', async () => {
+    it('returns NotFoundError when dispute does not exist', async () => {
       const { buyer } = await seed();
 
-      const result = await makeUsecase().execute({ disputeId: 'does-not-exist', userId: buyer.id });
+      const result = await (await makeUsecase()).execute({ disputeId: 'does-not-exist', userId: buyer.id });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(NotFoundError);
+      }
+    });
+
+    it('rolls back the dispute update when restoring a missing order fails', async () => {
+      const { order, dispute } = await seed();
+      const { module, repository } = await buildTransactionContext();
+
+      try {
+        const disputeBefore = await prisma.dispute.findUniqueOrThrow({ where: { id: dispute.id } });
+        const orderBefore = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
+
+        await expect(repository.executeWithdrawal(dispute.id, 'missing-order-for-rollback'))
+          .rejects.toMatchObject({ code: 'P2025' });
+
+        expect(await prisma.dispute.findUniqueOrThrow({ where: { id: dispute.id } })).toEqual(disputeBefore);
+        expect(await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).toEqual(orderBefore);
+      } finally {
+        await module.close();
+      }
+    });
+
+    it('isolates overlapping transaction scopes and rolls back only the failing scope', async () => {
+      const first = await seed();
+      const second = await seed();
+      const { module, repository, transactionHost } = await buildTransactionContext();
+      const fallback = transactionHost.tx;
+      let arrived = 0;
+      let releaseBarrier: (() => void) | undefined;
+      const barrier = new Promise<void>((resolve) => { releaseBarrier = resolve; });
+      const rendezvous = async () => {
+        arrived += 1;
+        if (arrived === 2) releaseBarrier?.();
+        await barrier;
+      };
+      let failedClient: typeof transactionHost.tx | undefined;
+      let successfulClient: typeof transactionHost.tx | undefined;
+
+      try {
+        const failedScope = transactionHost.withTransaction(async () => {
+          failedClient = transactionHost.tx;
+          await repository.update(first.dispute.id, { status: 'CANCELLED' });
+          await rendezvous();
+          await repository.update(first.dispute.id, { resolution: 'rolled back' });
+          throw new Error('force rollback');
+        });
+        const successfulScope = transactionHost.withTransaction(async () => {
+          successfulClient = transactionHost.tx;
+          await repository.update(second.dispute.id, { status: 'CANCELLED' });
+          await rendezvous();
+          await repository.update(second.dispute.id, { resolution: 'committed' });
+        });
+
+        await expect(failedScope).rejects.toThrow('force rollback');
+        await successfulScope;
+        expect(failedClient).not.toBe(fallback);
+        expect(successfulClient).not.toBe(fallback);
+        expect(failedClient).not.toBe(successfulClient);
+        expect(transactionHost.tx).toBe(fallback);
+        expect((await prisma.dispute.findUniqueOrThrow({ where: { id: first.dispute.id } })).status).toBe('OPEN');
+        expect((await prisma.dispute.findUniqueOrThrow({ where: { id: first.dispute.id } })).resolution).toBeNull();
+        expect((await prisma.dispute.findUniqueOrThrow({ where: { id: second.dispute.id } })).status).toBe('CANCELLED');
+        expect((await prisma.dispute.findUniqueOrThrow({ where: { id: second.dispute.id } })).resolution).toBe('committed');
+      } finally {
+        await module.close();
       }
     });
   });

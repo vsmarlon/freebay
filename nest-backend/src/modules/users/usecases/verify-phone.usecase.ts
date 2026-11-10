@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import {
   AppError,
   PhoneCodeAlreadyUsedError,
@@ -8,27 +8,21 @@ import {
   PhoneCodeExpiredError,
   PhoneCodeNotFoundError,
 } from '@/shared/core/errors';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { PhoneVerificationRepository } from '../domain/repositories/phone-verification.repository';
-import { UserResponse, toUserResponse } from '../mappers/user.mapper';
-
-export interface VerifyPhoneInput {
-  userId: string;
-  code: string;
-}
+import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
+import { UserResponse, toUserResponse } from '../dtos/user-response.class';
+import { VerifyPhoneInput } from '../dtos/user.dto';
 
 @Injectable()
 export class VerifyPhoneUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly phoneVerificationRepository: PhoneVerificationRepository,
+    private readonly phoneVerificationRepository: PhoneVerificationDatabaseRepository,
     private readonly prisma: PrismaService,
   ) {}
 
   async execute(input: VerifyPhoneInput): Promise<Either<AppError, UserResponse>> {
     const verificationResult = await this.phoneVerificationRepository.findLatestByUserId(input.userId);
-    if (isLeft(verificationResult)) return left(verificationResult.value);
+    if (verificationResult.isLeft()) return left(verificationResult.value);
     const verification = verificationResult.value;
 
     if (!verification) {
@@ -49,18 +43,15 @@ export class VerifyPhoneUseCase {
 
     const matches = await bcrypt.compare(input.code.trim(), verification.codeHash);
     if (!matches) {
-      await this.phoneVerificationRepository.incrementAttempts(verification.id);
+      const attemptResult = await this.phoneVerificationRepository.reserveFailedAttempt(verification.id);
+      if (attemptResult.isLeft()) return left(attemptResult.value);
+      if (!attemptResult.value) return left(new PhoneCodeAttemptsExceededError());
       return left(new PhoneCodeNotFoundError());
     }
 
-    const markUsedResult = await this.phoneVerificationRepository.markUsed(verification.id);
-    if (isLeft(markUsedResult)) return left(markUsedResult.value);
-
-    const updateResult = await this.userRepository.update(input.userId, {
-      phoneVerified: true,
-      isVerified: true,
-    });
-    if (isLeft(updateResult)) return left(updateResult.value);
+    const updateResult = await this.phoneVerificationRepository.consumeAndVerify(verification.id, input.userId);
+    if (updateResult.isLeft()) return left(updateResult.value);
+    if (!updateResult.value) return left(new PhoneCodeAlreadyUsedError());
 
     const [postsCount, productsCount, activeStory] = await Promise.all([
       this.prisma.post.count({ where: { userId: input.userId } }),

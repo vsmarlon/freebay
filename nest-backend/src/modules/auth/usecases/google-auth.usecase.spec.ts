@@ -1,0 +1,347 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { GoogleAuthUseCase } from './google-auth.usecase';
+import { UserRole } from '@prisma/client';
+import { UserDatabaseRepository } from '@/modules/users';
+import { right } from '@/shared/core/either';
+import { SessionTokenService } from '../services/session-token.service';
+
+const mockVerifyIdToken = jest.fn();
+
+jest.mock('google-auth-library', () => {
+  return {
+    OAuth2Client: jest.fn().mockImplementation(() => {
+      return {
+        verifyIdToken: mockVerifyIdToken,
+      };
+    }),
+  };
+});
+
+describe('GoogleAuthUseCase', () => {
+  let sut: GoogleAuthUseCase;
+  let mockUserRepository: {
+    findByGoogleId: jest.Mock;
+    findByEmail: jest.Mock;
+    update: jest.Mock;
+    create: jest.Mock;
+  };
+  let mockConfigService: { get: jest.Mock };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+
+    mockUserRepository = {
+      findByGoogleId: jest.fn().mockResolvedValue(right(null)),
+      findByEmail: jest.fn().mockResolvedValue(right(null)),
+      update: jest.fn(),
+      create: jest.fn(),
+    };
+
+    mockConfigService = {
+      get: jest.fn().mockImplementation((key: string) => {
+        if (key === 'GOOGLE_CLIENT_ID') return 'mock-client-id.apps.googleusercontent.com';
+        if (key === 'GOOGLE_WEB_CLIENT_ID') return 'mock-web-client-id.apps.googleusercontent.com';
+        return null;
+      }),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        GoogleAuthUseCase,
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: ConfigService, useValue: mockConfigService },
+        { provide: SessionTokenService, useValue: { generate: jest.fn().mockReturnValue({ token: 'access', refreshToken: 'refresh' }) } },
+      ],
+    }).compile();
+
+    sut = module.get(GoogleAuthUseCase);
+  });
+
+  it('authenticates an existing Google user by googleId', async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      getPayload: () => ({
+        sub: 'google-sub-123',
+        email: 'test@gmail.com',
+        name: 'Test User',
+        picture: 'https://avatar.com/pic.png',
+        email_verified: true,
+      }),
+    });
+
+    const existingUser = {
+      id: 'user-google-1',
+      displayName: 'Existing User',
+      username: 'existing_user',
+      email: 'test@gmail.com',
+      passwordHash: null,
+      googleId: 'google-sub-123',
+      emailVerified: true,
+      cpfHash: null,
+      phone: null,
+      phoneVerified: false,
+      city: 'São Paulo',
+      state: 'SP',
+      avatarUrl: 'https://avatar.com/pic.png',
+      bio: null,
+      isVerified: false,
+      isGuest: false,
+      role: UserRole.USER,
+      reputationScore: 0,
+      totalReviews: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    mockUserRepository.findByGoogleId.mockResolvedValue(right(existingUser));
+
+    const result = await sut.execute('valid-google-id-token');
+
+    expect(result.isRight()).toBe(true);
+    expect(mockVerifyIdToken).toHaveBeenCalledWith(expect.objectContaining({
+      audience: expect.arrayContaining(['mock-client-id.apps.googleusercontent.com', 'mock-web-client-id.apps.googleusercontent.com']),
+    }));
+    if (result.isRight()) {
+      expect(result.value.user.id).toBe('user-google-1');
+      expect(result.value.user.username).toBe('existing_user');
+    }
+  });
+
+  it('does not log Google token errors, claims, or audience values', async () => {
+    const errorLog = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+    const unsafeError = 'private-user@example.test bearer=sentinel-secret';
+    const unsafeAudience = 'sentinel-client-secret';
+    mockVerifyIdToken.mockRejectedValue(new Error(unsafeError));
+    const idToken = `header.${Buffer.from(
+      JSON.stringify({ aud: unsafeAudience, azp: unsafeAudience }),
+    ).toString('base64url')}.signature`;
+
+    await sut.execute(idToken);
+
+    const logged = errorLog.mock.calls.flat().join(' ');
+    expect(logged).toContain('Falha na validação do token Google');
+    expect(logged).not.toContain(unsafeError);
+    expect(logged).not.toContain('private-user@example.test');
+    expect(logged).not.toContain(unsafeAudience);
+  });
+
+  it('verifies fresh Google step-up proof without linking by email', async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const token = `header.${Buffer.from(JSON.stringify({ iat: now })).toString('base64url')}.signature`;
+    mockVerifyIdToken.mockResolvedValue({ getPayload: () => ({ sub: 'google-sub' }) });
+
+    const identity = await sut.verifyForStepUp(token);
+
+    expect(identity).toEqual({ subject: 'google-sub' });
+    expect(mockUserRepository.findByEmail).not.toHaveBeenCalled();
+    expect(mockUserRepository.update).not.toHaveBeenCalled();
+    expect(mockUserRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects stale or malformed Google issuance time for step-up', async () => {
+    const stale = Math.floor(Date.now() / 1000) - 301;
+    const token = `header.${Buffer.from(JSON.stringify({ iat: stale })).toString('base64url')}.signature`;
+    mockVerifyIdToken.mockResolvedValue({ getPayload: () => ({ sub: 'google-sub' }) });
+
+    expect(await sut.verifyForStepUp(token)).toBeNull();
+
+    mockVerifyIdToken.mockClear();
+    mockVerifyIdToken.mockResolvedValue({ getPayload: () => ({ sub: 'google-sub' }) });
+    expect(await sut.verifyForStepUp('malformed')).toBeNull();
+  });
+
+  it('links Google account when user exists with matching email and the local account is verified', async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      getPayload: () => ({
+        sub: 'google-sub-456',
+        email: 'email-user@gmail.com',
+        name: 'Email User',
+        picture: 'https://avatar.com/new.png',
+        email_verified: true,
+      }),
+    });
+
+    const existingEmailUser = {
+      id: 'user-email-1',
+      displayName: 'Email User',
+      username: 'email_user',
+      email: 'email-user@gmail.com',
+      passwordHash: 'some-hash',
+      googleId: null,
+      emailVerified: true,
+      cpfHash: null,
+      phone: null,
+      phoneVerified: false,
+      city: null,
+      state: null,
+      avatarUrl: null,
+      bio: null,
+      isVerified: false,
+      isGuest: false,
+      role: UserRole.USER,
+      reputationScore: 0,
+      totalReviews: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
+    mockUserRepository.findByEmail.mockResolvedValue(right(existingEmailUser));
+    mockUserRepository.update.mockResolvedValue(right({
+      ...existingEmailUser,
+      googleId: 'google-sub-456',
+      avatarUrl: 'https://avatar.com/new.png',
+    }));
+
+    const result = await sut.execute('valid-google-id-token');
+
+    expect(result.isRight()).toBe(true);
+    expect(mockUserRepository.update).toHaveBeenCalledWith('user-email-1', {
+      googleId: 'google-sub-456',
+      avatarUrl: 'https://avatar.com/new.png',
+    });
+  });
+
+  it('refuses to link a verified Google email to a local account whose email is unverified', async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      getPayload: () => ({
+        sub: 'attacker-sub',
+        email: 'victim@gmail.com',
+        name: 'Victim',
+        email_verified: true,
+      }),
+    });
+
+    mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
+    mockUserRepository.findByEmail.mockResolvedValue(
+      right({ id: 'victim-id', email: 'victim@gmail.com', googleId: null, emailVerified: false }),
+    );
+
+    const result = await sut.execute('attacker-google-id-token');
+
+    expect(result.isLeft()).toBe(true);
+    if (result.isLeft()) {
+      expect(result.value.code).toBe('EMAIL_VERIFICATION_REQUIRED');
+    }
+    expect(mockUserRepository.update).not.toHaveBeenCalled();
+  });
+
+  it('creates a new user with username: null when user does not exist', async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      getPayload: () => ({
+        sub: 'google-sub-789',
+        email: 'newuser@gmail.com',
+        name: 'New Google User',
+        picture: 'https://avatar.com/pic.png',
+        email_verified: true,
+      }),
+    });
+
+    const newlyCreatedUser = {
+      id: 'new-user-id',
+      displayName: 'New Google User',
+      username: null,
+      email: 'newuser@gmail.com',
+      passwordHash: null,
+      googleId: 'google-sub-789',
+      emailVerified: true,
+      cpfHash: null,
+      phone: null,
+      phoneVerified: false,
+      city: null,
+      state: null,
+      avatarUrl: 'https://avatar.com/pic.png',
+      bio: null,
+      isVerified: false,
+      isGuest: false,
+      role: UserRole.USER,
+      reputationScore: 0,
+      totalReviews: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
+    mockUserRepository.findByEmail.mockResolvedValue(right(null));
+    mockUserRepository.create.mockResolvedValue(right(newlyCreatedUser));
+
+    const result = await sut.execute('valid-google-id-token');
+
+    expect(result.isRight()).toBe(true);
+    if (result.isRight()) {
+      expect(result.value.user.id).toBe('new-user-id');
+      expect(result.value.user.username).toBeNull();
+    }
+    expect(mockUserRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+      displayName: 'New Google User',
+      username: null,
+      email: 'newuser@gmail.com',
+      googleId: 'google-sub-789',
+      wallet: { create: {} },
+    }));
+  });
+
+  it.each([false, undefined])(
+    'refuses to link an existing account when email_verified is %p',
+    async (emailVerified) => {
+      mockVerifyIdToken.mockResolvedValue({
+        getPayload: () => ({
+          sub: 'attacker-sub',
+          email: 'victim@gmail.com',
+          name: 'Victim',
+          email_verified: emailVerified,
+        }),
+      });
+
+      mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
+      mockUserRepository.findByEmail.mockResolvedValue(
+        right({ id: 'victim-id', email: 'victim@gmail.com', googleId: null }),
+      );
+
+      const result = await sut.execute('attacker-google-id-token');
+
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
+        expect(result.value.code).toBe('UNVERIFIED_GOOGLE_EMAIL');
+      }
+      expect(mockUserRepository.update).not.toHaveBeenCalled();
+    },
+  );
+
+  it('never trusts an unverified address when creating a new account', async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      getPayload: () => ({
+        sub: 'google-sub-unverified',
+        email: 'unverified@gmail.com',
+        name: 'Unverified',
+        email_verified: false,
+      }),
+    });
+
+    mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
+    mockUserRepository.findByEmail.mockResolvedValue(right(null));
+    mockUserRepository.create.mockResolvedValue(
+      right({ id: 'new-id', username: null, email: 'unverified@gmail.com' }),
+    );
+
+    await sut.execute('valid-google-id-token');
+
+    expect(mockUserRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ emailVerified: false }),
+    );
+  });
+
+  it('returns error when Google token is invalid', async () => {
+    mockVerifyIdToken.mockRejectedValue(new Error('Invalid token'));
+
+    const result = await sut.execute('invalid-token');
+
+    expect(result.isLeft()).toBe(true);
+    if (result.isLeft()) {
+      expect(result.value.code).toBe('INVALID_GOOGLE_TOKEN');
+    }
+  });
+});

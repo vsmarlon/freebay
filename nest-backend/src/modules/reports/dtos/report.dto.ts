@@ -1,79 +1,34 @@
-import { IsUUID, IsString, MinLength, IsOptional, IsIn } from 'class-validator';
+import { IsUUID, IsOptional, IsEnum, IsString, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Report, ReportReason } from '@prisma/client';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
+import { ReportReason, ReportTargetType } from '@prisma/client';
 
 export class CreateReportDTO {
-  @ApiProperty({ enum: ['USER', 'POST', 'CONVERSATION', 'MESSAGE', 'ORDER_CHAT', 'CHAT_MESSAGE'] })
-  @IsIn(['USER', 'POST', 'CONVERSATION', 'MESSAGE', 'ORDER_CHAT', 'CHAT_MESSAGE'])
-  readonly targetType: 'USER' | 'POST' | 'CONVERSATION' | 'MESSAGE' | 'ORDER_CHAT' | 'CHAT_MESSAGE';
+  @ApiProperty({ enum: ReportTargetType })
+  @IsEnum(ReportTargetType)
+  readonly targetType: ReportTargetType;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
   readonly targetId: string;
 
-  @ApiProperty({ example: 'SPAM' })
-  @IsString()
-  @MinLength(1)
+  @ApiProperty({ enum: ReportReason, example: ReportReason.SPAM })
+  @IsEnum(ReportReason)
   @SanitizeText()
-  readonly reason: string;
+  readonly reason: ReportReason;
 
   @ApiPropertyOptional({ example: 'Usuário está enviando mensagens de spam' })
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   @SanitizeText()
   readonly description?: string;
 }
 
-export class ResolveReportDTO {
-  @ApiProperty({ enum: ['REVIEWED', 'RESOLVED', 'REJECTED'] })
-  @IsIn(['REVIEWED', 'RESOLVED', 'REJECTED'])
-  readonly status: 'REVIEWED' | 'RESOLVED' | 'REJECTED';
-
-  @ApiPropertyOptional({ example: 'Report reviewed and action taken' })
-  @IsOptional()
-  @IsString()
-  @SanitizeText()
-  readonly adminNote?: string;
-}
-
-export class GetReportsQueryDTO {
-  @ApiPropertyOptional({ enum: ['PENDING', 'REVIEWED', 'RESOLVED', 'REJECTED'] })
-  @IsOptional()
-  @IsIn(['PENDING', 'REVIEWED', 'RESOLVED', 'REJECTED'])
-  readonly status?: 'PENDING' | 'REVIEWED' | 'RESOLVED' | 'REJECTED';
-}
-
-export class ResolveReportOutput {
-  @ApiProperty({ example: true })
-  readonly resolved: boolean;
-}
-
 export interface CreateReportInput {
   reporterId: string;
-  targetType: 'USER' | 'POST' | 'CONVERSATION' | 'MESSAGE' | 'ORDER_CHAT' | 'CHAT_MESSAGE';
+  targetType: ReportTargetType;
   targetId: string;
-  reason: string;
-  description?: string;
-}
-
-export interface GetReportsInput {
-  status?: string;
-}
-
-export interface ResolveReportInput {
-  reportId: string;
-  status: 'REVIEWED' | 'RESOLVED' | 'REJECTED';
-  adminNote?: string;
-}
-
-export interface ReportWithRelations {
-  id: string;
   reason: ReportReason;
-  description: string | null;
-  status: Report['status'];
-  createdAt: Date;
-  reporterId: string;
-  reportedUserId: string | null;
-  reportedPostId: string | null;
+  description?: string;
 }

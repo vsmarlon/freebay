@@ -1,15 +1,21 @@
 import { Injectable } from '@nestjs/common';
+import { ProductStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { ProductRepository } from '../../domain/repositories/product.repository';
+import { EmailVerificationGateService } from '@/modules/auth';
+import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
 import { CreateProductInput, CreateProductOutput } from '../../dtos/product.dto';
 
 @Injectable()
 export class CreateProductUseCase {
-  constructor(private readonly productRepository: ProductRepository) {}
+  constructor(
+    private readonly productRepository: ProductDatabaseRepository,
+    private readonly emailVerification: EmailVerificationGateService,
+  ) {}
 
   async execute(input: CreateProductInput): Promise<Either<AppError, CreateProductOutput>> {
-    const imageUrls = input.images.map((url, i) => ({ url, order: i }));
+    const verified = await this.emailVerification.ensureVerified(input.sellerId);
+    if (verified.isLeft()) return left(verified.value);
 
     const result = await this.productRepository.create({
       title: input.title,
@@ -18,9 +24,21 @@ export class CreateProductUseCase {
       condition: input.condition,
       category: { connect: { id: input.categoryId } },
       seller: { connect: { id: input.sellerId } },
-      status: 'ACTIVE',
+      status: ProductStatus.ACTIVE,
       quantity: input.quantity ?? 1,
-      images: { create: imageUrls },
+      media: {
+        create: input.media.map((item, order) => ({
+          url: item.url,
+          thumbnailUrl: item.thumbnailUrl,
+          type: item.type,
+          blurHash: item.blurHash,
+          altText: item.altText,
+          durationMs: item.durationMs,
+          coverTimestampMs: item.coverTimestampMs,
+          hotspots: item.hotspots,
+          order,
+        })),
+      },
     });
 
     if (result.isLeft()) return left(result.value);
@@ -38,6 +56,7 @@ export class CreateProductUseCase {
       quantity: product.quantity,
       soldCount: product.soldCount,
       createdAt: product.createdAt,
+      media: product.media,
     });
   }
 }

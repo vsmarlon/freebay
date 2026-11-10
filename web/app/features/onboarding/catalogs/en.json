@@ -1,0 +1,13 @@
+{
+  "skip": "Skip",
+  "next": "Next",
+  "finish": "Get started",
+  "welcome.step": "Step {current} of {total}",
+  "welcome.title.1": "Your account is ready",
+  "welcome.body.1": "Use FreeBay in your browser. Your session stays in the browser and signing out asks FreeBay to revoke it.",
+  "welcome.title.2": "Make it yours",
+  "welcome.body.2": "Manage your profile and in-app notification preferences in settings. Browser push notifications are not available here.",
+  "welcome.settings": "Open settings",
+  "welcome.title.3": "Ready when you are",
+  "welcome.body.3": "Explore, connect, and manage your activity from your account. You can revisit settings at any time."
+}

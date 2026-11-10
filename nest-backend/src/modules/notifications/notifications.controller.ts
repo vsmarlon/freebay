@@ -1,89 +1,74 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
+import { Controller, Body, Param, HttpStatus, ParseUUIDPipe } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import {
+  GetAuth,
+  PostAuth,
+  PatchAuth,
+  CurrentUserId,
+  Paginated,
+  PAGINATION_QUERIES,
+} from '@/shared/decorators';
+import { PageQuery } from '@/shared/core/pagination';
 import { GetNotificationsUseCase } from './usecases/get-notifications.usecase';
 import { MarkAsReadUseCase } from './usecases/mark-as-read.usecase';
+import { MarkAllAsReadUseCase } from './usecases/mark-all-as-read.usecase';
 import { RegisterFcmTokenUseCase } from './usecases/register-fcm-token.usecase';
 import { RegisterFcmTokenDTO, NotificationResponse } from './dtos/notification.dto';
-import { left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import { NotificationDatabaseRepository } from './data/repositories/notification-database.repository';
+;
 
 @ApiTags('Notifications')
 @Controller('notifications')
-@UseGuards(JwtAuthGuard)
 export class NotificationsController {
   constructor(
-    private prisma: PrismaService,
-    private getNotificationsUseCase: GetNotificationsUseCase,
-    private markAsReadUseCase: MarkAsReadUseCase,
-    private registerFcmTokenUseCase: RegisterFcmTokenUseCase,
+    private readonly getNotificationsUseCase: GetNotificationsUseCase,
+    private readonly markAsReadUseCase: MarkAsReadUseCase,
+    private readonly markAllAsReadUseCase: MarkAllAsReadUseCase,
+    private readonly registerFcmTokenUseCase: RegisterFcmTokenUseCase,
+    private readonly notificationRepository: NotificationDatabaseRepository,
   ) {}
 
-  @Get()
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth({
     summary: 'Get notifications',
-    auth: true,
+    description: 'Cursor-paginated, newest first',
     responseType: NotificationResponse,
+    queries: PAGINATION_QUERIES,
   })
-  async findAll(@CurrentUser() user: AuthUser) {
-    const userId = user.userId;
-    const result = await this.getNotificationsUseCase.execute(userId);
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return { notifications: result.value };
+  async findAll(@CurrentUserId() userId: string, @Paginated() page: PageQuery) {
+    return this.getNotificationsUseCase.execute(userId, page);
   }
 
-  @Post(':id/read')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth('unread-count', {
+    summary: 'Count unread notifications',
+  })
+  async countUnread(@CurrentUserId() userId: string) {
+    const result = await this.notificationRepository.countUnread(userId);
+    if (result.isLeft()) return result;
+    return { count: result.value };
+  }
+
+  @PostAuth('read-all', {
+    summary: 'Mark all notifications as read',
+    httpCode: HttpStatus.OK,
+  })
+  async markAllAsRead(@CurrentUserId() userId: string) {
+    return this.markAllAsReadUseCase.execute(userId);
+  }
+
+  @PostAuth('fcm-token', {
+    summary: 'Register FCM token',
+    bodyType: RegisterFcmTokenDTO,
+  })
+  async registerFcmToken(@CurrentUserId() userId: string, @Body() body: RegisterFcmTokenDTO) {
+    return this.registerFcmTokenUseCase.execute(userId, body.fcmToken, body.installationId);
+  }
+
+  @PatchAuth(':id/read', {
     summary: 'Mark notification as read',
-    auth: true,
     params: [{ name: 'id', description: 'Notification UUID' }],
     errors: [{ status: 404, description: 'Notification not found' }],
   })
-  async markAsRead(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.markAsReadUseCase.execute(id, user.userId);
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
-  }
-
-  @Post('fcm-token')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Register FCM token',
-    auth: true,
-    bodyType: RegisterFcmTokenDTO,
-  })
-  async registerFcmToken(@CurrentUser() user: AuthUser, @Body() body: RegisterFcmTokenDTO) {
-    const result = await this.registerFcmTokenUseCase.execute(user.userId, body.fcmToken);
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
-  }
-
-  @Post('read-all')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Mark all notifications as read',
-    auth: true,
-  })
-  async markAllAsRead(@CurrentUser() user: AuthUser) {
-    await this.prisma.notification.updateMany({
-      where: { userId: user.userId, read: false },
-      data: { read: true },
-    });
-    return { marked: true };
+  async markAsRead(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.markAsReadUseCase.execute(id, userId);
   }
 }

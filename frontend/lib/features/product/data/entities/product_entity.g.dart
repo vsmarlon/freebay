@@ -10,10 +10,16 @@ _ProductEntity _$ProductEntityFromJson(Map<String, dynamic> json) =>
     _ProductEntity(
       id: json['id'] as String,
       title: json['title'] as String,
-      description: json['description'] as String,
-      price: (json['price'] as num).toInt(),
-      condition: json['condition'] as String,
-      status: json['status'] as String,
+      description: json['description'] as String? ?? '',
+      price: (json['price'] as num?)?.toInt() ?? 0,
+      condition: json['condition'] == null
+          ? ProductCondition.isNew
+          : const ProductConditionConverter().fromJson(
+              json['condition'] as String,
+            ),
+      status: json['status'] == null
+          ? ProductStatus.active
+          : const ProductStatusConverter().fromJson(json['status'] as String),
       sellerId: json['sellerId'] as String,
       postId: json['postId'] as String?,
       seller: json['seller'] == null
@@ -32,12 +38,12 @@ Map<String, dynamic> _$ProductEntityToJson(_ProductEntity instance) =>
       'title': instance.title,
       'description': instance.description,
       'price': instance.price,
-      'condition': instance.condition,
-      'status': instance.status,
+      'condition': const ProductConditionConverter().toJson(instance.condition),
+      'status': const ProductStatusConverter().toJson(instance.status),
       'sellerId': instance.sellerId,
       'postId': instance.postId,
-      'seller': instance.seller,
-      'images': instance.images,
+      'seller': instance.seller?.toJson(),
+      'images': instance.images?.map((e) => e.toJson()).toList(),
       'quantity': instance.quantity,
       'soldCount': instance.soldCount,
     };

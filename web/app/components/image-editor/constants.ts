@@ -1,0 +1,37 @@
+export const filters = [
+  'none',
+  'contrast(1.2) saturate(1.1)',
+  'brightness(.95) sepia(.08)',
+  'grayscale(1) contrast(1.2)',
+  'brightness(1.05) saturate(.95)',
+  'sepia(.2) contrast(.9)',
+  'saturate(1.2) hue-rotate(-8deg)',
+];
+export const names = {
+  en: [
+    'Crop',
+    'Rotate left',
+    'Rotate right',
+    'Filter',
+    'Text',
+    'Draw',
+    'Save image',
+    'Cancel',
+    'Add text',
+    'Image could not be edited.',
+    'Select a crop by dragging on the image.',
+  ],
+  'pt-BR': [
+    'Cortar',
+    'Girar à esquerda',
+    'Girar à direita',
+    'Filtro',
+    'Texto',
+    'Desenhar',
+    'Salvar imagem',
+    'Cancelar',
+    'Adicionar texto',
+    'Não foi possível editar a imagem.',
+    'Selecione a área de corte arrastando sobre a imagem.',
+  ],
+} as const;

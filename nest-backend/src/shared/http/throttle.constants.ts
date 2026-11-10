@@ -1,0 +1,6 @@
+export const THROTTLE_TTL_SECOND_MS = 1_000;
+export const THROTTLE_TTL_TEN_SECONDS_MS = 10_000;
+export const THROTTLE_TTL_MINUTE_MS = 60_000;
+export const THROTTLE_TTL_HOUR_MS = 3_600_000;
+
+export const DEFAULT_THROTTLE_LIMIT = 60;

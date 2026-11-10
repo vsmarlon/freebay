@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Excluir minha conta — FreeBay</title>
+<link rel="stylesheet" href="/legal/_style.css">
+</head>
+<body>
+<header>
+  <h1>Excluir minha conta</h1>
+  <p>FreeBay · Rascunho funcional — publicação depende de revisão jurídica e dados de contato</p>
+</header>
+<main>
+  <div class="callout">
+    <strong>Rascunho — não publicar ainda.</strong> O contato do controlador/encarregado e os dados da empresa
+    continuam pendentes de confirmação pelo responsável. A operação de e-mail também depende de configuração
+    e entrega verificadas. Esta página não substitui revisão jurídica.
+  </div>
+
+  <h2>Solicitar exclusão pela web</h2>
+  <p>
+    Informe o e-mail verificado da conta. Se a conta existir e o serviço de e-mail estiver configurado,
+    enviaremos um link de autenticação com validade de 10 minutos. A abertura do link não exclui a conta:
+    você ainda precisará confirmar o pedido nesta página. Contas Apple com e-mail privado dependem da entrega
+    ao endereço de retransmissão da Apple.
+  </p>
+  <form id="request-form">
+    <label for="email">E-mail da conta</label>
+    <input id="email" name="email" type="email" autocomplete="email" required>
+    <label class="check">
+      <input id="consent" type="checkbox" required>
+      Autorizo o uso deste e-mail e dos dados técnicos da solicitação para autenticar e processar este pedido.
+    </label>
+    <button type="submit">Enviar link de autenticação</button>
+  </form>
+
+  <section id="authenticated" hidden>
+    <h2>Conta autenticada</h2>
+    <p id="auth-status">Nenhuma exclusão foi solicitada ainda.</p>
+    <div id="step-up-proof">
+      <label for="password">Confirme sua senha atual para solicitar a exclusão</label>
+      <input id="password" type="password" autocomplete="current-password" minlength="8" required>
+      <p>Contas sem senha podem usar a exclusão pelo aplicativo após confirmar a identidade pelo provedor vinculado.</p>
+    </div>
+    <label id="confirm-label" class="check">
+      <input id="confirm" type="checkbox">
+      Confirmo que quero iniciar o prazo de exclusão de 30 dias. Posso cancelar nesse prazo após autenticar novamente.
+    </label>
+    <button id="delete-button" type="button" disabled>Confirmar solicitação de exclusão</button>
+    <button id="cancel-button" type="button" hidden>Cancelar solicitação pendente</button>
+    <p>Cancelar o pedido não reativa anúncios pausados automaticamente.</p>
+  </section>
+
+  <p id="status" role="status" aria-live="polite"></p>
+
+  <h2>O que acontece depois</h2>
+  <p>
+    Se não houver pedidos em andamento, disputas abertas, saldo na carteira ou falha na revogação Apple,
+    a API aceita o pedido e inicia um prazo de 30 dias. As sessões são revogadas e anúncios ativos são pausados.
+    A API pode recusar o pedido enquanto houver essas pendências; resolva-as e envie uma nova solicitação.
+  </p>
+  <p>
+    Depois do prazo, o processo existente anonimiza alguns campos do perfil e remove algumas relações,
+    publicações e anúncios. Registros financeiros e mensagens podem permanecer; nem todos os dados e mídias
+    associados são removidos por esse processo. Os detalhes de retenção e os prazos legais precisam ser
+    confirmados pelo responsável antes da publicação.
+  </p>
+  <p>Para suporte ou exercício de outros direitos, o contato do controlador permanece pendente de confirmação.</p>
+</main>
+<footer>FreeBay · <span class="placeholder">PREENCHER: razão social e CNPJ após confirmação do responsável</span></footer>
+<script>
+(() => {
+  const status = document.getElementById('status');
+  const form = document.getElementById('request-form');
+  const authenticated = document.getElementById('authenticated');
+  const confirm = document.getElementById('confirm');
+  const deleteButton = document.getElementById('delete-button');
+  const cancelButton = document.getElementById('cancel-button');
+  const authStatus = document.getElementById('auth-status');
+  const password = document.getElementById('password');
+
+  async function request(path, method, body, stepUpToken) {
+    const response = await fetch(path, {
+      method,
+      credentials: 'same-origin',
+      headers: {
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...(stepUpToken ? { 'x-step-up-token': stepUpToken } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await response.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
+    if (!response.ok) {
+      const error = new Error(typeof data.message === 'string' ? data.message : 'Não foi possível concluir. Tente novamente.');
+      error.status = response.status;
+      throw error;
+    }
+    return data && typeof data.data === 'object' ? data.data : data;
+  }
+
+  function showAuthenticated(user) {
+    form.hidden = true;
+    authenticated.hidden = false;
+    if (user && user.deletionRequestedAt) {
+      authStatus.textContent = `Há um pedido pendente desde ${new Date(user.deletionRequestedAt).toLocaleString('pt-BR')}.`;
+      document.getElementById('confirm-label').hidden = true;
+      deleteButton.hidden = true;
+      cancelButton.hidden = false;
+      document.getElementById('step-up-proof').hidden = true;
+    }
+  }
+
+  async function consumeFragmentToken() {
+    const token = new URLSearchParams(window.location.hash.slice(1)).get('token');
+    if (!token) return;
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    status.textContent = 'Validando o link…';
+    try {
+      const result = await request('/auth/web/magic-link/consume', 'POST', { token });
+      showAuthenticated(result.user);
+      status.textContent = 'Autenticação concluída. Nenhuma exclusão foi iniciada.';
+    } catch (error) {
+      if (error.status === 401) form.hidden = false;
+      status.textContent = error.message;
+    }
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    status.textContent = 'Enviando solicitação…';
+    try {
+      await request('/auth/web/magic-link/request', 'POST', {
+        email: document.getElementById('email').value,
+        consent: true,
+        locale: 'pt-BR',
+        purpose: 'account-deletion',
+      });
+      status.textContent = 'Se a conta for elegível e o serviço de e-mail estiver configurado, as instruções serão enviadas ao endereço informado.';
+    } catch (error) {
+      if (error.status === 401) form.hidden = false;
+      status.textContent = error.message;
+    }
+  });
+
+  confirm.addEventListener('change', () => { deleteButton.disabled = !confirm.checked; });
+  deleteButton.addEventListener('click', async () => {
+    if (!confirm.checked || password.value.length < 8) return;
+    deleteButton.disabled = true;
+    try {
+      const proof = await request('/auth/web/step-up', 'POST', {
+        purpose: 'delete_account',
+        proof: { kind: 'password', password: password.value },
+      });
+      password.value = '';
+      if (typeof proof.stepUpToken !== 'string' || !proof.stepUpToken) {
+        throw new Error('Não foi possível confirmar sua identidade. Tente novamente.');
+      }
+      const state = await request('/users/me/web', 'DELETE', null, proof.stepUpToken);
+      authStatus.textContent = `Pedido aceito em ${new Date(state.deletionRequestedAt).toLocaleString('pt-BR')}. Exclusão prevista após 30 dias.`;
+      document.getElementById('confirm-label').hidden = true;
+      deleteButton.hidden = true;
+      cancelButton.hidden = false;
+      status.textContent = '';
+    } catch (error) {
+      status.textContent = error.message;
+      deleteButton.disabled = false;
+    }
+  });
+  cancelButton.addEventListener('click', async () => {
+    cancelButton.disabled = true;
+    try {
+      await request('/users/me/web/deletion/cancel', 'PATCH');
+      authStatus.textContent = 'Solicitação cancelada. Anúncios pausados não foram reativados.';
+      cancelButton.hidden = true;
+      status.textContent = '';
+    } catch (error) {
+      status.textContent = error.message;
+      cancelButton.disabled = false;
+    }
+  });
+
+  void consumeFragmentToken();
+})();
+</script>
+</body>
+</html>

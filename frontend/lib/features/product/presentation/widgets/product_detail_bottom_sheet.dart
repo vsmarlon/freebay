@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 
 class ProductDetailBottomSheet extends ConsumerStatefulWidget {
   final ProductEntity product;
@@ -21,25 +21,45 @@ class ProductDetailBottomSheet extends ConsumerStatefulWidget {
 class _ProductDetailBottomSheetState
     extends ConsumerState<ProductDetailBottomSheet> {
   int _quantity = 1;
+  bool _isAdding = false;
+
+  Future<void> _addToCart() async {
+    if (_isAdding) return;
+    setState(() => _isAdding = true);
+    final ok = await ref
+        .read(cartProvider.notifier)
+        .addToCart(widget.product.id, quantity: _quantity);
+    if (!mounted) return;
+    setState(() => _isAdding = false);
+    if (!ok) {
+      AppSnackbar.handleFailure(context, ref.read(cartProvider).error);
+      return;
+    }
+    AppSnackbar.success(context, 'Produto adicionado ao carrinho');
+  }
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final product = widget.product;
     final isDark = context.isDark;
     final available = product.quantity - product.soldCount;
     final maxQty = available > 10 ? 10 : available;
-    final canAdd = available > 0 && product.status != 'SOLD';
+    final canAdd = available > 0 && product.status == ProductStatus.active;
+    final canTapAdd = canAdd && !_isAdding;
+    // The order-create contract accepts a single unit only, so the shortcut
+    // stays off while a quantity above 1 is selected.
+    final canBuyNow = canAdd && _quantity == 1;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.white,
+        color: context.bgColor,
         border: Border(
           top: BorderSide(
             color: isDark
-                ? AppColors.mediumGray.withAlpha(50)
+                ? context.textSecondary.withAlpha(50)
                 : AppColors.lightGray,
-            width: 1,
           ),
         ),
       ),
@@ -55,16 +75,19 @@ class _ProductDetailBottomSheetState
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: isDark ? AppColors.white : AppColors.darkGray,
+                      color: context.textPrimary,
                     ),
                   ),
                   const Spacer(),
-                  _QuantityControl(
-                    value: _quantity,
-                    min: 1,
-                    max: maxQty,
-                    isDark: isDark,
-                    onChanged: (v) => setState(() => _quantity = v),
+                  Semantics(
+                    label: strings.cartQuantity(_quantity),
+                    child: _QuantityControl(
+                      value: _quantity,
+                      min: 1,
+                      max: maxQty,
+                      isDark: isDark,
+                      onChanged: (v) => setState(() => _quantity = v),
+                    ),
                   ),
                 ],
               ),
@@ -74,51 +97,34 @@ class _ProductDetailBottomSheetState
               children: [
                 Expanded(
                   child: InkWell(
-                    onTap: canAdd
-                        ? () async {
-                            final ok = await ref
-                                .read(cartProvider.notifier)
-                                .addToCart(product.id, quantity: _quantity);
-                            if (!context.mounted) return;
-                            if (!ok) {
-                              final error = ref.read(cartProvider).error;
-                              AppSnackbar.error(
-                                context,
-                                error ??
-                                    'Não foi possível adicionar ao carrinho',
-                              );
-                              return;
-                            }
-                            AppSnackbar.success(
-                                context, 'Produto adicionado ao carrinho');
-                          }
-                        : null,
+                    onTap: canTapAdd ? _addToCart : null,
                     child: Container(
                       height: 48,
                       decoration: BoxDecoration(
                         color: canAdd
                             ? (isDark
-                                ? AppColors.surfaceContainerDark
-                                : AppColors.lightGray)
-                            : AppColors.mediumGray.withAlpha(50),
+                                  ? AppColors.surfaceContainerDark
+                                  : AppColors.lightGray)
+                            : context.textSecondary.withAlpha(50),
                         border: Border.all(
                           color: canAdd
-                              ? (isDark ? AppColors.white : AppColors.onSurface)
-                              : AppColors.mediumGray.withAlpha(50),
-                          width: 1,
+                              ? (context.textPrimary)
+                              : context.textSecondary.withAlpha(50),
                         ),
                       ),
                       child: Center(
                         child: Text(
-                          canAdd ? 'Adicionar' : 'Indisponível',
+                          canAdd
+                              ? strings.productAddToCart
+                              : strings.productUnavailableLabel,
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w600,
                             color: canAdd
                                 ? (isDark
-                                    ? AppColors.white
-                                    : AppColors.onSurface)
-                                : AppColors.mediumGray,
+                                      ? AppColors.white
+                                      : AppColors.onSurface)
+                                : context.textSecondary,
                           ),
                         ),
                       ),
@@ -128,17 +134,41 @@ class _ProductDetailBottomSheetState
                 const SizedBox(width: 12),
                 Expanded(
                   child: AppButton(
-                    label: 'Comprar agora',
-                    onPressed: canAdd
+                    label: strings.productBuyNow,
+                    onPressed: canBuyNow
                         ? () {
                             context.push(
-                                '/profile/payment?productId=${product.id}');
+                              AppRoutes.profilePaymentWith(product.id),
+                            );
                           }
                         : null,
                   ),
                 ),
               ],
             ),
+            if (canAdd && _quantity > 1) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 14,
+                    color: context.textSecondary,
+                  ),
+                  Spacing.hSm,
+                  // ponytail: reuse of the add-to-cart copy; proper hint key
+                  // (e.g. productBuyNowQuantityHint) is pending the l10n owner.
+                  Expanded(
+                    child: Text(
+                      strings.productAddToCart,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: context.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -177,7 +207,7 @@ class _QuantityControl extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
           ),
         ),
         const SizedBox(width: 16),
@@ -196,11 +226,7 @@ class _QuantityButton extends StatelessWidget {
   final bool isDark;
   final VoidCallback? onTap;
 
-  const _QuantityButton({
-    required this.icon,
-    required this.isDark,
-    this.onTap,
-  });
+  const _QuantityButton({required this.icon, required this.isDark, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -210,20 +236,17 @@ class _QuantityButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceContainerDark : AppColors.lightGray,
+          color: context.surfaceColor,
           border: Border.all(
             color: isDark
-                ? AppColors.mediumGray.withAlpha(100)
-                : AppColors.mediumGray.withAlpha(50),
-            width: 1,
+                ? context.textSecondary.withAlpha(100)
+                : context.textSecondary.withAlpha(50),
           ),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: onTap != null
-              ? (isDark ? AppColors.white : AppColors.darkGray)
-              : AppColors.mediumGray,
+          color: onTap != null ? (context.textPrimary) : context.textSecondary,
         ),
       ),
     );

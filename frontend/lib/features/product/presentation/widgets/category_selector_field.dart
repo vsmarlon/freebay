@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class CategorySelectorField extends StatelessWidget {
   final AsyncValue<List<CategoryEntity>> categoriesAsync;
@@ -25,7 +20,7 @@ class CategorySelectorField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
+    final strings = l10n(context);
     return categoriesAsync.when(
       data: (categories) => InkWell(
         onTap: () => _showCategoryPicker(
@@ -37,7 +32,7 @@ class CategorySelectorField extends StatelessWidget {
         child: Container(
           height: 64,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          color: isDark ? AppColors.surfaceDark : AppColors.white,
+          color: context.bgColor,
           child: Row(
             children: [
               const Icon(
@@ -51,24 +46,22 @@ class CategorySelectorField extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Categoria',
+                      strings.productCategory,
                       style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: isDark
-                            ? AppColors.onPrimaryContainer
-                            : AppColors.primary,
+                        color: context.colors.primary,
                       ),
                     ),
                     Spacing.vXs,
                     Text(
-                      selectedCategory?.name ?? 'Selecionar categoria',
+                      selectedCategory?.name ?? strings.productSelectCategory,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
-                        color: isDark ? AppColors.white : AppColors.darkGray,
+                        color: context.textPrimary,
                       ),
                     ),
                   ],
@@ -84,26 +77,26 @@ class CategorySelectorField extends StatelessWidget {
       ),
       loading: () => Container(
         height: 64,
-        color: isDark ? AppColors.surfaceDark : AppColors.white,
+        color: context.bgColor,
         child: const Center(child: ShimmerBlock(width: 24, height: 24)),
       ),
       error: (_, _) => Container(
         padding: const EdgeInsets.all(16),
-        color: isDark ? AppColors.surfaceDark : AppColors.white,
+        color: context.bgColor,
         child: Row(
           children: [
             Expanded(
               child: Text(
-                'Não foi possível carregar categorias agora.',
+                strings.productCategoriesLoadFailed,
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
+                  color: context.textPrimary,
                 ),
               ),
             ),
             const SizedBox(width: 12),
             AppButton(
-              label: 'Tentar',
+              label: strings.commonRetry,
               size: AppButtonSize.compact,
               onPressed: onRetry,
             ),
@@ -119,10 +112,10 @@ class CategorySelectorField extends StatelessWidget {
     String? selectedCategoryId,
     void Function(String) onSelected,
   ) async {
-    final isDark = context.isDark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     await showBrutalistSheet<void>(
       context: context,
-      title: 'ESCOLHER CATEGORIA',
+      title: l10n(context).productChooseCategory,
       builder: (ctx) {
         return ListView.separated(
           shrinkWrap: true,
@@ -146,7 +139,7 @@ class CategorySelectorField extends StatelessWidget {
                     ? (isDark
                           ? AppColors.surfaceContainerDark
                           : AppColors.surfaceContainerHighest)
-                    : (isDark ? AppColors.surfaceDark : AppColors.white),
+                    : (context.bgColor),
                 child: Row(
                   children: [
                     Expanded(
@@ -157,7 +150,7 @@ class CategorySelectorField extends StatelessWidget {
                           fontWeight: isSelected
                               ? FontWeight.w700
                               : FontWeight.w500,
-                          color: isDark ? AppColors.white : AppColors.onSurface,
+                          color: context.textPrimary,
                         ),
                       ),
                     ),

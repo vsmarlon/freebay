@@ -43,6 +43,24 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum WalletBalanceKind {
+  AVAILABLE
+  PENDING
+  TOTAL_EARNED
+}
+
+enum WalletEntryReason {
+  SALE_HELD
+  SALE_RELEASED
+  HOLD_RELEASED
+  REFUND
+  DISPUTE_REFUND
+  DISPUTE_RELEASE
+  PAYOUT
+  WITHDRAWAL
+  ADJUSTMENT
+}
+
 enum EscrowStatus {
   HELD
   RELEASED
@@ -55,8 +73,7 @@ enum PaymentMethod {
 }
 
 enum PaymentProvider {
-  PAGARME
-  WOOVI
+  STRIPE
 }
 
 enum TransactionStatus {
@@ -67,6 +84,23 @@ enum TransactionStatus {
   RELEASED
   REFUNDED
   FAILED
+}
+
+enum TransferDeliveryState {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  RETRYABLE
+  TERMINAL
+}
+
+enum ReversalState {
+  NOT_REQUIRED
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  RETRYABLE
+  TERMINAL
 }
 
 enum DisputeStatus {
@@ -102,9 +136,22 @@ enum ChatTheme {
   SLATE
 }
 
+enum CommentReplyPermission {
+  EVERYONE
+  FOLLOWING
+  MENTIONED
+  CLOSED
+}
+
+enum PublicationMediaType {
+  IMAGE
+  VIDEO
+}
+
 enum ReportTargetType {
   USER
   POST
+  COMMENT
   CONVERSATION
   MESSAGE
   ORDER_CHAT
@@ -116,16 +163,22 @@ enum ReportTargetType {
 model User {
   id              String    @id @default(uuid())
   displayName     String
+  username        String?   @unique
   email           String    @unique
   emailVerified   Boolean   @default(false)
-  passwordHash    String
+  passwordHash    String?
+  googleId        String?   @unique
+  appleId         String?   @unique
+  appleRefreshTokenEncrypted String?
   cpfHash         String?   @unique
   cpf             String?
   phone           String?
   phoneVerified   Boolean   @default(false)
+  biometryLoginEnabled Boolean @default(false)
   city            String?
   state           String?
   avatarUrl       String?
+  avatarBlurHash  String?   @db.VarChar(166)
   bannerUrl       String?
   bio             String?   @db.VarChar(150)
   isVerified      Boolean   @default(false)
@@ -135,9 +188,19 @@ model User {
   totalReviews    Int       @default(0)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
   lastSeenAt      DateTime?
 
+  deletionRequestedAt DateTime?
+  sessionsInvalidBefore DateTime?
+  suspendedAt         DateTime?
+  suspensionReason    String?
+  personalPurgePendingMedia String[] @default([])
+  personalPurgeCompletedAt DateTime?
+
   wallet                  Wallet?
+  connectAccount          ConnectAccount?
+  walletEntries           WalletEntry[]
   products                Product[]
   posts                   Post[]
   savedPosts              SavedPost[]
@@ -149,12 +212,22 @@ model User {
   following               Follow[]                 @relation("Followers")
   blocksGiven             Block[]                  @relation("Blocker")
   blocksReceived          Block[]                  @relation("Blocked")
+  closeFriendsGiven        CloseFriend[]            @relation("CloseFriendsOwner")
+  closeFriendsReceived     CloseFriend[]            @relation("CloseFriendsMember")
+  restrictionsGiven       Restriction[]            @relation("RestrictionOwner")
+  restrictionsReceived    Restriction[]            @relation("RestrictedUser")
   disputes                Dispute[]
   comments                Comment[]
+  commentMedia            CommentMedia[]
+  commentBookmarks        CommentBookmark[]
+  commentShares           CommentShare[]
+  commentSubscriptions    CommentSubscription[]
+  commentConversationMutes CommentConversationMute[]
   likes                   Like[]
   shares                  Share[]
   chatMessages            ChatMessage[]
   stories                 Story[]
+  storyHighlights         StoryHighlight[]
   commentLikes            CommentLike[]
   favorites               Favorite[]
   cartItems               CartItem[]
@@ -165,17 +238,37 @@ model User {
   directMessages          DirectMessage[]
   conversationPreferences ConversationPreference[]
   messageReactions        MessageReaction[]
+  starredMessages         StarredMessage[]
   notifications           Notification[]
-  postMentions            PostMention[]         @relation("PostMentions")
-  commentMentions         CommentMention[]      @relation("CommentMentions")
-  submittedReports        Report[]              @relation("SubmittedReports")
+  pushDevices             PushDevice[]
+  postMentions            PostMention[]            @relation("PostMentions")
+  commentMentions         CommentMention[]         @relation("CommentMentions")
+  submittedReports        Report[]                 @relation("SubmittedReports")
   reportedUserReports     Report[]                 @relation("ReportedUserReports")
   bugReports              BugReport[]
-  fcmToken                String?
+  moderationActions       ModerationAction[]       @relation("ModerationActor")
+  reviewedReports         Report[]                 @relation("ReviewedReports")
+  resolvedDisputes        Dispute[]                @relation("ResolvedDisputes")
+  fcmToken                String?                  // Legacy column; new registrations use PushDevice.
   notificationPrefs       Json?                    @default("{\"orders\":true,\"follows\":true,\"messages\":true,\"disputes\":true}")
+  webConsentGrantedAt     DateTime?
+  webConsentIp            String?
+  webConsentUserAgent     String?
 
   @@index([email])
   @@index([createdAt])
+  @@index([deletionRequestedAt])
+}
+
+model PushDevice {
+  installationId String   @id @db.Uuid
+  userId         String
+  token          String   @unique
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model PasswordRecoveryCode {
@@ -197,6 +290,38 @@ model PasswordRecoveryCode {
   @@index([userId, expiresAt])
   @@index([userId, usedAt, expiresAt])
   @@index([codeHash])
+}
+
+enum StoryMediaType {
+  IMAGE
+  VIDEO
+}
+
+enum StoryAudience {
+  EVERYONE
+  CLOSE_FRIENDS
+}
+
+model WebMagicLink {
+  id              String    @id @default(uuid())
+  email           String
+  tokenHash       String    @unique
+  consentGranted  Boolean
+  consentAt       DateTime?
+  requestedAt     DateTime  @default(now())
+  expiresAt       DateTime
+  consumedAt      DateTime?
+  activatedAt     DateTime?
+  sendAcceptedAt  DateTime?
+  resendMessageId String?
+  requestedIp     String?
+  userAgent       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([email, requestedAt])
+  @@index([email, consumedAt, expiresAt])
+  @@index([expiresAt])
 }
 
 model PhoneVerificationCode {
@@ -254,38 +379,56 @@ model Product {
   seller    User           @relation(fields: [sellerId], references: [id])
   post      Post?          @relation(fields: [postId], references: [id])
   category  Category?      @relation(fields: [categoryId], references: [id])
-  images    ProductImage[]
+  media     ProductMedia[]
   orders    Order[]
   favorites Favorite[]
   cartItems CartItem[]
+  directConversations DirectConversation[]
 
   @@index([sellerId, createdAt])
-  @@index([status])
-  @@index([categoryId])
+  @@index([status, deletedAt, createdAt(sort: Desc), id])
+  @@index([status, deletedAt, price, id])
+  @@index([status, deletedAt, soldCount(sort: Desc), id])
+  @@index([categoryId, status])
 }
 
-model ProductImage {
-  id        String @id @default(uuid())
-  url       String
-  order     Int    @default(0)
-  productId String
+model ProductMedia {
+  id               String               @id @default(uuid())
+  url              String
+  thumbnailUrl     String?
+  type             PublicationMediaType
+  blurHash         String?              @db.VarChar(166)
+  altText          String?              @db.VarChar(500)
+  hotspots         Json?
+  durationMs       Int?
+  coverTimestampMs Int?
+  order            Int                  @default(0)
+  productId        String
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@unique([productId, order])
   @@index([productId])
 }
 
 model Post {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   content       String?
-  imageUrl      String?
   type          PostType
+  audience      StoryAudience @default(EVERYONE)
   userId        String
-  likesCount    Int      @default(0)
-  commentsCount Int      @default(0)
-  sharesCount   Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  likesCount    Int       @default(0)
+  commentsCount Int       @default(0)
+  sharesCount   Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  clientRequestId String?
+  clientRequestHash String?
+  quoteSourcePostId String?
+  quoteSourceCommentId String?
+  isQuote Boolean @default(false)
+  replyPermission CommentReplyPermission @default(EVERYONE)
 
   user                User          @relation(fields: [userId], references: [id])
   product             Product?
@@ -293,10 +436,23 @@ model Post {
   likes               Like[]
   shares              Share[]
   savedBy             SavedPost[]
+  media               PostMedia[]
   mentions            PostMention[]
   reportedPostReports Report[]      @relation("ReportedPostReports")
+  quoteSourcePost Post? @relation("PostQuoteSource", fields: [quoteSourcePostId], references: [id], onDelete: SetNull)
+  quotedByPosts Post[] @relation("PostQuoteSource")
+  quoteSourceComment Comment? @relation("CommentQuoteSource", fields: [quoteSourceCommentId], references: [id], onDelete: SetNull)
+  commentShares CommentShare[]
+  commentSubscriptions CommentSubscription[]
+  commentMutes CommentConversationMute[]
 
   @@index([userId, createdAt])
+  @@index([createdAt])
+  @@index([type, createdAt])
+  @@index([deletedAt])
+  @@unique([userId, clientRequestId])
+  @@index([quoteSourcePostId])
+  @@index([quoteSourceCommentId])
 }
 
 model PostMention {
@@ -314,24 +470,37 @@ model PostMention {
 }
 
 model Comment {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   content    String
   userId     String
   postId     String
   parentId   String?
-  likesCount Int      @default(0)
-  createdAt  DateTime @default(now())
+  likesCount Int       @default(0)
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+  isHidden   Boolean   @default(false)
+  authorHiddenAt DateTime?
+  clientRequestId String?
+  clientRequestHash String?
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post         Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent       Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
-  replies      Comment[]     @relation("CommentReplies")
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post         Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent       Comment?         @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies      Comment[]        @relation("CommentReplies")
   commentLikes CommentLike[]
   mentions     CommentMention[]
+  media        CommentMedia[]
+  bookmarks    CommentBookmark[]
+  shares       CommentShare[]
+  quotedByPosts Post[] @relation("CommentQuoteSource")
+  reportedCommentReports Report[] @relation("ReportedCommentReports")
+  notifications Notification[]
 
   @@index([userId])
-  @@index([postId])
-  @@index([parentId])
+  @@index([postId, parentId, deletedAt, createdAt, id])
+  @@index([parentId, deletedAt, createdAt])
+  @@unique([userId, clientRequestId])
+  @@index([postId, authorHiddenAt, deletedAt, createdAt, id])
 }
 
 model CommentMention {
@@ -400,6 +569,7 @@ model Follow {
   following User @relation("Following", fields: [followingId], references: [id])
 
   @@unique([followerId, followingId])
+  @@index([followingId])
 }
 
 model Order {
@@ -407,6 +577,7 @@ model Order {
   buyerId             String
   sellerId            String
   productId           String
+  quantity            Int          @default(1)
   amount              Int
   platformFee         Int
   sellerAmount        Int
@@ -414,6 +585,7 @@ model Order {
   escrowStatus        EscrowStatus @default(HELD)
   meetingScheduledAt  DateTime?
   deliveryConfirmedAt DateTime?
+  cancellationReason  String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 
@@ -421,6 +593,7 @@ model Order {
   seller                  User                     @relation("SellerOrders", fields: [sellerId], references: [id])
   product                 Product                  @relation(fields: [productId], references: [id], onDelete: Restrict)
   transaction             Transaction?
+  walletEntries           WalletEntry[]
   dispute                 Dispute?
   reviews                 Review[]
   chatMessages            ChatMessage[]
@@ -429,32 +602,124 @@ model Order {
 
   @@index([buyerId])
   @@index([sellerId])
+  @@index([buyerId, createdAt])
+  @@index([sellerId, createdAt])
   @@index([status])
   @@index([productId, status])
+  @@index([status, deliveryConfirmedAt])
 }
 
 model Transaction {
-  id             String            @id @default(uuid())
-  orderId        String            @unique
-  externalId     String?
-  amount         Int
-  platformFee    Int
-  sellerAmount   Int
-  paymentMethod  PaymentMethod
-  provider       PaymentProvider
-  status         TransactionStatus @default(PENDING)
-  idempotencyKey String            @unique
-  pixQrCode      String?
-  pixExpiresAt   DateTime?
-  paidAt         DateTime?
-  releasedAt     DateTime?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  id                String            @id @default(uuid())
+  orderId           String            @unique
+  externalId        String?
+  amount            Int
+  platformFee       Int
+  sellerAmount      Int
+  paymentMethod     PaymentMethod
+  provider          PaymentProvider
+  status            TransactionStatus @default(PENDING)
+  idempotencyKey    String            @unique
+  checkoutUrl       String?
+  checkoutExpiresAt DateTime?
+  chargeId          String?
+  transferId        String?
+  paidAt            DateTime?
+  releasedAt        DateTime?
+  paymentGroupId    String?
+  transferState     TransferDeliveryState @default(PENDING)
+  transferAttempts  Int                   @default(0)
+  transferProcessingAt DateTime?
+  transferIdempotencyKey String            @unique @default(uuid())
+  transferLastError String?
+  reversalState     ReversalState         @default(NOT_REQUIRED)
+  reversalAttempts  Int                   @default(0)
+  reversalProcessingAt DateTime?
+  reversalIdempotencyKey String            @unique @default(uuid())
+  reversalId        String?
+  reversalLastError String?
+  refundOperationId String? @unique
+  refundIdempotencyKey String? @unique
+  refundProviderId String? @unique
+  refundAmount Int?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id])
+  order        Order         @relation(fields: [orderId], references: [id])
+  paymentGroup PaymentGroup? @relation(fields: [paymentGroupId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([idempotencyKey])
+  @@index([paymentGroupId])
+  @@index([status, checkoutExpiresAt])
+  @@index([transferState, transferProcessingAt])
+  @@index([reversalState, reversalProcessingAt])
+  @@index([chargeId])
+  @@index([externalId])
+}
+
+enum PaymentGroupStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+}
+
+model PaymentGroup {
+  id                    String             @id @default(uuid())
+  buyerId               String
+  amount                Int
+  currency              String             @default("brl")
+  status                PaymentGroupStatus @default(PENDING)
+  provider              PaymentProvider
+  idempotencyKey        String             @unique
+  stripePaymentIntentId String?            @unique
+  stripeSessionId       String?            @unique
+  clientSecret          String?
+  checkoutUrl           String?
+  chargeId              String?
+  expiresAt             DateTime?
+  paidAt                DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  transactions Transaction[]
+
+  @@index([buyerId, createdAt])
+  @@index([status, expiresAt])
+}
+
+model ConnectAccount {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  stripeAccountId  String   @unique
+  country          String
+  defaultCurrency  String
+  transfersEnabled Boolean  @default(false)
+  payoutsEnabled   Boolean  @default(false)
+  detailsSubmitted Boolean  @default(false)
+  requirementsDue  String[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model WalletEntry {
+  id         String            @id @default(uuid())
+  userId     String
+  kind       WalletBalanceKind
+  amount     Int
+  reason     WalletEntryReason
+  orderId    String?
+  transferId String?
+  createdAt  DateTime          @default(now())
+
+  user  User   @relation(fields: [userId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([orderId])
 }
 
 model Wallet {
@@ -466,20 +731,6 @@ model Wallet {
   recipientId      String?
 
   user        User         @relation(fields: [userId], references: [id])
-  withdrawals Withdrawal[]
-}
-
-model Withdrawal {
-  id             String   @id @default(uuid())
-  walletId       String
-  amount         Int
-  status         String   @default("PENDING") // PENDING | PROCESSING | COMPLETED | FAILED
-  idempotencyKey String?  @unique
-  createdAt      DateTime @default(now())
-
-  wallet Wallet @relation(fields: [walletId], references: [id])
-
-  @@index([walletId])
 }
 
 model Dispute {
@@ -492,11 +743,15 @@ model Dispute {
   sellerEvidence Json?
   resolution     String?
   resolvedAt     DateTime?
+  resolvedById   String?
   createdAt      DateTime      @default(now())
   expiresAt      DateTime
 
-  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  openedBy User  @relation(fields: [openedById], references: [id], onDelete: Cascade)
+  order      Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  openedBy   User  @relation(fields: [openedById], references: [id], onDelete: Cascade)
+  resolvedBy User? @relation("ResolvedDisputes", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, expiresAt])
 }
 
 model Review {
@@ -516,6 +771,7 @@ model Review {
 
   @@unique([reviewerId, orderId, type])
   @@index([reviewedId])
+  @@index([reviewedId, createdAt])
 }
 
 model ReviewImage {
@@ -530,27 +786,34 @@ model ReviewImage {
 }
 
 model ChatMessage {
-  id            String      @id @default(uuid())
-  orderId       String
-  senderId      String
-  content       String?
-  type          MessageType @default(TEXT)
-  attachmentUrl String?
-  metadata      Json?
-  deliveredAt   DateTime?
-  readAt        DateTime?
-  replyToId     String?
-  deletedAt     DateTime?
-  createdAt     DateTime    @default(now())
+  id              String      @id @default(uuid())
+  orderId         String
+  senderId        String
+  clientMessageId String?
+  content         String?
+  type            MessageType @default(TEXT)
+  attachmentUrl   String?
+  metadata        Json?
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  replyToId       String?
+  viewOnce        Boolean     @default(false)
+  viewOnceOpeningHash String?   @db.Char(64)
+  viewOnceClosedAt DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime    @default(now())
 
   order                  Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
   sender                 User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
   replyTo                ChatMessage?      @relation("CmReplies", fields: [replyToId], references: [id], onDelete: SetNull)
-  replies                ChatMessage[]     @relation("CmReplies")
+  replies                ChatMessage[]       @relation("CmReplies")
   reactions              MessageReaction[]
+  starredBy              StarredMessage[]
   reportedChatMsgReports Report[]          @relation("ReportedChatMsgReports")
 
+  @@unique([orderId, senderId, clientMessageId])
   @@index([orderId, createdAt])
+  @@index([attachmentUrl])
 }
 
 model Favorite {
@@ -584,16 +847,24 @@ model CartItem {
 }
 
 model Story {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   userId    String
   imageUrl  String
+  mediaType StoryMediaType @default(IMAGE)
+  audience StoryAudience @default(EVERYONE)
+  caption   String?
+  textBlocks Json?
   expiresAt DateTime
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
 
   user  User        @relation(fields: [userId], references: [id])
   views StoryView[]
+  highlightItems StoryHighlightItem[]
 
   @@index([userId, expiresAt])
+  @@index([expiresAt])
+  @@index([deletedAt])
 }
 
 model StoryView {
@@ -624,10 +895,63 @@ model Block {
 enum MessageType {
   TEXT
   IMAGE
+  AUDIO
   VIDEO
   GIF
-  PRODUCT_CARD
   LOCATION
+  PRODUCT_CARD
+  DOCUMENT
+}
+
+model CloseFriend {
+  ownerId   String
+  memberId  String
+  createdAt DateTime @default(now())
+
+  owner  User @relation("CloseFriendsOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  member User @relation("CloseFriendsMember", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, memberId])
+  @@index([memberId])
+}
+
+model Restriction {
+  ownerId      String
+  restrictedId String
+  createdAt    DateTime @default(now())
+
+  owner      User @relation("RestrictionOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  restricted User @relation("RestrictedUser", fields: [restrictedId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, restrictedId])
+  @@index([restrictedId])
+}
+
+model StoryHighlight {
+  id           String   @id @default(uuid())
+  userId       String
+  title        String   @db.VarChar(40)
+  coverStoryId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stories StoryHighlightItem[]
+
+  @@index([userId, createdAt])
+}
+
+model StoryHighlightItem {
+  highlightId String
+  storyId     String
+  position    Int
+
+  highlight StoryHighlight @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+  story     Story          @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@id([highlightId, storyId])
+  @@unique([highlightId, position])
+  @@index([storyId])
 }
 
 model MessageReaction {
@@ -648,46 +972,78 @@ model MessageReaction {
   @@index([chatMessageId])
 }
 
+model StarredMessage {
+  id              String   @id @default(uuid())
+  userId          String
+  directMessageId String?
+  chatMessageId   String?
+  createdAt       DateTime @default(now())
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  directMessage DirectMessage? @relation(fields: [directMessageId], references: [id], onDelete: Cascade)
+  chatMessage   ChatMessage?   @relation(fields: [chatMessageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, directMessageId])
+  @@unique([userId, chatMessageId])
+  @@index([userId])
+  @@index([directMessageId])
+  @@index([chatMessageId])
+}
+
 model DirectConversation {
   id            String             @id @default(uuid())
   user1Id       String
   user2Id       String
+  productId     String?
+  scopeKey      String             @default("DIRECT")
   status        ConversationStatus @default(PENDING)
   lastMessageAt DateTime           @default(now())
   createdAt     DateTime           @default(now())
 
-  user1                     User                     @relation("User1Convos", fields: [user1Id], references: [id])
-  user2                     User                     @relation("User2Convos", fields: [user2Id], references: [id])
+  user1                     User                     @relation("User1Convos", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2                     User                     @relation("User2Convos", fields: [user2Id], references: [id], onDelete: Cascade)
+  product                   Product?                @relation(fields: [productId], references: [id], onDelete: Restrict)
   messages                  DirectMessage[]
   preferences               ConversationPreference[]
   reportedDirectConvReports Report[]                 @relation("ReportedDirectConvReports")
 
-  @@unique([user1Id, user2Id])
+  @@unique([user1Id, user2Id, scopeKey])
+  @@index([productId])
+  @@index([user2Id])
+  @@index([user1Id, lastMessageAt])
+  @@index([user2Id, lastMessageAt])
 }
 
 model DirectMessage {
-  id             String      @id @default(uuid())
-  conversationId String
-  senderId       String
-  content        String?
-  type           MessageType @default(TEXT)
-  attachmentUrl  String?
-  metadata       Json?
-  deliveredAt    DateTime?
-  readAt         DateTime?
-  replyToId      String?
-  deletedAt      DateTime?
-  createdAt      DateTime    @default(now())
+  id              String      @id @default(uuid())
+  conversationId  String
+  senderId        String
+  clientMessageId String?
+  content         String?
+  type            MessageType @default(TEXT)
+  attachmentUrl   String?
+  metadata        Json?
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  replyToId       String?
+  viewOnce        Boolean     @default(false)
+  viewOnceOpeningHash String?   @db.Char(64)
+  viewOnceClosedAt DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime    @default(now())
 
   conversation             DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender                   User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
   replyTo                  DirectMessage?     @relation("DmReplies", fields: [replyToId], references: [id], onDelete: SetNull)
-  replies                  DirectMessage[]    @relation("DmReplies")
-  reactions                MessageReaction[]
+  replies                DirectMessage[]     @relation("DmReplies")
+  reactions              MessageReaction[]
+  starredBy              StarredMessage[]
   reportedDirectMsgReports Report[]           @relation("ReportedDirectMsgReports")
 
+  @@unique([conversationId, senderId, clientMessageId])
   @@index([conversationId, createdAt])
   @@index([senderId])
+  @@index([attachmentUrl])
 }
 
 // ─── Per-user conversation preferences (archive, theme, background) ────
@@ -699,6 +1055,7 @@ model ConversationPreference {
   directConversationId String?
   isArchived           Boolean   @default(false)
   isDeleted            Boolean   @default(false)
+  muted                Boolean   @default(false)
   deletedAt            DateTime?
   theme                ChatTheme @default(DEFAULT)
   backgroundUrl        String?
@@ -737,6 +1094,7 @@ model Report {
   reporterId                   String
   reportedUserId               String?
   reportedPostId               String?
+  reportedCommentId            String?
   targetType                   ReportTargetType @default(USER)
   reportedDirectConversationId String?
   reportedOrderChatId          String?
@@ -748,10 +1106,14 @@ model Report {
   status                       ReportStatus     @default(PENDING)
   createdAt                    DateTime         @default(now())
   reviewedAt                   DateTime?
+  reviewedById                 String?
 
+  reviewedBy         User?               @relation("ReviewedReports", fields: [reviewedById], references: [id], onDelete: SetNull)
+  moderationActions  ModerationAction[]
   reporter           User                @relation("SubmittedReports", fields: [reporterId], references: [id], onDelete: Cascade)
   reportedUser       User?               @relation("ReportedUserReports", fields: [reportedUserId], references: [id], onDelete: Cascade)
   reportedPost       Post?               @relation("ReportedPostReports", fields: [reportedPostId], references: [id], onDelete: Cascade)
+  reportedComment    Comment?            @relation("ReportedCommentReports", fields: [reportedCommentId], references: [id], onDelete: Cascade)
   reportedDirectConv DirectConversation? @relation("ReportedDirectConvReports", fields: [reportedDirectConversationId], references: [id], onDelete: Cascade)
   reportedOrder      Order?              @relation("ReportedOrderReports", fields: [reportedOrderChatId], references: [id], onDelete: Cascade)
   reportedDirectMsg  DirectMessage?      @relation("ReportedDirectMsgReports", fields: [reportedDirectMessageId], references: [id], onDelete: Cascade)
@@ -759,6 +1121,7 @@ model Report {
 
   @@unique([reporterId, reportedUserId])
   @@unique([reporterId, reportedPostId])
+  @@unique([reporterId, reportedCommentId])
   @@unique([reporterId, reportedDirectConversationId])
   @@unique([reporterId, reportedOrderChatId])
   @@unique([reporterId, reportedDirectMessageId])
@@ -766,7 +1129,47 @@ model Report {
   @@index([reporterId])
   @@index([status])
   @@index([reportedUserId])
+  @@index([reportedPostId])
+  @@index([reportedCommentId])
   @@index([reportedDirectConversationId])
+  @@index([status, createdAt])
+}
+
+enum ModerationTargetType {
+  USER
+  PRODUCT
+  POST
+  COMMENT
+  REPORT
+}
+
+enum ModerationActionType {
+  REPORT_REVIEWED
+  REPORT_RESOLVED
+  REPORT_REJECTED
+  USER_SUSPENDED
+  USER_UNSUSPENDED
+  PRODUCT_REMOVED
+  POST_REMOVED
+  COMMENT_REMOVED
+}
+
+model ModerationAction {
+  id         String               @id @default(uuid())
+  actorId    String
+  targetType ModerationTargetType
+  targetId   String
+  action     ModerationActionType
+  reason     String?
+  reportId   String?
+  createdAt  DateTime             @default(now())
+
+  actor  User    @relation("ModerationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  report Report? @relation(fields: [reportId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
 }
 
 model BugReport {
@@ -801,11 +1204,97 @@ model Notification {
   title     String
   body      String
   data      Json?
+  commentId String?
+  dedupeKey String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
 
   @@index([userId, read])
   @@index([userId, createdAt])
+  @@unique([userId, dedupeKey])
+  @@index([commentId])
+}
+
+model PostMedia {
+  id               String               @id @default(uuid())
+  url              String
+  thumbnailUrl     String?
+  type             PublicationMediaType
+  blurHash         String?              @db.VarChar(166)
+  altText          String?              @db.VarChar(500)
+  hotspots         Json?
+  durationMs       Int?
+  coverTimestampMs Int?
+  order            Int                  @default(0)
+  postId           String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, order])
+  @@index([postId])
+}
+
+model CommentMedia {
+  id String @id @default(uuid())
+  commentId String
+  ownerId String
+  url String
+  mimeType String
+  sha256 String @db.Char(64)
+  size Int
+  position Int @default(0)
+  createdAt DateTime @default(now())
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  @@index([commentId, position])
+  @@index([ownerId])
+}
+
+model CommentBookmark {
+  id String @id @default(uuid())
+  userId String
+  commentId String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  @@unique([userId, commentId])
+  @@index([userId, createdAt, id])
+  @@index([commentId])
+}
+
+model CommentShare {
+  id String @id @default(uuid())
+  userId String
+  commentId String
+  postId String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@unique([userId, commentId])
+  @@index([postId, createdAt, id])
+  @@index([commentId])
+}
+
+model CommentSubscription {
+  userId String
+  postId String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@id([userId, postId])
+  @@index([postId])
+}
+
+model CommentConversationMute {
+  userId String
+  postId String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@id([userId, postId])
+  @@index([postId])
 }
 
 model SavedPost {
@@ -818,6 +1307,6 @@ model SavedPost {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
-  @@index([userId])
+  @@index([userId, createdAt, id])
   @@index([postId])
 }

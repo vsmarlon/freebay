@@ -14,9 +14,6 @@ _CartCheckoutItemEntity _$CartCheckoutItemEntityFromJson(
   productTitle: json['productTitle'] as String,
   quantity: (json['quantity'] as num?)?.toInt() ?? 1,
   amount: (json['amount'] as num?)?.toInt() ?? 0,
-  pixQrCode: json['pixQrCode'] as String? ?? '',
-  pixImage: json['pixImage'] as String? ?? '',
-  expiresAt: DateTime.parse(json['expiresAt'] as String),
 );
 
 Map<String, dynamic> _$CartCheckoutItemEntityToJson(
@@ -27,25 +24,35 @@ Map<String, dynamic> _$CartCheckoutItemEntityToJson(
   'productTitle': instance.productTitle,
   'quantity': instance.quantity,
   'amount': instance.amount,
-  'pixQrCode': instance.pixQrCode,
-  'pixImage': instance.pixImage,
-  'expiresAt': instance.expiresAt.toIso8601String(),
 };
 
 _CartCheckoutEntity _$CartCheckoutEntityFromJson(Map<String, dynamic> json) =>
     _CartCheckoutEntity(
-      items: (json['items'] as List<dynamic>)
-          .map(
-            (e) => CartCheckoutItemEntity.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      paymentGroupId: json['paymentGroupId'] as String,
+      items:
+          (json['items'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    CartCheckoutItemEntity.fromJson(e as Map<String, dynamic>),
+              )
+              .toList() ??
+          const [],
       totalOrders: (json['totalOrders'] as num?)?.toInt() ?? 0,
       totalAmount: (json['totalAmount'] as num?)?.toInt() ?? 0,
+      checkoutUrl: json['checkoutUrl'] as String?,
+      paymentIntentClientSecret: json['paymentIntentClientSecret'] as String?,
+      expiresAt: json['expiresAt'] == null
+          ? null
+          : DateTime.parse(json['expiresAt'] as String),
     );
 
 Map<String, dynamic> _$CartCheckoutEntityToJson(_CartCheckoutEntity instance) =>
     <String, dynamic>{
-      'items': instance.items,
+      'paymentGroupId': instance.paymentGroupId,
+      'items': instance.items.map((e) => e.toJson()).toList(),
       'totalOrders': instance.totalOrders,
       'totalAmount': instance.totalAmount,
+      'checkoutUrl': instance.checkoutUrl,
+      'paymentIntentClientSecret': instance.paymentIntentClientSecret,
+      'expiresAt': instance.expiresAt?.toIso8601String(),
     };

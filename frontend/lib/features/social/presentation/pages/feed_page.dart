@@ -1,23 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:go_router/go_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/create_composer_sheet.dart';
-import 'package:freebay/core/components/app_refresh_indicator.dart';
-import 'package:freebay/core/components/app_shell_scaffold_key.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/hide_on_scroll.dart';
-import 'package:freebay/features/social/presentation/widgets/feed_filters.dart';
-import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
+import 'package:freebay/features/social/presentation/widgets/feed_header.dart';
+import 'package:freebay/features/social/presentation/widgets/feed_intro_sections.dart';
+import 'package:freebay/features/social/presentation/widgets/feed_post_list.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class FeedPage extends ConsumerStatefulWidget {
   const FeedPage({super.key});
@@ -30,7 +21,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  late final HideOnScrollController _headerHide;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   bool get wantKeepAlive => true;
@@ -39,365 +30,143 @@ class _FeedPageState extends ConsumerState<FeedPage>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: AppMotion.base,
       vsync: this,
     );
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.linear,
+      curve: AppMotion.baseCurve,
     );
     _animationController.forward();
-    _headerHide = HideOnScrollController(vsync: this);
 
-    // ref.read is allowed in initState() per Riverpod docs — one-time seeding.
+    _scrollController.addListener(_onScroll);
+
     final currentState = ref.read(feedProvider);
-    final feedType = ref.read(feedTypeProvider);
     if (currentState.posts.isEmpty && !currentState.isLoading) {
       Future.microtask(() {
         if (!mounted) return;
-        ref
-            .read(feedProvider.notifier)
-            .loadFeed(
-              refresh: true,
-              feedType: feedType == FeedType.following
-                  ? 'following'
-                  : 'explore',
-            );
+        _loadCurrentFeed(refresh: true);
       });
     }
   }
 
+  void _onScroll() {
+    if (ref.read(feedProvider).error == null &&
+        _scrollController.position.extentAfter < 500) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadCurrentFeed({bool refresh = false}) {
+    return ref
+        .read(feedProvider.notifier)
+        .loadFeed(
+          refresh: refresh,
+          feedType: ref.read(feedTypeProvider),
+          contentFilter: ref.read(feedContentFilterProvider),
+        );
+  }
+
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _animationController.dispose();
-    _headerHide.dispose();
     super.dispose();
   }
 
   void _onFeedTypeChanged(FeedType type) {
-    ref.read(feedTypeProvider.notifier).state = type;
-    ref
-        .read(feedProvider.notifier)
-        .loadFeed(
-          refresh: true,
-          feedType: type == FeedType.following ? 'following' : 'explore',
-        );
+    ref.read(feedTypeProvider.notifier).set(type);
+    _loadCurrentFeed(refresh: true);
+  }
+
+  void _onContentFilterChanged(FeedContentFilter filter) {
+    ref.read(feedContentFilterProvider.notifier).set(filter);
+    _loadCurrentFeed(refresh: true);
+  }
+
+  void _loadMore() {
+    _loadCurrentFeed();
+  }
+
+  void _openComposer() {
+    showBrutalistSheet(
+      context: context,
+      title: l10n(context).feedCreatePost,
+      child: const CreateComposerSheet(),
+    );
+  }
+
+  void _retry() {
+    _loadCurrentFeed(refresh: ref.read(feedProvider).posts.isEmpty);
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final strings = l10n(context);
+    ref.listen<FeedState>(feedProvider, (previous, next) {
+      if (next.error != null &&
+          next.posts.isNotEmpty &&
+          previous?.error != next.error) {
+        AppSnackbar.error(
+          context,
+          strings.feedRefreshFailedShowingPosts,
+          action: SnackBarAction(label: strings.commonRetry, onPressed: _retry),
+        );
+      }
+    });
     final feedState = ref.watch(feedProvider);
-    final headerHeight = MediaQuery.of(context).padding.top + 66;
-
-    return Scaffold(
-      backgroundColor: context.appBarColor,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.only(top: headerHeight),
-              child: NotificationListener<ScrollNotification>(
-                onNotification: _headerHide.handleNotification,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: _buildBody(feedState),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            child: ScrollAwareBar(
-              animation: _headerHide.animation,
-              height: headerHeight,
-              edge: ScrollBarEdge.top,
-              child: PageHeader(
-                text: 'FREEBAY',
-                exclamation: '!',
-                leading: GestureDetector(
-                  onTap: () => appShellScaffoldKey.currentState?.openDrawer(),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: context.borderColor, width: 2),
-                    ),
-                    child: Icon(
-                      Icons.menu,
-                      color: context.textPrimary,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                actions: [
-                  _HeaderIcon(
-                    icon: Icons.notifications_outlined,
-                    route: '/notifications',
-                  ),
-                  _HeaderIcon(
-                    icon: Icons.account_balance_wallet_outlined,
-                    route: '/wallet',
-                    useGo: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBody(FeedState feedState) {
     final feedType = ref.watch(feedTypeProvider);
     final contentFilter = ref.watch(feedContentFilterProvider);
-    final filteredPosts = feedState.posts
-        .where((post) => _matchesContentFilter(post, contentFilter))
-        .toList();
-
-    final header = Column(
-      children: [_buildFeedTitle(feedType, contentFilter), Spacing.vSm],
-    );
-
-    if (feedState.error != null && feedState.posts.isEmpty) {
-      return Column(
-        children: [
-          header,
-          Expanded(
-            child: EmptyState.error(
-              message: 'Verifique sua conexão e tente novamente',
-              onRetry: () {
-                final type = ref.read(feedTypeProvider);
-                ref
-                    .read(feedProvider.notifier)
-                    .loadFeed(
-                      refresh: true,
-                      feedType: type == FeedType.following
-                          ? 'following'
-                          : 'explore',
-                    );
-              },
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: AppRefreshIndicator(
+          onRefresh: () async {
+            await _loadCurrentFeed(refresh: true);
+          },
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
             ),
-          ),
-        ],
-      );
-    }
-
-    if (feedState.posts.isEmpty && !feedState.isLoading) {
-      return Column(
-        children: [
-          header,
-          Expanded(child: EmptyState.noPosts()),
-        ],
-      );
-    }
-
-    if (filteredPosts.isEmpty && !feedState.isLoading) {
-      return Column(
-        children: [
-          header,
-          Expanded(
-            child: EmptyState.noResults(
-              subtitle: 'Troque entre posts sociais e vendas quando quiser.',
-            ),
-          ),
-        ],
-      );
-    }
-
-    return AppRefreshIndicator(
-      onRefresh: () async {
-        final type = ref.read(feedTypeProvider);
-        ref
-            .read(feedProvider.notifier)
-            .loadFeed(
-              refresh: true,
-              feedType: type == FeedType.following ? 'following' : 'explore',
-            );
-      },
-      child: ListView.builder(
-        padding: EdgeInsets.zero,
-        itemCount: filteredPosts.length + 1 + (feedState.hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return Column(
-              children: [
-                _buildFeedTitle(feedType, contentFilter),
-                Spacing.vSm,
-                _buildInputArea(),
-              ],
-            );
-          }
-          if (index == filteredPosts.length + 1) {
-            return _buildLoadingMore();
-          }
-          return RepaintBoundary(
-            child: FeedPostItem(post: filteredPosts[index - 1]),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildFeedTitle(FeedType feedType, FeedContentFilter contentFilter) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Spacer(),
-              FeedTypeDropdown(
-                currentType: feedType,
-                onChanged: _onFeedTypeChanged,
-              ),
-              const Spacer(),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: FeedContentFilterBar(
-              currentFilter: contentFilter,
-              onChanged: (filter) =>
-                  ref.read(feedContentFilterProvider.notifier).state = filter,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingMore() {
-    return const Padding(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _SkeletonFeedPost(),
-          SizedBox(height: 12),
-          _SkeletonFeedPost(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInputArea() {
-    return GestureDetector(
-      onTap: _openCreateChooser,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: context.surfaceColor,
-          border: Border.all(color: AppColors.onSurface, width: 2),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryContainer,
-                borderRadius: BorderRadius.zero,
-              ),
-              child: const Icon(
-                Icons.person,
-                size: 14,
-                color: AppColors.onPrimary,
-              ),
-            ),
-            Spacing.hSm,
-            Expanded(
-              child: Text(
-                'Criar post social ou anúncio de venda',
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 14,
-                  color: AppColors.outline,
+            slivers: [
+              // Floating and snapping SliverAppBar to free all screen when scrolling
+              const FeedHeader(),
+              SliverToBoxAdapter(
+                child: FeedIntroSections(
+                  feedType: feedType,
+                  contentFilter: contentFilter,
+                  onFeedTypeChanged: _onFeedTypeChanged,
+                  onContentFilterChanged: _onContentFilterChanged,
+                  onCompose: _openComposer,
                 ),
               ),
-            ),
-            const Icon(Icons.add, color: AppColors.primaryContainer, size: 20),
-          ],
+              FeedPostList(
+                state: feedState,
+                onRetry: _retry,
+                emptyState: contentFilter == FeedContentFilter.all
+                    ? EmptyState(
+                        icon: Icons.article_outlined,
+                        title: strings.feedNoPosts,
+                        subtitle: strings.feedNoPostsBody,
+                        action: AppButton(
+                          label: strings.socialPeopleSearchTitle,
+                          size: AppButtonSize.compact,
+                          onPressed: () => context.push(AppRoutes.peopleSearch),
+                        ),
+                      )
+                    : EmptyState(
+                        icon: Icons.search_off,
+                        title: strings.feedNoResults,
+                        subtitle: strings.feedNoResultsBody,
+                      ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  void _openCreateChooser() {
-    HapticFeedback.lightImpact();
-    showBrutalistSheet(
-      context: context,
-      title: 'O QUE VOCÊ QUER CRIAR?',
-      builder: (_) => const CreateComposerSheet(),
-    );
-  }
-
-  bool _matchesContentFilter(PostEntity post, FeedContentFilter contentFilter) {
-    switch (contentFilter) {
-      case FeedContentFilter.socialOnly:
-        return post.type != 'PRODUCT';
-      case FeedContentFilter.sellingOnly:
-        return post.type == 'PRODUCT';
-      case FeedContentFilter.all:
-        return true;
-    }
-  }
-}
-
-class _SkeletonFeedPost extends StatelessWidget {
-  const _SkeletonFeedPost();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            ShimmerBlock(width: 48, height: 48),
-            SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ShimmerBlock(height: 14, width: 100),
-                SizedBox(height: 8),
-                ShimmerBlock(height: 12, width: 150),
-              ],
-            ),
-          ],
-        ),
-        SizedBox(height: 12),
-        ShimmerBlock(height: 200),
-      ],
-    );
-  }
-}
-
-class _HeaderIcon extends StatelessWidget {
-  final IconData icon;
-  final String route;
-  final bool useGo;
-
-  const _HeaderIcon({
-    required this.icon,
-    required this.route,
-    this.useGo = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => useGo ? context.go(route) : context.push(route),
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          border: Border.all(color: context.borderColor, width: 2),
-        ),
-        child: Icon(icon, color: context.textPrimary, size: 20),
       ),
     );
   }

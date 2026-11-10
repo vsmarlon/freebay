@@ -2,36 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/features/auth/auth.dart';
+import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/features/orders/presentation/widgets/order_status_timeline.dart';
 import 'package:freebay/features/orders/presentation/widgets/escrow_status_card.dart';
 import 'package:freebay/features/orders/presentation/widgets/order_actions.dart';
+import 'package:freebay/features/orders/presentation/widgets/order_cancellation_sheet.dart';
 import 'package:freebay/features/orders/presentation/widgets/brutalist_confirm_dialog.dart';
-import 'package:freebay/shared/services/http_client.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class OrderDetailPage extends ConsumerStatefulWidget {
   final String orderId;
 
-  const OrderDetailPage({
-    super.key,
-    required this.orderId,
-  });
+  const OrderDetailPage({super.key, required this.orderId});
 
   @override
   ConsumerState<OrderDetailPage> createState() => _OrderDetailPageState();
 }
 
 class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
+  bool _isCancelPending = false;
   @override
   void initState() {
     super.initState();
@@ -43,104 +37,69 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(orderDetailProvider(widget.orderId));
-    final authState = ref.watch(authControllerProvider);
-    final currentUserId = authState.valueOrNull?.id;
+    final currentUserId = ref.watch(authControllerProvider).value?.id;
+    final shortId = widget.orderId.length > 8
+        ? widget.orderId.substring(0, 8)
+        : widget.orderId;
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text:
-                'PEDIDO #${widget.orderId.length > 8 ? widget.orderId.substring(0, 8) : widget.orderId}',
-            leading: GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: l10n(context).ordersNumber(shortId),
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                semanticLabel: l10n(context).accessibilityBack,
+                onTap: () => context.pop(),
               ),
             ),
-          ),
-          Expanded(
-            child: _buildBody(state, currentUserId),
-          ),
-        ],
+            Expanded(child: _buildContent(state, currentUserId)),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildBody(OrderDetailState state, String? currentUserId) {
+  Widget _buildContent(OrderDetailState state, String? currentUserId) {
     if (state.isLoading && state.order == null) {
-      return _buildSkeleton(context);
-    }
-
-    if (state.error != null && state.order == null) {
-      return Center(
+      return const SkeletonPage(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outlined,
-              color: context.colors.error,
-              size: 48,
-            ),
-            Spacing.vMd,
-            Text(
-              state.error!,
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 14,
-                color: context.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            Spacing.vLg,
-            _buildRetryButton(),
+            SizedBox(height: 16),
+            ShimmerBlock(height: 100),
+            SizedBox(height: 12),
+            ShimmerBlock(height: 100),
+            SizedBox(height: 12),
+            ShimmerBlock(height: 100),
           ],
         ),
       );
     }
-
     final order = state.order;
     if (order == null) {
-      return Center(
-        child: Text(
-          'Pedido não encontrado',
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontSize: 14,
-            color: context.textSecondary,
-          ),
-        ),
+      return EmptyState.error(
+        message: l10n(context).ordersNotFound,
+        onRetry: () =>
+            ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder(),
       );
     }
 
     final isBuyer = currentUserId == order.buyerId;
 
     return RefreshIndicator(
-      color: context.colors.primaryContainer,
-      onRefresh: () async {
-        await ref
-            .read(orderDetailProvider(widget.orderId).notifier)
-            .loadOrder();
-      },
+      onRefresh: () =>
+          ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder(),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
             OrderStatusTimeline(currentStatus: order.status),
             Spacing.vXs,
-            _buildProductSection(order),
+            _buildProductCard(order),
             Spacing.vXs,
-            _buildParticipantSection(order, isBuyer),
+            _buildParticipantCard(order, isBuyer),
             Spacing.vXs,
             EscrowStatusCard(
               escrowStatus: order.escrowStatus,
@@ -156,7 +115,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               reviewType: state.canReviewResponse?.reviewType,
               isBuyer: isBuyer,
               isLoading: state.isPerformingAction,
-              onConfirmDelivery: () => _handleConfirmDelivery(),
+              onConfirmDelivery: _handleConfirmDelivery,
               onReview: () => _handleReview(
                 order,
                 state.canReviewResponse?.reviewType,
@@ -164,10 +123,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               ),
               onChat: () => _handleChat(order, isBuyer),
               onDispute: () => _handleDispute(order),
-              onCancel: () => _handleCancel(),
+              onCancel: _handleCancel,
             ),
             Spacing.vXs,
-            _buildOrderInfo(order),
+            _buildInfoCard(order),
             Spacing.vXxl,
           ],
         ),
@@ -175,448 +134,244 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     );
   }
 
-  Widget _buildSkeleton(BuildContext context) {
-    return SkeletonPage(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
-          const ShimmerBlock(height: 32, width: 120),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const ShimmerBlock(width: 80, height: 80),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    ShimmerBlock(height: 16, width: 160),
-                    SizedBox(height: 8),
-                    ShimmerBlock(height: 14, width: 80),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const ShimmerBlock(height: 100),
-          const SizedBox(height: 16),
-          const ShimmerBlock(height: 48),
-          const SizedBox(height: 16),
-          _buildSkeletonInfoRow(),
-          _buildSkeletonInfoRow(),
-          _buildSkeletonInfoRow(),
-          _buildSkeletonInfoRow(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSkeletonInfoRow() {
-    return const Column(
-      children: [
-        Row(
-          children: [
-            ShimmerBlock(width: 80, height: 14),
-            Spacer(),
-            ShimmerBlock(width: 120, height: 14),
-          ],
-        ),
-        SizedBox(height: 8),
-      ],
-    );
-  }
-
-  Widget _buildRetryButton() {
-    return AppButton(
-      label: 'Tentar novamente',
-      onPressed: () {
-        ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder();
-      },
-    );
-  }
-
-  Widget _buildProductSection(OrderEntity order) {
+  Widget _buildProductCard(OrderEntity order) {
     final product = order.product;
-
     return Container(
       color: context.surfaceColor,
-      padding: const EdgeInsets.all(24),
-      child: Column(
+      padding: const EdgeInsets.all(20),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'PRODUTO',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 1.2,
-              color: context.textSecondary,
-            ),
+          Container(
+            width: 72,
+            height: 72,
+            color: context.surfaceMidColor,
+            child: product?.imageUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: product!.imageUrl!,
+                    fit: BoxFit.cover,
+                  )
+                : Icon(Icons.image_outlined, color: context.textSecondary),
           ),
-          Spacing.vMd,
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                color: context.surfaceMidColor,
-                child: product?.imageUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: product!.imageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            const ShimmerBlock(height: 60, width: 60),
-                        errorWidget: (context, url, error) => Icon(
-                          Icons.image_outlined,
-                          color: context.textSecondary,
-                        ),
-                      )
-                    : Icon(
-                        Icons.image_outlined,
-                        color: context.textSecondary,
-                      ),
-              ),
-              Spacing.hMd,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product?.title ?? 'Produto',
-                      style: TextStyle(
-                        fontFamily: AppTypography.headlineFontFamily,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: context.textPrimary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Spacing.vSm,
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      color: context.surfaceMidColor,
-                      child: Text(
-                        order.formattedAmount,
-                        style: TextStyle(
-                          fontFamily: AppTypography.headlineFontFamily,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: context.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
+          Spacing.hMd,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product?.title ?? 'Produto',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: context.textPrimary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+                Spacing.vSm,
+                Text(
+                  order.formattedAmount,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: context.textPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildParticipantSection(OrderEntity order, bool isBuyer) {
+  Widget _buildParticipantCard(OrderEntity order, bool isBuyer) {
     final participant = isBuyer ? order.seller : order.buyer;
     final label = isBuyer ? 'VENDEDOR' : 'COMPRADOR';
 
     return Container(
       color: context.surfaceMidColor,
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.all(20),
+      child: Row(
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 1.2,
-              color: context.textSecondary,
-            ),
-          ),
-          Spacing.vMd,
-          Row(
-            children: [
-              UserAvatar(
-                imageUrl: participant?.avatarUrl,
-                isVerified: participant?.isVerified ?? false,
-                size: AppAvatarSize.medium,
-              ),
-              Spacing.hMd,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      participant?.displayNameOrDefault ?? 'Usuário',
-                      style: TextStyle(
-                        fontFamily: AppTypography.headlineFontFamily,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: context.textPrimary,
-                      ),
-                    ),
-                    if (participant?.isVerified == true) ...[
-                      Spacing.vXs,
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.verified,
-                            color: context.colors.primaryContainer,
-                            size: 14,
-                          ),
-                          Spacing.hXs,
-                          Text(
-                            'Verificado',
-                            style: TextStyle(
-                              fontFamily: AppTypography.fontFamily,
-                              fontSize: 12,
-                              color: context.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    if (participant != null) {
-                      context.push('/user/${participant.id}');
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    child: Icon(
-                      Icons.chevron_right,
-                      color: context.textSecondary,
-                    ),
+          UserAvatar(imageUrl: participant?.avatarUrl),
+          Spacing.hMd,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: context.textSecondary,
                   ),
                 ),
-              ),
-            ],
+                Text(
+                  participant?.displayNameOrDefault ??
+                      l10n(context).commonUnknownUser,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: context.textPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
+          if (participant != null)
+            IconButton(
+              icon: Icon(Icons.chevron_right, color: context.textSecondary),
+              onPressed: () => context.push(AppRoutes.userPath(participant.id)),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildOrderInfo(OrderEntity order) {
+  Widget _buildInfoCard(OrderEntity order) {
     return Container(
       color: context.surfaceColor,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'INFORMAÇÕES',
+            l10n(context).ordersInformation.toUpperCase(),
             style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
               fontSize: 12,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 1.2,
+              fontWeight: FontWeight.bold,
               color: context.textSecondary,
             ),
           ),
           Spacing.vMd,
-          _buildInfoRow('ID do pedido', order.id),
-          const SizedBox(height: 12),
-          _buildInfoRow(
-            'Data do pedido',
-            _formatDate(order.createdAt),
+          _row(l10n(context).ordersOrderId, order.id),
+          const SizedBox(height: 8),
+          _row(
+            l10n(context).ordersOrderDate,
+            localizedShortDate(context, order.createdAt),
           ),
-          if (order.deliveryConfirmedAt != null) ...[
-            const SizedBox(height: 12),
-            _buildInfoRow(
-              'Entrega confirmada',
-              _formatDate(order.deliveryConfirmedAt!),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 14,
-              color: context.textSecondary,
-            ),
+  Widget _row(String k, String v) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(k, style: TextStyle(fontSize: 13, color: context.textSecondary)),
+      const SizedBox(width: 12),
+      Flexible(
+        child: Text(
+          v,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: context.textPrimary,
           ),
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.end,
         ),
-        Expanded(
-          flex: 3,
-          child: Text(
-            value,
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: context.textPrimary,
-            ),
-            textAlign: TextAlign.end,
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final year = date.year;
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '$day/$month/$year às $hour:$minute';
-  }
+      ),
+    ],
+  );
 
   Future<void> _handleConfirmDelivery() async {
-    final confirmed = await showDialog<bool>(
+    final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => BrutalistConfirmDialog(
-        title: 'Confirmar Recebimento',
-        message:
-            'Ao confirmar o recebimento, o pagamento será liberado para o vendedor. Deseja continuar?',
-        confirmLabel: 'Confirmar',
-        cancelLabel: 'Cancelar',
+      builder: (_) => BrutalistConfirmDialog(
+        title: l10n(context).ordersConfirmReceipt,
+        message: l10n(context).ordersConfirmReceiptBody,
+        confirmLabel: l10n(context).commonConfirm,
+        cancelLabel: l10n(context).commonCancel,
       ),
     );
-
-    if (confirmed == true) {
-      final success = await ref
+    if (ok == true) {
+      await ref
           .read(orderDetailProvider(widget.orderId).notifier)
           .confirmDelivery();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success
-                  ? 'Recebimento confirmado com sucesso!'
-                  : 'Erro ao confirmar recebimento',
-            ),
-            backgroundColor: success ? AppColors.success : AppColors.error,
-          ),
-        );
-      }
     }
   }
 
   void _handleReview(OrderEntity order, String? reviewType, bool isBuyer) {
     if (reviewType == null) return;
-
-    final reviewedUser = isBuyer ? order.seller : order.buyer;
-
+    final user = isBuyer ? order.seller : order.buyer;
     context.push(
-      '/reviews/create',
+      AppRoutes.createReview,
       extra: {
         'orderId': widget.orderId,
         'reviewedId': isBuyer ? order.sellerId : order.buyerId,
-        'reviewedName': reviewedUser?.displayNameOrDefault ?? 'Usuário',
-        'reviewedAvatarUrl': reviewedUser?.avatarUrl,
+        'reviewedName':
+            user?.displayNameOrDefault ?? l10n(context).commonUnknownUser,
+        'reviewedAvatarUrl': user?.avatarUrl,
         'reviewType': reviewType,
       },
     );
   }
 
   Future<void> _handleChat(OrderEntity order, bool isBuyer) async {
-    final otherUserId = isBuyer ? order.sellerId : order.buyerId;
-    final otherUser = isBuyer ? order.seller : order.buyer;
+    final targetId = isBuyer ? order.sellerId : order.buyerId;
+    final result = await ref
+        .read(chatRepositoryProvider)
+        .startDirectConversation(targetId);
+    if (!mounted) return;
+    result.fold(
+      (failure) => AppSnackbar.handleFailure(context, failure),
+      (conversationId) => context.push(AppRoutes.chatPath(conversationId)),
+    );
+  }
 
-    try {
-      final response = await HttpClient.instance.post(
-        '/chat/conversations',
-        data: {'targetUserId': otherUserId},
-      );
-      final data = response.data['data'] as Map<String, dynamic>;
-      final conversationId = data['conversationId'] as String;
-
-      if (!mounted) {
-        return;
-      }
-
-      context.push(
-        '/chat/$conversationId',
-        extra: {
-          'oderName': otherUser?.displayNameOrDefault ?? 'Chat',
-          'oderAvatarUrl': otherUser?.avatarUrl,
-          'chatType': 'direct',
-        },
-      );
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível abrir a conversa'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+  Future<void> _handleDispute(OrderEntity order) async {
+    await context.push(AppRoutes.createDisputePath(order.id));
+    if (mounted) {
+      await ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder();
     }
   }
 
-  void _handleDispute(OrderEntity order) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content:
-            Text('Abertura de disputa pela interface chega no próximo ajuste.'),
-        backgroundColor: AppColors.onSurface,
-      ),
+  Future<void> _handleCancel() async {
+    await showBrutalistSheet<void>(
+      context: context,
+      title: l10n(context).ordersCancel.toUpperCase(),
+      scrollable: false,
+      builder: (_) => OrderCancellationSheet(onConfirm: _cancelOrder),
     );
   }
 
-  Future<void> _handleCancel() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => BrutalistConfirmDialog(
-        title: 'Cancelar Pedido',
-        message:
-            'Tem certeza que deseja cancelar este pedido? O valor será reembolsado.',
-        confirmLabel: 'Cancelar Pedido',
-        cancelLabel: 'Voltar',
-        isDanger: true,
-      ),
-    );
-
-    if (confirmed == true) {
-      final success = await ref
+  Future<bool> _cancelOrder(String reason) async {
+    if (_isCancelPending) return false;
+    _isCancelPending = true;
+    try {
+      final stepUpToken = await StepUpAuthenticator.authorize(
+        context,
+        ref,
+        purpose: 'cancel_order',
+        resourceId: widget.orderId,
+      );
+      if (stepUpToken == null || !mounted) return false;
+      final outcome = await ref
           .read(orderDetailProvider(widget.orderId).notifier)
-          .cancelOrder();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success
-                  ? 'Pedido cancelado com sucesso!'
-                  : 'Erro ao cancelar pedido',
-            ),
-            backgroundColor: success ? AppColors.success : AppColors.error,
-          ),
-        );
+          .cancelOrder(reason, stepUpToken);
+      if (!mounted) return false;
+      if (outcome != null) {
+        if (outcome == 'REFUND_PENDING') {
+          AppSnackbar.info(context, l10n(context).ordersRefundPending);
+        } else {
+          AppSnackbar.success(context, l10n(context).ordersCancelledSuccess);
+        }
+        await ref
+            .read(orderDetailProvider(widget.orderId).notifier)
+            .loadOrder();
+        return true;
       }
+      final error = ref.read(orderDetailProvider(widget.orderId)).error;
+      AppSnackbar.error(context, error ?? l10n(context).errorUnknown);
+      return false;
+    } catch (_) {
+      if (mounted) AppSnackbar.error(context, l10n(context).errorUnknown);
+      return false;
+    } finally {
+      _isCancelPending = false;
     }
   }
 }

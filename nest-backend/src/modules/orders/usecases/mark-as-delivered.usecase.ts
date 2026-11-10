@@ -1,31 +1,30 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
-import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
-import { OrderRepository } from '../domain/repositories/order.repository';
+import { OrderStatus } from '@prisma/client';
+import { Either, left, right } from '@/shared/core/either';
+import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError, ConflictError } from '@/shared/core/errors';
+import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { MarkAsDeliveredInput } from '../dtos/order.dto';
 
 @Injectable()
 export class MarkAsDeliveredUseCase {
-  constructor(private readonly orderRepository: OrderRepository) {}
+  constructor(private readonly orderRepository: OrderDatabaseRepository) {}
 
   async execute(input: MarkAsDeliveredInput): Promise<Either<AppError, void>> {
     const orderResult = await this.orderRepository.findById(input.orderId);
-    if (isLeft(orderResult)) return left(orderResult.value);
+    if (orderResult.isLeft()) return left(orderResult.value);
     if (!orderResult.value) return left(new NotFoundError('Order'));
 
     if (orderResult.value.buyerId !== input.buyerId) {
       return left(new UnauthorizedError('Only buyer can mark as delivered'));
     }
 
-    if (orderResult.value.status !== 'SHIPPED') {
+    if (orderResult.value.status !== OrderStatus.SHIPPED) {
       return left(new InvalidOrderStateError('SHIPPED to deliver', orderResult.value.status));
     }
 
-    const result = await this.orderRepository.update(input.orderId, {
-      status: 'DELIVERED',
-      deliveryConfirmedAt: new Date(),
-    });
-    if (isLeft(result)) return left(result.value);
+    const result = await this.orderRepository.markDelivered(input.orderId);
+    if (result.isLeft()) return left(result.value);
+    if (!result.value) return left(new ConflictError('Order changed before delivery could be recorded'));
 
     return right(undefined);
   }

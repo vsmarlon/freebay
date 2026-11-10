@@ -1,21 +1,14 @@
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:flutter/material.dart';
 
-/// Twitter-style scroll direction tracker: hides on scroll-down, reveals on
-/// scroll-up, and always reveals at the top of the list.
-///
-/// Feed a bubbled [ScrollNotification] into [handleNotification] (always
-/// returns false so the notification keeps bubbling up the tree), then drive
-/// a [ScrollAwareBar] with [animation].
 class HideOnScrollController {
   HideOnScrollController({required TickerProvider vsync, this.threshold = 12})
     : _controller = AnimationController(
         vsync: vsync,
-        duration: const Duration(milliseconds: 150),
+        duration: AppMotion.base,
         value: 1,
       );
 
-  /// Minimum accumulated scroll delta (px) before toggling visibility.
-  /// Avoids jitter from tiny scroll bounces.
   final double threshold;
 
   final AnimationController _controller;
@@ -33,7 +26,15 @@ class HideOnScrollController {
     }
 
     if (metrics.pixels <= metrics.minScrollExtent) {
-      _show();
+      // NestedScrollView's correction keeps reporting min-range pixels while
+      // the finger is still moving toward the collapsing header; only a settled
+      // position (any notification that is not a moving update) means top.
+      final stillPulling =
+          notification is ScrollUpdateNotification &&
+          (notification.scrollDelta ?? 0) != 0;
+      if (!stillPulling) {
+        _show();
+      }
       _accumulated = 0;
       return false;
     }
@@ -59,19 +60,16 @@ class HideOnScrollController {
   }
 
   void _show() {
-    _controller.animateTo(
-      1,
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.linear,
-    );
+    _controller.animateTo(1, duration: AppMotion.base);
+  }
+
+  void showImmediately() {
+    _accumulated = 0;
+    _controller.value = 1;
   }
 
   void _hide() {
-    _controller.animateTo(
-      0,
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.linear,
-    );
+    _controller.animateTo(0, duration: AppMotion.base);
   }
 
   void dispose() {
@@ -81,9 +79,6 @@ class HideOnScrollController {
 
 enum ScrollBarEdge { top, bottom }
 
-/// Overlays [child] and translates it off-screen toward [edge] as
-/// [animation] goes from 1 (visible) to 0 (hidden). Uses [Transform.translate]
-/// (GPU-accelerated, no relayout) rather than a height/size animation.
 class ScrollAwareBar extends StatelessWidget {
   const ScrollAwareBar({
     super.key,
@@ -110,4 +105,38 @@ class ScrollAwareBar extends StatelessWidget {
       child: RepaintBoundary(child: child),
     );
   }
+}
+
+class CollapsingScrollBar extends StatelessWidget {
+  const CollapsingScrollBar({
+    super.key,
+    required this.animation,
+    required this.child,
+    this.edge = ScrollBarEdge.top,
+  });
+
+  final Animation<double> animation;
+  final Widget child;
+  final ScrollBarEdge edge;
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: animation,
+    builder: (context, child) => ClipRect(
+      child: Align(
+        alignment: edge == ScrollBarEdge.top
+            ? Alignment.topCenter
+            : Alignment.bottomCenter,
+        heightFactor: animation.value,
+        child: IgnorePointer(
+          ignoring: animation.value == 0,
+          child: ExcludeSemantics(
+            excluding: animation.value == 0,
+            child: child,
+          ),
+        ),
+      ),
+    ),
+    child: RepaintBoundary(child: child),
+  );
 }

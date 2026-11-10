@@ -8,20 +8,25 @@ import {
   IsInt,
   Min,
   Max,
+  Matches,
   Validate,
   ValidatorConstraint,
   ValidatorConstraintInterface,
   IsNotEmpty,
+  IsIn,
+  IsUUID,
+  ValidateIf,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { isValidCpfOrCnpj } from '@/shared/utils/cpf.utils';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
+import { USERNAME_REGEX, DISPLAY_NAME_REGEX } from '@/modules/auth/dtos/auth.dto';
 
 @ValidatorConstraint({ name: 'cpfOrCnpj', async: false })
 export class IsCpfOrCnpjConstraint implements ValidatorConstraintInterface {
-  validate(value: string) {
-    return isValidCpfOrCnpj(value);
+  validate(value: unknown) {
+    return typeof value === 'string' && isValidCpfOrCnpj(value);
   }
 
   defaultMessage() {
@@ -35,8 +40,18 @@ export class UpdateProfileDTO {
   @IsString()
   @MinLength(2)
   @MaxLength(50)
+  @Matches(DISPLAY_NAME_REGEX, {
+    message: 'Nome de exibição deve conter apenas letras, números e espaços, sem caracteres especiais',
+  })
   @SanitizeText()
   readonly displayName?: string;
+
+  @ApiPropertyOptional({ example: 'john_doe', minLength: 3, maxLength: 20, description: '3-20 chars, lowercase letters/numbers/underscore only' })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase().trim() : value))
+  @Matches(USERNAME_REGEX, { message: 'Nome de usuário deve ter 3-20 caracteres e conter apenas letras minúsculas, números e underscore' })
+  readonly username?: string;
 
   @ApiPropertyOptional({ example: 'Bio text here...', maxLength: 150 })
   @IsOptional()
@@ -62,9 +77,28 @@ export class UpdateProfileDTO {
   readonly avatarUrl?: string;
 
   @ApiPropertyOptional({ example: '529.982.247-25' })
-  @IsOptional()
+  @ValidateIf((_input, value) => value !== undefined)
+  @IsString()
   @Validate(IsCpfOrCnpjConstraint)
   readonly cpf?: string;
+
+  @ApiPropertyOptional({ example: '123456', description: 'One-time code sent to the current account email' })
+  @ValidateIf((_input, value) => value !== undefined)
+  @IsString()
+  @Matches(/^\d{6}$/)
+  readonly profileVerificationCode?: string;
+}
+
+export class RequestProfileVerificationDTO {
+  @ApiProperty({ example: '529.982.247-25' })
+  @IsString()
+  @Validate(IsCpfOrCnpjConstraint)
+  readonly cpf: string;
+
+  @ApiPropertyOptional({ enum: ['pt-BR', 'en'] })
+  @ValidateIf((_input, value) => value !== undefined)
+  @IsIn(['pt-BR', 'en'])
+  readonly locale?: 'pt-BR' | 'en';
 }
 
 export class RegisterPhoneDTO {
@@ -80,15 +114,34 @@ export class VerifyPhoneDTO {
   readonly code: string;
 }
 
+@ValidatorConstraint({ name: 'notificationPreferences', async: false })
+export class NotificationPreferencesConstraint implements ValidatorConstraintInterface {
+  validate(value: unknown): boolean {
+    return value !== null && typeof value === 'object' && !Array.isArray(value) &&
+      Object.entries(value).every(([key, enabled]) =>
+        ['orders', 'follows', 'messages', 'disputes'].includes(key) && typeof enabled === 'boolean');
+  }
+
+  defaultMessage() { return 'Preferências de notificação inválidas'; }
+}
+
 export class UpdateFcmTokenDTO {
   @ApiPropertyOptional({ example: 'fcm-token-value' })
   @IsOptional()
   @IsString()
-  readonly fcmToken?: string;
+  @MinLength(1)
+  @MaxLength(4096)
+  readonly fcmToken?: string | null;
+
+  @ApiPropertyOptional({ description: 'Stable UUID of this app installation; required when setting or removing a token' })
+  @ValidateIf((input: UpdateFcmTokenDTO) => input.fcmToken !== undefined || input.installationId !== undefined)
+  @IsUUID('4')
+  readonly installationId?: string;
 
   @ApiPropertyOptional({ example: { orders: true, follows: true, messages: true } })
   @IsOptional()
   @IsObject()
+  @Validate(NotificationPreferencesConstraint)
   readonly notificationPrefs?: Record<string, boolean>;
 }
 
@@ -109,6 +162,19 @@ export class OffsetPaginationQueryDTO {
   readonly offset?: number;
 }
 
+export class CloseFriendCandidatesQueryDTO extends OffsetPaginationQueryDTO {
+  @ApiPropertyOptional({ description: 'Search followers by name or username' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  readonly q?: string;
+
+  @ApiPropertyOptional({ enum: ['true'], description: 'Show only selected friends' })
+  @IsOptional()
+  @IsIn(['true'])
+  readonly selected?: string;
+}
+
 export class UserSearchQueryDTO {
   @ApiPropertyOptional({ description: 'Search query' })
   @IsOptional()
@@ -116,10 +182,12 @@ export class UserSearchQueryDTO {
   @MaxLength(100)
   readonly q?: string;
 
-  @ApiPropertyOptional({ description: 'Pagination cursor' })
+  @ApiPropertyOptional({ example: 0 })
   @IsOptional()
-  @IsString()
-  readonly cursor?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  readonly offset?: number;
 
   @ApiPropertyOptional({ example: 20 })
   @IsOptional()
@@ -138,18 +206,28 @@ export class SuggestionsQueryDTO {
   @Min(1)
   @Max(50)
   readonly limit?: number;
+
+  @ApiPropertyOptional({ example: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  readonly offset?: number;
 }
 
 export interface GetProfileInput {
   userId: string;
+  viewerId?: string;
+  includePrivate?: boolean;
 }
 
 export interface GetUserStatsInput {
   userId: string;
 }
 
-export interface UpdateProfileInput extends UpdateProfileDTO {
+export interface UpdateProfileInput extends Omit<UpdateProfileDTO, 'profileVerificationCode'> {
   userId: string;
+  profileVerificationCode?: string;
 }
 
 export interface UpdateFcmTokenInput extends UpdateFcmTokenDTO {
@@ -169,10 +247,22 @@ export interface BlockUserInput {
 export interface SearchUsersInput {
   query: string;
   limit: number;
-  cursor?: string;
+  offset: number;
+  viewerId?: string;
 }
 
 export interface GetSuggestionsInput {
   userId: string;
   limit: number;
+  offset: number;
+}
+
+export interface RegisterPhoneInput {
+  userId: string;
+  phone: string;
+}
+
+export interface VerifyPhoneInput {
+  userId: string;
+  code: string;
 }

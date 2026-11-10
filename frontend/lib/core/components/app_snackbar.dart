@@ -1,18 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/providers/last_error_provider.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 enum AppSnackbarType { success, error, warning, info }
 
 class AppSnackbar {
-  static void show(
-    BuildContext context, {
+  static SnackBar _build({
     required String message,
-    AppSnackbarType type = AppSnackbarType.info,
-    Duration duration = const Duration(seconds: 3),
+    required AppSnackbarType type,
+    required Duration duration,
+    SnackBarAction? action,
+    VoidCallback? onVisible,
   }) {
     final color = switch (type) {
       AppSnackbarType.success => AppColors.success,
@@ -28,40 +31,149 @@ class AppSnackbar {
       AppSnackbarType.info => Icons.info_outline,
     };
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.white,
-                ),
-              ),
+    return SnackBar(
+      content: Row(
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.white),
             ),
-          ],
-        ),
-        backgroundColor: AppColors.darkGray,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-        ),
-        duration: duration,
-        margin: const EdgeInsets.all(16),
+          ),
+        ],
       ),
+      action: action,
+      onVisible: onVisible,
+      backgroundColor: AppColors.darkGray,
+      behavior: SnackBarBehavior.floating,
+      duration: duration,
+      margin: const EdgeInsets.all(16),
+    );
+  }
+
+  static void show(
+    BuildContext context, {
+    required String message,
+    AppSnackbarType type = AppSnackbarType.info,
+    Duration duration = const Duration(seconds: 3),
+    SnackBarAction? action,
+  }) {
+    _showOnMessenger(
+      ScaffoldMessenger.of(context),
+      message: message,
+      type: type,
+      duration: duration,
+      action: action,
+    );
+  }
+
+  static void _showOnMessenger(
+    ScaffoldMessengerState messenger, {
+    required String message,
+    required AppSnackbarType type,
+    required Duration duration,
+    SnackBarAction? action,
+  }) {
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      _build(message: message, type: type, duration: duration, action: action),
+    );
+  }
+
+  /// Use after a page has been popped; the root messenger may still be active.
+  static void errorOnMessenger(
+    ScaffoldMessengerState messenger,
+    String message,
+  ) {
+    if (!messenger.mounted) return;
+    _showOnMessenger(
+      messenger,
+      message: message,
+      type: AppSnackbarType.error,
+      duration: const Duration(seconds: 3),
+    );
+    _recordError(messenger.context, message);
+  }
+
+  static void infoOnMessenger(
+    ScaffoldMessengerState messenger,
+    String message,
+  ) {
+    if (!messenger.mounted) return;
+    _showOnMessenger(
+      messenger,
+      message: message,
+      type: AppSnackbarType.info,
+      duration: const Duration(seconds: 3),
     );
   }
 
   static void success(BuildContext context, String message) =>
       show(context, message: message, type: AppSnackbarType.success);
 
-  static void error(BuildContext context, String message) {
-    show(context, message: message, type: AppSnackbarType.error);
+  static void error(
+    BuildContext context,
+    String message, {
+    SnackBarAction? action,
+  }) {
+    show(
+      context,
+      message: message,
+      type: AppSnackbarType.error,
+      action: action,
+    );
     _recordError(context, message);
+  }
+
+  /// Renders localized copy without exposing arbitrary server error text.
+  static void handleFailure(BuildContext context, Object? failure) =>
+      error(context, localizedFailureMessage(context, failure));
+
+  /// Keep the delete pending until the undo window expires. A snackbar with an
+  /// action may stay visible indefinitely with accessibility navigation enabled.
+  static void undoable(
+    BuildContext context, {
+    required String message,
+    required VoidCallback onUndo,
+    required VoidCallback onCommit,
+    Duration duration = const Duration(seconds: 4),
+  }) {
+    final messenger = ScaffoldMessenger.of(context);
+    Timer? timer;
+    var resolved = false;
+    void resolve(VoidCallback action) {
+      if (resolved) return;
+      resolved = true;
+      timer?.cancel();
+      action();
+    }
+
+    late ScaffoldFeatureController<SnackBar, SnackBarClosedReason> controller;
+    controller = messenger.showSnackBar(
+      _build(
+        message: message,
+        type: AppSnackbarType.info,
+        duration: duration,
+        onVisible: () {
+          timer = Timer(duration, () {
+            resolve(onCommit);
+            controller.close();
+          });
+        },
+        action: SnackBarAction(
+          label: l10n(context).commonUndo,
+          textColor: AppColors.onPrimaryContainer,
+          onPressed: () {
+            resolve(onUndo);
+          },
+        ),
+      ),
+    );
+    controller.closed.then((_) {
+      resolve(onCommit);
+    });
   }
 
   static void _recordError(BuildContext context, String message) {
@@ -72,7 +184,7 @@ class AppSnackbar {
     try {
       ProviderScope.containerOf(context, listen: false)
           .read(lastErrorProvider.notifier)
-          .state = LastErrorInfo(message, route);
+          .setError(LastErrorInfo(message, route));
     } catch (_) {}
   }
 
@@ -80,5 +192,5 @@ class AppSnackbar {
       show(context, message: message, type: AppSnackbarType.warning);
 
   static void info(BuildContext context, String message) =>
-      show(context, message: message, type: AppSnackbarType.info);
+      show(context, message: message);
 }

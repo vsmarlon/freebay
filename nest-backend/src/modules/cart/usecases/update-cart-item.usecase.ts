@@ -1,25 +1,35 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { CartRepository } from '../domain/repositories/cart.repository';
+import { Either, left, right } from '@/shared/core/either';
+import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
+import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
 
 import { UpdateCartItemInput, UpdateCartItemOutput } from '../dtos/cart.dto';
 
 @Injectable()
 export class UpdateCartItemUseCase {
-  constructor(private readonly cartRepository: CartRepository) {}
+  constructor(private readonly cartRepository: CartDatabaseRepository) {}
 
   async execute(input: UpdateCartItemInput): Promise<Either<AppError, UpdateCartItemOutput>> {
     if (!Number.isInteger(input.quantity) || input.quantity < 1 || input.quantity > 10) {
-      return left(new AppError('BAD_REQUEST', 'Quantidade deve ser entre 1 e 10'));
+      return left(new BadRequestError('Quantidade deve ser entre 1 e 10'));
     }
 
     const existingResult = await this.cartRepository.findItem(input.userId, input.productId);
-    if (isLeft(existingResult)) return left(existingResult.value);
-    if (!existingResult.value) return left(new AppError('NOT_FOUND', 'Item no carrinho não encontrado', 404));
+    if (existingResult.isLeft()) return left(existingResult.value);
+    if (!existingResult.value) return left(new NotFoundError('Item no carrinho'));
+
+    const productResult = await this.cartRepository.findProductById(input.productId);
+    if (productResult.isLeft()) return left(productResult.value);
+    if (!productResult.value || productResult.value.status !== 'ACTIVE') {
+      return left(new NotFoundError('Produto'));
+    }
+    const availableStock = Math.max(productResult.value.quantity - productResult.value.soldCount, 0);
+    if (input.quantity > availableStock) {
+      return left(new BadRequestError('Quantidade indisponível em estoque'));
+    }
 
     const itemResult = await this.cartRepository.updateQuantity(input.userId, input.productId, input.quantity);
-    if (isLeft(itemResult)) return left(itemResult.value);
+    if (itemResult.isLeft()) return left(itemResult.value);
 
     return right({ item: itemResult.value });
   }

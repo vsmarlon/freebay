@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { AppError, BadRequestError } from '@/shared/core/errors';
+import { isOwnedUpload } from '@/shared/utils/file.utils';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
-import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
+import { ConversationPreferenceDatabaseRepository } from '../data/repositories/conversation-preference-database.repository';
 import { ConversationPreference } from '@prisma/client';
 
 @Injectable()
 export class SetConversationBackgroundUseCase {
   constructor(
     private threadAccess: ChatThreadAccessService,
-    private preferenceRepo: ConversationPreferenceRepository,
+    private preferenceRepo: ConversationPreferenceDatabaseRepository,
   ) {}
 
   async execute(
@@ -17,6 +18,9 @@ export class SetConversationBackgroundUseCase {
     conversationId: string,
     background: string,
   ): Promise<Either<AppError, ConversationPreference>> {
+    if (!isOwnedUpload(background, userId, 'background')) {
+      return left(new BadRequestError('Fundo inválido ou não pertence ao usuário'));
+    }
     const resolved = await this.threadAccess.resolveThread(userId, conversationId);
     if (resolved.isLeft()) {
       return left(resolved.value);

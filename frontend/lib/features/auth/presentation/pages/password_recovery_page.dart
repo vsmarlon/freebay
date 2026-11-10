@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/centered_form_wrapper.dart';
+import 'package:freebay/features/auth/presentation/widgets/auth_header.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PasswordRecoveryPage extends ConsumerStatefulWidget {
   const PasswordRecoveryPage({super.key});
@@ -20,157 +18,107 @@ class PasswordRecoveryPage extends ConsumerStatefulWidget {
 
 class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
   final _emailController = TextEditingController();
-  final _codeController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _requested = false;
-  String? _message;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
     _emailController.dispose();
-    _codeController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _requestCode() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    final result = await ref
-        .read(authRepositoryProvider)
-        .requestPasswordRecovery(_emailController.text.trim());
-    result.fold(
-      (failure) {
-        setState(() => _message = failure.message);
-      },
-      (_) {
-        setState(() {
-          _requested = true;
-          _message = 'Se o e-mail existir, você receberá um código.';
-        });
-      },
-    );
-  }
+    final strings = l10n(context);
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-  Future<void> _resetPassword() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    final verify = await ref
-        .read(authRepositoryProvider)
-        .verifyPasswordRecoveryCode(
-          _emailController.text.trim(),
-          _codeController.text.trim(),
-        );
-    verify.fold(
-      (failure) {
-        setState(() => _message = failure.message);
-      },
-      (ok) async {
-        if (!ok) return;
-        final reset = await ref
-            .read(authRepositoryProvider)
-            .resetPassword(
-              _emailController.text.trim(),
-              _codeController.text.trim(),
-              _passwordController.text.trim(),
-            );
-        reset.fold(
-          (failure) {
-            setState(() => _message = failure.message);
-          },
-          (_) {
-            if (mounted) context.pop();
-          },
-        );
-      },
-    );
+    final email = _emailController.text.trim();
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .requestPasswordRecovery(email);
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (success) {
+      context.push(
+        '${AppRoutes.verifyResetCode}?email=${Uri.encodeComponent(email)}',
+      );
+    } else {
+      setState(() => _errorMessage = strings.authRecoveryRequestFailed);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final strings = l10n(context);
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.backgroundDark
-          : AppColors.backgroundLight,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'RECUPERAR SENHA',
-            leading: GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: const Icon(Icons.arrow_back, size: 20),
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              AuthHeader(
+                title: strings.authForgotPassword.toUpperCase(),
+                onBack: () => context.pop(),
               ),
-            ),
-          ),
-          Expanded(
-            child: CenteredFormWrapper(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AppTextField(
-                      controller: _emailController,
-                      label: 'E-mail',
-                      hint: 'seu@email.com',
-                      keyboardType: TextInputType.emailAddress,
-                      prefixIcon: Icons.email_outlined,
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Informe seu e-mail' : null,
-                    ),
-                    Spacing.vMd,
-                    if (_requested) ...[
-                      AppTextField(
-                        controller: _codeController,
-                        label: 'Código',
-                        hint: '123456',
-                        keyboardType: TextInputType.number,
-                        prefixIcon: Icons.verified_outlined,
-                        validator: (v) => v == null || v.length != 6
-                            ? 'Informe o código de 6 dígitos'
-                            : null,
-                      ),
-                      Spacing.vMd,
-                      AppTextField(
-                        controller: _passwordController,
-                        label: 'Nova senha',
-                        hint: 'Mínimo 8 caracteres',
-                        obscureText: true,
-                        showPasswordToggle: true,
-                        prefixIcon: Icons.lock_outline,
-                        validator: (v) => v == null || v.length < 8
-                            ? 'Senha muito curta'
-                            : null,
-                      ),
-                      Spacing.vMd,
-                    ],
-                    if (_message != null) ...[
-                      Text(
-                        _message!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isDark ? AppColors.white : AppColors.darkGray,
+              Expanded(
+                child: CenteredFormWrapper(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Spacing.vLg,
+                        Center(
+                          child: SvgPicture.asset(
+                            'assets/images/recovery_lock.svg',
+                            width: 200,
+                          ),
                         ),
-                      ),
-                      Spacing.vMd,
-                    ],
-                    AppButton(
-                      label: _requested ? 'Redefinir senha' : 'Enviar código',
-                      onPressed: _requested ? _resetPassword : _requestCode,
+                        Spacing.vMd,
+                        Text(
+                          strings.authRecoveryHint,
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: context.textSecondary,
+                          ),
+                        ),
+                        Spacing.vLg,
+                        AppTextField(
+                          controller: _emailController,
+                          label: strings.authEmail,
+                          hint: strings.authEmailExample,
+                          keyboardType: TextInputType.emailAddress,
+                          prefixIcon: Icons.email_outlined,
+                          validator: (v) => v == null || v.isEmpty
+                              ? strings.authEmailRequired
+                              : null,
+                        ),
+                        if (_errorMessage != null) ...[
+                          Spacing.vMd,
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: AppColors.error),
+                          ),
+                        ],
+                        Spacing.vLg,
+                        AppButton(
+                          label: strings.authSendCode,
+                          isLoading: _isLoading,
+                          onPressed: _requestCode,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

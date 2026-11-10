@@ -1,0 +1,263 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:video_player/video_player.dart';
+import 'app_video_viewer/video_source_resolver.dart';
+import 'app_video_viewer/video_viewer_controls.dart';
+
+const videoControlsHideDelay = Duration(seconds: 3);
+
+Future<void> showFullScreenVideo(
+  BuildContext context,
+  String videoUrl, {
+  VideoPlayerController? controller,
+  Map<String, String>? httpHeaders,
+}) async {
+  await Navigator.of(context).push<void>(
+    PageRouteBuilder<void>(
+      opaque: false,
+      barrierColor: Colors.black,
+      transitionDuration: AppMotion.forContext(context, AppMotion.enter),
+      pageBuilder: (_, _, _) => _AppVideoViewer(
+        videoUrl: videoUrl,
+        controller: controller,
+        httpHeaders: httpHeaders,
+      ),
+      transitionsBuilder: (_, animation, _, child) =>
+          FadeTransition(opacity: animation, child: child),
+    ),
+  );
+}
+
+class _AppVideoViewer extends StatefulWidget {
+  final String videoUrl;
+  final VideoPlayerController? controller;
+  final Map<String, String>? httpHeaders;
+
+  const _AppVideoViewer({
+    required this.videoUrl,
+    this.controller,
+    this.httpHeaders,
+  });
+
+  @override
+  State<_AppVideoViewer> createState() => _AppVideoViewerState();
+}
+
+class _AppVideoViewerState extends State<_AppVideoViewer> {
+  VideoPlayerController? _controller;
+  final _resolver = const VideoSourceResolver();
+  String? _error;
+  bool _showControls = true;
+  Timer? _hideControlsTimer;
+  bool _zoomed = false;
+  bool _scaling = false;
+  int _activePointers = 0;
+  final _transform = TransformationController();
+
+  @override
+  void initState() {
+    super.initState();
+    final controller = widget.controller;
+    if (controller == null) {
+      _initialize();
+    } else {
+      _controller = controller;
+      _attachController(controller);
+      _play(controller);
+    }
+  }
+
+  void _attachController(VideoPlayerController controller) {
+    controller.addListener(_onControllerUpdate);
+  }
+
+  Future<void> _play(VideoPlayerController controller) async {
+    try {
+      await controller.play();
+      _startHideControlsTimer();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = l10n(context).errorUnknown);
+      }
+    }
+  }
+
+  void _onControllerUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  void _startHideControlsTimer() {
+    _hideControlsTimer?.cancel();
+    _hideControlsTimer = Timer(videoControlsHideDelay, () {
+      if (mounted && (_controller?.value.isPlaying ?? false)) {
+        setState(() => _showControls = false);
+      }
+    });
+  }
+
+  void _toggleControls() {
+    setState(() => _showControls = !_showControls);
+    if (_showControls && (_controller?.value.isPlaying ?? false)) {
+      _startHideControlsTimer();
+    }
+  }
+
+  Future<void> _initialize() async {
+    try {
+      final controller = await _resolver.createController(
+        widget.videoUrl,
+        httpHeaders: widget.httpHeaders,
+      );
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() => _controller = controller);
+      _attachController(controller);
+      await _play(controller);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = l10n(context).errorUnknown);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _transform.dispose();
+    _hideControlsTimer?.cancel();
+    _controller?.removeListener(_onControllerUpdate);
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _retry() async {
+    final controller = _controller;
+    controller?.removeListener(_onControllerUpdate);
+    await controller?.dispose();
+    if (!mounted) {
+      return;
+    }
+    _hideControlsTimer?.cancel();
+    setState(() {
+      _error = null;
+      _controller = null;
+    });
+    await _initialize();
+  }
+
+  void _togglePlayPause() {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    if (controller.value.isPlaying) {
+      controller.pause();
+      _hideControlsTimer?.cancel();
+      setState(() => _showControls = true);
+    } else {
+      if (controller.value.position >= controller.value.duration) {
+        controller.seekTo(Duration.zero);
+      }
+      controller.play();
+      _startHideControlsTimer();
+      setState(() {});
+    }
+  }
+
+  void _toggleMute() {
+    final controller = _controller;
+    if (controller == null) return;
+    final isMuted = controller.value.volume == 0.0;
+    controller.setVolume(isMuted ? 1.0 : 0.0);
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    final isInitialized = controller?.value.isInitialized ?? false;
+    final isPlaying = controller?.value.isPlaying ?? false;
+    final position = controller?.value.position ?? Duration.zero;
+    final duration = controller?.value.duration ?? Duration.zero;
+    final isCompleted =
+        isInitialized && duration > Duration.zero && position >= duration;
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Listener(
+              onPointerDown: (_) {
+                _activePointers++;
+                if (_activePointers > 1) setState(() => _scaling = true);
+              },
+              onPointerUp: (_) {
+                _activePointers--;
+                if (_activePointers == 0) setState(() => _scaling = false);
+              },
+              onPointerCancel: (_) {
+                _activePointers = 0;
+                setState(() => _scaling = false);
+              },
+              child: InteractiveViewer(
+                transformationController: _transform,
+                panEnabled: _zoomed,
+                maxScale: 4,
+                onInteractionUpdate: (_) {
+                  final zoomed = _transform.value.getMaxScaleOnAxis() > 1.01;
+                  if (zoomed != _zoomed) {
+                    setState(() => _zoomed = zoomed);
+                  }
+                },
+                child: Dismissible(
+                  key: const Key('video_viewer'),
+                  direction: _zoomed || _scaling
+                      ? DismissDirection.none
+                      : DismissDirection.vertical,
+                  onDismissed: (_) => Navigator.of(context).pop(),
+                  child: Center(
+                    child: _error != null
+                        ? VideoViewerError(message: _error!, onRetry: _retry)
+                        : isInitialized && controller != null
+                        ? GestureDetector(
+                            onTap: _toggleControls,
+                            behavior: HitTestBehavior.opaque,
+                            child: AspectRatio(
+                              aspectRatio: controller.value.aspectRatio,
+                              child: VideoPlayer(controller),
+                            ),
+                          )
+                        : const CircularProgressIndicator(
+                            color: AppColors.primaryContainer,
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (isInitialized && (!isPlaying || isCompleted))
+            VideoViewerCenterButton(
+              isCompleted: isCompleted,
+              onTap: _togglePlayPause,
+            ),
+          if (_showControls && (!isInitialized || controller == null))
+            VideoViewerCloseButton(onClose: () => Navigator.of(context).pop()),
+          if (_showControls && isInitialized && controller != null)
+            VideoViewerControls(
+              controller: controller,
+              isPlaying: isPlaying,
+              isCompleted: isCompleted,
+              position: position,
+              duration: duration,
+              onClose: () => Navigator.of(context).pop(),
+              onTogglePlay: _togglePlayPause,
+              onToggleMute: _toggleMute,
+            ),
+        ],
+      ),
+    );
+  }
+}

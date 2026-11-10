@@ -1,27 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
-import 'package:freebay/features/profile/data/entities/follower_entity.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-
-final followingProvider = FutureProvider.family<List<FollowerEntity>, String>((
-  ref,
-  userId,
-) async {
-  final repository = ref.watch(profileRepositoryProvider);
-  final result = await repository.getFollowing(userId);
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (following) => following,
-  );
-});
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/profile/presentation/providers/follow_list_provider.dart';
+import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
 
 class FollowingPage extends ConsumerWidget {
   final String userId;
@@ -30,162 +15,116 @@ class FollowingPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = context.isDark;
-    final followingAsync = ref.watch(followingProvider(userId));
-
+    final strings = l10n(context);
+    final followingAsync = ref.watch(followingListProvider(userId));
+    final currentUserId = ref.watch(authControllerProvider).value?.id;
+    // Own following list means the edge exists until the follow provider says
+    // otherwise; someone else's list says nothing about the viewer.
+    final defaultFollowed =
+        currentUserId != null && (userId == 'me' || userId == currentUserId);
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'SEGUINDO',
-            leading: GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: strings.profileFollowingTitle,
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
+                onTap: () => context.pop(),
               ),
+              breadcrumbs: context.breadcrumbs,
             ),
-            breadcrumbs: context.breadcrumbs,
-          ),
-          Expanded(
-            child: followingAsync.when(
-              data: (following) {
-                return following.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.people_outline,
-                              size: 64,
-                              color: isDark
-                                  ? AppColors.mediumGray
-                                  : AppColors.mediumGray,
-                            ),
-                            Spacing.vMd,
-                            Text(
-                              'Não segue ninguém ainda',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: isDark
-                                    ? AppColors.mediumGray
-                                    : AppColors.mediumGray,
-                              ),
-                            ),
-                          ],
-                        ),
+            Expanded(
+              child: followingAsync.when(
+                data: (following) => following.users.isEmpty
+                    ? EmptyState(
+                        icon: Icons.people_outline,
+                        title: strings.profileNoConnections,
+                        subtitle: strings.profileNoFollowingBody,
                       )
                     : RefreshIndicator(
-                        onRefresh: () async {
-                          ref.invalidate(followingProvider(userId));
-                        },
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount: following.length,
-                          itemBuilder: (context, index) {
-                            final user = following[index];
-                            return _buildFollowingTile(context, user, isDark);
+                        onRefresh: () => ref
+                            .read(followingListProvider(userId).notifier)
+                            .loadMore(refresh: true),
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            if (notification.metrics.pixels >=
+                                notification.metrics.maxScrollExtent - 200) {
+                              ref
+                                  .read(followingListProvider(userId).notifier)
+                                  .loadMore();
+                            }
+                            return false;
                           },
-                        ),
-                      );
-              },
-              loading: () => SkeletonList(
-                itemCount: 6,
-                itemBuilder: (_, i) => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  child: Row(
-                    children: [
-                      ShimmerBlock(width: 48, height: 48),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ShimmerBlock(height: 16, width: 140),
-                            SizedBox(height: 4),
-                            ShimmerBlock(height: 12, width: 200),
-                          ],
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: following.users.length,
+                            itemBuilder: (context, index) {
+                              final user = following.users[index];
+                              final isFollowing =
+                                  ref
+                                      .watch(followStateProvider)[user.id]
+                                      ?.isFollowing ??
+                                  defaultFollowed;
+                              return UserListTile(
+                                user: UserListTileItem(
+                                  id: user.id,
+                                  displayName: user.displayName,
+                                  username: user.username ?? user.displayName,
+                                  avatarUrl: user.avatarUrl,
+                                ),
+                                trailing: AppButton(
+                                  label:
+                                      (isFollowing
+                                              ? strings.profileUnfollow
+                                              : strings.profileFollow)
+                                          .toUpperCase(),
+                                  size: AppButtonSize.compact,
+                                  variant: isFollowing
+                                      ? AppButtonVariant.secondary
+                                      : AppButtonVariant.primary,
+                                  onPressed: () async {
+                                    await ref
+                                        .read(followStateProvider.notifier)
+                                        .toggleFollow(user.id);
+                                    await ref
+                                        .read(
+                                          followingListProvider(
+                                            userId,
+                                          ).notifier,
+                                        )
+                                        .loadMore(refresh: true);
+                                  },
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
-                      SizedBox(width: 12),
-                      ShimmerBlock(width: 80, height: 32),
+                loading: () => const SkeletonPage(
+                  child: Column(
+                    children: [
+                      SizedBox(height: 16),
+                      ShimmerBlock(height: 60),
+                      SizedBox(height: 12),
+                      ShimmerBlock(height: 60),
+                      SizedBox(height: 12),
+                      ShimmerBlock(height: 60),
                     ],
                   ),
                 ),
-              ),
-              error: (err, _) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: AppColors.error,
-                    ),
-                    Spacing.vMd,
-                    Text(
-                      'Erro ao carregar seguindo',
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                      ),
-                    ),
-                  ],
+                error: (error, _) => EmptyState.error(
+                  message: strings.errorUnknown,
+                  onRetry: () => ref
+                      .read(followingListProvider(userId).notifier)
+                      .loadMore(refresh: true),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFollowingTile(
-    BuildContext context,
-    FollowerEntity user,
-    bool isDark,
-  ) {
-    return ListTile(
-      leading: GestureDetector(
-        onTap: () => context.push('/user/${user.id}'),
-        child: UserAvatar(
-          imageUrl: user.avatarUrl,
-          size: AppAvatarSize.medium,
-          isVerified: user.isVerified,
+          ],
         ),
-      ),
-      title: Text(
-        user.displayName,
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: isDark ? AppColors.white : AppColors.darkGray,
-        ),
-      ),
-      subtitle: user.bio != null && user.bio!.isNotEmpty
-          ? Text(
-              user.bio!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-              ),
-            )
-          : null,
-      trailing: OutlinedButton(
-        onPressed: () {},
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primaryContainer,
-          side: const BorderSide(color: AppColors.primaryContainer),
-        ),
-        child: const Text('Seguindo'),
       ),
     );
   }

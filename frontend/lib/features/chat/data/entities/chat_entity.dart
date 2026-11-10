@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
+import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/chat/data/entities/last_message_info.dart';
@@ -8,11 +9,18 @@ import 'package:freebay/features/chat/data/entities/order_info.dart';
 part 'chat_entity.freezed.dart';
 part 'chat_entity.g.dart';
 
-ChatThreadType _threadTypeFromJson(String? value) =>
-    value == 'ORDER' ? ChatThreadType.order : ChatThreadType.direct;
+@freezed
+abstract class ChatProductInfo with _$ChatProductInfo {
+  const factory ChatProductInfo({
+    required String id,
+    required String title,
+    String? imageUrl,
+    @Default('') String status,
+  }) = _ChatProductInfo;
 
-String _threadTypeToJson(ChatThreadType type) =>
-    type == ChatThreadType.order ? 'ORDER' : 'DIRECT';
+  factory ChatProductInfo.fromJson(Map<String, dynamic> json) =>
+      _$ChatProductInfoFromJson(json);
+}
 
 @freezed
 abstract class ChatEntity with _$ChatEntity {
@@ -20,13 +28,13 @@ abstract class ChatEntity with _$ChatEntity {
 
   const factory ChatEntity({
     required String id,
-    @JsonKey(fromJson: _threadTypeFromJson, toJson: _threadTypeToJson)
     required ChatThreadType threadType,
     required UserEntity otherUser,
     @JsonKey(name: 'lastMessage') LastMessageInfo? lastMessageInfo,
     required DateTime createdAt,
     ConversationPreference? preference,
     OrderInfo? orderInfo,
+    ChatProductInfo? product,
     @Default(0) int unreadCount,
   }) = _ChatEntity;
 
@@ -40,5 +48,17 @@ abstract class ChatEntity with _$ChatEntity {
   DateTime get timestamp => lastMessageInfo?.createdAt ?? createdAt;
   bool get unread => unreadCount > 0;
   bool get isArchived => preference?.isArchived ?? false;
+  bool get isMuted => preference?.muted ?? false;
   String? get orderStatus => orderInfo?.status;
+
+  OrderStatus? get orderStatusEnum {
+    final status = orderStatus;
+    if (status == null) return null;
+    for (final value in OrderStatus.values) {
+      if (value.name.toUpperCase() == status) return value;
+    }
+    return null;
+  }
+
+  String? get productTitle => product?.title ?? orderInfo?.productTitle;
 }

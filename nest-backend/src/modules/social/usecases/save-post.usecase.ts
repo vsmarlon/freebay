@@ -1,28 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
-import { PostRepository } from '../domain/repositories/post.repository';
-import { SavedPostRepository } from '../domain/repositories/saved-post.repository';
+import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
+import { SavedPostDatabaseRepository } from '../data/repositories/saved-post-database.repository';
 
 @Injectable()
 export class SavePostUseCase {
   constructor(
-    private readonly postRepository: PostRepository,
-    private readonly savedPostRepository: SavedPostRepository,
+    private readonly postRepository: PostDatabaseRepository,
+    private readonly savedPostRepository: SavedPostDatabaseRepository,
   ) {}
 
-  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, void>> {
-    const postResult = await this.postRepository.findById(input.postId);
-    if (isLeft(postResult)) return left(postResult.value);
+  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, { active: boolean }>> {
+    const postResult = await this.postRepository.findById(input.postId, input.userId);
+    if (postResult.isLeft()) return left(postResult.value);
     if (!postResult.value) return left(new NotFoundError('Post'));
 
-    const existingResult = await this.savedPostRepository.findByUserAndPost(input.userId, input.postId);
-    if (isLeft(existingResult)) return left(existingResult.value);
-    if (existingResult.value) return right(undefined);
-
-    const saveResult = await this.savedPostRepository.save(input.userId, input.postId);
-    if (isLeft(saveResult)) return left(saveResult.value);
-
-    return right(undefined);
+    const result = await this.savedPostRepository.setSaved(input.userId, input.postId, true);
+    if (result.isLeft()) return left(result.value);
+    return right(result.value);
   }
 }

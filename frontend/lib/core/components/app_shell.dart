@@ -1,25 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_socket_provider.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/app_background.dart';
 import 'package:freebay/core/components/brutalist_fab.dart';
 import 'package:freebay/core/components/app_shell_scaffold_key.dart';
 import 'package:freebay/core/components/hide_on_scroll.dart';
+import 'package:freebay/core/components/shell_scroll_chrome.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_drawer.dart';
+import 'package:freebay/shared/providers/connectivity_status_provider.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 const double kNavBarContentHeight = 64;
 
 class AppShell extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
+  final List<Widget> branches;
 
-  const AppShell({super.key, required this.navigationShell});
+  const AppShell({
+    super.key,
+    required this.navigationShell,
+    required this.branches,
+  });
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -28,18 +36,52 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   late final HideOnScrollController _navHide;
+  late final PageController _pageController;
+  late final AnimationController _drawer;
+  LocalHistoryEntry? _drawerHistory;
+  bool _dragging = false;
+  final Set<int> _visitedTabs = {0};
 
   @override
   void initState() {
     super.initState();
+    _visitedTabs.add(widget.navigationShell.currentIndex);
     WidgetsBinding.instance.addObserver(this);
     _navHide = HideOnScrollController(vsync: this);
+    _pageController = PageController(
+      initialPage: widget.navigationShell.currentIndex,
+    );
+    _drawer = AnimationController(vsync: this)
+      ..addListener(() {
+        if (mounted) setState(() {});
+      });
+  }
+
+  @override
+  void didUpdateWidget(AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final index = widget.navigationShell.currentIndex;
+    if (oldWidget.navigationShell.currentIndex != index) {
+      _navHide.showImmediately();
+    }
+    _visitedTabs.add(index);
+    if (_pageController.hasClients &&
+        _pageController.page?.round() != index &&
+        !_dragging &&
+        !_pageController.position.isScrollingNotifier.value) {
+      _pageController.jumpToPage(index);
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _navHide.dispose();
+    _pageController.dispose();
+    final history = _drawerHistory;
+    _drawerHistory = null;
+    history?.remove();
+    _drawer.dispose();
     super.dispose();
   }
 
@@ -48,28 +90,134 @@ class _AppShellState extends State<AppShell>
     if (state == AppLifecycleState.resumed) {
       final container = ProviderScope.containerOf(context);
       final authState = container.read(authControllerProvider);
-      final user = authState.valueOrNull;
+      final user = authState.value;
       final socketService = container.read(chatSocketServiceProvider);
-      if (user != null && !user.isGuest && !socketService.isConnected) {
+      if (user != null && !socketService.isConnected) {
         socketService.connect();
       }
     }
   }
 
   void _onDestinationSelected(int index) {
+    if (index < 0 || index >= widget.branches.length) return;
     HapticFeedback.lightImpact();
-    widget.navigationShell.goBranch(
-      index,
-      initialLocation: index == widget.navigationShell.currentIndex,
-    );
+    _visitedTabs.add(index);
+
+    if (index == widget.navigationShell.currentIndex) {
+      widget.navigationShell.goBranch(index, initialLocation: true);
+      return;
+    }
+
+    if (_pageController.hasClients) {
+      final duration = AppMotion.forContext(context, AppMotion.base);
+      if (duration == Duration.zero) {
+        _pageController.jumpToPage(index);
+      } else {
+        _pageController.animateToPage(
+          index,
+          duration: duration,
+          curve: AppMotion.baseCurve,
+        );
+      }
+    } else {
+      widget.navigationShell.goBranch(index);
+    }
   }
 
-  Widget? _fabFor(BuildContext context, int selectedIndex) {
+  void _onPageChanged(int index) {
+    if (index == widget.navigationShell.currentIndex) return;
+    _visitedTabs.add(index);
+    widget.navigationShell.goBranch(index);
+  }
+
+  bool _handleShellScroll(ScrollNotification notification) {
+    if (notification.metrics.axis == Axis.horizontal) {
+      return false;
+    }
+    if (MediaQuery.viewInsetsOf(context).bottom > 0) {
+      _navHide.showImmediately();
+      return false;
+    }
+    return _navHide.handleNotification(notification);
+  }
+
+  void _rememberDrawer() {
+    if (_drawerHistory != null) return;
+    _drawerHistory = LocalHistoryEntry(
+      onRemove: () {
+        if (_drawerHistory == null) return;
+        _drawerHistory = null;
+        if (mounted) _settleDrawer(false);
+      },
+    );
+    ModalRoute.of(context)?.addLocalHistoryEntry(_drawerHistory!);
+  }
+
+  void _settleDrawer(bool open) {
+    if (open) _rememberDrawer();
+    _drawer
+        .animateTo(
+          open ? 1 : 0,
+          duration: AppMotion.forContext(context, AppMotion.base),
+        )
+        .whenCompleteOrCancel(() {
+          if (!mounted || _drawer.value != 0) return;
+          final history = _drawerHistory;
+          _drawerHistory = null;
+          history?.remove();
+        });
+  }
+
+  void _startDrag(DragStartDetails details) {
+    // ponytail: the shell gesture only opens the drawer from the left edge;
+    // horizontal swiping between bottom-nav branches belongs to no one, and
+    // inner pagers (profile tabs) own their own drags.
+    _dragging = details.globalPosition.dx <= 24;
+    if (_dragging) _drawer.stop();
+  }
+
+  void _updateDrag(DragUpdateDetails details) {
+    if (!_dragging) return;
+    final width = MediaQuery.sizeOf(context).width;
+    final delta = details.primaryDelta ?? 0;
+    if (_drawer.value > 0 || delta > 0) {
+      _rememberDrawer();
+      _drawer.value = (_drawer.value + delta / (width * 0.78)).clamp(0, 1);
+    }
+  }
+
+  void _endDrag([DragEndDetails? details]) {
+    if (!_dragging) return;
+    _dragging = false;
+    final velocity = details?.primaryVelocity ?? 0;
+    if (_drawer.value > 0 || _drawerHistory != null) {
+      _settleDrawer(
+        details != null &&
+            (velocity.abs() >= kMinFlingVelocity
+                ? velocity > 0
+                : _drawer.value >= 0.5),
+      );
+    }
+  }
+
+  BrutalistFab? _fabFor(BuildContext context, int selectedIndex) {
     switch (selectedIndex) {
+      case 0:
+        return BrutalistFab(
+          icon: Icons.edit_outlined,
+          semanticLabel: l10n(context).feedCreatePost,
+          onTap: () => context.push(AppRoutes.createPost),
+        );
       case 1:
-        return BrutalistFab(onTap: () => context.push('/products/create'));
+        return BrutalistFab(
+          semanticLabel: l10n(context).productCreateListing,
+          onTap: () => context.push(AppRoutes.createProduct),
+        );
       case 3:
-        return BrutalistFab(onTap: () => context.push('/chat/new'));
+        return BrutalistFab(
+          semanticLabel: l10n(context).chatNewTitle,
+          onTap: () => context.push(AppRoutes.chatNew),
+        );
       default:
         return null;
     }
@@ -78,66 +226,208 @@ class _AppShellState extends State<AppShell>
   @override
   Widget build(BuildContext context) {
     final selectedIndex = widget.navigationShell.currentIndex;
+    final shellIsCurrent = ModalRoute.isCurrentOf(context) ?? true;
 
     return Consumer(
       builder: (context, ref, _) {
-        ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (_, next) {
-          final user = next.valueOrNull;
+        ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (
+          previous,
+          next,
+        ) {
+          final user = next.value;
           final socketService = ref.read(chatSocketServiceProvider);
-          if (user != null && !user.isGuest) {
+          if (user != null) {
+            if (previous?.value != null && previous?.value?.id != user.id) {
+              socketService.disconnect();
+            }
             socketService.connect();
           } else {
             socketService.disconnect();
           }
         });
 
-        final navBarHeight =
-            kNavBarContentHeight + MediaQuery.of(context).padding.bottom;
+        final navBarHeight = kNavBarContentHeight;
+        final navBottom = MediaQuery.paddingOf(context).bottom + 8;
         final fab = _fabFor(context, selectedIndex);
+        final connectivity = ref.watch(connectivityStatusProvider);
 
-        return Scaffold(
-          key: appShellScaffoldKey,
-          drawer: const FeedDrawer(),
-          drawerEnableOpenDragGesture: selectedIndex == 0,
-          drawerEdgeDragWidth: 48,
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: _navHide.handleNotification,
-                  child: MediaQuery(
-                    data: MediaQuery.of(context).copyWith(
-                      padding: MediaQuery.of(
-                        context,
-                      ).padding.copyWith(bottom: navBarHeight),
+        final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+        if (isKeyboardOpen || !shellIsCurrent) _navHide.showImmediately();
+
+        return GestureDetector(
+          dragStartBehavior: DragStartBehavior.down,
+          onHorizontalDragStart: _startDrag,
+          onHorizontalDragUpdate: _updateDrag,
+          onHorizontalDragEnd: _endDrag,
+          onHorizontalDragCancel: _endDrag,
+          child: _DrawerScaffold(
+            open: () => _settleDrawer(true),
+            close: () => _settleDrawer(false),
+            opened: _drawer.value == 1,
+            backgroundColor: Colors.transparent,
+            resizeToAvoidBottomInset: false,
+            key: appShellScaffoldKey,
+            body: AppBackground(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: _handleShellScroll,
+                      child: Builder(
+                        builder: (mediaContext) => MediaQuery(
+                          data: MediaQuery.of(mediaContext).copyWith(
+                            padding: MediaQuery.paddingOf(mediaContext)
+                                .copyWith(
+                                  bottom: isKeyboardOpen
+                                      ? 0
+                                      : navBarHeight + navBottom,
+                                ),
+                          ),
+                          child: PageView(
+                            controller: _pageController,
+                            onPageChanged: _onPageChanged,
+                            physics: const NeverScrollableScrollPhysics(),
+                            // The custom PageView must mute kept-alive branches,
+                            // including when a root route covers the entire shell.
+                            children: [
+                              for (final (index, branch)
+                                  in widget.branches.indexed)
+                                RepaintBoundary(
+                                  child: Offstage(
+                                    offstage: !_visitedTabs.contains(index),
+                                    child: TickerMode(
+                                      enabled:
+                                          shellIsCurrent &&
+                                          index == selectedIndex,
+                                      child: ShellScrollChromeScope(
+                                        animation: _navHide.animation,
+                                        child: branch,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                    child: widget.navigationShell,
                   ),
-                ),
+                  if (connectivity.asData?.value == false)
+                    Positioned(
+                      top: MediaQuery.paddingOf(context).top + 8,
+                      left: 16,
+                      right: 16,
+                      child: Semantics(
+                        liveRegion: true,
+                        label: l10n(context).commonOffline,
+                        child: Container(
+                          color: context.surfaceColor,
+                          padding: const EdgeInsets.all(8),
+                          child: ExcludeSemantics(
+                            child: Text(
+                              l10n(context).commonOffline.toUpperCase(),
+                              textAlign: TextAlign.center,
+                              style: AppTypography.labelSmall.copyWith(
+                                color: context.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (fab != null && !isKeyboardOpen)
+                    Positioned(
+                      right: 16,
+                      bottom: navBarHeight + navBottom + 16,
+                      child: ScrollAwareBar(
+                        animation: _navHide.animation,
+                        height: navBarHeight + navBottom + 16 + fab.size,
+                        edge: ScrollBarEdge.bottom,
+                        child: fab,
+                      ),
+                    ),
+                  if (!isKeyboardOpen)
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: navBottom,
+                      child: ScrollAwareBar(
+                        animation: _navHide.animation,
+                        height: navBarHeight + navBottom,
+                        edge: ScrollBarEdge.bottom,
+                        child: _BrutalistNavBar(
+                          selectedIndex: selectedIndex,
+                          onDestinationSelected: _onDestinationSelected,
+                        ),
+                      ),
+                    ),
+                  if (_drawer.value > 0) ...[
+                    Positioned.fill(
+                      child: ModalBarrier(
+                        color: Colors.black.withValues(
+                          alpha: 0.54 * _drawer.value,
+                        ),
+                        onDismiss: () => _settleDrawer(false),
+                        semanticsLabel: MaterialLocalizations.of(
+                          context,
+                        ).modalBarrierDismissLabel,
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      bottom: 0,
+                      left:
+                          -(1 - _drawer.value) *
+                          MediaQuery.sizeOf(context).width *
+                          0.78,
+                      width: MediaQuery.sizeOf(context).width * 0.78,
+                      child: const BlockSemantics(child: FeedDrawer()),
+                    ),
+                  ],
+                ],
               ),
-              if (fab != null)
-                Positioned(right: 16, bottom: navBarHeight + 16, child: fab),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: ScrollAwareBar(
-                  animation: _navHide.animation,
-                  height: navBarHeight,
-                  edge: ScrollBarEdge.bottom,
-                  child: _BrutalistNavBar(
-                    selectedIndex: selectedIndex,
-                    onDestinationSelected: (index) =>
-                        _onDestinationSelected(index),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
     );
   }
+}
+
+// ponytail: Scaffold exposes open/close but no drag progress. Keep its existing
+// caller API while one shell-owned animation drives all drawer entry points.
+class _DrawerScaffold extends Scaffold {
+  const _DrawerScaffold({
+    required this.open,
+    required this.close,
+    required this.opened,
+    super.key,
+    super.backgroundColor,
+    super.resizeToAvoidBottomInset,
+    super.body,
+  });
+
+  final VoidCallback open;
+  final VoidCallback close;
+  final bool opened;
+
+  @override
+  ScaffoldState createState() => _DrawerScaffoldState();
+}
+
+class _DrawerScaffoldState extends ScaffoldState {
+  // ScaffoldState exposes its widget as Scaffold; this state is created only
+  // by _DrawerScaffold.
+  _DrawerScaffold get _configuration => widget as _DrawerScaffold;
+
+  @override
+  void openDrawer() => _configuration.open();
+
+  @override
+  void closeDrawer() => _configuration.close();
+
+  @override
+  bool get isDrawerOpen => _configuration.opened;
 }
 
 class _BrutalistNavBar extends StatelessWidget {
@@ -153,55 +443,50 @@ class _BrutalistNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: context.isDark
-            ? AppColors.surfaceDark
-            : AppColors.surfaceContainerLowest,
-        border: Border(top: BorderSide(color: AppColors.onSurface, width: 2)),
+        color: context.surfaceColor,
+        border: Border.all(color: context.borderColor, width: 1.5),
       ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            children: [
-              _NavItem(
-                icon: Icons.home_outlined,
-                selectedIcon: Icons.home,
-                label: 'FREEBAY!',
-                isSelected: selectedIndex == 0,
-                onTap: () => onDestinationSelected(0),
-              ),
-              _NavItem(
-                icon: Icons.search,
-                selectedIcon: Icons.search,
-                label: 'EXPLORAR',
-                isSelected: selectedIndex == 1,
-                onTap: () => onDestinationSelected(1),
-              ),
-              _NavItem(
-                icon: Icons.account_balance_wallet_outlined,
-                selectedIcon: Icons.account_balance_wallet,
-                label: 'CARTEIRA',
-                isSelected: selectedIndex == 2,
-                onTap: () => onDestinationSelected(2),
-                isWallet: true,
-              ),
-              _NavItem(
-                icon: Icons.chat_bubble_outline,
-                selectedIcon: Icons.chat_bubble,
-                label: 'MENSAGENS',
-                isSelected: selectedIndex == 3,
-                onTap: () => onDestinationSelected(3),
-              ),
-              _NavItem(
-                icon: Icons.person_outline,
-                selectedIcon: Icons.person,
-                label: 'PERFIL',
-                isSelected: selectedIndex == 4,
-                onTap: () => onDestinationSelected(4),
-              ),
-            ],
-          ),
+      child: SizedBox(
+        height: kNavBarContentHeight,
+        child: Row(
+          children: [
+            _NavItem(
+              icon: Icons.home_outlined,
+              selectedIcon: Icons.home,
+              label: l10n(context).navHome,
+              isSelected: selectedIndex == 0,
+              onTap: () => onDestinationSelected(0),
+            ),
+            _NavItem(
+              icon: Icons.search,
+              selectedIcon: Icons.search,
+              label: l10n(context).navExplore,
+              isSelected: selectedIndex == 1,
+              onTap: () => onDestinationSelected(1),
+            ),
+            _NavItem(
+              icon: Icons.account_balance_wallet_outlined,
+              selectedIcon: Icons.account_balance_wallet,
+              label: l10n(context).walletTitleBrutalist,
+              isSelected: selectedIndex == 2,
+              onTap: () => onDestinationSelected(2),
+              isWallet: true,
+            ),
+            _NavItem(
+              icon: Icons.chat_bubble_outline,
+              selectedIcon: Icons.chat_bubble,
+              label: l10n(context).navMessages,
+              isSelected: selectedIndex == 3,
+              onTap: () => onDestinationSelected(3),
+            ),
+            _NavItem(
+              icon: Icons.person_outline,
+              selectedIcon: Icons.person,
+              label: l10n(context).navProfile,
+              isSelected: selectedIndex == 4,
+              onTap: () => onDestinationSelected(4),
+            ),
+          ],
         ),
       ),
     );
@@ -227,7 +512,6 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -237,32 +521,38 @@ class _NavItem extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         child: Container(
           height: 64,
-          color: isSelected ? AppColors.primaryContainer : Colors.transparent,
+          decoration: const BoxDecoration(color: Colors.transparent),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 isSelected ? selectedIcon : icon,
                 color: isSelected
-                    ? AppColors.onPrimary
-                    : (isDark
-                          ? AppColors.inverseOnSurface
-                          : AppColors.onSurface),
-                size: 24,
+                    ? context.colors.primary
+                    : context.textPrimary,
+                size: 22,
               ),
-              Spacing.vXs,
+              if (isSelected)
+                Container(
+                  width: 24,
+                  height: 3,
+                  margin: const EdgeInsets.only(bottom: 2, top: 2),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryContainer,
+                  ),
+                )
+              else
+                Spacing.vXs,
               Text(
                 label,
                 style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
+                  fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                  letterSpacing: 0.6,
                   color: isSelected
-                      ? AppColors.onPrimary
-                      : (isDark
-                            ? AppColors.inverseOnSurface
-                            : AppColors.onSurface),
+                      ? context.colors.primary
+                      : context.textPrimary,
                 ),
               ),
             ],

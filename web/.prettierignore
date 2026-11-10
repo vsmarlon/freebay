@@ -1,0 +1,10 @@
+node_modules/
+build/
+.react-router/
+public/
+test-results/
+.e2e-real-artifacts/
+e2e/artifacts/
+fonts/
+package-lock.json
+*.log

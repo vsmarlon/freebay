@@ -1,52 +1,65 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
-import { CartService } from './cart.service';
-import { AddToCartDTO, UpdateCartItemDTO, CartResponse, CheckoutCartResponse } from './dtos/cart.dto';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { isLeft } from '@/shared/core/either';
+import { Body, Controller, Param, ParseUUIDPipe, Query } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { GetAuth, PostAuth, PatchAuth, CurrentUserId } from '@/shared/decorators';
+import { GetCartUseCase } from './usecases/get-cart.usecase';
+import { AddToCartUseCase } from './usecases/add-to-cart.usecase';
+import { UpdateCartItemUseCase } from './usecases/update-cart-item.usecase';
+import { RemoveFromCartUseCase } from './usecases/remove-from-cart.usecase';
+import { ClearCartUseCase } from './usecases/clear-cart.usecase';
+import { CheckoutCartUseCase } from './usecases/checkout-cart.usecase';
+import { GetCheckoutRecoveryUseCase } from './usecases/get-checkout-recovery.usecase';
+import {
+  AddToCartDTO,
+  UpdateCartItemDTO,
+  CheckoutCartDTO,
+  CartResponse,
+  CheckoutCartResponse,
+  CheckoutRecoveryQueryDTO,
+} from './dtos/cart.dto';
 
 @ApiTags('Cart')
 @Controller('cart')
-@UseGuards(JwtAuthGuard, NonGuestGuard)
 export class CartController {
-  constructor(private readonly cartService: CartService) {}
+  constructor(
+    private readonly getCartUseCase: GetCartUseCase,
+    private readonly addToCartUseCase: AddToCartUseCase,
+    private readonly updateCartItemUseCase: UpdateCartItemUseCase,
+    private readonly removeFromCartUseCase: RemoveFromCartUseCase,
+    private readonly clearCartUseCase: ClearCartUseCase,
+    private readonly checkoutCartUseCase: CheckoutCartUseCase,
+    private readonly getCheckoutRecoveryUseCase: GetCheckoutRecoveryUseCase,
+  ) {}
 
-  @Get()
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth({
     summary: 'Get cart contents',
-    auth: true,
     responseType: CartResponse,
   })
-  async getCart(@CurrentUser() user: AuthUser) {
-    const result = await this.cartService.getCart(user.userId);
-    if (isLeft(result)) throw result.value;
-    return result.value;
+  async getCart(@CurrentUserId() userId: string) {
+    return this.getCartUseCase.execute(userId);
   }
 
-  @Post('checkout')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PostAuth('checkout', {
     summary: 'Checkout cart',
-    description: 'Creates orders for all items in cart with PIX payment',
-    auth: true,
+    description:
+      'Creates one order per cart item under a single Stripe payment. Either every order is created or none is. Pass mode=intent for the mobile PaymentSheet.',
+    bodyType: CheckoutCartDTO,
     responseType: CheckoutCartResponse,
+    throttle: { limit: 5, ttl: 60000 },
+    errors: [
+      { status: 400, description: 'Empty cart, missing CPF, or unavailable stock' },
+    ],
   })
-  async checkout(@CurrentUser() user: AuthUser) {
-    const result = await this.cartService.checkout({ userId: user.userId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
+  async checkout(@CurrentUserId() userId: string, @Body() body: CheckoutCartDTO) {
+    return this.checkoutCartUseCase.execute({ userId, mode: body.mode });
   }
 
-  @Post(':productId')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth('checkout/recovery', { summary: 'Recover the current account checkout attempt' })
+  async checkoutRecovery(@CurrentUserId() userId: string, @Query() query: CheckoutRecoveryQueryDTO) {
+    return this.getCheckoutRecoveryUseCase.execute({ userId, mode: query.mode });
+  }
+
+  @PostAuth(':productId', {
     summary: 'Add product to cart',
-    auth: true,
     bodyType: AddToCartDTO,
     params: [{ name: 'productId', description: 'Product UUID' }],
     errors: [
@@ -55,65 +68,47 @@ export class CartController {
     ],
   })
   async addToCart(
-    @Param('productId') productId: string,
-    @CurrentUser() user: AuthUser,
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @CurrentUserId() userId: string,
     @Body() body: AddToCartDTO,
   ) {
-    const result = await this.cartService.addToCart({
-      userId: user.userId,
+    return this.addToCartUseCase.execute({
+      userId,
       productId,
       quantity: body.quantity ?? 1,
     });
-    if (isLeft(result)) throw result.value;
-    return result.value;
   }
 
-  @Patch(':productId')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PatchAuth('clear', 'Clear cart')
+  async clearCart(@CurrentUserId() userId: string) {
+    return this.clearCartUseCase.execute(userId);
+  }
+
+  @PatchAuth(':productId', {
     summary: 'Update cart item quantity',
-    auth: true,
     bodyType: UpdateCartItemDTO,
     params: [{ name: 'productId', description: 'Product UUID' }],
     errors: [{ status: 404, description: 'Item not found in cart' }],
   })
   async updateCartItem(
-    @Param('productId') productId: string,
-    @CurrentUser() user: AuthUser,
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @CurrentUserId() userId: string,
     @Body() body: UpdateCartItemDTO,
   ) {
-    const result = await this.cartService.updateCartItem({
-      userId: user.userId,
+    return this.updateCartItemUseCase.execute({
+      userId,
       productId,
       quantity: body.quantity,
     });
-    if (isLeft(result)) throw result.value;
-    return result.value;
   }
 
-  @Delete(':productId')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PatchAuth(':productId/remove', {
     summary: 'Remove item from cart',
-    auth: true,
     params: [{ name: 'productId', description: 'Product UUID' }],
     errors: [{ status: 404, description: 'Item not found in cart' }],
   })
-  async removeFromCart(@Param('productId') productId: string, @CurrentUser() user: AuthUser) {
-    const result = await this.cartService.removeFromCart({ userId: user.userId, productId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
-  }
-
-  @Delete()
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Clear cart',
-    auth: true,
-  })
-  async clearCart(@CurrentUser() user: AuthUser) {
-    const result = await this.cartService.clearCart(user.userId);
-    if (isLeft(result)) throw result.value;
-    return result.value;
+  async removeFromCart(@Param('productId', ParseUUIDPipe) productId: string, @CurrentUserId() userId: string) {
+    return this.removeFromCartUseCase.execute({ userId, productId });
   }
 }
+

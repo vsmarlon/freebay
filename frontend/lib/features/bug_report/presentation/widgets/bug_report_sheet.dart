@@ -2,12 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/bug_report/presentation/providers/bug_report_provider.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 Future<void> showBugReportSheet(
   BuildContext context, {
@@ -16,7 +13,7 @@ Future<void> showBugReportSheet(
 }) {
   return showBrutalistSheet(
     context: context,
-    title: 'Reportar problema',
+    title: l10n(context).bugReportTitle,
     builder: (sheetContext) => _BugReportSheetContent(
       prefillDescription: prefillDescription,
       screenContext: screenContext,
@@ -28,10 +25,7 @@ class _BugReportSheetContent extends ConsumerStatefulWidget {
   final String? prefillDescription;
   final String? screenContext;
 
-  const _BugReportSheetContent({
-    this.prefillDescription,
-    this.screenContext,
-  });
+  const _BugReportSheetContent({this.prefillDescription, this.screenContext});
 
   @override
   ConsumerState<_BugReportSheetContent> createState() =>
@@ -62,9 +56,10 @@ class _BugReportSheetContentState
   }
 
   Future<void> _submit() async {
+    final strings = l10n(context);
     final description = _controller.text.trim();
     if (description.isEmpty) {
-      AppSnackbar.error(context, 'Descreva o problema antes de enviar.');
+      AppSnackbar.error(context, strings.bugReportDescriptionRequired);
       return;
     }
 
@@ -78,29 +73,27 @@ class _BugReportSheetContentState
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    result.fold(
-      (failure) => AppSnackbar.error(context, failure.message),
-      (_) {
-        Navigator.pop(context);
-        AppSnackbar.success(context, 'Relatório enviado. Obrigado!');
-      },
-    );
+    result.fold((failure) => AppSnackbar.handleFailure(context, failure), (_) {
+      Navigator.pop(context);
+      AppSnackbar.success(context, strings.bugReportThanks);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppTextField(
-          label: 'O que aconteceu?',
+          label: strings.bugReportWhatHappened,
           controller: _controller,
           maxLines: 4,
         ),
         Spacing.vLg,
         AppButton(
-          label: 'Enviar',
+          label: strings.commonSend,
           isLoading: _isSubmitting,
           onPressed: _submit,
         ),

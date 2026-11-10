@@ -1,95 +1,198 @@
+import { Test } from '@nestjs/testing';
+import { Module } from '@nestjs/common';
+import { ClsModule } from 'nestjs-cls';
+import { ClsPluginTransactional } from '@nestjs-cls/transactional';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { createTransactionClient } from '@/shared/testing/test-doubles';
 import { DisputeResolutionExecutionService } from './dispute-resolution-execution.service';
-import { DisputeWithOrder } from '../domain/repositories/dispute.repository';
+import { WalletMissingError } from '@/shared/wallet/wallet-mutation';
+import { DisputeWithOrder } from '../types/dispute.types';
 
 describe('DisputeResolutionExecutionService', () => {
   let sut: DisputeResolutionExecutionService;
 
-  beforeEach(() => {
-    sut = new DisputeResolutionExecutionService();
-  });
-
-  function buildTx(walletRow: { availableBalance: number; pendingBalance: number; totalEarned: number } | null) {
-    return {
-      order: { update: jest.fn().mockResolvedValue({}) },
+  function buildRoute(walletExists = true, claimedCount = 1) {
+    // The delegates object is what the interactive $transaction hands back as
+    // the transaction client; the adapters see the calls and the assertions
+    // made below. $transaction falls back to running the callback straight
+    // away so the @Transactional wrapper behaves like the real client.
+    const delegates = {
+      dispute: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      order: { updateMany: jest.fn().mockResolvedValue({ count: claimedCount }) },
+      transaction: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
       wallet: {
-        findUnique: jest.fn().mockResolvedValue(walletRow),
+        findUnique: jest.fn().mockResolvedValue(walletExists ? { userId: 'seller-1' } : null),
+        createMany: jest.fn().mockResolvedValue({ count: 1 }),
         update: jest.fn().mockResolvedValue({}),
       },
-    } as unknown as Parameters<DisputeResolutionExecutionService['resolveInFavorOfBuyer']>[0];
+      walletEntry: { createMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    };
+    return {
+      delegates,
+      client: createTransactionClient(delegates),
+      // The adapter opens the interactive transaction on this double; it
+      // receives the delegates object as the transaction client.
+      prismaDouble: {
+        $transaction: jest.fn((fn: (c: unknown) => Promise<unknown>) => fn(delegates)),
+      },
+    };
+  }
+
+  async function compileSuite(walletExists = true, claimedCount = 1) {
+    const build = buildRoute(walletExists, claimedCount);
+    @Module({
+      providers: [{ provide: PrismaService, useValue: build.prismaDouble }],
+      exports: [PrismaService],
+    })
+    class FakePrismaModule {}
+    const module = await Test.createTestingModule({
+      imports: [
+        ClsModule.forRoot({
+          global: true,
+          plugins: [
+            new ClsPluginTransactional({
+              adapter: new TransactionalAdapterPrisma({ prismaInjectionToken: PrismaService }),
+              imports: [FakePrismaModule],
+            }),
+          ],
+        }),
+      ],
+      providers: [DisputeResolutionExecutionService],
+    }).compile();
+    sut = module.get(DisputeResolutionExecutionService);
+    return build.delegates;
   }
 
   function buildDispute(overrides: Partial<DisputeWithOrder['order']> = {}): DisputeWithOrder {
+    const now = new Date();
     return {
       id: 'dispute-1',
       orderId: 'order-1',
+      openedById: 'buyer-1',
+      status: 'OPEN',
+      reason: 'Item não recebido',
+      buyerEvidence: null,
+      sellerEvidence: null,
+      resolution: null,
+      resolvedAt: null,
+      resolvedById: null,
+      createdAt: now,
+      expiresAt: now,
       order: {
         id: 'order-1',
         buyerId: 'buyer-1',
         sellerId: 'seller-1',
+        productId: 'product-1',
+        quantity: 1,
         amount: 10000,
+        platformFee: 1000,
         sellerAmount: 9000,
+        status: 'DISPUTED',
+        escrowStatus: 'HELD',
+        meetingScheduledAt: null,
+        deliveryConfirmedAt: null,
+        cancellationReason: null,
+        createdAt: now,
+        updatedAt: now,
         ...overrides,
       },
-    } as unknown as DisputeWithOrder;
+    };
   }
 
-  describe('resolveInFavorOfBuyer', () => {
-    it('sets order to CANCELLED, escrow to REFUNDED, and credits buyer availableBalance by order.amount', async () => {
-      const tx = buildTx({ availableBalance: 5000, pendingBalance: 0, totalEarned: 0 });
-      const dispute = buildDispute();
+  describe('finalizeBuyer', () => {
+    it('claims the dispute, the escrow, records Stripe refund completion, and releases the seller hold without wallet-crediting the buyer', async () => {
+      const fake = await compileSuite();
 
-      await sut.resolveInFavorOfBuyer(tx, dispute);
+      await sut.finalizeBuyer(buildDispute(), {
+        operationId: 'refund-op-1', providerId: 're_1', amount: 10000,
+      }, { resolution: 'Buyer wins', resolvedById: null });
 
-      expect(tx.order.update).toHaveBeenCalledWith({
-        where: { id: 'order-1' },
-        data: { status: 'CANCELLED', escrowStatus: 'REFUNDED' },
-      });
-      expect(tx.wallet.update).toHaveBeenCalledWith({
-        where: { userId: 'buyer-1' },
-        data: { availableBalance: { increment: 10000 } },
+      expect(fake.order.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ id: 'order-1', cancellationReason: 'DISPUTE_REFUND_PENDING' }),
+      }));
+      expect(fake.transaction.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ refundOperationId: 'refund-op-1', refundProviderId: 're_1', refundAmount: 10000 }),
+        data: { status: 'REFUNDED' },
+      }));
+      expect(fake.wallet.update).not.toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 'buyer-1' } }));
+      expect(fake.wallet.update).toHaveBeenCalledWith({
+        where: { userId: 'seller-1' },
+        data: { pendingBalance: { increment: -9000 } },
       });
     });
 
-    it('skips wallet update when buyer wallet does not exist', async () => {
-      const tx = buildTx(null);
-      const dispute = buildDispute();
+    it('does not create or credit a buyer wallet for a Stripe refund', async () => {
+      const fake = await compileSuite();
+      (fake.wallet.findUnique as jest.Mock).mockResolvedValue({ userId: 'seller-1' });
 
-      await sut.resolveInFavorOfBuyer(tx, dispute);
+      await sut.finalizeBuyer(buildDispute(), {
+        operationId: 'refund-op-1', providerId: 're_1', amount: 10000,
+      }, { resolution: 'Buyer wins', resolvedById: null });
 
-      expect(tx.wallet.update).not.toHaveBeenCalled();
-      expect(tx.order.update).toHaveBeenCalled();
+      const buyerCall = (fake.wallet.update as jest.Mock).mock.calls.find(
+        ([arg]) => arg.where.userId === 'buyer-1',
+      );
+      expect(buyerCall).toBeUndefined();
+    });
+
+    it('refuses to release a hold against a seller wallet that does not exist', async () => {
+      await compileSuite(false);
+
+      await expect(sut.finalizeBuyer(buildDispute(), {
+        operationId: 'refund-op-1', providerId: 're_1', amount: 10000,
+      }, { resolution: 'Buyer wins', resolvedById: null })).rejects.toThrow(WalletMissingError);
+    });
+
+    it('moves no money when the escrow was already released', async () => {
+      const fake = await compileSuite(true, 0);
+
+      await expect(sut.finalizeBuyer(buildDispute(), {
+        operationId: 'refund-op-1', providerId: 're_1', amount: 10000,
+      }, { resolution: 'Buyer wins', resolvedById: null })).rejects.toThrow('DISPUTE_ORDER_CLAIM_LOST');
+
+      expect(fake.wallet.update).not.toHaveBeenCalled();
     });
   });
 
-  describe('resolveInFavorOfSeller', () => {
-    it('sets order to COMPLETED, escrow to RELEASED, and moves sellerAmount from pendingBalance to availableBalance and totalEarned', async () => {
-      const tx = buildTx({ availableBalance: 2000, pendingBalance: 9000, totalEarned: 0 });
-      const dispute = buildDispute();
+  describe('finalizeSeller', () => {
+    it('claims the escrow and moves sellerAmount from pending to available and totalEarned', async () => {
+      const fake = await compileSuite();
 
-      await sut.resolveInFavorOfSeller(tx, dispute);
+      await sut.finalizeSeller(buildDispute(), { resolution: 'Seller wins', resolvedById: 'admin-1' });
 
-      expect(tx.order.update).toHaveBeenCalledWith({
-        where: { id: 'order-1' },
+      expect(fake.order.updateMany).toHaveBeenCalledWith({
+        where: { id: 'order-1', status: 'DISPUTED', escrowStatus: 'HELD', cancellationReason: null },
         data: { status: 'COMPLETED', escrowStatus: 'RELEASED' },
       });
-      expect(tx.wallet.update).toHaveBeenCalledWith({
+      expect(fake.wallet.update).toHaveBeenCalledWith({
         where: { userId: 'seller-1' },
         data: {
-          pendingBalance: { decrement: 9000 },
           availableBalance: { increment: 9000 },
+          pendingBalance: { increment: -9000 },
           totalEarned: { increment: 9000 },
         },
       });
+      expect(fake.transaction.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ orderId: 'order-1', status: 'PAID' }),
+        data: { status: 'RELEASED', releasedAt: expect.any(Date) },
+      }));
     });
 
-    it('skips wallet update when seller wallet does not exist', async () => {
-      const tx = buildTx(null);
-      const dispute = buildDispute();
+    it('refuses to pay out against a seller wallet that does not exist', async () => {
+      await compileSuite(false);
 
-      await sut.resolveInFavorOfSeller(tx, dispute);
+      await expect(sut.finalizeSeller(buildDispute(), { resolution: 'Seller wins', resolvedById: null }))
+        .rejects.toThrow(WalletMissingError);
+    });
 
-      expect(tx.wallet.update).not.toHaveBeenCalled();
-      expect(tx.order.update).toHaveBeenCalled();
+    it('moves no money when the escrow was already released', async () => {
+      const fake = await compileSuite(true, 0);
+
+      await expect(sut.finalizeSeller(buildDispute(), { resolution: 'Seller wins', resolvedById: null }))
+        .rejects.toThrow('DISPUTE_ORDER_CLAIM_LOST');
+
+      expect(fake.wallet.update).not.toHaveBeenCalled();
     });
   });
 });

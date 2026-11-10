@@ -1,14 +1,28 @@
-import { IsString, MinLength, MaxLength, IsEmail, IsOptional } from 'class-validator';
+﻿import { StepUpPurpose, BiometricChallengePurpose } from '@/shared/auth/biometric-credential.service';
+import { IsString, MinLength, MaxLength, IsEmail, IsOptional, Matches, IsIn, IsObject, IsUUID, ValidateNested } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
+
+export const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
+export const DISPLAY_NAME_REGEX = /^[a-zA-ZÀ-ÿ0-9]+(([-']|\. ?| )[a-zA-ZÀ-ÿ0-9]+)*$/;
 
 export class RegisterDTO {
   @ApiProperty({ example: 'John Doe', minLength: 2, maxLength: 50 })
   @IsString()
   @MinLength(2)
   @MaxLength(50)
+  @Matches(DISPLAY_NAME_REGEX, {
+    message: 'Nome de exibição deve conter apenas letras, números e espaços, sem caracteres especiais',
+  })
   @SanitizeText()
   readonly displayName: string;
+
+  @ApiProperty({ example: 'john_doe', minLength: 3, maxLength: 20, description: '3-20 chars, lowercase letters/numbers/underscore only' })
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase().trim() : value))
+  @Matches(USERNAME_REGEX, { message: 'Nome de usuário deve ter 3-20 caracteres e conter apenas letras minúsculas, números e underscore' })
+  readonly username: string;
 
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
@@ -33,8 +47,15 @@ export class RegisterDTO {
 }
 
 export class LoginDTO {
-  @ApiProperty({ example: 'john@example.com' })
-  @IsEmail()
+  @ApiProperty({ example: 'john@example.com', description: 'Account identifier: email or unique @username' })
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase().trim() : value))
+  @MinLength(3)
+  @MaxLength(254)
+  // Identificador = e-mail OU @username único. Usernames: [a-z0-9_]{3,20} (o @ é opcional na digitação).
+  @Matches(/^@?[a-z0-9_]{3,20}$|^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
+    message: 'Informe um e-mail válido ou @username (3-20 caracteres: letras minúsculas, números ou _)',
+  })
   readonly email: string;
 
   @ApiProperty({ example: '********', minLength: 8 })
@@ -43,15 +64,251 @@ export class LoginDTO {
   readonly password: string;
 }
 
-export class LogoutDTO {
-  @ApiPropertyOptional({ description: 'Refresh token to blacklist alongside the access token' })
+export class BiometricLoginDTO {
+  @ApiProperty({ description: 'Backend-issued biometric token (JWT type: biometric)', maxLength: 2048 })
+  @IsString()
+  @MaxLength(2048)
+  readonly biometricToken: string;
+
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID('4')
+  readonly challengeId: string;
+
+  @ApiProperty({ description: 'Base64 DER ECDSA signature over the exact challenge UTF-8 bytes' })
+  @IsString()
+  @MinLength(4)
+  @MaxLength(1024)
+  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/)
+  readonly signature: string;
+}
+
+export class BiometricTokenDTO {
+  @ApiProperty({ description: 'Backend-issued biometric token (JWT type: biometric)', maxLength: 2048 })
+  @IsString()
+  @MaxLength(2048)
+  readonly biometricToken: string;
+}
+
+export class BiometricChallengeDTO {
+  @ApiProperty({ maxLength: 2048 })
+  @IsString()
+  @MaxLength(2048)
+  readonly biometricToken: string;
+
+  @ApiPropertyOptional({ enum: Object.values(BiometricChallengePurpose) })
+  @IsIn(Object.values(BiometricChallengePurpose))
+  readonly purpose: BiometricChallengePurpose;
+
+  @ApiPropertyOptional({ enum: StepUpPurpose })
+  @IsOptional()
+  @IsIn(Object.values(StepUpPurpose))
+  readonly stepUpPurpose?: StepUpPurpose;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  readonly resourceId?: string;
+}
+
+export class BiometricEnrollmentChallengeDTO {
+  @ApiProperty({ description: 'Base64 DER SubjectPublicKeyInfo for a P-256 key', maxLength: 1024 })
+  @IsString()
+  @MaxLength(1024)
+  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/)
+  readonly publicKey: string;
+}
+
+export class BiometricEnrollmentDTO extends BiometricEnrollmentChallengeDTO {
+  @ApiPropertyOptional({ maxLength: 4096 })
   @IsOptional()
   @IsString()
-  readonly refreshToken?: string;
+  @MaxLength(4096)
+  readonly stepUpToken?: string;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  readonly challengeId?: string;
+
+  @ApiPropertyOptional({ description: 'Base64 DER ECDSA signature of the enrollment challenge' })
+  @IsOptional()
+  @IsString()
+  @MinLength(4)
+  @MaxLength(1024)
+  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/)
+  readonly signature?: string;
+}
+
+export class StepUpProofDTO {
+  @ApiProperty({ enum: ['password', 'google', 'apple', 'biometric', 'magic_link'] })
+  @IsIn(['password', 'google', 'apple', 'biometric', 'magic_link'])
+  readonly kind: 'password' | 'google' | 'apple' | 'biometric' | 'magic_link';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  readonly password?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(8192)
+  readonly idToken?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(8192)
+  readonly identityToken?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(256)
+  readonly rawNonce?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  readonly biometricToken?: string;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  readonly challengeId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MinLength(4)
+  @MaxLength(1024)
+  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/)
+  readonly signature?: string;
+
+  @ApiPropertyOptional({ description: 'Single-use action-confirmation link token; accepted only by web step-up.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  readonly token?: string;
+
+  @ApiPropertyOptional({ description: 'Server HMAC binding the token to user, purpose, and resource.' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[0-9a-f]{64}$/)
+  readonly contextSignature?: string;
+}
+
+export class StepUpDTO {
+  @ApiProperty({ enum: StepUpPurpose })
+  @IsIn(Object.values(StepUpPurpose))
+  readonly purpose: StepUpPurpose;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  readonly resourceId?: string;
+
+  @ApiProperty({ type: StepUpProofDTO })
+  @IsObject()
+  @ValidateNested()
+  @Type(() => StepUpProofDTO)
+  readonly proof: StepUpProofDTO;
+}
+
+export class GoogleAuthDTO {
+  @ApiProperty({ description: 'Google ID token from google_sign_in' })
+  @IsString()
+  readonly idToken: string;
+}
+
+export class GoogleRedirectDTO {
+  @ApiProperty({ description: 'Google ID token posted by the Sign In With Google redirect flow' })
+  @IsString()
+  readonly credential: string;
+
+  @ApiProperty({ description: 'CSRF token posted by Google; must match the g_csrf_token cookie' })
+  @IsString()
+  readonly g_csrf_token: string;
+}
+
+export class AppleAuthDTO {
+  @ApiProperty({ description: 'Apple identity token' })
+  @IsString()
+  @MaxLength(8192)
+  readonly identityToken: string;
+
+  @ApiProperty({ description: 'Single-use Apple authorization code' })
+  @IsString()
+  @MaxLength(4096)
+  readonly authorizationCode: string;
+
+  @ApiProperty({ description: 'Original cryptographically random nonce used to request Apple credentials' })
+  @IsString()
+  @MinLength(32)
+  @MaxLength(256)
+  readonly rawNonce: string;
+
+  @ApiPropertyOptional({ description: 'Optional display label supplied by Apple on first authorization' })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  @Matches(DISPLAY_NAME_REGEX)
+  @SanitizeText()
+  readonly fullName?: string;
+}
+
+export class CompleteProfileDTO {
+  @ApiProperty({ example: 'john_doe', minLength: 3, maxLength: 20, description: '3-20 chars, lowercase letters/numbers/underscore only' })
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase().trim() : value))
+  @Matches(USERNAME_REGEX, { message: 'Nome de usuário deve ter 3-20 caracteres e conter apenas letras minúsculas, números e underscore' })
+  readonly username: string;
+
+  @ApiPropertyOptional({ example: 'John Doe', minLength: 2, maxLength: 50 })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  @Matches(DISPLAY_NAME_REGEX, {
+    message: 'Nome de exibição deve conter apenas letras, números e espaços, sem caracteres especiais',
+  })
+  @SanitizeText()
+  readonly displayName?: string;
+
+  @ApiPropertyOptional({ example: 'São Paulo' })
+  @IsOptional()
+  @IsString()
+  @SanitizeText()
+  readonly city?: string;
+
+  @ApiPropertyOptional({ example: 'SP' })
+  @IsOptional()
+  @IsString()
+  readonly state?: string;
 }
 
 export class ForgotPasswordDTO {
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
   readonly email: string;
+}
+
+export class UsernameAvailabilityQueryDTO {
+  @ApiProperty({ example: 'john_doe', minLength: 1, maxLength: 20 })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(20)
+  readonly u: string;
+}
+
+export interface CheckUsernameAvailabilityInput {
+  username: string;
+}
+
+export interface CheckUsernameAvailabilityOutput {
+  available: boolean;
+  suggestions: string[];
 }
