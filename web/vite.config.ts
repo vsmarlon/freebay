@@ -1,6 +1,18 @@
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
+import babel from 'vite-plugin-babel';
 import { defineConfig, loadEnv, type ProxyOptions } from 'vite';
+
+// React Compiler memoizes components and hooks; manual useCallback/useMemo is only
+// kept where an effect dependency needs a stable identity. Target 19 keeps its output
+// on the runtime React already ships.
+const reactCompiler = babel({
+  include: /\.[jt]sx?$/,
+  babelConfig: {
+    presets: ['@babel/preset-typescript'],
+    plugins: [['babel-plugin-react-compiler', { target: '19' }]],
+  },
+});
 
 // ponytail: SSR (server.server.ts) reads process.env.BACKEND_URL at request time; dev never populates it from .env files, so seed it here. Shell env wins, then .env files, then the dev proxy default.
 export default defineConfig(({ mode }) => {
@@ -15,7 +27,7 @@ export default defineConfig(({ mode }) => {
   };
 
   return {
-    plugins: [tailwindcss(), reactRouter()],
+    plugins: [tailwindcss(), reactRouter(), reactCompiler],
     // ponytail: pins dev-server prebundle discovery; without it the first socket use triggers a mid-session reload in dev (and in fixture journeys).
     optimizeDeps: { include: ['@tanstack/react-query', 'socket.io-client'] },
     server: {

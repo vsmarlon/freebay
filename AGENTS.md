@@ -39,7 +39,7 @@ Keep types truthful in production and tests. Bare `any`, `as any`, and `as unkno
 - Prettier owns layout (`web/.prettierrc.json`, `npm run format`); CI runs `npm run format:check`. Do not hand-format around it, and keep lines under 120 characters except strings, URLs and Tailwind class lists (ESLint `max-len`).
 - No `useEffect` in components. It is allowed inside a named custom hook (`app/**/hooks/**` or `use-*.ts`) for an external-system subscription. ESLint `no-restricted-syntax` enforces it.
 - Tailwind CSS 4 only for web styling. No hand-written component/feature CSS except the minimal globals in `app/styles.css`. Shared primitives live in `app/components/`; icons are the project's own inline SVG strokes via the `Icon`/`appIcons` map in `app/components/icons/` — never import a third-party icon package.
-- React web changes must follow the `vercel-react-best-practices` skill (loaded for every web change); prefer TanStack Query for data, useSyncExternalStore for subscriptions, callback refs for imperative sync, and `<Navigate>` for redirects over effects.
+- React web changes must follow the `vercel-react-best-practices` skill (loaded for every web change); prefer TanStack Query for data, useSyncExternalStore for subscriptions, callback refs for imperative sync, and `<Navigate>` for redirects over effects. React Compiler runs in the Vite pipeline (`vite-plugin-babel`), so `useCallback`/`useMemo` are only kept where a hook dependency array needs a stable identity — do not add new ones by habit.
 
 ## Tests and evidence
 
