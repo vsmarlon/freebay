@@ -18,19 +18,7 @@ const bannedIconImports = [{
 
 // Effects policy (AGENTS.md): no useEffect in components. It is allowed inside a named
 // custom hook (`app/**/hooks/**` or `use-*.ts`), which is where external-system
-// subscriptions live. These files still carry the old component-level pattern; delete an
-// entry as its file migrates.
-const legacyEffectFiles = [
-  'app/components/location-picker.tsx',
-  'app/features/auth/step-up-dialog.tsx',
-  'app/features/chat/media.tsx',
-  'app/features/commerce/checkout.tsx',
-  'app/features/marketplace/buy.tsx',
-  'app/features/social/post-media.tsx',
-  'app/features/stories/archive.tsx',
-  'app/features/stories/player.tsx',
-];
-
+// subscriptions live.
 export default [
   { ignores: ['build/**', '.react-router/**', 'node_modules/**'] },
   eslint.configs.recommended,
@@ -71,7 +59,7 @@ export default [
   },
   {
     files: ['app/**/*.{ts,tsx}'],
-    ignores: [...legacyEffectFiles, 'app/**/hooks/**', 'app/**/use-*.ts'],
+    ignores: ['app/**/hooks/**', 'app/**/use-*.ts'],
     rules: {
       'no-restricted-syntax': ['error',
         { selector: "CallExpression[callee.name='useEffect']", message: 'Use a custom hook, a callback ref, useSyncExternalStore or a query. See web playbook section 4.' },

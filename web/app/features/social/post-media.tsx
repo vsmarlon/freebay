@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { decode as decodeBlurHash } from 'blurhash';
 import { usePreferences } from '../../core/preferences';
 import { useMediaUrl, mediaUrl } from '../../core/media';
 import { useI18n } from '../../core/locale';
 import { trackVideo } from '../../core/in-view';
 import { Icon, ImageViewer } from '../../components';
+import { useFullscreenState } from './hooks/use-fullscreen-state';
 import en from './catalogs/en.json';
 import ptBR from './catalogs/pt-BR.json';
 import type { PostMediaItem } from './types';
@@ -80,13 +81,7 @@ function FeedVideo({
   }, []);
   // External-system primitive: the fullscreen API is the only source of truth;
   // reading ref.current during render is forbidden, so the listener owns state.
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  useEffect(() => {
-    const sync = () => setIsFullscreen(document.fullscreenElement === ref.current);
-    sync();
-    document.addEventListener('fullscreenchange', sync);
-    return () => document.removeEventListener('fullscreenchange', sync);
-  }, []);
+  const isFullscreen = useFullscreenState(ref);
   const togglePlay = () => {
     const video = ref.current;
     if (!video) return;

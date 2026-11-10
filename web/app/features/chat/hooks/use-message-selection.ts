@@ -19,3 +19,5 @@ export function useMessageSelection() {
     },
   };
 }
+
+export type MessageSelection = ReturnType<typeof useMessageSelection>;

@@ -1,6 +1,64 @@
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig, loadEnv, type ProxyOptions } from 'vite';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { transformSync } from 'oxc-transform-react';
+import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite';
+
+// ponytail: content-hash cache, no eviction — Vite re-transforms the same route modules
+// once per environment and on every rebuild; delete node_modules/.cache if it ever lies.
+const compilerCache = join(process.cwd(), 'node_modules/.cache/freebay-react-compiler');
+type CompilerMap = NonNullable<ReturnType<typeof transformSync>['map']>;
+type CachedTransform = { code: string; map?: CompilerMap };
+
+// JSON.parse is untyped; this guard is the contract with the writer below. The map
+// cast is unavoidable: the compiler's shape is only known through its types.
+function cachedTransform(value: unknown): CachedTransform | null {
+  if (!value || typeof value !== 'object' || !('code' in value) || typeof value.code !== 'string')
+    return null;
+  const map = 'map' in value ? value.map : undefined;
+  if (map !== undefined && map !== null && typeof map !== 'object') return null;
+  return map ? { code: value.code, map: map as CompilerMap } : { code: value.code };
+}
+
+// React Compiler memoizes components and hooks; manual useCallback/useMemo is only
+// kept where an effect dependency needs a stable identity. The Rust port (Oxc) is
+// ~8x faster than the Babel plugin; JSX stays intact for the React Router transform.
+const reactCompiler: Plugin = {
+  name: 'react-compiler',
+  enforce: 'pre',
+  // SSR renders once per request; memoization only pays off in the browser bundle.
+  applyToEnvironment: (environment) => environment.name !== 'ssr',
+  transform(code, id) {
+    if (!/[\\/]app[\\/].*\.tsx?$/.test(id)) return;
+    const key = createHash('sha1').update(id).update('\0').update(code).digest('hex');
+    const cachedPath = join(compilerCache, `${key}.json`);
+    if (existsSync(cachedPath)) {
+      try {
+        const cached = cachedTransform(JSON.parse(readFileSync(cachedPath, 'utf8')));
+        if (cached) return { code: cached.code, map: cached.map ?? null };
+      } catch {
+        /* corrupt entry falls through to a fresh transform */
+      }
+    }
+    const result = transformSync(id, code, {
+      jsx: 'preserve',
+      sourcemap: true,
+      reactCompiler: { target: '19' },
+    });
+    if (result.fatal || result.errors.length)
+      throw new Error(`React Compiler failed on ${id}: ${JSON.stringify(result.errors)}`);
+    const map = result.map ?? null;
+    try {
+      mkdirSync(compilerCache, { recursive: true });
+      writeFileSync(cachedPath, JSON.stringify({ code: result.code, map }));
+    } catch {
+      /* cache is an optimization; a read-only tree still builds */
+    }
+    return { code: result.code, map };
+  },
+};
 
 // ponytail: SSR (server.server.ts) reads process.env.BACKEND_URL at request time; dev never populates it from .env files, so seed it here. Shell env wins, then .env files, then the dev proxy default.
 export default defineConfig(({ mode }) => {
@@ -15,7 +73,7 @@ export default defineConfig(({ mode }) => {
   };
 
   return {
-    plugins: [tailwindcss(), reactRouter()],
+    plugins: [tailwindcss(), reactRouter(), reactCompiler],
     // ponytail: pins dev-server prebundle discovery; without it the first socket use triggers a mid-session reload in dev (and in fixture journeys).
     optimizeDeps: { include: ['@tanstack/react-query', 'socket.io-client'] },
     server: {

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { storiesApi } from './api';
 import { RequireAuth } from '../../core/session';
 import { Button, Dialog } from '../../components';
+import { useOwnerHighlights } from './hooks/use-owner-highlights';
 import { Media, useStories, useStoryCopy, type Highlight, type Story } from './shared';
 
 export function StoryArchive() {
@@ -11,29 +12,14 @@ export function StoryArchive() {
   const [title, setTitle] = useState('');
   const [cover, setCover] = useState('');
   const [editing, setEditing] = useState<string>();
-  const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [mutationError, setMutationError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{
     kind: 'story' | 'highlight';
     id: string;
   } | null>(null);
   const ownerId = value?.stories[0]?.user?.id;
-
-  // Highlights of the archive owner, refetched whenever the archive page lands
-  // at a different owner; async writes only, the empty case derives instead of
-  // an explicit reset.
-  useEffect(() => {
-    if (!ownerId) return;
-    const controller = new AbortController();
-    void storiesApi
-      .highlightsOfUser(ownerId, controller.signal)
-      .then((response) => setHighlights(response.highlights))
-      .catch(() => {
-        if (!controller.signal.aborted) setMutationError(t.error);
-      });
-    return () => controller.abort();
-  }, [ownerId, t.error]);
-  const shownHighlights = ownerId ? highlights : [];
+  const ownerHighlights = useOwnerHighlights(ownerId, t.error);
+  const shownHighlights = ownerHighlights.highlights;
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -60,7 +46,7 @@ export function StoryArchive() {
   async function removeHighlight(id: string) {
     try {
       await storiesApi.deleteHighlight(id);
-      setHighlights((items) => items.filter((item) => item.id !== id));
+      ownerHighlights.setHighlights((items) => items.filter((item) => item.id !== id));
     } catch {
       setMutationError(t.error);
     }
@@ -180,7 +166,9 @@ export function StoryArchive() {
                 ))}
             </fieldset>
             <p>{t.chooseStories}</p>
-            {mutationError && <p role="alert">{mutationError}</p>}
+            {(mutationError || ownerHighlights.error) && (
+              <p role="alert">{mutationError || ownerHighlights.error}</p>
+            )}
             <button disabled={!selected.length || !cover} className="bg-brand px-4 py-3 text-white">
               {editing ? t.edit : t.save}
             </button>

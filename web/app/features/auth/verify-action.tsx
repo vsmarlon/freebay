@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../components';
@@ -22,7 +22,7 @@ export default function VerifyActionPage() {
   const { user, isPending, error: sessionError, reload } = useSession();
   const queryClient = useQueryClient();
   const { locale, t, path } = useAuthText();
-  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const params = new URLSearchParams(location.search);
   const [token] = useState(() => params.get('token') ?? '');
   const [contextSignature] = useState(() => params.get('contextSignature') ?? '');
   const [purpose] = useState(() => params.get('purpose') ?? '');

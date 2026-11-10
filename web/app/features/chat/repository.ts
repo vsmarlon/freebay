@@ -170,6 +170,7 @@ export const chatRepository = {
       destinationDomain: string;
     }>(`${root}/security/verify-url`, { url }),
   blockUser: (userId: string) => api.post<void>(`/users/${encodeURIComponent(userId)}/block`),
+  unblockUser: (userId: string) => api.patch<void>(`/users/${encodeURIComponent(userId)}/unblock`),
   reportUser: (userId: string) =>
     api.post<void>('/reports', { targetType: 'USER', targetId: userId, reason: 'SPAM' }),
   upload: async (file: File, context: 'chat' | 'background' = 'chat', signal?: AbortSignal) => {

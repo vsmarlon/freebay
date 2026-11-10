@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Form,
   Link,
@@ -75,7 +75,7 @@ export default function CatalogRoute() {
     },
     [fetcher.data],
   );
-  const options = useMemo(() => flatten(categories), [categories]);
+  const options = flatten(categories);
   const loading = navigation.state !== 'idle';
   const isSearch = location.pathname.endsWith('/search');
   return (

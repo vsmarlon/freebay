@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../core/api';
 import { useSession } from '../../core/session';
@@ -7,6 +7,7 @@ import en from './catalogs/en.json';
 import ptBR from './catalogs/pt-BR.json';
 import { chatRepository } from './repository';
 import { shouldFetchMedia } from './model';
+import { useViewOnceLease } from './hooks/use-view-once-lease';
 
 function mediaPath(src: string): string | null {
   if (!src.startsWith('/media/')) return null;
@@ -39,7 +40,11 @@ export function AuthenticatedMedia({
   const [openingKey, setOpeningKey] = useState<string | null>(null);
   const [openedMediaUrl, setOpenedMediaUrl] = useState<string | null>(null);
   const [openError, setOpenError] = useState(false);
-  const pendingCloseRef = useRef<{ key: string; cancelled: boolean } | null>(null);
+  const cancelViewOnceLease = useViewOnceLease({
+    openingKey,
+    conversationId,
+    viewOnceMessageId,
+  });
 
   const activeSrc = isViewOnce ? (opened ? (openedMediaUrl ?? '') : '') : src;
   const wantsMedia = enabled && Boolean(activeSrc) && shouldFetchMedia(isViewOnce, opened);
@@ -75,21 +80,6 @@ export function AuthenticatedMedia({
 
   // View-once lease: armed while an opening exists; the next opening cycle
   // cancels the pending close, a real unmount fires it (deferred).
-  useEffect(() => {
-    if (!(openingKey && conversationId && viewOnceMessageId)) return;
-    pendingCloseRef.current = { key: openingKey, cancelled: false };
-    return () => {
-      const pending = pendingCloseRef.current;
-      if (!pending) return;
-      pendingCloseRef.current = null;
-      Promise.resolve().then(() => {
-        if (!pending.cancelled && conversationId && viewOnceMessageId)
-          void chatRepository
-            .closeViewOnce(conversationId, viewOnceMessageId, pending.key)
-            .catch(() => {});
-      });
-    };
-  }, [openingKey, conversationId, viewOnceMessageId]);
 
   async function openOnce() {
     if (!conversationId || !viewOnceMessageId || opening || viewOnceSenderId === user?.id) return;
@@ -115,9 +105,7 @@ export function AuthenticatedMedia({
   }
 
   function closeOnce() {
-    const pending = pendingCloseRef.current;
-    pendingCloseRef.current = null;
-    if (pending) pending.cancelled = true;
+    cancelViewOnceLease();
     setOpeningKey(null);
     setOpened(false);
     setOpenedMediaUrl(null);
