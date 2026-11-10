@@ -7,7 +7,9 @@ process.env.E2E_BASE_URL = 'http://127.0.0.1:5174';
 
 export default defineConfig({
   testDir: './journeys',
-  outputDir: path.resolve(process.env.PLAYWRIGHT_OUTPUT_DIR ?? path.join(tmpdir(), 'freebay-playwright-local-output')),
+  outputDir: path.resolve(
+    process.env.PLAYWRIGHT_OUTPUT_DIR ?? path.join(tmpdir(), 'freebay-playwright-local-output'),
+  ),
   fullyParallel: false,
   workers: 1,
   retries: 0,

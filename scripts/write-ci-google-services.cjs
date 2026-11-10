@@ -3,6 +3,8 @@ const path = require('node:path');
 
 const target = process.argv[2] ?? 'frontend/android/app/google-services.json';
 
+// ponytail: CI-only placeholder. The real file is gitignored; Firebase is optional
+// for the CI journeys, so a syntactically valid config is enough for the Gradle plugin.
 const config = {
   project_info: {
     project_number: '000000000000',

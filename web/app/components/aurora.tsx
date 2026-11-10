@@ -36,7 +36,12 @@ export function Aurora() {
     if (!element) return;
     // ponytail: the aurora is an ambient wash — low-power GPU slice, no antialias; visual quality is insensitive to these.
     // preserveDrawingBuffer: without it the compositor may hand screenshots/Playwright a blank canvas; the buffer is 1x-DPR and 24fps, so the copy cost is negligible.
-    const gl = element?.getContext('webgl', { powerPreference: 'low-power', antialias: false, alpha: false, preserveDrawingBuffer: true });
+    const gl = element?.getContext('webgl', {
+      powerPreference: 'low-power',
+      antialias: false,
+      alpha: false,
+      preserveDrawingBuffer: true,
+    });
     if (!element || !gl) return;
     const compile = (type: number, source: string) => {
       const shader = gl.createShader(type);
@@ -45,7 +50,10 @@ export function Aurora() {
       gl.compileShader(shader);
       return gl.getShaderParameter(shader, gl.COMPILE_STATUS) ? shader : null;
     };
-    const vertex = compile(gl.VERTEX_SHADER, 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}');
+    const vertex = compile(
+      gl.VERTEX_SHADER,
+      'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}',
+    );
     const pixel = compile(gl.FRAGMENT_SHADER, fragment);
     if (!vertex || !pixel) return;
     const program = gl.createProgram();
@@ -93,14 +101,21 @@ export function Aurora() {
         }
         if (textureReady) {
           gl.uniform2f(size, width, height);
-          gl.uniform1f(time, document.documentElement.dataset.aurora === 'off' ? 0 : (now - started) / 1000);
+          gl.uniform1f(
+            time,
+            document.documentElement.dataset.aurora === 'off' ? 0 : (now - started) / 1000,
+          );
           gl.uniform1f(dark, document.documentElement.dataset.theme === 'dark' ? 1 : 0);
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
       }
       if (document.documentElement.dataset.aurora !== 'off') frame = requestAnimationFrame(render);
     };
-    const start = () => { cancelAnimationFrame(frame); last = 0; render(performance.now()); };
+    const start = () => {
+      cancelAnimationFrame(frame);
+      last = 0;
+      render(performance.now());
+    };
     const image = new Image();
     image.onload = () => {
       gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -112,7 +127,10 @@ export function Aurora() {
     start();
     window.addEventListener('resize', start);
     const observer = new MutationObserver(start);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-aurora'] });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'data-aurora'],
+    });
     return () => {
       cancelAnimationFrame(frame);
       image.onload = null;
@@ -123,5 +141,10 @@ export function Aurora() {
       gl.deleteProgram(program);
     };
   }, []);
-  return <><div className="aurora-static" aria-hidden="true" /><canvas className="aurora-canvas" ref={bind} aria-hidden="true" /></>;
+  return (
+    <>
+      <div className="aurora-static" aria-hidden="true" />
+      <canvas className="aurora-canvas" ref={bind} aria-hidden="true" />
+    </>
+  );
 }

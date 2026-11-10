@@ -7,16 +7,23 @@ const key = 'freebay.preferences';
 const fallback: Prefs = { theme: 'system', animatedBackground: true, feedSoundOn: false };
 const listeners = new Set<() => void>();
 let current: Prefs | null = null;
-const darkQuery = typeof matchMedia === 'undefined' ? null : matchMedia('(prefers-color-scheme: dark)');
+const darkQuery =
+  typeof matchMedia === 'undefined' ? null : matchMedia('(prefers-color-scheme: dark)');
 
 function readPrefs(): Prefs {
   try {
     const saved: unknown = JSON.parse(localStorage.getItem(key) ?? '{}');
     if (!saved || typeof saved !== 'object') return fallback;
     const next = { ...fallback };
-    if ('theme' in saved && (saved.theme === 'light' || saved.theme === 'dark' || saved.theme === 'system')) next.theme = saved.theme;
-    if ('animatedBackground' in saved && typeof saved.animatedBackground === 'boolean') next.animatedBackground = saved.animatedBackground;
-    if ('feedSoundOn' in saved && typeof saved.feedSoundOn === 'boolean') next.feedSoundOn = saved.feedSoundOn;
+    if (
+      'theme' in saved &&
+      (saved.theme === 'light' || saved.theme === 'dark' || saved.theme === 'system')
+    )
+      next.theme = saved.theme;
+    if ('animatedBackground' in saved && typeof saved.animatedBackground === 'boolean')
+      next.animatedBackground = saved.animatedBackground;
+    if ('feedSoundOn' in saved && typeof saved.feedSoundOn === 'boolean')
+      next.feedSoundOn = saved.feedSoundOn;
     return next;
   } catch {
     return fallback;
@@ -35,7 +42,8 @@ function serverSnapshot(): Prefs {
 function applyDocument(prefs: Prefs) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  root.dataset.theme = prefs.theme === 'system' ? (darkQuery?.matches ? 'dark' : 'light') : prefs.theme;
+  root.dataset.theme =
+    prefs.theme === 'system' ? (darkQuery?.matches ? 'dark' : 'light') : prefs.theme;
   root.dataset.aurora = prefs.animatedBackground ? 'on' : 'off';
 }
 
@@ -71,7 +79,6 @@ function update(next: Prefs) {
   persist(next);
   notify();
 }
-
 
 export function PreferencesProvider({ children }: React.PropsWithChildren) {
   return children;

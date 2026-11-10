@@ -18,6 +18,8 @@ it('does not expose repost for close-friends posts', () => {
 });
 
 it('renders the ordered media contract', () => {
-  expect(orderedMedia([media('second', 1), media('first', 0)]).map((item) => item.id))
-    .toEqual(['first', 'second']);
+  expect(orderedMedia([media('second', 1), media('first', 0)]).map((item) => item.id)).toEqual([
+    'first',
+    'second',
+  ]);
 });

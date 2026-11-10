@@ -9,7 +9,10 @@ function backendOrigin() {
 }
 
 async function publicGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${backendOrigin()}${path}`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(10_000) });
+  const response = await fetch(`${backendOrigin()}${path}`, {
+    headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(10_000),
+  });
   if (!response.ok) throw new ApiError('Marketplace request failed', response.status);
   const body: unknown = await response.json();
   if (body && typeof body === 'object' && 'data' in body) return body.data as T;

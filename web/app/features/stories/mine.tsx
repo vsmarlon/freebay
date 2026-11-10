@@ -6,4 +6,10 @@ function MyStories() {
   return user ? <StoryRail userId={user.id} /> : null;
 }
 
-export default function MyStoriesRoute() { return <RequireAuth><MyStories /></RequireAuth>; }
+export default function MyStoriesRoute() {
+  return (
+    <RequireAuth>
+      <MyStories />
+    </RequireAuth>
+  );
+}

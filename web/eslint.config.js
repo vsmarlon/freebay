@@ -16,6 +16,21 @@ const bannedIconImports = [{
   ],
 }];
 
+// Effects policy (AGENTS.md): no useEffect in components. It is allowed inside a named
+// custom hook (`app/**/hooks/**` or `use-*.ts`), which is where external-system
+// subscriptions live. These files still carry the old component-level pattern; delete an
+// entry as its file migrates.
+const legacyEffectFiles = [
+  'app/components/location-picker.tsx',
+  'app/features/auth/step-up-dialog.tsx',
+  'app/features/chat/media.tsx',
+  'app/features/commerce/checkout.tsx',
+  'app/features/marketplace/buy.tsx',
+  'app/features/social/post-media.tsx',
+  'app/features/stories/archive.tsx',
+  'app/features/stories/player.tsx',
+];
+
 export default [
   { ignores: ['build/**', '.react-router/**', 'node_modules/**'] },
   eslint.configs.recommended,
@@ -37,6 +52,31 @@ export default [
     files: ['app/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': ['error', ...bannedIconImports],
+    },
+  },
+  {
+    files: ['app/**/*.{ts,tsx}'],
+    rules: {
+      // Layout is Prettier's job; these two keep the dense one-liner style from returning.
+      'max-statements-per-line': ['error', { max: 1 }],
+      'max-len': ['error', {
+        code: 120,
+        ignoreUrls: true,
+        ignoreStrings: true,
+        ignoreTemplateLiterals: true,
+        ignoreRegExpLiterals: true,
+        ignoreComments: true,
+      }],
+    },
+  },
+  {
+    files: ['app/**/*.{ts,tsx}'],
+    ignores: [...legacyEffectFiles, 'app/**/hooks/**', 'app/**/use-*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error',
+        { selector: "CallExpression[callee.name='useEffect']", message: 'Use a custom hook, a callback ref, useSyncExternalStore or a query. See web playbook section 4.' },
+        { selector: "CallExpression[callee.property.name='useEffect']", message: 'Same as above.' },
+      ],
     },
   },
   {

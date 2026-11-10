@@ -5,4 +5,6 @@ export function loader({ params }: LoaderFunctionArgs) {
   return null;
 }
 
-export default function LocaleLayout() { return <Outlet />; }
+export default function LocaleLayout() {
+  return <Outlet />;
+}

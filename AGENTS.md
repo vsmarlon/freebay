@@ -36,8 +36,9 @@ Keep types truthful in production and tests. Bare `any`, `as any`, and `as unkno
 ## Web style gates (`web/`)
 
 - Icons are the project's own inline SVG strokes (or images), PortfolioTW-style. Third-party icon packages are banned (`lucide-react`, `react-icons/*`, `@heroicons/*`, `@phosphor-icons/*`, `react-feather`); ESLint `no-restricted-imports` rejects them.
-- No `useEffect` in new code. Derive state during render, keep logic in event handlers, and express subscriptions through framework primitives instead of mount/unmount effects. ESLint `no-restricted-syntax` rejects `useEffect`/`React.useEffect`; `legacyEffectFiles` in `web/eslint.config.js` lists grandfathered legacy files pending migration — delete entries there as each file is migrated, never add new ones.
-- Tailwind CSS 4 only for web styling. No hand-written component/feature CSS except the minimal globals in `app/styles.css`. Shared primitives live in `app/components/`; icons are the project's own inline SVG strokes via the `Icon`/`appIcons` map in `app/components/index.tsx` — never import a third-party icon package.
+- Prettier owns layout (`web/.prettierrc.json`, `npm run format`); CI runs `npm run format:check`. Do not hand-format around it, and keep lines under 120 characters except strings, URLs and Tailwind class lists (ESLint `max-len`).
+- No `useEffect` in components. It is allowed inside a named custom hook (`app/**/hooks/**` or `use-*.ts`) for an external-system subscription. ESLint `no-restricted-syntax` enforces it; `legacyEffectFiles` in `web/eslint.config.js` lists grandfathered legacy files pending migration — delete entries there as each file is migrated, never add new ones.
+- Tailwind CSS 4 only for web styling. No hand-written component/feature CSS except the minimal globals in `app/styles.css`. Shared primitives live in `app/components/`; icons are the project's own inline SVG strokes via the `Icon`/`appIcons` map in `app/components/icons/` — never import a third-party icon package.
 - React web changes must follow the `vercel-react-best-practices` skill (loaded for every web change); prefer TanStack Query for data, useSyncExternalStore for subscriptions, callback refs for imperative sync, and `<Navigate>` for redirects over effects.
 
 ## Tests and evidence
@@ -82,9 +83,12 @@ After entity/codegen changes, run `dart run build_runner build --delete-conflict
 ```bash
 npx tsc --noEmit
 npm run lint
+npm run format:check
 npm test
 npm run build
 ```
+
+Web tests have two Vitest projects: `unit` (node) and `components` (jsdom, `app/**/*.test.tsx`). Component tests render through `tests/render-with-providers.tsx` and query by role and accessible name.
 
 Mocked E2E (`npm run test:e2e`) needs port 5173 free. When a dev server holds it, run `npx playwright test --config=e2e/playwright.local.config.ts` instead — same journeys on ports 5174/3333, touching neither the dev server nor the real backend.
 

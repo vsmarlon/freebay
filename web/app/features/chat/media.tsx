@@ -14,7 +14,15 @@ function mediaPath(src: string): string | null {
   return url.origin === window.location.origin ? `${url.pathname}${url.search}` : null;
 }
 
-export function AuthenticatedMedia({ src, type, alt, enabled = true, conversationId, viewOnceMessageId, viewOnceSenderId }: {
+export function AuthenticatedMedia({
+  src,
+  type,
+  alt,
+  enabled = true,
+  conversationId,
+  viewOnceMessageId,
+  viewOnceSenderId,
+}: {
   src: string;
   type: 'image' | 'video' | 'audio';
   alt?: string;
@@ -33,7 +41,7 @@ export function AuthenticatedMedia({ src, type, alt, enabled = true, conversatio
   const [openError, setOpenError] = useState(false);
   const pendingCloseRef = useRef<{ key: string; cancelled: boolean } | null>(null);
 
-  const activeSrc = isViewOnce ? (opened ? openedMediaUrl ?? '' : '') : src;
+  const activeSrc = isViewOnce ? (opened ? (openedMediaUrl ?? '') : '') : src;
   const wantsMedia = enabled && Boolean(activeSrc) && shouldFetchMedia(isViewOnce, opened);
   const fetchPath = wantsMedia ? mediaPath(activeSrc) : null;
   const canFetch = wantsMedia && Boolean(fetchPath);
@@ -43,17 +51,26 @@ export function AuthenticatedMedia({ src, type, alt, enabled = true, conversatio
   const blobQuery = useQuery({
     // ['media', …] keys ride the root cache subscription that revokes the object
     // URL when the entry is removed (gc).
-    queryKey: ['media', 'chat-media', user?.id ?? '', fetchPath ?? '', isViewOnce && openingKey ? openingKey : ''],
+    queryKey: [
+      'media',
+      'chat-media',
+      user?.id ?? '',
+      fetchPath ?? '',
+      isViewOnce && openingKey ? openingKey : '',
+    ],
     enabled: canFetch && Boolean(user),
     queryFn: async ({ signal }) => {
-      const blob = await api.blob(fetchPath!, { signal, ...(isViewOnce && openingKey ? { headers: { 'x-view-once-opening': openingKey } } : {}) });
+      const blob = await api.blob(fetchPath!, {
+        signal,
+        ...(isViewOnce && openingKey ? { headers: { 'x-view-once-opening': openingKey } } : {}),
+      });
       return URL.createObjectURL(blob);
     },
     staleTime: 0,
     gcTime: 0,
     retry: false,
   });
-  const mediaUrl = canFetch ? blobQuery.data ?? null : null;
+  const mediaUrl = canFetch ? (blobQuery.data ?? null) : null;
   const visualError = (canFetch && Boolean(blobQuery.error)) || openError;
 
   // View-once lease: armed while an opening exists; the next opening cycle
@@ -65,14 +82,22 @@ export function AuthenticatedMedia({ src, type, alt, enabled = true, conversatio
       const pending = pendingCloseRef.current;
       if (!pending) return;
       pendingCloseRef.current = null;
-      Promise.resolve().then(() => { if (!pending.cancelled && conversationId && viewOnceMessageId) void chatRepository.closeViewOnce(conversationId, viewOnceMessageId, pending.key).catch(() => {}); });
+      Promise.resolve().then(() => {
+        if (!pending.cancelled && conversationId && viewOnceMessageId)
+          void chatRepository
+            .closeViewOnce(conversationId, viewOnceMessageId, pending.key)
+            .catch(() => {});
+      });
     };
   }, [openingKey, conversationId, viewOnceMessageId]);
 
   async function openOnce() {
     if (!conversationId || !viewOnceMessageId || opening || viewOnceSenderId === user?.id) return;
     // Already opened for this viewer: the take reachable by refetch (retry) only.
-    if (opened) { void blobQuery.refetch(); return; }
+    if (opened) {
+      void blobQuery.refetch();
+      return;
+    }
     setOpenError(false);
     setOpening(true);
     try {
@@ -82,23 +107,68 @@ export function AuthenticatedMedia({ src, type, alt, enabled = true, conversatio
       // A close/unmount racing the response fires the server lease release below.
       setOpenedMediaUrl(result.mediaUrl);
       setOpened(true);
-    } catch { setOpenError(true); }
-    finally { setOpening(false); }
+    } catch {
+      setOpenError(true);
+    } finally {
+      setOpening(false);
+    }
   }
 
   function closeOnce() {
     const pending = pendingCloseRef.current;
     pendingCloseRef.current = null;
     if (pending) pending.cancelled = true;
-    setOpeningKey(null); setOpened(false); setOpenedMediaUrl(null); setOpenError(false);
-    if (openingKey && conversationId && viewOnceMessageId) void chatRepository.closeViewOnce(conversationId, viewOnceMessageId, openingKey).catch(() => {});
+    setOpeningKey(null);
+    setOpened(false);
+    setOpenedMediaUrl(null);
+    setOpenError(false);
+    if (openingKey && conversationId && viewOnceMessageId)
+      void chatRepository
+        .closeViewOnce(conversationId, viewOnceMessageId, openingKey)
+        .catch(() => {});
   }
 
-  const content = viewOnceMessageId && !src ? <p role="status" className="text-sm text-muted">{t('chat.mediaError')}</p>
-    : viewOnceMessageId && viewOnceSenderId === user?.id ? <p role="status" className="text-sm text-muted">{t('chat.viewOnceSenderDenied')}</p>
-    : viewOnceMessageId && (!opened || visualError) ? <button className="ui-button ui-secondary" type="button" onClick={() => void openOnce()} disabled={opening}>{visualError ? t('common.retry') : opening ? t('common.loading') : t('chat.viewOnce')}</button>
-    : visualError ? <p role="alert" className="text-sm text-muted">{t('chat.mediaError')}</p>
-    : !mediaUrl ? <span role="status" className="text-sm text-muted">{t('common.loading')}</span>
-    : <>{type === 'video' ? <video className="max-h-96 max-w-full" src={mediaUrl} controls preload="metadata" /> : type === 'audio' ? <audio src={mediaUrl} controls preload="metadata" /> : <img className="max-h-96 max-w-full object-contain" src={mediaUrl} alt={alt ?? ''} />}{viewOnceMessageId ? <button type="button" className="ui-button ui-ghost" onClick={closeOnce}>{t('common.close')}</button> : null}</>;
+  const content =
+    viewOnceMessageId && !src ? (
+      <p role="status" className="text-sm text-muted">
+        {t('chat.mediaError')}
+      </p>
+    ) : viewOnceMessageId && viewOnceSenderId === user?.id ? (
+      <p role="status" className="text-sm text-muted">
+        {t('chat.viewOnceSenderDenied')}
+      </p>
+    ) : viewOnceMessageId && (!opened || visualError) ? (
+      <button
+        className="ui-button ui-secondary"
+        type="button"
+        onClick={() => void openOnce()}
+        disabled={opening}
+      >
+        {visualError ? t('common.retry') : opening ? t('common.loading') : t('chat.viewOnce')}
+      </button>
+    ) : visualError ? (
+      <p role="alert" className="text-sm text-muted">
+        {t('chat.mediaError')}
+      </p>
+    ) : !mediaUrl ? (
+      <span role="status" className="text-sm text-muted">
+        {t('common.loading')}
+      </span>
+    ) : (
+      <>
+        {type === 'video' ? (
+          <video className="max-h-96 max-w-full" src={mediaUrl} controls preload="metadata" />
+        ) : type === 'audio' ? (
+          <audio src={mediaUrl} controls preload="metadata" />
+        ) : (
+          <img className="max-h-96 max-w-full object-contain" src={mediaUrl} alt={alt ?? ''} />
+        )}
+        {viewOnceMessageId ? (
+          <button type="button" className="ui-button ui-ghost" onClick={closeOnce}>
+            {t('common.close')}
+          </button>
+        ) : null}
+      </>
+    );
   return <span style={{ display: 'contents' }}>{content}</span>;
 }

@@ -1,9 +1,16 @@
-import { type RouteConfigEntry, type RouteConfig, index, layout, route } from '@react-router/dev/routes';
+import {
+  type RouteConfigEntry,
+  type RouteConfig,
+  index,
+  layout,
+  route,
+} from '@react-router/dev/routes';
 import accountRoutes from './features/account/routes';
 import authRoutes from './features/auth/routes';
 import commerceRoutes from './features/commerce/routes';
 import marketplaceRoutes from './features/marketplace/routes';
 import socialRoutes from './features/social/routes';
+import adminRoutes from './features/admin/routes';
 
 function uniqueIds(entries: RouteConfigEntry[], group: string): RouteConfigEntry[] {
   return entries.map((entry, index) => ({
@@ -30,6 +37,7 @@ export default [
       ...uniqueIds(socialRoutes, 'social'),
       ...uniqueIds(accountRoutes, 'account'),
       ...uniqueIds(commerceRoutes, 'commerce'),
+      ...uniqueIds(adminRoutes, 'admin'),
       route('stories', 'features/stories/index.tsx', { id: 'stories-index' }),
       route('stories/new', 'features/stories/create.tsx', { id: 'stories-create' }),
       route('stories/mine', 'features/stories/mine.tsx', { id: 'stories-mine' }),

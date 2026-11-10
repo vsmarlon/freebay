@@ -7,7 +7,7 @@ it('clamps the trim into the video and ignores windows shorter than 0.2s', () =>
   expect(trimWindow(-3, 20, 10)).toEqual({ start: 0, end: 10, changed: false });
   expect(trimWindow(1.9, 2.0, 10)).toEqual({ start: 0, end: 10, changed: false });
   expect(trimWindow(0.04, 9.96, 10)).toEqual({ start: 0, end: 10, changed: false }); // sub-frame identity stays untrimmed
-  expect(trimWindow(0.1, 10, 10)).toEqual({ start: 0.1, end: 10, changed: true });   // any real head cut is a trim
+  expect(trimWindow(0.1, 10, 10)).toEqual({ start: 0.1, end: 10, changed: true }); // any real head cut is a trim
   expect(trimWindow(2, 5, NaN)).toEqual({ start: 0, end: 0, changed: false }); // unknown duration keeps original
 });
 

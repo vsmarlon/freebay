@@ -1,5 +1,5 @@
 export const preferenceKeys = ['orders', 'follows', 'messages', 'disputes'] as const;
-export type PreferenceKey = typeof preferenceKeys[number];
+export type PreferenceKey = (typeof preferenceKeys)[number];
 export type NotificationPreferences = Partial<Record<PreferenceKey, boolean>>;
 
 export function parseNotificationPreferences(value: unknown): NotificationPreferences {

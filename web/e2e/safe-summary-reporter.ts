@@ -1,6 +1,13 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import type { FullConfig, FullResult, Reporter, Suite, TestCase, TestResult } from '@playwright/test/reporter';
+import type {
+  FullConfig,
+  FullResult,
+  Reporter,
+  Suite,
+  TestCase,
+  TestResult,
+} from '@playwright/test/reporter';
 
 export default class SafeSummaryReporter implements Reporter {
   private total = 0;
@@ -25,7 +32,12 @@ export default class SafeSummaryReporter implements Reporter {
       failed: this.failed,
       skipped: this.skipped,
       status: result.status,
-      success: result.status === 'passed' && this.total > 0 && this.passed > 0 && this.failed === 0 && this.skipped === 0,
+      success:
+        result.status === 'passed' &&
+        this.total > 0 &&
+        this.passed > 0 &&
+        this.failed === 0 &&
+        this.skipped === 0,
       command: process.env.E2E_COMMAND ?? 'Playwright command not declared',
       fixture: process.env.E2E_FIXTURE_MODE ?? 'fixture mode not declared',
     };

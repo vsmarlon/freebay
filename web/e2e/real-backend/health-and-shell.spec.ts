@@ -12,5 +12,7 @@ test('real backend is ready and serves the public web shell', async ({ page, req
 
   await page.goto('/en');
   await expect(page).toHaveTitle(/Freebay/i);
-  await expect(page.getByRole('heading', { name: /Good finds have a way of finding you/i })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /Good finds have a way of finding you/i }),
+  ).toBeVisible();
 });

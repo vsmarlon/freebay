@@ -1,6 +1,14 @@
 import type { ProductPage } from './types';
 
-export type CatalogFilters = { q: string; categoryId: string; minPrice: string; maxPrice: string; condition: string; sort: string; cursor?: string };
+export type CatalogFilters = {
+  q: string;
+  categoryId: string;
+  minPrice: string;
+  maxPrice: string;
+  condition: string;
+  sort: string;
+  cursor?: string;
+};
 export function catalogQuery(filters: CatalogFilters): URLSearchParams {
   const query = new URLSearchParams({ limit: '20' });
   if (filters.q.trim()) query.set('search', filters.q.trim());
@@ -22,5 +30,8 @@ export function parseCentsFilter(value: string): number {
 
 export function appendPage(current: ProductPage, next: ProductPage): ProductPage {
   const seen = new Set(current.products.map((product) => product.id));
-  return { products: [...current.products, ...next.products.filter((product) => !seen.has(product.id))], nextCursor: next.nextCursor };
+  return {
+    products: [...current.products, ...next.products.filter((product) => !seen.has(product.id))],
+    nextCursor: next.nextCursor,
+  };
 }

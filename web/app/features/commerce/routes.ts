@@ -11,6 +11,10 @@ export default [
   route('disputes', 'features/commerce/disputes.tsx'),
   route('disputes/:id', 'features/commerce/dispute.tsx'),
   route('wallet', 'features/commerce/wallet.tsx'),
-  route('payments/success', 'features/commerce/payment-return.tsx', { id: 'commerce-payment-success' }),
-  route('payments/cancel', 'features/commerce/payment-return.tsx', { id: 'commerce-payment-cancel' }),
+  route('payments/success', 'features/commerce/payment-return.tsx', {
+    id: 'commerce-payment-success',
+  }),
+  route('payments/cancel', 'features/commerce/payment-return.tsx', {
+    id: 'commerce-payment-cancel',
+  }),
 ] satisfies RouteConfig;
