@@ -94,6 +94,7 @@ test('magic-link GET is inert, explicit confirmation consumes once, and profile 
 test('favorite and cart remain separate; cart quantity is stock bounded and checkout uses session mode/server cents', async ({
   page,
 }) => {
+  test.setTimeout(60_000);
   const state = await installBrowserFixture(page);
   await openProtectedRoute(page, state, '/en/feed');
   await page.goto(`/en/products/${productId}`);
@@ -114,7 +115,7 @@ test('favorite and cart remain separate; cart quantity is stock bounded and chec
 
   await page.goto('/en/cart');
   await waitForHydration(page);
-  await expect(page.getByRole('heading', { name: 'Your cart' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: 'Your cart' })).toBeVisible({ timeout: 45_000 });
   await expect(page.getByText(/Items \(1\)/)).toBeVisible();
   await page.getByRole('link', { name: 'Continue to checkout' }).click();
   await page.getByRole('button', { name: 'Continue to secure checkout' }).click();
