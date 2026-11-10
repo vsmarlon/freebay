@@ -18,8 +18,8 @@ html[data-scrolling="true"]::-webkit-scrollbar-thumb,html[data-scrolling="true"]
    utilities always win over them, which removes the old specificity fights. */
 @layer components {
 .aurora-canvas,.aurora-static{position:fixed;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none}.aurora-canvas{opacity:.2}.aurora-static{z-index:-3;background:radial-gradient(ellipse at 72% 30%,#8a108326 0 9%,transparent 34%),radial-gradient(ellipse at 22% 75%,#6600621a 0 7%,transparent 35%),var(--canvas)}
-:root[data-theme=light] .aurora-canvas{opacity:.42}
-:root[data-theme=light] .aurora-static{background:radial-gradient(ellipse at 72% 30%,#8a10833d 0 9%,transparent 34%),radial-gradient(ellipse at 22% 75%,#66006229 0 7%,transparent 35%),var(--canvas)}
+:root[data-theme=light] .aurora-canvas{opacity:.68}
+:root[data-theme=light] .aurora-static{background:radial-gradient(ellipse at 72% 30%,#8a10834d 0 12%,transparent 38%),radial-gradient(ellipse at 22% 75%,#66006238 0 10%,transparent 40%),var(--canvas)}
 
 .ui-button{min-height:40px;padding:8px 14px;font:700 13px 'Space Grotesk',sans-serif;border:1px solid var(--edge);cursor:pointer}.ui-button:active{transform:translate(3px,3px);box-shadow:none}.ui-sm{min-height:32px}.ui-lg{min-height:48px}.ui-ghost{background:transparent;color:var(--ink)}.ui-danger{background:#ba1a1a;color:white}.ui-primary{background:linear-gradient(135deg,#660062,#8a1083);color:#fff;box-shadow:3px 3px #660062}.ui-secondary{background:var(--surface);color:var(--ink);border:1.5px solid var(--edge)}
 .icon-control{width:38px;height:38px;background:var(--surface-mid);color:var(--ink);border:1px solid var(--edge);cursor:pointer;display:grid;place-items:center;padding:0;margin:0;font-size:15px}.icon-control[aria-pressed="false"]{opacity:.55}.icon-control-sm{width:30px;height:30px}.icon-control[disabled]{opacity:.45;cursor:not-allowed}.icon-control-primary{background:linear-gradient(135deg,#660062,#8a1083);color:#fff;border-color:var(--edge)}.icon-control-danger{background:transparent;color:#ba1a1a;border-color:#ba1a1a}.icon-control-danger:hover{background:color-mix(in srgb,#ba1a1a 12%,transparent)}
