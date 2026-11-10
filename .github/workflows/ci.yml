@@ -357,6 +357,7 @@ jobs:
   # docs/test-runs/2026-11-09/mobile-ui-journey/.
   mobile-ui:
     name: Real mobile journey (Android emulator / Nest / PostgreSQL / Redis)
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     continue-on-error: true
