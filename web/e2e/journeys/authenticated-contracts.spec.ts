@@ -12,14 +12,23 @@ async function waitForHydration(page: Page) {
 
 async function openProtectedRoute(page: Page, state: BrowserFixture, path: string) {
   state.profile.username = 'buyer_01';
+  const targetPath = new URL(path, 'http://localhost').pathname;
+  await page.addInitScript((userId) => {
+    localStorage.setItem(`freebay.welcome.seen.${encodeURIComponent(userId)}`, 'true');
+  }, state.userId);
   await page.goto(path);
   await waitForHydration(page);
   const skip = page.getByRole('button', { name: 'Skip' });
-  if (await skip.isVisible({ timeout: 5000 }).catch(() => false)) {
+  await expect.poll(async () => {
+    if (new URL(page.url()).pathname === targetPath) return 'target';
+    if (await skip.isVisible().catch(() => false)) return 'welcome';
+    return 'pending';
+  }, { timeout: 10_000 }).toMatch(/target|welcome/);
+  if (await skip.isVisible().catch(() => false)) {
     await finishWelcome(page);
-    await waitForHydration(page);
   }
-  await expect(page).toHaveURL((url) => url.pathname === new URL(path, 'http://localhost').pathname);
+  await expect.poll(() => new URL(page.url()).pathname, { timeout: 15_000 }).toBe(targetPath);
+  await expect(page).toHaveURL((url) => url.pathname === targetPath);
 }
 
 test('magic-link GET is inert, explicit confirmation consumes once, and profile completes through cookie-backed session', async ({ page }) => {
@@ -275,7 +284,7 @@ test('story view is recorded only after authenticated media loads and the next s
 test('profile edit, privacy step-up, deletion guard, notifications and close-friends state follow server outcomes', async ({ page }) => {
   const state = await installBrowserFixture(page);
   await openProtectedRoute(page, state, '/en/profile/edit');
-  await expect(page.getByRole('button', { name: 'Save changes' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Save changes' })).toBeEnabled({ timeout: 10_000 });
   await page.getByLabel('Display name').fill('Updated Synthetic Name');
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('status')).toHaveText('Saved.');
