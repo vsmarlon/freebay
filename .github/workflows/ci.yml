@@ -334,8 +334,8 @@ jobs:
 
       - name: Install Chromium and run guarded real browser journey
         env:
-          E2E_OUTPUT_DIR: ${{ runner.temp }}/freebay-web-real-e2e
-          E2E_SUMMARY_FILE: ${{ runner.temp }}/freebay-web-real-e2e/summary.json
+          E2E_OUTPUT_DIR: /tmp/freebay-web-real-e2e
+          E2E_SUMMARY_FILE: /tmp/freebay-web-real-e2e/summary.json
         run: |
           (cd web && npx playwright install --with-deps chromium)
           node scripts/run-real-web-e2e.cjs
@@ -345,7 +345,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: web-real-e2e-summary
-          path: ${{ runner.temp }}/freebay-web-real-e2e/summary.json
+          path: /tmp/freebay-web-real-e2e/summary.json
           if-no-files-found: warn
           retention-days: 1
 
