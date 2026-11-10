@@ -10,11 +10,25 @@ const clientRoot = path.resolve('.', 'build', 'client');
 
 const port = Number(process.env.PORT ?? 3001);
 const backend = new URL(process.env.BACKEND_URL ?? 'http://localhost:3000');
+const securityHeaders = {
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+  'x-frame-options': 'DENY',
+  'permissions-policy': 'camera=(), microphone=(), geolocation=(self)',
+  'cross-origin-opener-policy': 'same-origin',
+  'content-security-policy': "frame-ancestors 'none'; base-uri 'self'; object-src 'none'",
+  ...(process.env.NODE_ENV === 'production'
+    ? { 'strict-transport-security': 'max-age=31536000; includeSubDomains' }
+    : {}),
+};
 const apiPrefixes = ['/auth', '/users', '/products', '/categories', '/social', '/stories', '/cart', '/orders', '/favorites', '/payments', '/wallet', '/reviews', '/disputes', '/chat', '/notifications', '/uploads', '/media', '/reports', '/bug-reports', '/health', '/socket.io'];
 const isApiPath = (path) => apiPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 const sendApp = createRequestListener({ build, mode: process.env.NODE_ENV ?? 'production' });
 const sendAppNoCache = (incoming, outgoing) => {
-  try { outgoing.setHeader('cache-control', 'no-cache'); } catch { /* ponytail: best-effort header, SSR handles missing ones */ }
+  try {
+    for (const [name, value] of Object.entries(securityHeaders)) outgoing.setHeader(name, value);
+    outgoing.setHeader('cache-control', 'no-cache');
+  } catch { /* ponytail: best-effort header, SSR handles missing ones */ }
   sendApp(incoming, outgoing);
 };
 
@@ -52,6 +66,7 @@ const serveStatic = async (incoming, outgoing) => {
   const body = wantsGzip ? file.gz : file.raw;
   const immutable = pathname.startsWith('/assets/');
   const head = {
+    ...securityHeaders,
     'content-type': file.type,
     'content-length': body.length,
     'cache-control': immutable ? 'public, max-age=31536000, immutable' : 'no-cache',
