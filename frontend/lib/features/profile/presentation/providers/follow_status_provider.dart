@@ -6,6 +6,8 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/features/stories/presentation/providers/stories_provider.dart';
+import 'package:freebay/features/stories/presentation/providers/story_highlight_provider.dart';
 
 final followServiceProvider = Provider<FollowService>((ref) => FollowService());
 
@@ -113,6 +115,9 @@ class FollowStateNotifier extends Notifier<Map<String, FollowStatusResponse>> {
           ref.invalidate(profileFutureProvider(userId));
           ref.invalidate(profileStatsProvider);
           ref.invalidate(suggestionsProvider);
+          ref.invalidate(storiesProvider);
+          ref.invalidate(userStoriesProvider(userId));
+          ref.invalidate(storyHighlightsProvider(userId));
           ref.read(feedProvider.notifier).resetFollowing();
 
           return true;

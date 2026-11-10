@@ -14,6 +14,8 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
 import 'package:freebay/features/profile/data/repositories/profile_repository.dart';
+import 'package:freebay/features/stories/presentation/providers/stories_provider.dart';
+import 'package:freebay/features/stories/presentation/providers/story_highlight_provider.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class UserProfilePage extends ConsumerWidget {
@@ -301,6 +303,9 @@ class UserProfilePage extends ConsumerWidget {
                   (_) {
                     ref.invalidate(blockedUsersProvider);
                     ref.invalidate(profileFutureProvider(user.id));
+                    ref.invalidate(storiesProvider);
+                    ref.invalidate(userStoriesProvider(user.id));
+                    ref.invalidate(storyHighlightsProvider(user.id));
                     AppSnackbar.success(context, l10n(context).chatUserBlocked);
                     if (context.canPop()) context.pop();
                   },
