@@ -52,7 +52,7 @@ export function TextArea({
   autoGrow?: boolean;
 }) {
   const fieldId = id ?? `field-${label.toLowerCase().replace(/\W+/g, '-')}`;
-  const ref = usePreHydrationValue<HTMLTextAreaElement>(onChange, value);
+  const [ref, hydrated] = usePreHydrationValue<HTMLTextAreaElement>(onChange, value);
   const resize = (field: HTMLTextAreaElement) => {
     if (!autoGrow) return;
     field.style.height = 'auto';
@@ -69,7 +69,7 @@ export function TextArea({
           ref(node);
           if (node) resize(node);
         }}
-        value={value}
+        {...(hydrated ? { value } : { defaultValue: value })}
         onChange={(event) => {
           resize(event.currentTarget);
           onChange?.(event);

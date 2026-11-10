@@ -29,4 +29,8 @@ export function StoryViewerRoute() {
   );
 }
 
+export function loader() {
+  return null;
+}
+
 export default StoryViewerRoute;

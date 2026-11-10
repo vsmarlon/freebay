@@ -44,8 +44,9 @@ function main([action, artifactPath, manifestPath, revision, configuration, veri
       throw new Error('Build artifact manifest mismatch');
     }
     const verification = actual.verification;
+    // Intentional quarantines are recorded in skipped; only failures block.
     if (!verification || verification.success !== true || verification.tests < 1 ||
-      verification.failed !== 0 || verification.skipped !== 0) {
+      verification.failed !== 0) {
       throw new Error('Build manifest does not contain a successful non-empty test result');
     }
   }

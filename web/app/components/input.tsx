@@ -22,12 +22,12 @@ export function Input({
   trailing?: ReactNode;
 }) {
   const inputId = id ?? `field-${label.toLowerCase().replace(/\W+/g, '-')}`;
-  const ref = usePreHydrationValue<HTMLInputElement>(onChange, value);
+  const [ref, hydrated] = usePreHydrationValue<HTMLInputElement>(onChange, value);
   const field = (
     <input
       {...props}
       ref={ref}
-      value={value}
+      {...(hydrated ? { value } : { defaultValue: value })}
       onChange={onChange}
       id={inputId}
       className={`min-h-[42px] w-full min-w-0 border-[1.5px] border-ink bg-surface px-3 py-2.5 text-ink ${props.className ?? ''}`}

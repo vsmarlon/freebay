@@ -63,8 +63,8 @@ describe('restricted comment approval visibility', () => {
 
 describe('social mutation endpoints', () => {
   // Regression: like/repost now return the authoritative { active, count } state
-  // that the cache merge uses; an "active" post flips to the PATCH (deactivate) verb.
-  it('sends POST for activating and PATCH with the { active, count } payload for deactivating', async () => {
+  // that the cache merge uses; post toggles receive the current active state.
+  it('sends POST for activating and PATCH for deactivating', async () => {
     const post = vi.spyOn(api, 'post').mockResolvedValue({ active: true, count: 5 });
     const patch = vi.spyOn(api, 'patch').mockResolvedValue({ active: false, count: 4 });
 
@@ -74,6 +74,8 @@ describe('social mutation endpoints', () => {
     expect(patch).toHaveBeenCalledWith('/social/posts/p1/unlike');
     await expect(socialApi.repost('p1', false)).resolves.toEqual({ active: true, count: 5 });
     expect(post).toHaveBeenCalledWith('/social/posts/p1/share');
+    await expect(socialApi.repost('p1', true)).resolves.toEqual({ active: false, count: 4 });
+    expect(patch).toHaveBeenCalledWith('/social/posts/p1/unshare');
     await expect(socialApi.likeComment('c1', true)).resolves.toEqual({ active: false, count: 4 });
     expect(patch).toHaveBeenCalledWith('/social/comments/c1/unlike');
     patch.mockResolvedValueOnce({ active: false });

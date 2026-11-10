@@ -150,6 +150,13 @@ const send = (route: Route, data: unknown, status = 200) =>
 const baseUrl = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:5173';
 const baseOrigin = new URL(baseUrl).origin;
 export async function installBrowserFixture(page: Page, state = newBrowserFixture()) {
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('freebay.fixture.initialized') === 'true') return;
+    sessionStorage.setItem('freebay.fixture.initialized', 'true');
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('freebay.welcome.seen.')) localStorage.removeItem(key);
+    }
+  });
   await page.context().addCookies([
     {
       name: 'freebay_web_refresh',

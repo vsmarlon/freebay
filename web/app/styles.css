@@ -176,12 +176,12 @@ html[data-scrolling='true'] *::-webkit-scrollbar-thumb {
       radial-gradient(ellipse at 22% 75%, #6600621a 0 7%, transparent 35%), var(--canvas);
   }
   :root[data-theme='light'] .aurora-canvas {
-    opacity: 0.42;
+    opacity: 0.68;
   }
   :root[data-theme='light'] .aurora-static {
     background:
-      radial-gradient(ellipse at 72% 30%, #8a10833d 0 9%, transparent 34%),
-      radial-gradient(ellipse at 22% 75%, #66006229 0 7%, transparent 35%), var(--canvas);
+      radial-gradient(ellipse at 72% 30%, #8a10834d 0 12%, transparent 38%),
+      radial-gradient(ellipse at 22% 75%, #66006238 0 10%, transparent 40%), var(--canvas);
   }
 
   .ui-button {

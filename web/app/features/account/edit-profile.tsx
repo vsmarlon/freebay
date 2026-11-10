@@ -398,28 +398,24 @@ export default function EditProfilePage() {
               )}
             </FormSection>
             <FormSection title={t('sectionImages')}>
-              <label className="ui-field">
-                <span>{t('avatar')}</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={(e) => {
-                    chooseImage(e.currentTarget.files?.[0], 'avatar');
-                    e.currentTarget.value = '';
-                  }}
-                />
-              </label>
-              <label className="ui-field">
-                <span>{t('banner')}</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={(e) => {
-                    chooseImage(e.currentTarget.files?.[0], 'banner');
-                    e.currentTarget.value = '';
-                  }}
-                />
-              </label>
+              <Input
+                label={t('avatar')}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={(e) => {
+                  chooseImage(e.currentTarget.files?.[0], 'avatar');
+                  e.currentTarget.value = '';
+                }}
+              />
+              <Input
+                label={t('banner')}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={(e) => {
+                  chooseImage(e.currentTarget.files?.[0], 'banner');
+                  e.currentTarget.value = '';
+                }}
+              />
             </FormSection>
             <div className="flex flex-wrap items-center gap-3">
               <Button type="submit" disabled={busy}>
