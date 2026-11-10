@@ -40,7 +40,6 @@ dependencies:
   flutter_secure_storage: ^10.0.0
   flutter_hooks: ^0.21.3+1
   hooks_riverpod: ^3.3.2
-  animated_tree_view: ^2.3.0
   json_annotation: ^4.12.0
   equatable: ^2.1.0
 
@@ -55,9 +54,7 @@ dependencies:
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   geolocator: ^13.0.2
-  permission_handler: ^11.4.0
 
-  photo_view: ^0.15.0
   flutter_rating_bar: ^4.0.1
 
   firebase_core: ^4.4.0
@@ -77,7 +74,6 @@ dependencies:
   flutter_image_compress: ^2.5.1
   emoji_picker_flutter: ^4.5.4
   vector_math: ^2.2.0
-  ffmpeg_kit_flutter_new_video: ^2.5.7
 
 dev_dependencies:
   flutter_test:
