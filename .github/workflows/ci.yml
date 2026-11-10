@@ -438,9 +438,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -no-metrics
           disable-animations: true
           disable-linux-hw-accel: auto
+          working-directory: frontend
           script: |
             adb reverse tcp:3000 tcp:43187
-            cd frontend
             flutter test integration_test/real_backend_journey_test.dart -d emulator-5554
 
       - name: Upload mobile journey evidence
