@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useRef,
-  useState,
-  type PropsWithChildren,
-} from 'react';
+import { createContext, useContext, useRef, useState, type PropsWithChildren } from 'react';
 import { useI18n } from '../core/locale';
 import { Icon } from './index';
 
