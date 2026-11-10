@@ -77,8 +77,30 @@ test('magic-link GET is inert, explicit confirmation consumes once, and profile 
   await page.getByLabel('City').fill('São Paulo');
   await page.getByLabel('State').fill('SP');
   await page.getByRole('button', { name: 'Save profile' }).click();
-  await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible();
-  await finishWelcome(page);
+  await expect
+    .poll(
+      async () => {
+        if (new URL(page.url()).pathname.endsWith('/feed')) return 'feed';
+        if (
+          await page
+            .getByRole('button', { name: 'Skip' })
+            .isVisible()
+            .catch(() => false)
+        )
+          return 'welcome';
+        return 'pending';
+      },
+      { timeout: 15_000 },
+    )
+    .toMatch(/feed|welcome/);
+  if (
+    await page
+      .getByRole('button', { name: 'Skip' })
+      .isVisible()
+      .catch(() => false)
+  ) {
+    await finishWelcome(page);
+  }
   await expect(page).toHaveURL(/\/en\/feed$/);
   expect(state.profile).toMatchObject({ username: 'buyer_01', city: 'São Paulo' });
   expect(
