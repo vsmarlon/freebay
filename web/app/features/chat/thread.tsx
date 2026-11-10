@@ -49,6 +49,7 @@ import { MessageItem } from './message-item';
 import { ThreadSidebar } from './thread/thread-sidebar';
 import { useScrollAnchor } from './hooks/use-scroll-anchor';
 import { useProductInquiryDraft } from './hooks/use-product-inquiry-draft';
+import { useMessageSelection } from './hooks/use-message-selection';
 
 const uuid = () => crypto.randomUUID();
 const isMediaType = (
@@ -88,8 +89,8 @@ function Thread() {
 
   const [draft, setDraft] = useState('');
   const [reply, setReply] = useState<ChatMessage | null>(null);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
+  const selection = useMessageSelection();
+  const { selectedIds, selectedTargets } = selection;
   const [forwardOpen, setForwardOpen] = useState(false);
   const [forwardQuery, setForwardQuery] = useState('');
   const debouncedForwardQuery = useDebouncedValue(forwardQuery, 180);
@@ -334,7 +335,7 @@ function Thread() {
     if (!content) return;
     try {
       await navigator.clipboard.writeText(content);
-      setSelectedIds([]);
+      selection.clear();
     } catch {
       setActionError(t('chat.clipboardError'));
     }
@@ -353,7 +354,7 @@ function Thread() {
     }
     try {
       await navigator.share({ text: content });
-      setSelectedIds([]);
+      selection.clear();
     } catch (cause) {
       if (!(cause instanceof DOMException && cause.name === 'AbortError'))
         setActionError(t('chat.sendError'));
@@ -374,13 +375,13 @@ function Thread() {
       .filter((_, index) => settled[index].status === 'fulfilled')
       .map((message) => message.id);
     if (removed.length) deleteThreadMessages(client, id, removed);
-    setSelectedIds([]);
+    selection.clear();
     if (settled.some((result) => result.status === 'rejected')) setActionError(t('chat.sendError'));
   }
   async function starSelected() {
     try {
       for (const messageId of selectedIds) await chatRepository.star(id, messageId);
-      setSelectedIds([]);
+      selection.clear();
     } catch {
       setActionError(t('chat.sendError'));
     }
@@ -538,11 +539,11 @@ function Thread() {
     if (selectedIds.length !== 1) return;
     const target = messages.find((message) => message.id === selectedIds[0]);
     if (target) setReply(target);
-    setSelectedIds([]);
+    selection.clear();
   }
   function clearSelection() {
-    setSelectedIds([]);
-    setSelectedTargets([]);
+    selection.clear();
+    selection.setTargets([]);
     setForwardOpen(false);
   }
   async function setTheme(theme: string) {
@@ -585,8 +586,7 @@ function Thread() {
     }
     try {
       await chatRepository.forward(id, selectedIds, selectedTargets);
-      setSelectedIds([]);
-      setSelectedTargets([]);
+      selection.clear();
     } catch {
       setActionError(t('chat.sendError'));
     }
@@ -599,11 +599,7 @@ function Thread() {
     }
   }
   function toggleSelected(messageId: string, checked: boolean) {
-    setSelectedIds((current) =>
-      checked
-        ? [...new Set([...current, messageId])]
-        : current.filter((item) => item !== messageId),
-    );
+    selection.toggle(messageId, checked);
   }
 
   const muted = newestPage?.preference?.muted ?? false;
@@ -826,7 +822,7 @@ function Thread() {
               onToggle={toggleSelected}
               onReply={(target) => {
                 setReply(target);
-                setSelectedIds([]);
+                selection.clear();
               }}
               onOpenExternal={(url) => void openExternal(url)}
             />
@@ -931,7 +927,7 @@ function Thread() {
                           checked={selectedTargets.includes(item.id)}
                           onChange={(event) => {
                             const checked = event.currentTarget.checked;
-                            setSelectedTargets((targets) =>
+                            selection.setTargets((targets) =>
                               checked
                                 ? [...new Set([...targets, item.id])]
                                 : targets.filter((target) => target !== item.id),
