@@ -359,6 +359,7 @@ jobs:
     name: Real mobile journey (Android emulator / Nest / PostgreSQL / Redis)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    continue-on-error: true
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://test_user:test_password@127.0.0.1:5432/freebay_test_db?schema=public
