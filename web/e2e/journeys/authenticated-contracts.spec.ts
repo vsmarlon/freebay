@@ -113,9 +113,9 @@ test('favorite and cart remain separate; cart quantity is stock bounded and chec
   expect(state.favorites.has(productId)).toBe(true);
   expect(state.cartQuantity).toBe(1);
 
-  await page.goto('/en/cart');
-  await waitForHydration(page);
-  await expect(page.getByRole('heading', { name: 'Your cart' })).toBeVisible({ timeout: 45_000 });
+  await page.getByRole('button', { name: /Synthetic Buyer|Account/ }).click();
+  await page.getByRole('menuitem', { name: 'Cart' }).click();
+  await expect(page.getByRole('heading', { name: 'Your cart' })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/Items \(1\)/)).toBeVisible();
   await page.getByRole('link', { name: 'Continue to checkout' }).click();
   await page.getByRole('button', { name: 'Continue to secure checkout' }).click();
