@@ -74,17 +74,16 @@ export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
 // ponytail: values typed or autofilled into SSR forms before React hydration never reach state (the first re-render wipes them); mount-time adoption pulls them in. Selects keep the ceiling until a journey proves otherwise.
 function usePreHydrationValue<T extends HTMLInputElement | HTMLTextAreaElement>(onChange: ((event: ChangeEvent<T>) => void) | undefined, controlled: unknown) {
   const adopted = useRef(false);
-  return useCallback((field: T | null) => {
-    if (adopted.current || !field || !onChange) return;
-    const adopt = () => {
-      if (adopted.current || field.value === '' || field.value === String(controlled ?? '')) return;
+  const [hydrated, setHydrated] = useState(false);
+  const ref = useCallback((field: T | null) => {
+    if (!field) return;
+    if (!adopted.current && onChange && field.value !== '' && field.value !== String(controlled ?? '')) {
       adopted.current = true;
       onChange({ currentTarget: field } as ChangeEvent<T>);
-    };
-    field.addEventListener('input', adopt);
-    if (field.value !== '' && field.value !== String(controlled ?? '')) adopt();
-    return () => field.removeEventListener('input', adopt);
+    }
+    setHydrated(true);
   }, [onChange, controlled]);
+  return [ref, hydrated] as const;
 }
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -93,8 +92,8 @@ export function buttonClass(variant: ButtonVariant = 'primary', size: ButtonSize
 export function Button({ variant = 'primary', size = 'md', pending = false, disabled, type = 'button', className = '', children, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize; pending?: boolean }) { return <button {...props} type={type} disabled={disabled || pending} className={`${buttonClass(variant, size)} ${className}`}>{pending ? '… ' : null}{children}</button>; }
 export function Input({ label, error, hint, id, icon, trailing, onChange, value, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string; hint?: string; icon?: IconName; trailing?: ReactNode }) {
   const inputId = id ?? `field-${label.toLowerCase().replace(/\W+/g, '-')}`;
-  const ref = usePreHydrationValue<HTMLInputElement>(onChange, value);
-  const field = <input {...props} ref={ref} value={value} onChange={onChange} id={inputId} aria-invalid={Boolean(error)} aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined} />;
+  const [hydrationRef, hydrated] = usePreHydrationValue<HTMLInputElement>(onChange, value);
+  const field = <input {...props} ref={hydrationRef} {...(hydrated ? { value } : { defaultValue: value })} onChange={onChange} id={inputId} aria-invalid={Boolean(error)} aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined} />;
   return <div className="grid min-w-0 grid-cols-1 gap-1.5 text-xs"><label htmlFor={inputId}>{label}</label>{icon || trailing ? <span className="relative block">{icon ? <span className="pointer-events-none absolute top-1/2 left-2.5 grid -translate-y-1/2 place-items-center text-muted" aria-hidden="true"><Icon name={icon} size={16} /></span> : null}<span className={icon ? '[&>input]:pl-9' : ''}>{field}</span>{trailing ? <span className="absolute top-1/2 right-[3px] grid size-[34px] -translate-y-1/2 place-items-center">{trailing}</span> : null}</span> : field}{error ? <small id={`${inputId}-error`} role="alert" className="text-danger">{error}</small> : hint ? <small id={`${inputId}-hint`} className="text-muted">{hint}</small> : null}</div>;
 }
 export function PasswordInput({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
@@ -113,9 +112,9 @@ export function SegmentedControl<T extends string>({ label, value, options, onCh
 export function Select({ label, error, children, id, ...props }: SelectHTMLAttributes<HTMLSelectElement> & { label: string; error?: string; children: ReactNode }) { const selectId = id ?? `field-${label.toLowerCase().replace(/\W+/g, '-')}`; return <label className="grid min-w-0 grid-cols-1 gap-1.5 text-xs" htmlFor={selectId}><span>{label}</span><select {...props} className="min-h-[42px] min-w-0 border-[1.5px] border-ink bg-surface px-3 py-2.5 text-ink" id={selectId} aria-invalid={Boolean(error)}>{children}</select>{error ? <small role="alert" className="text-danger">{error}</small> : null}</label>; }
 export function TextArea({ label, error, id, onChange, value, autoGrow = false, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; error?: string; autoGrow?: boolean }) {
   const fieldId = id ?? `field-${label.toLowerCase().replace(/\W+/g, '-')}`;
-  const ref = usePreHydrationValue<HTMLTextAreaElement>(onChange, value);
+  const [hydrationRef, hydrated] = usePreHydrationValue<HTMLTextAreaElement>(onChange, value);
   const resize = (field: HTMLTextAreaElement) => { if (!autoGrow) return; field.style.height = 'auto'; field.style.height = `${Math.min(field.scrollHeight, 200)}px`; };
-  return <label className="grid min-w-0 grid-cols-1 gap-1.5 text-xs" htmlFor={fieldId}><span>{label}</span><textarea {...props} className={`min-h-[42px] min-w-0 border-[1.5px] border-ink bg-surface px-3 py-2.5 text-ink ${autoGrow ? 'max-h-[200px] resize-none overflow-y-auto' : ''}`} data-auto-grow={autoGrow ? '' : undefined} ref={(node) => { ref(node); if (node) resize(node); }} value={value} onChange={(event) => { resize(event.currentTarget); onChange?.(event); }} id={fieldId} aria-invalid={Boolean(error)} />{error ? <small role="alert" className="text-danger">{error}</small> : null}</label>;
+  return <label className="grid min-w-0 grid-cols-1 gap-1.5 text-xs" htmlFor={fieldId}><span>{label}</span><textarea {...props} className={`min-h-[42px] min-w-0 border-[1.5px] border-ink bg-surface px-3 py-2.5 text-ink ${autoGrow ? 'max-h-[200px] resize-none overflow-y-auto' : ''}`} data-auto-grow={autoGrow ? '' : undefined} ref={(node) => { hydrationRef(node); if (node) resize(node); }} {...(hydrated ? { value } : { defaultValue: value })} onChange={(event) => { resize(event.currentTarget); onChange?.(event); }} id={fieldId} aria-invalid={Boolean(error)} />{error ? <small role="alert" className="text-danger">{error}</small> : null}</label>;
 }
 export function Checkbox({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string; ref?: Ref<HTMLInputElement> }) { return <label className="flex items-start gap-2.5"><input {...props} className="mt-0.5 flex-none" type="checkbox" /><span>{label}</span></label>; }
 export function Surface({ tone = 'base', className = '', ...props }: HTMLAttributes<HTMLDivElement> & { tone?: 'base' | 'mid' | 'high' }) { const bg = tone === 'base' ? 'bg-surface' : tone === 'mid' ? 'bg-surface-mid' : 'bg-surface-high'; return <div {...props} className={`border border-(--hairline) p-4 ${bg} ${className}`} />; }
