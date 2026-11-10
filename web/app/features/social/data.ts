@@ -29,9 +29,9 @@ export const socialApi = {
     return api.post<Post>('/social/posts', body);
   },
   deletePost: (id: string) => api.patch<void>(`/social/posts/${encodeURIComponent(id)}/delete`),
-  likePost: (id: string, active: boolean) => active ? api.patch<MutationState>(`/social/posts/${encodeURIComponent(id)}/unlike`) : api.post<MutationState>(`/social/posts/${encodeURIComponent(id)}/like`),
-  repost: (id: string, active: boolean) => active ? api.patch<MutationState>(`/social/posts/${encodeURIComponent(id)}/unshare`) : api.post<MutationState>(`/social/posts/${encodeURIComponent(id)}/share`),
-  save: (id: string, active: boolean) => active ? api.patch<SaveMutationState>(`/social/posts/${encodeURIComponent(id)}/unsave`) : api.post<SaveMutationState>(`/social/posts/${encodeURIComponent(id)}/save`),
+  likePost: (id: string, active: boolean) => active ? api.post<MutationState>(`/social/posts/${encodeURIComponent(id)}/like`) : api.patch<MutationState>(`/social/posts/${encodeURIComponent(id)}/unlike`),
+  repost: (id: string, active: boolean) => active ? api.post<MutationState>(`/social/posts/${encodeURIComponent(id)}/share`) : api.patch<MutationState>(`/social/posts/${encodeURIComponent(id)}/unshare`),
+  save: (id: string, active: boolean) => active ? api.post<SaveMutationState>(`/social/posts/${encodeURIComponent(id)}/save`) : api.patch<SaveMutationState>(`/social/posts/${encodeURIComponent(id)}/unsave`),
   createComment: (id: string, content: string, parentId?: string, mentionIds?: string[]) => api.post<CreatedComment>(`/social/posts/${encodeURIComponent(id)}/comments`, { content, parentId, mentionIds, clientRequestId: crypto.randomUUID() }),
   deleteComment: (id: string) => api.patch<void>(`/social/comments/${encodeURIComponent(id)}/delete`),
   approveComment: (id: string) => api.patch<void>(`/social/comments/${encodeURIComponent(id)}/approve`),

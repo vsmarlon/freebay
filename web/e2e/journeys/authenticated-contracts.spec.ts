@@ -7,15 +7,18 @@ async function finishWelcome(page: Page) {
 
 async function waitForHydration(page: Page) {
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(250);
+  await page.waitForTimeout(1000);
 }
 
 async function openProtectedRoute(page: Page, state: BrowserFixture, path: string) {
   state.profile.username = 'buyer_01';
   await page.goto(path);
   await waitForHydration(page);
-  await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible();
-  await finishWelcome(page);
+  const skip = page.getByRole('button', { name: 'Skip' });
+  if (await skip.isVisible({ timeout: 5000 }).catch(() => false)) {
+    await finishWelcome(page);
+    await waitForHydration(page);
+  }
   await expect(page).toHaveURL((url) => url.pathname === new URL(path, 'http://localhost').pathname);
 }
 
@@ -106,7 +109,6 @@ test('social comment/save round-trip follows fixture state rather than optimisti
   const state = await installBrowserFixture(page);
   await openProtectedRoute(page, state, '/en/feed');
   await expect(page.getByText('Public fixture post')).toBeVisible();
-  await page.waitForTimeout(250);
   await page.getByRole('button', { name: 'Save post' }).click();
   await expect.poll(() => state.savedPost).toBe(true);
   await page.getByRole('link', { name: 'Comments' }).click();

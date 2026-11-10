@@ -49,7 +49,7 @@ export default function EditProfilePage() {
     <FormSection title={t('sectionImages')}>
     <label className="ui-field"><span>{t('avatar')}</span><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(e) => { chooseImage(e.currentTarget.files?.[0], 'avatar'); e.currentTarget.value = ''; }} /></label><label className="ui-field"><span>{t('banner')}</span><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(e) => { chooseImage(e.currentTarget.files?.[0], 'banner'); e.currentTarget.value = ''; }} /></label>
     </FormSection>
-    <div className="flex flex-wrap items-center gap-3"><Button disabled={busy}>{busy ? t('loading') : t('save')}</Button><Link className="ui-button ui-secondary" to={path(paths.profile)}>{t('cancel')}</Link></div>{ok ? <p role="status">{t('saveOk')}</p> : null}{error ? <p role="alert" className="text-danger">{error}</p> : null}<p className="text-sm text-secondary">{t('identityNotice')}</p>
+    <div className="flex flex-wrap items-center gap-3"><Button type="submit" disabled={busy}>{busy ? t('loading') : t('save')}</Button><Link className="ui-button ui-secondary" to={path(paths.profile)}>{t('cancel')}</Link></div>{ok ? <p role="status">{t('saveOk')}</p> : null}{error ? <p role="alert" className="text-danger">{error}</p> : null}<p className="text-sm text-secondary">{t('identityNotice')}</p>
   </form>}</Panel></Frame>;
 }
 

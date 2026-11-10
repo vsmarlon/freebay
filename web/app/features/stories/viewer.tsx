@@ -15,3 +15,5 @@ export function StoryViewerRoute() { return <RequireAuth><StoryViewer /></Requir
 export function loader() {
   return null;
 }
+
+export default StoryViewerRoute;
