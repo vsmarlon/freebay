@@ -11,3 +11,7 @@ export function StoryViewer() {
 }
 
 export function StoryViewerRoute() { return <RequireAuth><StoryViewer /></RequireAuth>; }
+
+export function loader() {
+  return null;
+}

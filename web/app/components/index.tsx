@@ -76,9 +76,14 @@ function usePreHydrationValue<T extends HTMLInputElement | HTMLTextAreaElement>(
   const adopted = useRef(false);
   return useCallback((field: T | null) => {
     if (adopted.current || !field || !onChange) return;
-    if (field.value === '' || field.value === String(controlled ?? '')) return;
-    adopted.current = true;
-    onChange({ currentTarget: field } as ChangeEvent<T>);
+    const adopt = () => {
+      if (adopted.current || field.value === '' || field.value === String(controlled ?? '')) return;
+      adopted.current = true;
+      onChange({ currentTarget: field } as ChangeEvent<T>);
+    };
+    field.addEventListener('input', adopt);
+    if (field.value !== '' && field.value !== String(controlled ?? '')) adopt();
+    return () => field.removeEventListener('input', adopt);
   }, [onChange, controlled]);
 }
 
