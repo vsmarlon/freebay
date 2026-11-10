@@ -5,9 +5,15 @@ async function finishWelcome(page: Page) {
   await page.getByRole('button', { name: 'Skip' }).click();
 }
 
+async function waitForHydration(page: Page) {
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(250);
+}
+
 async function openProtectedRoute(page: Page, state: BrowserFixture, path: string) {
   state.profile.username = 'buyer_01';
   await page.goto(path);
+  await waitForHydration(page);
   await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible();
   await finishWelcome(page);
   await expect(page).toHaveURL((url) => url.pathname === new URL(path, 'http://localhost').pathname);
@@ -16,6 +22,7 @@ async function openProtectedRoute(page: Page, state: BrowserFixture, path: strin
 test('magic-link GET is inert, explicit confirmation consumes once, and profile completes through cookie-backed session', async ({ page }) => {
   const state = await installBrowserFixture(page);
   await page.goto('/en/register');
+  await waitForHydration(page);
   const email = page.getByLabel('Email address');
   await email.fill('synthetic@example.invalid');
   await expect(email).toHaveValue('synthetic@example.invalid');
@@ -99,6 +106,7 @@ test('social comment/save round-trip follows fixture state rather than optimisti
   const state = await installBrowserFixture(page);
   await openProtectedRoute(page, state, '/en/feed');
   await expect(page.getByText('Public fixture post')).toBeVisible();
+  await page.waitForTimeout(250);
   await page.getByRole('button', { name: 'Save post' }).click();
   await expect.poll(() => state.savedPost).toBe(true);
   await page.getByRole('link', { name: 'Comments' }).click();
@@ -164,7 +172,7 @@ test('chat sends a reply, archives the thread, and never fetches view-once media
   const message = page.getByRole('textbox', { name: 'Message' });
   await message.fill('Synthetic reply body');
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page.getByText('Synthetic reply body')).toBeVisible();
+  await expect(page.getByText('Synthetic reply body').last()).toBeVisible();
   expect(state.calls.find((call) => call.path.endsWith('/messages') && call.method === 'POST')?.body).toMatchObject({ content: 'Synthetic reply body', type: 'TEXT', replyToId: '30000000-0000-4000-8000-000000000003' });
   await page.getByRole('button', { name: 'Archive' }).click();
   await expect(page.getByRole('button', { name: 'Unarchive' })).toBeVisible();
@@ -265,6 +273,7 @@ test('story view is recorded only after authenticated media loads and the next s
 test('profile edit, privacy step-up, deletion guard, notifications and close-friends state follow server outcomes', async ({ page }) => {
   const state = await installBrowserFixture(page);
   await openProtectedRoute(page, state, '/en/profile/edit');
+  await expect(page.getByRole('button', { name: 'Save changes' })).toBeEnabled();
   await page.getByLabel('Display name').fill('Updated Synthetic Name');
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('status')).toHaveText('Saved.');
