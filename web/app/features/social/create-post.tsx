@@ -41,19 +41,19 @@ export function CreatePost({ userId }: { userId: string }) {
   const [error, setError] = useState('');
   const [mention, setMention] = useState<MentionRange | null>(null);
   const term = mention?.term ?? '';
+  const mentionListOpen = audience === 'EVERYONE' && term.length >= 2;
   const people = useQuery({
     queryKey: userKey(userId, 'social', 'mention-search', term),
     queryFn: ({ signal }) => socialApi.searchUsers(term, signal),
-    enabled: audience === 'EVERYONE' && term.length >= 2,
+    enabled: mentionListOpen,
     gcTime: 0,
     staleTime: 0,
   });
-  const suggestions =
-    audience === 'EVERYONE' && term.length >= 2
-      ? (people.data?.users ?? [])
-          .filter((user) => !mentions.some((item) => item.id === user.id))
-          .slice(0, 5)
-      : [];
+  const suggestions = mentionListOpen
+    ? (people.data?.users ?? [])
+        .filter((user) => !mentions.some((item) => item.id === user.id))
+        .slice(0, 5)
+    : [];
   function syncMention(text: string, caret: number) {
     setMention(findMention(text, caret));
   }
@@ -117,13 +117,15 @@ export function CreatePost({ userId }: { userId: string }) {
         }}
         onSubmit={doSubmit}
         onSubmitOverride={onEnterOverride}
+        // The picker supports mouse/touch and Enter-picks-first; arrow-key traversal of the
+        // list is not implemented, so Tab is the keyboard path into it.
         textareaProps={{
           role: 'combobox',
-          'aria-expanded': suggestions.length > 0,
-          'aria-controls': 'social-mention-list',
+          'aria-expanded': mentionListOpen,
+          'aria-controls': mentionListOpen ? 'social-mention-list' : undefined,
         }}
       />
-      {term.length >= 2 && audience === 'EVERYONE' ? (
+      {mentionListOpen ? (
         <ul id="social-mention-list" className="grid max-h-40 overflow-y-auto bg-surface-high p-1">
           {people.isPending ? (
             <li role="status" className="p-2 text-xs text-muted">
