@@ -16,7 +16,7 @@ function useDocumentVisible() {
   return useSyncExternalStore(subscribeVisibility, isDocumentVisible, serverDocumentVisible);
 }
 
-// ponytail: one player for stories and highlights so both routes keep the same app behavior.
+// One player for stories and highlights so both routes share the same playback behavior.
 export function StoryPlayer({
   stories,
   title,
@@ -97,7 +97,8 @@ export function StoryPlayer({
     const start = dragRef.current;
     dragRef.current = null;
     setDragging(false);
-    // ponytail: distance threshold only; velocity-aware dismissal if drag feels wrong
+    // Dismissal is a distance threshold only: a slow drag past a quarter of the viewport
+    // closes the viewer. Velocity is not sampled, so replaying the gesture is the escape hatch.
     if (
       start?.active &&
       dragOffsetRef.current > (typeof window === 'undefined' ? 0 : window.innerHeight * 0.25)
@@ -189,7 +190,11 @@ export function StoryPlayer({
                   {story.audience === 'CLOSE_FRIENDS' ? (
                     <span className="text-success">{t.closeFriends}</span>
                   ) : null}
-                  <time dateTime={story.createdAt}>{storyAge(story.createdAt, t.now)}</time>
+                  {/* Relative age comes from the local clock, so the SSR and hydration
+                      renders can disagree by one minute boundary. */}
+                  <time dateTime={story.createdAt} suppressHydrationWarning>
+                    {storyAge(story.createdAt, t.now)}
+                  </time>
                   {story.viewsCount !== undefined ? (
                     <span aria-hidden="true">
                       · {story.viewsCount} {t.views}
