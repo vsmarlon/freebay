@@ -87,4 +87,26 @@ export default [
       'better-tailwindcss/no-unnecessary-whitespace': 'off',
     },
   },
+
+  {
+    files: ['app/features/**/domain/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['react', 'react-dom', 'react-router', '@tanstack/*', '**/components/**', '**/core/api/**', '**/data/**', '**/presentation/**'], message: 'Domain is pure: no React, transport, cache, UI or persistence dependencies.' },
+        ],
+      }],
+      'no-restricted-globals': ['error', 'window', 'document', 'localStorage', 'sessionStorage', 'fetch'],
+    },
+  },
+  {
+    files: ['app/features/**/presentation/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['**/core/api/**', '**/data/**', '**/repository/**', '**/infrastructure/**'], message: 'Presentation must consume feature hooks/use cases; do not call transport or repositories directly.' },
+        ],
+      }],
+    },
+  },
 ];
