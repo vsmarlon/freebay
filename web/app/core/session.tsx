@@ -108,6 +108,24 @@ function subscribeLogout(listener: () => void) {
   };
 }
 
+// The logout endpoint authenticates from the 15-minute access cookie, so an idle tab must
+// renew the cookies before it can end the session.
+async function postSessionLogout() {
+  try {
+    await api.post('/auth/web/session/logout', undefined, { auth: false });
+  } catch (cause) {
+    if (!(cause instanceof ApiError) || cause.status !== 401) throw cause;
+    try {
+      await refreshAccessToken();
+      await api.post('/auth/web/session/logout', undefined, { auth: false });
+    } catch (retryCause) {
+      // A refused refresh means the server session is already gone; anything else is a failure.
+      if (retryCause instanceof ApiError && retryCause.status === 401) return;
+      throw retryCause;
+    }
+  }
+}
+
 function SessionStateProvider({ children }: React.PropsWithChildren) {
   const [isSigningOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
@@ -148,11 +166,13 @@ function SessionStateProvider({ children }: React.PropsWithChildren) {
 
   const reload = async () => {
     const id = ++reloadId.current;
+    const previousUserId =
+      queryClient.getQueryData<SessionUser | null>(['session', 'user'])?.id ?? null;
     clearAccessToken();
     try {
       await queryClient.cancelQueries({ queryKey: ['session', 'user'] });
     } catch {
-      /* ignore */
+      /* a query that refuses to cancel must not block the reload */
     }
     await queryClient.removeQueries({ queryKey: ['session', 'user'] });
     if (id !== reloadId.current) return;
@@ -161,6 +181,13 @@ function SessionStateProvider({ children }: React.PropsWithChildren) {
     } catch {
       /* error state reflects it */
     }
+    const nextUserId =
+      queryClient.getQueryData<SessionUser | null>(['session', 'user'])?.id ?? null;
+    // Another account signing in on this tab must not be served the previous account's caches.
+    if (id === reloadId.current && nextUserId !== previousUserId)
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== 'session',
+      });
   };
 
   const signOut = async () => {
@@ -171,9 +198,7 @@ function SessionStateProvider({ children }: React.PropsWithChildren) {
     setSignOutFailed(false);
     clearAccessToken();
     try {
-      await queryClient.cancelQueries();
-      queryClient.clear();
-      await api.post('/auth/web/session/logout', undefined, { auth: false });
+      await postSessionLogout();
     } catch (cause) {
       if (operation !== reloadId.current) {
         logoutFlight.current = false;
@@ -188,6 +213,14 @@ function SessionStateProvider({ children }: React.PropsWithChildren) {
       logoutFlight.current = false;
       return;
     }
+    try {
+      await queryClient.cancelQueries();
+    } catch {
+      /* cache.clear() below drops whatever refused to cancel */
+    }
+    queryClient.clear();
+    // The recovery above may have minted a token for a session that no longer exists.
+    clearAccessToken();
     publishLogout();
     setSigningOut(false);
     setSignOutFailed(false);
@@ -232,20 +265,8 @@ export function useSession() {
   return useContext(Context);
 }
 export const session = {
-  current: async () => {
-    try {
-      return parseUser(await api.get<unknown>('/users/me'));
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401) return null;
-      throw error;
-    }
-  },
   refresh: async () => {
     await refreshAccessToken();
-  },
-  logout: async () => {
-    await api.post('/auth/web/session/logout', undefined, { auth: false });
-    clearAccessToken();
   },
   socketToken: () => accessTokenForSocket(),
 };
