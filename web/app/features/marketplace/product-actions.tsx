@@ -14,7 +14,7 @@ const actionButton =
 
 export function ProductActions({ product, stock }: { product: ProductSummary; stock: number }) {
   const { path } = useLocale();
-  const { isPending } = useSession();
+  const { user, isPending } = useSession();
   const navigate = useNavigate();
   const actions = useProductActions(product);
   const { t, favorite, follow, saved, following, busy, message } = actions;
@@ -63,7 +63,7 @@ export function ProductActions({ product, stock }: { product: ProductSummary; st
           className={`${actionButton}${saved ? ' bg-surface-mid text-brand' : ''}`}
           aria-label={saved ? t('product.unfavorite') : t('product.favorite')}
           aria-pressed={saved}
-          disabled={busy || isPending || favorite.isPending || favorite.isError}
+          disabled={busy || isPending || Boolean(user && (favorite.isPending || favorite.isError))}
           onClick={() => void actions.toggleFavorite()}
         >
           <Icon name="heart" size={20} />
