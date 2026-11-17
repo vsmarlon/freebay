@@ -21,7 +21,12 @@ export class ChatThreadAccessService {
         return left(new ForbiddenError('Você não é participante desta conversa'));
       }
       const otherUserId = directConv.user1Id === userId ? directConv.user2Id : directConv.user1Id;
-      return right({ directConversationId: conversationId, otherUserId });
+      return right({
+        directConversationId: conversationId,
+        otherUserId,
+        directStatus: directConv.status,
+        initiatorId: directConv.initiatorId,
+      });
     }
 
     const order = await this.prisma.order.findUnique({ where: { id: conversationId } });

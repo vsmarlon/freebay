@@ -18,8 +18,15 @@ class OrderRepositoryImpl implements OrderRepository {
     CancelToken? cancelToken,
   }) => requestEither(
     () => client.get('/orders/$orderId', cancelToken: cancelToken),
-    decoder: (response) =>
-        Right(OrderEntity.fromJson(response.data['data']['order'])),
+    decoder: (response) {
+      final data = response.data['data'] as Map<String, dynamic>;
+      final order = Map<String, dynamic>.from(data['order'] as Map);
+      final actions = data['allowedActions'];
+      order['allowedActions'] = actions is List
+          ? actions.whereType<String>().toList()
+          : const <String>[];
+      return Right(OrderEntity.fromJson(order));
+    },
   );
 
   @override
@@ -61,16 +68,30 @@ class OrderRepositoryImpl implements OrderRepository {
   );
 
   @override
-  Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) async {
-    final confirmation = await requestEither<void>(
-      () => client.patch('/orders/$orderId/confirm-delivery'),
+  Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) =>
+      _transition(orderId, 'confirm-delivery');
+
+  @override
+  Future<Either<Failure, OrderEntity>> markAsShipped(String orderId) =>
+      _transition(orderId, 'ship');
+
+  @override
+  Future<Either<Failure, OrderEntity>> markAsDelivered(String orderId) =>
+      _transition(orderId, 'deliver');
+
+  Future<Either<Failure, OrderEntity>> _transition(
+    String orderId,
+    String action,
+  ) async {
+    final result = await requestEither<void>(
+      () => client.patch('/orders/$orderId/$action'),
       decoder: (_) => const Right(null),
     );
-    if (confirmation.isLeft) {
-      return Left(confirmation.leftOrNull!);
+    if (result.isLeft) {
+      return Left(result.leftOrNull!);
     }
 
-    // Confirmation returns an acknowledgement; reload the canonical order.
+    // Transitions return an acknowledgement; reload the canonical order.
     return getOrder(orderId);
   }
 

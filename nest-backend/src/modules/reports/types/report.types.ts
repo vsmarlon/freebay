@@ -15,5 +15,4 @@ export interface CreateReportData {
   reportedChatMessageId?: string;
   reason: ReportReason;
   description?: string | null;
-  hideFromUser?: boolean;
 }

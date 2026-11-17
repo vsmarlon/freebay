@@ -165,6 +165,11 @@ class ChatRepository {
     decoder: (_) => const Right(null),
   );
 
+  Future<Either<Failure, void>> acceptChat(String id) => requestEither<void>(
+    () => client.post('/chat/conversations/$id/accept'),
+    decoder: (_) => const Right(null),
+  );
+
   Future<Either<Failure, void>> archiveChat(
     String id,
     ChatThreadType type,

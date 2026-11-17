@@ -29,7 +29,7 @@ describe('GetOrderUseCase', () => {
   ] as const)('allows the %s', async (_role, user) => {
     findById.mockResolvedValue(right(order));
 
-    await expect(sut.execute('order-1', user)).resolves.toEqual(right({ order }));
+    await expect(sut.execute('order-1', user)).resolves.toEqual(right({ order, allowedActions: [] }));
   });
 
   it('rejects an outsider', async () => {

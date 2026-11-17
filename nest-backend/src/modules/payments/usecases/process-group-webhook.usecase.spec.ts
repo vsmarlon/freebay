@@ -99,7 +99,7 @@ describe('ProcessGroupWebhookUseCase', () => {
     mockTransactionRepository.markAsFailed.mockResolvedValue(right({ count: 1 }));
     mockProductRepository.updateInventoryOnSale.mockResolvedValue(right(undefined));
     mockProductRepository.restoreInventoryOnExpiry.mockResolvedValue(right(undefined));
-    mockOrderRepository.confirm.mockResolvedValue(right(undefined));
+    mockOrderRepository.confirm.mockResolvedValue(right(true));
     mockOrderRepository.cancel.mockResolvedValue(right(undefined));
     mockWalletRepository.creditPending.mockResolvedValue(right(undefined));
     mockNotificationService.notifyPayment.mockResolvedValue(undefined);
@@ -129,6 +129,20 @@ describe('ProcessGroupWebhookUseCase', () => {
     });
 
     expect(mockOrderRepository.confirm).toHaveBeenCalledTimes(3);
+  });
+
+  it('não deve creditar nenhum vendedor quando um pedido do grupo já saiu de PENDING', async () => {
+    mockOrderRepository.confirm.mockResolvedValue(right(false));
+
+    const result = await sut.execute({
+      event: 'payment_intent.succeeded',
+      data: { paymentGroupId: 'group-1', amountTotal: 30000, chargeId: 'ch_1' },
+    });
+
+    expect(result.isRight()).toBe(true);
+    expect(mockOrderRepository.confirm).toHaveBeenCalledTimes(1);
+    expect(mockProductRepository.updateInventoryOnSale).not.toHaveBeenCalled();
+    expect(mockWalletRepository.creditPending).not.toHaveBeenCalled();
   });
 
   it('não deve creditar ninguém quando outra entrega já reivindicou o grupo', async () => {

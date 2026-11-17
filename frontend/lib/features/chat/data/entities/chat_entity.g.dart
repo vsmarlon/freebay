@@ -42,6 +42,7 @@ _ChatEntity _$ChatEntityFromJson(Map<String, dynamic> json) => _ChatEntity(
       ? null
       : ChatProductInfo.fromJson(json['product'] as Map<String, dynamic>),
   unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
+  canAccept: json['canAccept'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$ChatEntityToJson(_ChatEntity instance) =>
@@ -55,6 +56,7 @@ Map<String, dynamic> _$ChatEntityToJson(_ChatEntity instance) =>
       'orderInfo': instance.orderInfo?.toJson(),
       'product': instance.product?.toJson(),
       'unreadCount': instance.unreadCount,
+      'canAccept': instance.canAccept,
     };
 
 const _$ChatThreadTypeEnumMap = {

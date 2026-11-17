@@ -65,7 +65,6 @@ class _MakeOfferDialogState extends State<MakeOfferDialog> {
       'originalPrice': widget.initialPriceCents,
       'offerPrice': offerCents,
       'message': _messageController.text.trim(),
-      'status': 'PENDING',
     });
   }
 

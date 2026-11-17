@@ -350,6 +350,12 @@ class AppLocalizationsPt extends AppLocalizations {
   String get chatConversationRestored => 'Conversa restaurada';
 
   @override
+  String get chatAcceptConversation => 'Aceitar conversa';
+
+  @override
+  String get chatAcceptedSuccess => 'Conversa aceita';
+
+  @override
   String get chatDeleteUndoExplanation =>
       'A conversa ficará oculta para você. Você terá alguns segundos para desfazer.';
 
@@ -626,7 +632,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get orderStatusConfirmed => 'Confirmado';
 
   @override
-  String get orderStatusShipped => 'Enviado';
+  String get orderStatusShipped => 'Entrega em mãos';
 
   @override
   String get orderStatusDelivered => 'Entregue';
@@ -639,6 +645,29 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get orderStatusDisputed => 'Em Disputa';
+
+  @override
+  String get orderStatusRefundPending => 'Reembolso pendente';
+
+  @override
+  String get orderStatusUnknown => 'Status desconhecido — atualize o app';
+
+  @override
+  String get ordersMarkHandover => 'Marcar entrega em mãos';
+
+  @override
+  String get ordersMarkHandoverBody =>
+      'O comprador confirma o recebimento e o pagamento é liberado.';
+
+  @override
+  String get ordersMarkReceived => 'Marcar como recebido';
+
+  @override
+  String get ordersMarkReceivedBody =>
+      'Isso registra que você recebeu o item. Você ainda pode abrir uma disputa se houver algo errado.';
+
+  @override
+  String get escrowStatusUnknown => 'Status de custódia desconhecido';
 
   @override
   String get ordersDispute => 'Abrir uma disputa';
@@ -4148,6 +4177,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get chatConversationRestored => 'Conversa restaurada';
 
   @override
+  String get chatAcceptConversation => 'Aceitar conversa';
+
+  @override
+  String get chatAcceptedSuccess => 'Conversa aceita';
+
+  @override
   String get chatDeleteUndoExplanation =>
       'A conversa ficará oculta para você. Você terá alguns segundos para desfazer.';
 
@@ -4424,7 +4459,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get orderStatusConfirmed => 'Confirmado';
 
   @override
-  String get orderStatusShipped => 'Enviado';
+  String get orderStatusShipped => 'Entrega em mãos';
 
   @override
   String get orderStatusDelivered => 'Entregue';
@@ -4437,6 +4472,29 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get orderStatusDisputed => 'Em Disputa';
+
+  @override
+  String get orderStatusRefundPending => 'Reembolso pendente';
+
+  @override
+  String get orderStatusUnknown => 'Status desconhecido — atualize o app';
+
+  @override
+  String get ordersMarkHandover => 'Marcar entrega em mãos';
+
+  @override
+  String get ordersMarkHandoverBody =>
+      'O comprador confirma o recebimento e o pagamento é liberado.';
+
+  @override
+  String get ordersMarkReceived => 'Marcar como recebido';
+
+  @override
+  String get ordersMarkReceivedBody =>
+      'Isso registra que você recebeu o item. Você ainda pode abrir uma disputa se houver algo errado.';
+
+  @override
+  String get escrowStatusUnknown => 'Status de custódia desconhecido';
 
   @override
   String get ordersDispute => 'Abrir uma disputa';

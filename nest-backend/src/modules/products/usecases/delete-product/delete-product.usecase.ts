@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
+import { AppError, BadRequestError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
 import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
 import { DeleteProductInput } from '../../dtos/product.dto';
+import { canDeleteProduct } from '../../domain/product-state';
 
 @Injectable()
 export class DeleteProductUseCase {
@@ -15,6 +16,10 @@ export class DeleteProductUseCase {
 
     if (product.value.sellerId !== input.userId) {
       return left(new ForbiddenError('Você não pode excluir este produto'));
+    }
+
+    if (!canDeleteProduct(product.value)) {
+      return left(new BadRequestError('O anúncio está reservado por um pedido em aberto'));
     }
 
     const deleted = await this.productRepository.delete(input.productId);

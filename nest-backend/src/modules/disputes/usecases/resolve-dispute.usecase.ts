@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { TransactionStatus } from '@prisma/client';
+import { DisputeWinner, TransactionStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError, DatabaseError, ConflictError, PaymentProviderError } from '@/shared/core/errors';
 import { NotificationService } from '../../notifications/services/notification.service';
@@ -8,7 +8,6 @@ import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
 import { RefundStatus } from '@/modules/payments/types/payment-provider.types';
-import { DisputeWinner } from '../dispute.constants';
 import { TransactionDatabaseRepository } from '@/modules/payments/data/repositories/transaction-database.repository';
 import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
 
@@ -93,6 +92,7 @@ export class ResolveDisputeUseCase {
         }, {
           resolution: input.resolution,
           resolvedById: input.resolvedById ?? null,
+          winner: DisputeWinner.BUYER,
         });
       } catch (error) {
         if (error instanceof Error && error.message === 'DISPUTE_NOT_RESOLVABLE') {
@@ -105,6 +105,7 @@ export class ResolveDisputeUseCase {
         await this.resolutionExecution.finalizeSeller(dispute, {
           resolution: input.resolution,
           resolvedById: input.resolvedById ?? null,
+          winner: DisputeWinner.SELLER,
         });
       } catch (error) {
         if (error instanceof Error && error.message === 'DISPUTE_NOT_RESOLVABLE') {

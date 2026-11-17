@@ -22,6 +22,8 @@ abstract interface class OrderRepository {
     OrderStatus? status,
   });
   Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId);
+  Future<Either<Failure, OrderEntity>> markAsShipped(String orderId);
+  Future<Either<Failure, OrderEntity>> markAsDelivered(String orderId);
   Future<Either<Failure, OrderEntity>> createOrder(String productId);
   Future<Either<Failure, String>> cancelOrder(
     String orderId, {

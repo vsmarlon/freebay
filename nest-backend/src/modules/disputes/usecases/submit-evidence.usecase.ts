@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, NotFoundError, UnauthorizedError, BadRequestError } from '@/shared/core/errors';
-import { DisputeStatus, Prisma } from '@prisma/client';
+import { AppError, NotFoundError, UnauthorizedError, BadRequestError, ConflictError } from '@/shared/core/errors';
+import { Prisma } from '@prisma/client';
 import { DisputeDatabaseRepository } from '../data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
+import { partyOf } from '../domain/dispute-state';
 
 @Injectable()
 export class SubmitEvidenceUseCase {
@@ -21,22 +22,25 @@ export class SubmitEvidenceUseCase {
       return left(new NotFoundError('Dispute'));
     }
 
-    const isBuyer = dispute.order.buyerId === input.userId;
-    const isSeller = dispute.order.sellerId === input.userId;
-    if (!isBuyer && !isSeller) {
+    const party = partyOf(dispute.order, input.userId);
+    if (!party) {
       return left(new UnauthorizedError('Not authorized'));
     }
 
-    if (!this.transitionPolicy.canSubmitEvidence(dispute.status)) {
+    if (!this.transitionPolicy.canSubmitEvidence(dispute.status, party)) {
       return left(new BadRequestError(`Evidence cannot be submitted while dispute is ${dispute.status}`));
     }
 
-    const updateData = isBuyer
-      ? { buyerEvidence: input.evidence, status: DisputeStatus.AWAITING_SELLER }
-      : { sellerEvidence: input.evidence, status: DisputeStatus.AWAITING_BUYER };
-
-    const updateResult = await this.disputeRepo.update(input.disputeId, updateData);
+    const updateResult = await this.disputeRepo.submitEvidence({
+      disputeId: input.disputeId,
+      expectedStatus: dispute.status,
+      party,
+      evidence: input.evidence,
+    });
     if (updateResult.isLeft()) return left(updateResult.value);
+    if (!updateResult.value) {
+      return left(new ConflictError('Dispute changed before evidence could be recorded'));
+    }
 
     return right(undefined);
   }

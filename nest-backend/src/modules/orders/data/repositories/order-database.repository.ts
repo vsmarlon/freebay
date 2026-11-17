@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { OrderStatus, Prisma } from "@prisma/client";
+import { CancellationKind, OrderStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "@/shared/infra/prisma/prisma.service";
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from "@/shared/core/either";
@@ -92,17 +92,18 @@ export class OrderDatabaseRepository {
     orderId: string,
     status: OrderStatus,
     reason: string,
-    owner?: Parameters<OrderMutationRepository['claimCancellation']>[3],
+    kind: CancellationKind,
+    owner?: Parameters<OrderMutationRepository['claimCancellation']>[4],
   ): RepositoryResponse<boolean> {
-    return this.mutations.claimCancellation(orderId, status, reason, owner);
+    return this.mutations.claimCancellation(orderId, status, reason, kind, owner);
   }
 
   claimCheckoutAbandoned(orderId: string, tx?: Prisma.TransactionClient): RepositoryResponse<boolean> {
     return this.mutations.claimCheckoutAbandoned(orderId, tx);
   }
 
-  markRefundPending(orderId: string, reason: string): RepositoryResponse<void> {
-    return this.mutations.markRefundPending(orderId, reason);
+  markRefundPending(orderId: string, reason: string, kind: CancellationKind): RepositoryResponse<boolean> {
+    return this.mutations.markRefundPending(orderId, reason, kind);
   }
 
   markShipped(orderId: string): RepositoryResponse<boolean> {

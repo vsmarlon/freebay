@@ -10,47 +10,77 @@ enum OrderStatus {
   confirmed,
   shipped,
   delivered,
+  disputed,
+  refundPending,
   completed,
   cancelled,
-  disputed;
+  unknown;
 
   String get label => switch (this) {
     OrderStatus.pending => 'Pendente',
     OrderStatus.confirmed => 'Confirmado',
-    OrderStatus.shipped => 'Enviado',
+    OrderStatus.shipped => 'Entrega em mãos',
     OrderStatus.delivered => 'Entregue',
+    OrderStatus.disputed => 'Em Disputa',
+    OrderStatus.refundPending => 'Reembolso pendente',
     OrderStatus.completed => 'Concluído',
     OrderStatus.cancelled => 'Cancelado',
-    OrderStatus.disputed => 'Em Disputa',
+    OrderStatus.unknown => 'Desconhecido',
   };
 
-  String toApiString() => name.toUpperCase();
+  String toApiString() => switch (this) {
+    OrderStatus.pending => 'PENDING',
+    OrderStatus.confirmed => 'CONFIRMED',
+    OrderStatus.shipped => 'SHIPPED',
+    OrderStatus.delivered => 'DELIVERED',
+    OrderStatus.disputed => 'DISPUTED',
+    OrderStatus.refundPending => 'REFUND_PENDING',
+    OrderStatus.completed => 'COMPLETED',
+    OrderStatus.cancelled => 'CANCELLED',
+    OrderStatus.unknown => 'UNKNOWN',
+  };
 }
 
-OrderStatus _orderStatusFromJson(String value) => OrderStatus.values.firstWhere(
-  (e) => e.name == value.toLowerCase(),
-  orElse: () => OrderStatus.pending,
-);
+OrderStatus _orderStatusFromJson(String value) => switch (value.toUpperCase()) {
+  'PENDING' => OrderStatus.pending,
+  'CONFIRMED' => OrderStatus.confirmed,
+  'SHIPPED' => OrderStatus.shipped,
+  'DELIVERED' => OrderStatus.delivered,
+  'DISPUTED' => OrderStatus.disputed,
+  'REFUND_PENDING' => OrderStatus.refundPending,
+  'COMPLETED' => OrderStatus.completed,
+  'CANCELLED' => OrderStatus.cancelled,
+  _ => OrderStatus.unknown,
+};
 
 enum EscrowStatus {
   held,
   released,
-  refunded;
+  refunded,
+  unknown;
 
   String get label => switch (this) {
     EscrowStatus.held => 'Em custódia',
     EscrowStatus.released => 'Liberado',
     EscrowStatus.refunded => 'Reembolsado',
+    EscrowStatus.unknown => 'Desconhecido',
   };
 
-  String toApiString() => name.toUpperCase();
+  String toApiString() => switch (this) {
+    EscrowStatus.held => 'HELD',
+    EscrowStatus.released => 'RELEASED',
+    EscrowStatus.refunded => 'REFUNDED',
+    EscrowStatus.unknown => 'UNKNOWN',
+  };
 }
 
 EscrowStatus _escrowStatusFromJson(String value) =>
-    EscrowStatus.values.firstWhere(
-      (e) => e.name == value.toLowerCase(),
-      orElse: () => EscrowStatus.held,
-    );
+    switch (value.toUpperCase()) {
+      'HELD' => EscrowStatus.held,
+      'RELEASED' => EscrowStatus.released,
+      'REFUNDED' => EscrowStatus.refunded,
+      _ => EscrowStatus.unknown,
+    };
 
 @freezed
 abstract class OrderUserInfo with _$OrderUserInfo {
@@ -89,10 +119,13 @@ abstract class OrderEntity with _$OrderEntity {
     ProductEntity? product,
     OrderUserInfo? buyer,
     OrderUserInfo? seller,
+    @Default(<String>[]) List<String> allowedActions,
   }) = _OrderEntity;
 
   factory OrderEntity.fromJson(Map<String, dynamic> json) =>
       _$OrderEntityFromJson(json);
+
+  bool can(String action) => allowedActions.contains(action);
 
   double get amountInReais => amount / 100;
   double get platformFeeInReais => platformFee / 100;

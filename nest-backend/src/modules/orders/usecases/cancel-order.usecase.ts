@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { OrderStatus, TransactionStatus } from '@prisma/client';
+import { CancellationKind, OrderStatus, TransactionStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError, ConflictError, PaymentProviderError, BadRequestError } from '@/shared/core/errors';
 import { EscrowStatus } from '@prisma/client';
@@ -77,7 +77,10 @@ export class CancelOrderUseCase {
       : payment?.status === TransactionStatus.PENDING
         ? { paymentIdempotencyKey: payment.idempotencyKey }
         : undefined;
-    const claimed = await this.orderRepository.claimCancellation(order.id, order.status, reason, owner);
+    const kind = order.buyerId === input.userId
+      ? CancellationKind.BUYER_REQUEST
+      : CancellationKind.SELLER_REQUEST;
+    const claimed = await this.orderRepository.claimCancellation(order.id, order.status, reason, kind, owner);
     if (claimed.isLeft()) return left(claimed.value);
     if (!claimed.value) return left(new ConflictError('O pedido não pode mais ser cancelado'));
 
@@ -112,6 +115,9 @@ export class CancelOrderUseCase {
         if (refund.value.status === 'failed' || refund.value.status === 'canceled') {
           return left(new PaymentProviderError('Reembolso não concluído; pedido permanece retido para revisão'));
         }
+        const pending = await this.orderRepository.markRefundPending(order.id, reason, kind);
+        if (pending.isLeft()) return left(pending.value);
+        if (!pending.value) return left(new ConflictError('O pedido mudou antes de registrar o reembolso pendente'));
         return right('REFUND_PENDING');
       }
     } else if (payment?.status === TransactionStatus.PENDING) {

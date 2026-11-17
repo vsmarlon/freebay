@@ -9,30 +9,73 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  backend-ci:
-    name: Backend CI (NestJS / Prisma / Postgres / Redis)
+  # One cheap job decides which stacks were touched so a docs/web/backend-only
+  # change never pays for the Flutter + Android build.
+  changes:
+    name: Detect changed areas
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
-
+    timeout-minutes: 5
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      android: ${{ steps.filter.outputs.android }}
+      web: ${{ steps.filter.outputs.web }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Start native PostgreSQL and Redis
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes postgresql-16 redis-server
-          sudo systemctl start postgresql redis-server
-          sudo -u postgres psql --set=ON_ERROR_STOP=1 --command="CREATE ROLE test_user WITH LOGIN PASSWORD 'test_password';"
-          sudo -u postgres createdb --owner=test_user freebay_test_db
-          pg_isready --host=127.0.0.1 --port=5432
-          redis-cli ping
+      - name: Detect changed areas
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            backend:
+              - 'nest-backend/**'
+              - 'scripts/**'
+              - 'package.json'
+              - '.github/workflows/**'
+            frontend:
+              - 'frontend/**'
+              - 'scripts/**'
+              - 'package.json'
+              - '.github/workflows/**'
+            # Gradle/APK inputs only. Dart-only changes are already compile-checked
+            # by build_runner + flutter analyze, and master still builds every push.
+            android:
+              - 'frontend/android/**'
+              - 'frontend/pubspec.yaml'
+              - 'frontend/pubspec.lock'
+              - 'frontend/libs/**'
+              - 'frontend/assets/**'
+              - 'scripts/**'
+              - 'package.json'
+              - '.github/workflows/**'
+            web:
+              - 'web/**'
+              - 'scripts/**'
+              - 'package.json'
+              - '.github/workflows/**'
+
+  # Builds the exact artifact the real journey runs against, and owns the
+  # backend fast feedback (typecheck, build, lint, unit). Runs on web changes too
+  # because the real web journey verifies a backend build of this revision.
+  backend-static:
+    name: Backend build, typecheck, lint, unit
+    needs: [changes]
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.backend == 'true' || needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Node.js 24.10.0
         uses: actions/setup-node@v4
@@ -43,7 +86,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: nest-backend
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Audit production dependencies
         run: node scripts/audit-production.cjs nest-backend
@@ -89,6 +132,63 @@ jobs:
           npm test -- --json --outputFile="$RUNNER_TEMP/backend-unit.json"
           node ../scripts/summarize-jest.cjs "$RUNNER_TEMP/backend-unit.json" "$RUNNER_TEMP/backend-unit-summary.json" "npm test -- --json" "unit tests, external providers replaced at test boundaries"
 
+      - name: Create backend build manifest and staging artifact
+        if: success()
+        run: |
+          # The manifest attests the build against the unit suite; the DB-backed
+          # suites run in backend-db and gate the workflow on their own.
+          mkdir -p "$RUNNER_TEMP/backend-artifact"
+          node scripts/build-manifest.cjs create nest-backend/dist "$RUNNER_TEMP/backend-artifact/backend-build-manifest.json" "$GITHUB_SHA" backend-node24-test-runtime "$RUNNER_TEMP/backend-unit-summary.json"
+          cp -a nest-backend/dist "$RUNNER_TEMP/backend-artifact/dist"
+
+      - name: Upload backend build
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: ${{ runner.temp }}/backend-artifact/
+          if-no-files-found: error
+
+  # Integration + e2e share the same native PostgreSQL/Redis setup, so they stay
+  # in one job while running in parallel with the static build above.
+  backend-db:
+    name: Backend integration and E2E
+    needs: [changes]
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start native PostgreSQL and Redis
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-16 redis-server
+          sudo systemctl start postgresql redis-server
+          sudo -u postgres psql --set=ON_ERROR_STOP=1 --command="CREATE ROLE test_user WITH LOGIN PASSWORD 'test_password';"
+          sudo -u postgres createdb --owner=test_user freebay_test_db
+          pg_isready --host=127.0.0.1 --port=5432
+          redis-cli ping
+
+      - name: Set up Node.js 24.10.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.10.0
+          cache: npm
+          cache-dependency-path: nest-backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: nest-backend
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma client
+        working-directory: nest-backend
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/freebay_test_db?schema=public
+        run: npx prisma generate
+
       - name: Push Test Schema (Prisma db push)
         working-directory: nest-backend
         env:
@@ -122,25 +222,14 @@ jobs:
           npx jest --config jest.config.e2e.js --runInBand --json --outputFile="$RUNNER_TEMP/backend-e2e.json"
           node ../scripts/summarize-jest.cjs "$RUNNER_TEMP/backend-e2e.json" "$RUNNER_TEMP/backend-e2e-summary.json" "npx jest --config jest.config.e2e.js --runInBand" "per-job freebay_test_db and Redis; external provider boundaries are fake or disabled"
 
-      - name: Create backend build manifest and staging artifact
-        if: success()
-        run: |
-          mkdir -p "$RUNNER_TEMP/backend-artifact"
-          node -e "const fs=require('node:fs'); const names=['unit','integration','e2e']; const values=names.map(n=>JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/backend-' + n + '-summary.json','utf8'))); const summary={tests:values.reduce((n,v)=>n+v.tests,0),passed:values.reduce((n,v)=>n+v.passed,0),failed:values.reduce((n,v)=>n+v.failed,0),skipped:values.reduce((n,v)=>n+v.skipped,0),success:values.every(v=>v.success),commands:values.map(v=>v.command),fixture:values.map(v=>v.fixture)}; fs.writeFileSync(process.env.RUNNER_TEMP + '/backend-test-summary.json',JSON.stringify(summary)); if(summary.tests < 1 || summary.failed || summary.skipped || !summary.success) process.exit(1)"
-          node scripts/build-manifest.cjs create nest-backend/dist "$RUNNER_TEMP/backend-artifact/backend-build-manifest.json" "$GITHUB_SHA" backend-node24-test-runtime "$RUNNER_TEMP/backend-test-summary.json"
-          cp -a nest-backend/dist "$RUNNER_TEMP/backend-artifact/dist"
-      - name: Upload backend build
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-dist
-          path: ${{ runner.temp }}/backend-artifact/
-          if-no-files-found: error
-
-  frontend-ci:
-    name: Frontend CI (Flutter / Dart)
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
+  # Fast Flutter feedback (format, codegen, analyzer, architecture gates) without
+  # waiting for Gradle.
+  frontend-static:
+    name: Frontend format, analyze, gates
+    needs: [changes]
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -170,19 +259,67 @@ jobs:
         working-directory: frontend
         run: flutter analyze --fatal-infos lib libs/freebay_design_system/lib
 
+  # Gradle is the long pole (~3 min warm, ~11 min cold). It runs as its own job
+  # and only for Android build inputs or master, so Dart-only PRs get their
+  # format/analyze feedback in ~2.5 min instead of waiting for the APK.
+  frontend-android:
+    name: Frontend Android debug APK
+    needs: [changes]
+    if: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || needs.changes.outputs.android == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          cache: true
+
+      - name: Install Flutter dependencies
+        working-directory: frontend
+        run: flutter pub get
+
       - name: Write CI Firebase config
         run: node scripts/write-ci-google-services.cjs frontend/android/app/google-services.json
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
+      # Restore-only on PRs, save-only on master: a ~3.5 GB archive saved by
+      # every PR branch would evict the shared cache and make the next run cold.
+      - name: Restore Gradle cache
+        id: gradle-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('frontend/android/**/*.gradle*', 'frontend/android/gradle/wrapper/gradle-wrapper.properties', 'frontend/pubspec.lock') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+            setup-java-Linux-x64-gradle-
+
+      # Pub get already ran above; skipping it here avoids the duplicate
+      # dependency resolution Flutter would otherwise do inside the build.
       - name: Build Android debug APK
         working-directory: frontend
-        run: flutter build apk --debug
+        run: flutter build apk --debug --no-pub
+
+      - name: Save Gradle cache
+        if: github.ref == 'refs/heads/master' && steps.gradle-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.gradle-cache.outputs.cache-primary-key }}
 
       - name: Upload Android debug APK
         if: success()
@@ -194,6 +331,8 @@ jobs:
 
   web-ci:
     name: Web CI (React / TypeScript)
+    needs: [changes]
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.web == 'true' || needs.changes.outputs.backend == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
@@ -208,9 +347,16 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
+      - name: Restore Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('web/package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
+
       - name: Install web dependencies
         working-directory: web
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Audit production dependencies
         run: node scripts/audit-production.cjs web
@@ -264,9 +410,10 @@ jobs:
 
   web-real-backend-e2e:
     name: Real web journey (Nest / PostgreSQL / Redis)
-    needs: [backend-ci, web-ci]
+    needs: [changes, backend-static, web-ci]
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.backend == 'true' || needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 25
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://test_user:test_password@127.0.0.1:5432/freebay_test_db?schema=public
@@ -304,10 +451,17 @@ jobs:
             nest-backend/package-lock.json
             web/package-lock.json
 
+      - name: Restore Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('web/package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
+
       - name: Install backend and web dependencies
         run: |
-          npm --prefix nest-backend ci
-          npm --prefix web ci
+          npm --prefix nest-backend ci --no-audit --no-fund
+          npm --prefix web ci --no-audit --no-fund
 
       - name: Download and verify exact backend build
         uses: actions/download-artifact@v4
@@ -419,7 +573,7 @@ jobs:
         run: node scripts/write-ci-google-services.cjs frontend/android/app/google-services.json
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -466,21 +620,26 @@ jobs:
   quality-gate:
     name: Required CI quality gate
     if: ${{ always() }}
-    needs: [backend-ci, frontend-ci, web-ci, web-real-backend-e2e]
+    needs: [changes, backend-static, backend-db, frontend-static, frontend-android, web-ci, web-real-backend-e2e]
     runs-on: ubuntu-24.04
     steps:
-      - name: Require every mandatory PR CI job to succeed
+      - name: Require every applicable PR CI job to succeed
         env:
-          BACKEND: ${{ needs.backend-ci.result }}
-          FLUTTER: ${{ needs.frontend-ci.result }}
+          CHANGES: ${{ needs.changes.result }}
+          BACKEND_STATIC: ${{ needs.backend-static.result }}
+          BACKEND_DB: ${{ needs.backend-db.result }}
+          FRONTEND_STATIC: ${{ needs.frontend-static.result }}
+          FRONTEND_ANDROID: ${{ needs.frontend-android.result }}
           WEB: ${{ needs.web-ci.result }}
           WEB_REAL_E2E: ${{ needs.web-real-backend-e2e.result }}
         run: |
-          for gate in BACKEND FLUTTER WEB WEB_REAL_E2E; do
+          # Path-filtered jobs report "skipped"; that is a pass, a failure or
+          # cancellation is not.
+          for gate in CHANGES BACKEND_STATIC BACKEND_DB FRONTEND_STATIC FRONTEND_ANDROID WEB WEB_REAL_E2E; do
             value="${!gate}"
-            if [ "$value" != success ]; then
+            if [ "$value" != success ] && [ "$value" != skipped ]; then
               echo "Required gate $gate result: $value" >&2
               exit 1
             fi
           done
-          echo 'All mandatory CI jobs succeeded.'
+          echo 'All applicable CI jobs succeeded.'

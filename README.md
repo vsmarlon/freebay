@@ -1,108 +1,92 @@
 # FreeBay
 
 <p align="center">
+  <img src="https://img.shields.io/badge/Flutter-3.44-02569B?style=flat&logo=flutter" alt="Flutter">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react" alt="React">
   <img src="https://img.shields.io/badge/NestJS-11-E23C56?style=flat&logo=nestjs" alt="NestJS">
-  <img src="https://img.shields.io/badge/Flutter-3.6-02569B?style=flat&logo=flutter" alt="Flutter">
-  <img src="https://img.shields.io/badge/Prisma-7.4-2D3748?style=flat&logo=prisma" alt="Prisma">
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat&logo=postgresql" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis" alt="Redis">
+  <img src="https://img.shields.io/badge/Stripe-635BFF?style=flat&logo=stripe" alt="Stripe">
 </p>
 
-FreeBay é uma plataforma C2C que combina marketplace e interação social. O app Flutter consome uma API NestJS; o backend usa Prisma e PostgreSQL, com Redis e Socket.IO em fluxos que dependem desses serviços.
+**FreeBay é um marketplace C2C com uma camada social.** Anuncie o que não usa
+mais, descubra produtos de pessoas reais, converse pelo chat e combine a entrega
+em mãos — com pagamento protegido via Stripe. O app Flutter e o cliente web
+compartilham a mesma API NestJS.
 
-## Implementação e status
+## Diagrama
 
-Consulte [`docs/FEATURE_TRUTH.md`](docs/FEATURE_TRUTH.md) para capacidades verificadas no código, jornadas incompletas, limites e evidências. Um endpoint ou teste isolado não comprova uma jornada completa nem prontidão de produção. O schema atual está em `nest-backend/prisma/schema.prisma`; este README não replica modelos, enums ou status que podem ficar desatualizados.
+> No preview do editor, os nós são clicáveis e abrem a pasta correspondente.
 
-### Pagamentos (`payments`)
+```mermaid
+flowchart LR
+    subgraph clientes["Clientes"]
+        app["📱 App Flutter<br/>Android · iOS"]
+        web["🖥️ Web React<br/>SSR · PT-BR / EN"]
+    end
 
-> **Decisão do owner pendente:** o texto histórico abaixo conflita com a implementação Stripe encontrada no código. A implementação não confirma, por si só, uma decisão de produto/provedor. Não trate esta tabela como afirmação atual; preserve-a até o owner resolver a divergência.
+    pessoa(["👤 Pessoa"]) --> app & web
+    app <-->|"HTTP · Socket.IO"| api["⚙️ API NestJS<br/>auth · social · chat<br/>marketplace · pedidos"]
+    web <-->|"HTTP · SSR"| api
+    api <--> db[("🐘 PostgreSQL<br/>Prisma")]
+    api <--> redis[("⚡ Redis<br/>sessão · cache · filas")]
+    api -. "webhooks" .-> stripe["💳 Stripe<br/>Checkout · Connect"]
+    api -. "e-mail · push" .-> ext["✉️ Provedores externos"]
 
-| Componente | Status |
-|------------|--------|
-| Controller | ✅ Completo |
-| Use Cases | ✅ Completo |
-| Provider (AbacatePay) | ✅ Completo |
-| Repository | ❌ Não existe (lógica no use case) |
-| Tests | ✅ Unit test |
-
-- Métodos: PIX, CREDIT_CARD
-- Providers reais: STRIPE.
-- Idempotency keys para evitar duplicatas - USE STRIPE SKILLS TO HANDLE FLUXES.
-- PIX QR Code com expiração
-- **Backend:** `nest-backend/src/modules/payments/`
-- **Frontend:** `frontend/lib/features/payments/`
-
-
-## Arquitetura
-
-```text
-frontend/                 Flutter app
-nest-backend/src/modules/ NestJS feature modules
-nest-backend/prisma/      Prisma schema and development seed
-docs/                     Feature truth, operations, design and test evidence
+    click app href "frontend/" "App Flutter"
+    click web href "web/" "Web React"
+    click api href "nest-backend/src/modules/" "Módulos da API"
+    click db href "nest-backend/prisma/schema.prisma" "Schema Prisma"
+    click redis href "nest-backend/src/modules/" "Módulos da API"
+    click stripe href "nest-backend/src/modules/payments/" "Pagamentos"
 ```
 
-Os módulos backend não têm todos a mesma divisão interna de repositórios. No Flutter, as features também variam em camadas; consulte a estrutura existente antes de contribuir. Orientações para agentes estão em [`AGENTS.md`](AGENTS.md), e os tokens de UI em [`frontend/DESIGN.md`](frontend/DESIGN.md).
+## Telas
 
-## Pré-requisitos
+<table>
+  <tr>
+    <td align="center"><img src="docs/test-runs/2026-10-24/qa-cart-app/explore-before.png" width="220" alt="Explorar no app"><br><sub><b>Explorar</b> · app</sub></td>
+    <td align="center"><img src="docs/screenshots/marketplace-tailwind-catalog.png" width="380" alt="Catálogo web"><br><sub><b>Catálogo</b> · web</sub></td>
+    <td align="center"><img src="docs/device-runs/2026-11-08/profile_stats_icons_smaller_numbers.png" width="220" alt="Perfil no app"><br><sub><b>Perfil</b> · app</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/test-runs/2026-10-25/a30-cart-stories/cart-checkout-summary.png" width="220" alt="Carrinho no app"><br><sub><b>Carrinho</b> · app</sub></td>
+    <td align="center"><img src="docs/screenshots/auth-login-aurora-inputs.png" width="380" alt="Login web"><br><sub><b>Login</b> · web</sub></td>
+    <td align="center"><img src="docs/test-runs/2026-10-25/a30-cart-stories/onboarding-step1.png" width="220" alt="Onboarding no app"><br><sub><b>Onboarding</b> · app</sub></td>
+  </tr>
+</table>
 
-- Node.js compatível com o projeto e npm.
-- Flutter/Dart disponíveis no `PATH`.
-- PostgreSQL e Redis nativos ou em serviço externo para jornadas backend que os usam.
+## Stack
 
-## Começar
+Flutter · React Router · NestJS · Prisma/PostgreSQL · Redis · Socket.IO · Stripe
 
-### Backend
+## Rodando localmente
 
 ```bash
+# API — http://localhost:3000
 cd nest-backend
-npm install
-# Configure nest-backend/.env com os valores necessários ao ambiente local.
-npm run db:sync
-npx cross-env NODE_ENV=development npm run db:seed
+npm ci
+cp .env.example .env   # preencha os valores locais
+npm run db:sync && npx cross-env NODE_ENV=development npm run db:seed
 npm run start:dev
 ```
 
-O seed contém dados de desenvolvimento. Não use seed de desenvolvimento para inicializar produção. O schema-sync é o fluxo de desenvolvimento atual; alterações em banco compartilhado/produção exigem processo aprovado pelo owner.
-
-### Frontend
-
 ```bash
-cd frontend
-flutter pub get
-flutter run
-```
-
-## Testes e gates
-
-Integração e E2E usam PostgreSQL/Redis explicitamente configurados e os scripts de teste guardados; consulte `nest-backend/.env.test` e [`AGENTS.md`](AGENTS.md). Os entry points são executáveis sem Docker quando esses serviços nativos/externos estão disponíveis.
-
-```bash
-cd nest-backend
-npm test
-npm run test:integration
-npm run test:e2e
+# Web — http://localhost:5173
+cd web && npm ci && npm run dev
 ```
 
 ```bash
-cd frontend
-flutter analyze --fatal-infos lib test libs/freebay_design_system/lib
-flutter test
+# App
+cd frontend && flutter pub get && flutter run --dart-define=API_BASE_URL=http://127.0.0.1:3000
 ```
 
-```bash
-# Run from the repository root.
-node scripts/ci-check.js
-npm run test:ci-scripts
-make test
-```
+## Documentação
 
-`make test` é o alvo local agregado; E2E e builds têm comandos próprios descritos em `AGENTS.md`. O workflow de CI está em `.github/workflows/ci.yml`. Este repositório não configura deploy automático.
-
-## Configuração
-
-Use [`nest-backend/.env.example`](nest-backend/.env.example) como referência; não coloque credenciais em commits. O frontend recebe configuração por Flutter build defines conforme o recurso usado. Consulte os módulos e suas documentações próprias para provider-specific setup; este README não declara qual pagamento/provedor está aprovado como produto.
+- [`docs/FEATURE_TRUTH.md`](docs/FEATURE_TRUTH.md) — o que está implementado, limites e evidências.
+- [`AGENTS.md`](AGENTS.md) — convenções, gates e regras de contribuição.
+- [`web/README.md`](web/README.md) — cliente web, SSR, OAuth e variáveis de ambiente.
+- [`docs/adr/`](docs/adr/) — decisões de arquitetura e escopo do produto.
 
 ## Licença
 

@@ -80,11 +80,12 @@ describe('RegisterPhoneUseCase', () => {
     }
   });
 
-  it('sets phoneVerified to false when saving the phone', async () => {
+  it('sets phoneVerified and the public badge to false when saving a new phone', async () => {
     await sut.execute({ userId: 'user-1', phone: '11999999999' });
     expect(mockUserRepository.update).toHaveBeenCalledWith('user-1', {
       phone: '11999999999',
       phoneVerified: false,
+      isVerified: false,
     });
   });
 

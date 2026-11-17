@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ConversationStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
+import { AppError, BadRequestError, ConflictError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { AcceptConversationOutput } from '../dtos/chat.dto';
+import { canAcceptDirect } from '../domain/conversation-state';
 
 @Injectable()
 export class AcceptConversationUseCase {
@@ -18,14 +18,17 @@ export class AcceptConversationUseCase {
     if (conversation.user1Id !== userId && conversation.user2Id !== userId) {
       return left(new BadRequestError('Not authorized'));
     }
-    if (conversation.status !== ConversationStatus.PENDING) {
-      return left(new BadRequestError('Conversation is not pending'));
+    if (!canAcceptDirect({
+      status: conversation.status,
+      userId,
+      initiatorId: conversation.initiatorId ?? null,
+    })) {
+      return left(new BadRequestError('Conversation is not pending or you are the initiator'));
     }
 
-    const updateResult = await this.conversationRepository.updateDirectConversation(conversationId, {
-      status: ConversationStatus.ACTIVE,
-    });
-    if (updateResult.isLeft()) return left(updateResult.value);
+    const accepted = await this.conversationRepository.acceptDirectConversation(conversationId);
+    if (accepted.isLeft()) return left(accepted.value);
+    if (!accepted.value) return left(new ConflictError('Conversation changed before acceptance'));
 
     return right({ accepted: true });
   }

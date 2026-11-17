@@ -58,7 +58,7 @@ final class OrderDetailProvider
   }
 }
 
-String _$orderDetailHash() => r'906c1565bbb20084ef76164f80c9f191dc81a8e4';
+String _$orderDetailHash() => r'5828fe44ad5855e967918226e8953d2d2b925d0d';
 
 final class OrderDetailFamily extends $Family
     with

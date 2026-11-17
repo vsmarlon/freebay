@@ -1,14 +1,24 @@
 import { EscrowStatus, OrderStatus, Prisma } from "@prisma/client";
 import { USER_SELECT_MINIMAL } from "@/shared/utils/prisma-selects";
 
+export const ORDER_TRANSACTION_SELECT = {
+  status: true,
+  paymentGroupId: true,
+  chargeId: true,
+  externalId: true,
+} satisfies Prisma.TransactionSelect;
+
 export const ORDER_INCLUDE_FULL = {
   product: { include: { media: true } },
   buyer: { select: USER_SELECT_MINIMAL },
   seller: { select: USER_SELECT_MINIMAL },
+  transaction: { select: ORDER_TRANSACTION_SELECT },
+  dispute: { select: { id: true, status: true } },
 } satisfies Prisma.OrderInclude;
 
 export const ORDER_INCLUDE_PRODUCT = {
   product: { include: { media: true } },
+  transaction: { select: { paymentGroupId: true } },
 } satisfies Prisma.OrderInclude;
 
 export const ORDER_SELECT_CREATE = {
@@ -40,6 +50,7 @@ export const SALES_ORDER_STATUSES = [
   OrderStatus.SHIPPED,
   OrderStatus.DELIVERED,
   OrderStatus.DISPUTED,
+  OrderStatus.REFUND_PENDING,
   OrderStatus.COMPLETED,
   OrderStatus.CANCELLED,
 ] as const satisfies readonly OrderStatus[];

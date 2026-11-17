@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { ModerationActionType, ModerationTargetType, ReportStatus } from '@prisma/client';
+import { ModerationActionType, ReportStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, ConflictError, NotFoundError } from '@/shared/core/errors';
+import { AppError, ConflictError, DatabaseError, NotFoundError } from '@/shared/core/errors';
 import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
 import { ResolvableReportStatus } from '../dtos/admin.dto';
 
 const ACTION_BY_STATUS: Record<ResolvableReportStatus, ModerationActionType> = {
-  [ReportStatus.REVIEWED]: ModerationActionType.REPORT_REVIEWED,
   [ReportStatus.RESOLVED]: ModerationActionType.REPORT_RESOLVED,
   [ReportStatus.REJECTED]: ModerationActionType.REPORT_REJECTED,
 };
@@ -25,28 +24,26 @@ export class ResolveReportUseCase {
     if (reportResult.isLeft()) return left(reportResult.value);
     if (!reportResult.value) return left(new NotFoundError('Denúncia'));
 
-    if (reportResult.value.status !== ReportStatus.PENDING) {
+    // REVIEWED is a legacy state left by the old flow; it must still be resolvable.
+    if (reportResult.value.status !== ReportStatus.PENDING
+      && reportResult.value.status !== ReportStatus.REVIEWED) {
       return left(new ConflictError('Esta denúncia já foi revisada'));
     }
 
-    const resolveResult = await this.moderationRepository.resolveReport(input.reportId, {
-      status: input.status,
-      reviewedById: input.adminId,
-    });
-    if (resolveResult.isLeft()) return left(resolveResult.value);
-    if (resolveResult.value.count === 0) {
-      return left(new ConflictError('Esta denúncia já foi revisada'));
+    try {
+      const resolved = await this.moderationRepository.resolveReportAndRecord({
+        reportId: input.reportId,
+        status: input.status,
+        adminId: input.adminId,
+        action: ACTION_BY_STATUS[input.status],
+        note: input.note ?? null,
+      });
+      if (!resolved) {
+        return left(new ConflictError('Esta denúncia já foi revisada'));
+      }
+    } catch {
+      return left(new DatabaseError('Failed to resolve report'));
     }
-
-    const actionResult = await this.moderationRepository.recordAction({
-      actorId: input.adminId,
-      targetType: ModerationTargetType.REPORT,
-      targetId: input.reportId,
-      action: ACTION_BY_STATUS[input.status],
-      reason: input.note ?? null,
-      reportId: input.reportId,
-    });
-    if (actionResult.isLeft()) return left(actionResult.value);
 
     return right(undefined);
   }

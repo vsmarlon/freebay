@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { OrderStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError, ConflictError } from '@/shared/core/errors';
 import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { MarkAsDeliveredInput } from '../dtos/order.dto';
+import { canMarkDelivered } from '../domain/order-state';
 
 @Injectable()
 export class MarkAsDeliveredUseCase {
@@ -18,7 +18,7 @@ export class MarkAsDeliveredUseCase {
       return left(new UnauthorizedError('Only buyer can mark as delivered'));
     }
 
-    if (orderResult.value.status !== OrderStatus.SHIPPED) {
+    if (!canMarkDelivered(orderResult.value, input.buyerId)) {
       return left(new InvalidOrderStateError('SHIPPED to deliver', orderResult.value.status));
     }
 

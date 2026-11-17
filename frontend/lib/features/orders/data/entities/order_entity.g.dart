@@ -45,6 +45,11 @@ _OrderEntity _$OrderEntityFromJson(Map<String, dynamic> json) => _OrderEntity(
   seller: json['seller'] == null
       ? null
       : OrderUserInfo.fromJson(json['seller'] as Map<String, dynamic>),
+  allowedActions:
+      (json['allowedActions'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const <String>[],
 );
 
 Map<String, dynamic> _$OrderEntityToJson(_OrderEntity instance) =>
@@ -63,6 +68,7 @@ Map<String, dynamic> _$OrderEntityToJson(_OrderEntity instance) =>
       'product': instance.product?.toJson(),
       'buyer': instance.buyer?.toJson(),
       'seller': instance.seller?.toJson(),
+      'allowedActions': instance.allowedActions,
     };
 
 const _$OrderStatusEnumMap = {
@@ -70,15 +76,18 @@ const _$OrderStatusEnumMap = {
   OrderStatus.confirmed: 'confirmed',
   OrderStatus.shipped: 'shipped',
   OrderStatus.delivered: 'delivered',
+  OrderStatus.disputed: 'disputed',
+  OrderStatus.refundPending: 'refundPending',
   OrderStatus.completed: 'completed',
   OrderStatus.cancelled: 'cancelled',
-  OrderStatus.disputed: 'disputed',
+  OrderStatus.unknown: 'unknown',
 };
 
 const _$EscrowStatusEnumMap = {
   EscrowStatus.held: 'held',
   EscrowStatus.released: 'released',
   EscrowStatus.refunded: 'refunded',
+  EscrowStatus.unknown: 'unknown',
 };
 
 _CanReviewResponse _$CanReviewResponseFromJson(Map<String, dynamic> json) =>

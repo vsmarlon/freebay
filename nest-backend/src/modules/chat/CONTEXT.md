@@ -1,20 +1,19 @@
-# Chat
-
-Este contexto nomeia as conversas de produto e o agrupamento por interlocutor.
+# Chat — Glossary
 
 ## Language
 
-**Conversa de produto**:
-Conversa pré-compra entre duas pessoas sobre um único produto. Existe uma conversa
-única para cada produto e par de participantes, independentemente de quem inicia;
-reabrir esse mesmo contato retoma a mesma conversa. Produtos diferentes entre o
-mesmo par de pessoas têm conversas distintas.
-_Avoid_: Pedido, conversa pessoal, thread de produto (quando o contexto for o
-conceito de conversa).
+**Direct conversation**:
+A one-to-one thread between two users, optionally about a product. Stored with its two participants sorted by id and a nullable `initiatorId`.
 
-**Pasta de conversas**:
-Agrupamento das conversas pelo outro participante. Para quem compra, reúne
-conversas com o vendedor; para quem vende, reúne conversas com o comprador. O
-termo não implica agrupamento exclusivo por vendedor, nem substitui a identidade
-do produto de cada conversa.
-_Avoid_: Pasta de vendedor.
+**Conversation request**:
+A direct conversation in `PENDING`: the initiator started it without the target following them. The initiator may send the opening message; the other participant must accept before replying.
+
+**Active conversation**:
+A direct conversation in `ACTIVE`. Both participants may send.
+
+**Blocked**:
+A relationship enforced by the `Block` table, not by conversation status. `ConversationStatus.BLOCKED` is reserved and has no writer; sending and starting are refused by the block lookup.
+_Avoid_: treating `BLOCKED` as the source of truth for blocking
+
+**Conversation preference**:
+One participant's per-thread view state: archived, deleted, muted, theme, background. A new incoming message restores a deleted preference.

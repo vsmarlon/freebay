@@ -37,7 +37,6 @@ export class OrderFactory {
         sellerAmount,
         status: overrides.status || OrderStatus.PENDING,
         escrowStatus: overrides.escrowStatus || EscrowStatus.HELD,
-        meetingScheduledAt: overrides.meetingScheduledAt || null,
         deliveryConfirmedAt: overrides.deliveryConfirmedAt || null,
       },
     });
@@ -65,7 +64,6 @@ export class OrderFactory {
         sellerAmount,
         status: overrides.status || OrderStatus.PENDING,
         escrowStatus: overrides.escrowStatus || EscrowStatus.HELD,
-        meetingScheduledAt: overrides.meetingScheduledAt || null,
         deliveryConfirmedAt: overrides.deliveryConfirmedAt || null,
       },
     });

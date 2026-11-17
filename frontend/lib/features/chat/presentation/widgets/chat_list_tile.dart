@@ -12,6 +12,7 @@ class ChatListTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final Future<void> Function() onArchive;
+  final VoidCallback? onAccept;
 
   const ChatListTile({
     super.key,
@@ -21,6 +22,7 @@ class ChatListTile extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     required this.onArchive,
+    this.onAccept,
   });
 
   @override
@@ -178,6 +180,18 @@ class ChatListTile extends StatelessWidget {
                         ],
                       ],
                     ),
+                    if (chat.canAccept) ...[
+                      Spacing.vSm,
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: AppButton(
+                          label: strings.chatAcceptConversation,
+                          variant: AppButtonVariant.secondary,
+                          size: AppButtonSize.compact,
+                          onPressed: onAccept,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

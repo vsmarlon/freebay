@@ -20,6 +20,7 @@ _ProductEntity _$ProductEntityFromJson(Map<String, dynamic> json) =>
       status: json['status'] == null
           ? ProductStatus.active
           : const ProductStatusConverter().fromJson(json['status'] as String),
+      pauseReason: json['pauseReason'] as String?,
       sellerId: json['sellerId'] as String,
       postId: json['postId'] as String?,
       seller: json['seller'] == null
@@ -40,6 +41,7 @@ Map<String, dynamic> _$ProductEntityToJson(_ProductEntity instance) =>
       'price': instance.price,
       'condition': const ProductConditionConverter().toJson(instance.condition),
       'status': const ProductStatusConverter().toJson(instance.status),
+      'pauseReason': instance.pauseReason,
       'sellerId': instance.sellerId,
       'postId': instance.postId,
       'seller': instance.seller?.toJson(),

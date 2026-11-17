@@ -62,7 +62,7 @@ describe('CancelOrderUseCase money claims', () => {
 
     expect(result.isRight()).toBe(true);
     expect(orderRepository.claimCancellation).toHaveBeenCalledWith(
-      'order-1', 'CONFIRMED', 'Changed mind', { refundOperationId: 'refund-op-1' },
+      'order-1', 'CONFIRMED', 'Changed mind', 'BUYER_REQUEST', { refundOperationId: 'refund-op-1' },
     );
     expect(stripe.refundPayment).toHaveBeenCalledTimes(1);
     expect(stripe.refundPayment).toHaveBeenCalledWith(expect.objectContaining({
@@ -82,7 +82,7 @@ describe('CancelOrderUseCase money claims', () => {
 
     expect(result.isRight()).toBe(true);
     expect(orderRepository.claimCancellation).toHaveBeenCalledWith(
-      'order-1', 'CONFIRMED', 'Ação', { refundOperationId: 'refund-op-1' },
+      'order-1', 'CONFIRMED', 'Ação', 'BUYER_REQUEST', { refundOperationId: 'refund-op-1' },
     );
   });
 
@@ -115,7 +115,7 @@ describe('CancelOrderUseCase money claims', () => {
 
     expect(result.isLeft()).toBe(true);
     expect(orderRepository.claimCancellation).toHaveBeenCalledWith(
-      'order-1', 'CONFIRMED', 'Changed mind', { refundOperationId: 'refund-op-1' },
+      'order-1', 'CONFIRMED', 'Changed mind', 'BUYER_REQUEST', { refundOperationId: 'refund-op-1' },
     );
     expect(orderRepository.refundOrder).not.toHaveBeenCalled();
   });
@@ -133,7 +133,7 @@ describe('CancelOrderUseCase money claims', () => {
     expect(retried.isRight()).toBe(true);
     expect(orderRepository.claimCancellation).toHaveBeenCalledTimes(1);
     expect(orderRepository.claimCancellation).toHaveBeenCalledWith(
-      'order-1', 'CONFIRMED', 'Updated reason', { refundOperationId: 'refund-op-1' },
+      'order-1', 'CONFIRMED', 'Updated reason', 'BUYER_REQUEST', { refundOperationId: 'refund-op-1' },
     );
   });
 });

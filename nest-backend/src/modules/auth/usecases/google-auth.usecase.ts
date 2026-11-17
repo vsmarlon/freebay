@@ -117,7 +117,6 @@ export class GoogleAuthUseCase {
       avatarUrl: payload.picture ?? null,
       bio: null,
       isVerified: false,
-      isGuest: false,
       role: UserRole.USER,
       reputationScore: 0,
       totalReviews: 0,

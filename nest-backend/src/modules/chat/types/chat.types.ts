@@ -1,4 +1,4 @@
-import { ChatTheme } from '@prisma/client';
+import { ChatTheme, ConversationStatus } from '@prisma/client';
 
 export interface UpsertPreferenceInput {
   userId: string;
@@ -16,6 +16,8 @@ export interface ResolvedChatThread {
   directConversationId?: string;
   otherUserId: string;
   orderStatus?: string;
+  directStatus?: ConversationStatus;
+  initiatorId?: string | null;
 }
 
 export interface OgMetadata {

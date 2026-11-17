@@ -84,6 +84,15 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     });
   }
 
+  Future<void> _acceptChat(ChatEntity chat) async {
+    final result = await ref.read(chatRepositoryProvider).acceptChat(chat.id);
+    result.fold((failure) => AppSnackbar.handleFailure(context, failure), (_) {
+      ref.invalidate(chatsProvider);
+      ref.invalidate(liveChatListProvider);
+      AppSnackbar.success(context, l10n(context).chatAcceptedSuccess);
+    });
+  }
+
   void _confirmDelete(ChatEntity chat) {
     showDialog(
       context: context,
@@ -282,6 +291,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                                 context.push(AppRoutes.chatPath(chat.id)),
                             onLongPress: () => _showContextMenu(chat),
                             onArchive: () => _archiveChat(chat),
+                            onAccept: () => _acceptChat(chat),
                           );
                         },
                       ),

@@ -349,6 +349,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatConversationRestored => 'Conversation restored';
 
   @override
+  String get chatAcceptConversation => 'Accept conversation';
+
+  @override
+  String get chatAcceptedSuccess => 'Conversation accepted';
+
+  @override
   String get chatDeleteUndoExplanation =>
       'The conversation will be hidden for you. You can undo this for a few seconds.';
 
@@ -624,7 +630,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get orderStatusConfirmed => 'Confirmed';
 
   @override
-  String get orderStatusShipped => 'Shipped';
+  String get orderStatusShipped => 'Handover arranged';
 
   @override
   String get orderStatusDelivered => 'Delivered';
@@ -637,6 +643,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get orderStatusDisputed => 'In dispute';
+
+  @override
+  String get orderStatusRefundPending => 'Refund pending';
+
+  @override
+  String get orderStatusUnknown => 'Unknown status — update the app';
+
+  @override
+  String get ordersMarkHandover => 'Mark handover';
+
+  @override
+  String get ordersMarkHandoverBody =>
+      'The buyer confirms receipt, then the payment is released.';
+
+  @override
+  String get ordersMarkReceived => 'Mark as received';
+
+  @override
+  String get ordersMarkReceivedBody =>
+      'This records that you received the item. You can still open a dispute if something is wrong.';
+
+  @override
+  String get escrowStatusUnknown => 'Unknown escrow status';
 
   @override
   String get ordersDispute => 'Open a dispute';

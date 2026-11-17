@@ -8,10 +8,11 @@ import { RemoveContentUseCase } from './usecases/remove-content.usecase';
 import { ListModerationActionsUseCase } from './usecases/list-moderation-actions.usecase';
 import { PaymentsModule } from '../payments/payments.module';
 import { ListTransferFailuresUseCase } from './usecases/list-transfer-failures.usecase';
+import { DisputesModule } from '../disputes/disputes.module';
 
 @Module({
   controllers: [AdminController],
-  imports: [PaymentsModule],
+  imports: [PaymentsModule, DisputesModule],
   providers: [
     ModerationDatabaseRepository,
     ListReportsUseCase,

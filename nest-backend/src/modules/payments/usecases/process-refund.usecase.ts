@@ -91,6 +91,7 @@ export class ProcessRefundUseCase {
       OrderStatus.SHIPPED,
       OrderStatus.DELIVERED,
       OrderStatus.DISPUTED,
+      OrderStatus.REFUND_PENDING,
       OrderStatus.COMPLETED,
     ];
     if (!refundableStatuses.includes(order.status) ||

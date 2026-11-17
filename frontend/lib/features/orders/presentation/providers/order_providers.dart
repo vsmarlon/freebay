@@ -7,6 +7,8 @@ import 'package:freebay/features/orders/domain/usecases/can_review_order_usecase
 import 'package:freebay/features/orders/domain/usecases/get_my_purchases_usecase.dart';
 import 'package:freebay/features/orders/domain/usecases/get_my_sales_usecase.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers_state.dart';
+import 'package:freebay/shared/either/either.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/storage_service.dart';
@@ -83,12 +85,24 @@ class OrderDetail extends _$OrderDetail {
     );
   }
 
-  Future<bool> confirmDelivery() async {
+  Future<bool> confirmDelivery() => _runTransition(
+    () => ref.read(orderRepositoryProvider).confirmDelivery(orderId),
+  );
+
+  Future<bool> markAsShipped() => _runTransition(
+    () => ref.read(orderRepositoryProvider).markAsShipped(orderId),
+  );
+
+  Future<bool> markAsDelivered() => _runTransition(
+    () => ref.read(orderRepositoryProvider).markAsDelivered(orderId),
+  );
+
+  Future<bool> _runTransition(
+    Future<Either<Failure, OrderEntity>> Function() action,
+  ) async {
     state = state.copyWith(isPerformingAction: true, error: null);
 
-    final result = await ref
-        .read(orderRepositoryProvider)
-        .confirmDelivery(orderId);
+    final result = await action();
     return result.fold(
       (failure) {
         state = state.copyWith(

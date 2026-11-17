@@ -36,6 +36,7 @@ abstract class ChatEntity with _$ChatEntity {
     OrderInfo? orderInfo,
     ChatProductInfo? product,
     @Default(0) int unreadCount,
+    @Default(false) bool canAccept,
   }) = _ChatEntity;
 
   factory ChatEntity.fromJson(Map<String, dynamic> json) =>

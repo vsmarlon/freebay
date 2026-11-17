@@ -1,4 +1,4 @@
-import { EscrowStatus, OrderStatus, Prisma, Product, ProductStatus } from "@prisma/client";
+import { EscrowStatus, OrderStatus, Prisma, Product, ProductPauseReason, ProductStatus } from "@prisma/client";
 import { PrismaService } from "@/shared/infra/prisma/prisma.service";
 import { RepositoryResponse, left, right } from "@/shared/core/either";
 import { BadRequestError, DatabaseError, NotFoundError } from "@/shared/core/errors";
@@ -58,7 +58,7 @@ export class OrderReservationRepository {
         } else {
           const reserveResult = await tx.product.updateMany({
             where: { id: data.productId, status: ProductStatus.ACTIVE },
-            data: { status: ProductStatus.PAUSED },
+            data: { status: ProductStatus.PAUSED, pauseReason: ProductPauseReason.RESERVED },
           });
           if (reserveResult.count === 0) throw new Error(PRODUCT_UNAVAILABLE);
         }
@@ -115,13 +115,13 @@ export class OrderReservationRepository {
       });
       await tx.product.updateMany({
         where: { id: productId, status: ProductStatus.SOLD },
-        data: { status: ProductStatus.ACTIVE },
+        data: { status: ProductStatus.ACTIVE, pauseReason: null },
       });
       return;
     }
-    await tx.product.update({
-      where: { id: productId },
-      data: { status: ProductStatus.ACTIVE },
+    await tx.product.updateMany({
+      where: { id: productId, status: ProductStatus.PAUSED, pauseReason: ProductPauseReason.RESERVED },
+      data: { status: ProductStatus.ACTIVE, pauseReason: null },
     });
   }
 }

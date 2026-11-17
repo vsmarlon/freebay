@@ -61,6 +61,7 @@ export class StartConversationUseCase {
     const createResult = await this.conversationRepository.createDirectConversation({
       user1: { connect: { id: user1Id } },
       user2: { connect: { id: user2Id } },
+      initiatorId,
       ...(productId ? { product: { connect: { id: productId } } } : {}),
       scopeKey: productId ? `PRODUCT:${productId}` : 'DIRECT',
       status,

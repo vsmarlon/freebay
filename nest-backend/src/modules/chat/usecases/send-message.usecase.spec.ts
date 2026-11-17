@@ -7,7 +7,7 @@ import { OgScraperService } from '../services/og-scraper.service';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { ConversationPreferenceDatabaseRepository } from '../data/repositories/conversation-preference-database.repository';
-import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
+import { AppError, ForbiddenError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
 import { directConversation, directMessage, orderMessage } from './test-fixtures';
 import { deleteUpload, saveUpload } from '@/shared/utils/file.utils';
@@ -37,6 +37,7 @@ const mockThreadAccess = {
 
 const mockPreferenceRepository = {
   findByUserAndThread: jest.fn(),
+  upsert: jest.fn(),
 };
 
 const mockNotificationService = {
@@ -66,10 +67,11 @@ describe('SendMessageUseCase', () => {
     mockRepo.findDirectMessageByClientId.mockResolvedValue(right(null));
     mockRepo.findChatMessageByClientId.mockResolvedValue(right(null));
     mockThreadAccess.resolveThread.mockResolvedValue(
-      right({ directConversationId: 'conv-1', otherUserId: 'user-2' }),
+      right({ directConversationId: 'conv-1', otherUserId: 'user-2', directStatus: 'ACTIVE' }),
     );
     mockRepo.messageBelongsToThread.mockResolvedValue(right(true));
     mockPreferenceRepository.findByUserAndThread.mockResolvedValue(right(null));
+    mockPreferenceRepository.upsert.mockResolvedValue(right({}));
   });
 
   it('returns error if thread cannot be resolved', async () => {
@@ -88,6 +90,37 @@ describe('SendMessageUseCase', () => {
 
     expect(result.isLeft()).toBe(true);
     if (result.isLeft()) expect(result.value).toBeInstanceOf(NotFoundError);
+  });
+
+  it('blocks the target from replying in a PENDING conversation before accepting', async () => {
+    mockThreadAccess.resolveThread.mockResolvedValue(right({
+      directConversationId: 'conv-1',
+      otherUserId: 'user-1',
+      directStatus: 'PENDING',
+      initiatorId: 'user-2',
+    }));
+
+    const result = await sut.execute({ senderId: 'user-1', conversationId: 'conv-1', content: 'Hello' });
+
+    expect(result.isLeft()).toBe(true);
+    if (result.isLeft()) expect(result.value).toBeInstanceOf(ForbiddenError);
+    expect(mockRepo.createDirectMessage).not.toHaveBeenCalled();
+  });
+
+  it('lets the initiator send the opening message in a PENDING conversation', async () => {
+    mockThreadAccess.resolveThread.mockResolvedValue(right({
+      directConversationId: 'conv-1',
+      otherUserId: 'target-1',
+      directStatus: 'PENDING',
+      initiatorId: 'user-1',
+    }));
+    mockRepo.createDirectMessage.mockResolvedValue(right(directMessage()));
+    mockRepo.updateDirectConversation.mockResolvedValue(right(directConversation()));
+
+    const result = await sut.execute({ senderId: 'user-1', conversationId: 'conv-1', content: 'Hello' });
+
+    expect(result.isRight()).toBe(true);
+    expect(mockRepo.createDirectMessage).toHaveBeenCalled();
   });
 
   it('returns error if conversation is pending and user not participant', async () => {
@@ -416,7 +449,7 @@ describe('SendMessageUseCase', () => {
     const messageId = `message-${kind}`;
     mockThreadAccess.resolveThread.mockResolvedValue(kind === 'order'
       ? right({ orderId: threadId, otherUserId: recipientId })
-      : right({ directConversationId: threadId, otherUserId: recipientId }));
+      : right({ directConversationId: threadId, otherUserId: recipientId, directStatus: 'ACTIVE' }));
     mockPreferenceRepository.findByUserAndThread.mockResolvedValue(right({ muted }));
     if (kind === 'order') {
       mockRepo.createChatMessage.mockResolvedValue(right(orderMessage({ id: messageId, sender: { id: 'sender-1', displayName: 'Sender', avatarUrl: null } })));

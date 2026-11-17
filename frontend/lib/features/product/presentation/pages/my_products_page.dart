@@ -208,27 +208,29 @@ class MyProductsPage extends ConsumerWidget {
                     ],
                   ),
                   Spacing.vSm,
-                  InkWell(
-                    onTap: () =>
-                        context.push(AppRoutes.productEditPath(product.id)),
-                    child: Container(
-                      width: double.infinity,
-                      height: 36,
-                      color: isDark
-                          ? AppColors.surfaceContainerDark
-                          : AppColors.surfaceContainerHighest,
-                      child: Center(
-                        child: Text(
-                          l10n(context).productEditListing,
-                          style: const TextStyle(
-                            fontFamily: AppTypography.fontFamily,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onSurface,
+                  if (product.status != ProductStatus.sold &&
+                      product.pauseReason != 'RESERVED')
+                    InkWell(
+                      onTap: () =>
+                          context.push(AppRoutes.productEditPath(product.id)),
+                      child: Container(
+                        width: double.infinity,
+                        height: 36,
+                        color: isDark
+                            ? AppColors.surfaceContainerDark
+                            : AppColors.surfaceContainerHighest,
+                        child: Center(
+                          child: Text(
+                            l10n(context).productEditListing,
+                            style: const TextStyle(
+                              fontFamily: AppTypography.fontFamily,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSurface,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

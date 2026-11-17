@@ -6,8 +6,7 @@ import { ConflictError, DatabaseError, NotFoundError } from '@/shared/core/error
 
 const mockModerationRepository = {
   findReportById: jest.fn(),
-  resolveReport: jest.fn(),
-  recordAction: jest.fn(),
+  resolveReportAndRecord: jest.fn(),
 };
 
 const buildReport = (overrides: Record<string, unknown> = {}) => ({
@@ -57,101 +56,83 @@ describe('ResolveReportUseCase', () => {
     sut = module.get(ResolveReportUseCase);
 
     mockModerationRepository.findReportById.mockResolvedValue(right(buildReport()));
-    mockModerationRepository.resolveReport.mockResolvedValue(right({ count: 1 }));
-    mockModerationRepository.recordAction.mockResolvedValue(right(undefined));
+    mockModerationRepository.resolveReportAndRecord.mockResolvedValue(true);
   });
 
-  it('deve retornar NotFoundError quando a denúncia não existe', async () => {
+  it('retorna NotFoundError quando a denúncia não existe', async () => {
     mockModerationRepository.findReportById.mockResolvedValue(right(null));
 
-    const result = await sut.execute({
-      reportId: 'report-1',
-      adminId: 'admin-1',
-      status: 'RESOLVED',
-    });
+    const result = await sut.execute({ reportId: 'report-1', adminId: 'admin-1', status: 'RESOLVED' });
 
     expect(result.isLeft()).toBe(true);
     expect(result.value).toBeInstanceOf(NotFoundError);
-    expect(mockModerationRepository.resolveReport).not.toHaveBeenCalled();
+    expect(mockModerationRepository.resolveReportAndRecord).not.toHaveBeenCalled();
   });
 
-  it('deve retornar ConflictError quando a denúncia já foi revisada', async () => {
-    mockModerationRepository.findReportById.mockResolvedValue(
-      right(buildReport({ status: 'RESOLVED' })),
-    );
+  it('retorna ConflictError quando a denúncia já está em estado terminal', async () => {
+    mockModerationRepository.findReportById.mockResolvedValue(right(buildReport({ status: 'RESOLVED' })));
 
-    const result = await sut.execute({
-      reportId: 'report-1',
-      adminId: 'admin-1',
-      status: 'RESOLVED',
-    });
+    const result = await sut.execute({ reportId: 'report-1', adminId: 'admin-1', status: 'RESOLVED' });
 
     expect(result.isLeft()).toBe(true);
     expect(result.value).toBeInstanceOf(ConflictError);
-    expect(mockModerationRepository.resolveReport).not.toHaveBeenCalled();
+    expect(mockModerationRepository.resolveReportAndRecord).not.toHaveBeenCalled();
   });
 
-  it('deve retornar ConflictError quando outro admin reivindicou a denúncia primeiro', async () => {
-    mockModerationRepository.resolveReport.mockResolvedValue(right({ count: 0 }));
+  it('resolve uma denúncia legada em REVIEWED em vez de deixá-la presa', async () => {
+    mockModerationRepository.findReportById.mockResolvedValue(right(buildReport({ status: 'REVIEWED' })));
 
-    const result = await sut.execute({
+    const result = await sut.execute({ reportId: 'report-1', adminId: 'admin-1', status: 'RESOLVED' });
+
+    expect(result.isRight()).toBe(true);
+    expect(mockModerationRepository.resolveReportAndRecord).toHaveBeenCalledWith({
       reportId: 'report-1',
-      adminId: 'admin-1',
       status: 'RESOLVED',
+      adminId: 'admin-1',
+      action: 'REPORT_RESOLVED',
+      note: null,
     });
+  });
+
+  it('retorna ConflictError quando outro admin reivindicou a denúncia primeiro', async () => {
+    mockModerationRepository.resolveReportAndRecord.mockResolvedValue(false);
+
+    const result = await sut.execute({ reportId: 'report-1', adminId: 'admin-1', status: 'RESOLVED' });
 
     expect(result.isLeft()).toBe(true);
     expect(result.value).toBeInstanceOf(ConflictError);
-    expect(mockModerationRepository.recordAction).not.toHaveBeenCalled();
   });
 
-  it('deve gravar quem resolveu a denúncia', async () => {
-    await sut.execute({ reportId: 'report-1', adminId: 'admin-1', status: 'RESOLVED' });
-
-    expect(mockModerationRepository.resolveReport).toHaveBeenCalledWith('report-1', {
-      status: 'RESOLVED',
-      reviewedById: 'admin-1',
-    });
-  });
-
-  it('deve registrar a ação de moderação com a nota do admin', async () => {
+  it('grava a decisão e a auditoria na mesma chamada transacional', async () => {
     await sut.execute({
       reportId: 'report-1',
       adminId: 'admin-1',
-      status: 'RESOLVED',
-      note: 'procede',
+      status: 'REJECTED',
+      note: 'sem indícios',
     });
 
-    expect(mockModerationRepository.recordAction).toHaveBeenCalledWith({
-      actorId: 'admin-1',
-      targetType: 'REPORT',
-      targetId: 'report-1',
-      action: 'REPORT_RESOLVED',
-      reason: 'procede',
+    expect(mockModerationRepository.resolveReportAndRecord).toHaveBeenCalledWith({
       reportId: 'report-1',
+      status: 'REJECTED',
+      adminId: 'admin-1',
+      action: 'REPORT_REJECTED',
+      note: 'sem indícios',
     });
   });
 
-  it('deve mapear REVIEWED para a ação REPORT_REVIEWED', async () => {
-    await sut.execute({ reportId: 'report-1', adminId: 'admin-1', status: 'REVIEWED' });
+  it('retorna DatabaseError quando a transação de resolução falha', async () => {
+    mockModerationRepository.resolveReportAndRecord.mockRejectedValue(new Error('audit insert failed'));
 
-    expect(mockModerationRepository.recordAction.mock.calls[0][0].action).toBe('REPORT_REVIEWED');
+    const result = await sut.execute({ reportId: 'report-1', adminId: 'admin-1', status: 'RESOLVED' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(result.value).toBeInstanceOf(DatabaseError);
   });
 
-  it('deve mapear REJECTED para a ação REPORT_REJECTED', async () => {
-    await sut.execute({ reportId: 'report-1', adminId: 'admin-1', status: 'REJECTED' });
-
-    expect(mockModerationRepository.recordAction.mock.calls[0][0].action).toBe('REPORT_REJECTED');
-  });
-
-  it('deve propagar a falha quando a busca da denúncia falha', async () => {
+  it('propaga a falha da busca da denúncia', async () => {
     mockModerationRepository.findReportById.mockResolvedValue(left(new DatabaseError('boom')));
 
-    const result = await sut.execute({
-      reportId: 'report-1',
-      adminId: 'admin-1',
-      status: 'RESOLVED',
-    });
+    const result = await sut.execute({ reportId: 'report-1', adminId: 'admin-1', status: 'RESOLVED' });
 
     expect(result.isLeft()).toBe(true);
     expect(result.value).toBeInstanceOf(DatabaseError);

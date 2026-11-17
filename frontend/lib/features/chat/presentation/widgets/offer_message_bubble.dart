@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
@@ -24,7 +22,6 @@ class OfferMessageBubble extends StatelessWidget {
     final originalPrice = meta['originalPrice'] as int?;
     final offerPrice = meta['offerPrice'] as int? ?? 0;
     final note = meta['message'] as String?;
-    final productId = meta['productId'] as String?;
 
     return Container(
       width: 260,
@@ -102,27 +99,6 @@ class OfferMessageBubble extends StatelessWidget {
                 fontStyle: FontStyle.italic,
                 color: context.textSecondary,
               ),
-            ),
-          ],
-          // ponytail: accept only when the offer carries a productId to pay
-          // for; make-offer messages don't yet — negotiation flow is pending.
-          if (!isMe && productId != null) ...[
-            Spacing.vMd,
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: strings.chatOfferAccept,
-                    size: AppButtonSize.compact,
-                    onPressed: () {
-                      HapticFeedback.mediumImpact();
-                      context.push(
-                        '/profile/payment?productId=$productId&offerPrice=$offerPrice',
-                      );
-                    },
-                  ),
-                ),
-              ],
             ),
           ],
         ],

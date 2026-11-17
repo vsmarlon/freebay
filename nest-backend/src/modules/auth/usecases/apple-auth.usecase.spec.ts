@@ -15,7 +15,7 @@ describe('AppleAuthUseCase', () => {
     id: 'user-1', displayName: 'Person', username: null, email: 'person@example.com', passwordHash: null,
     appleId: 'apple-sub', appleRefreshTokenEncrypted: encrypted, googleId: null, emailVerified: true,
     cpfHash: null, phone: null, phoneVerified: false, city: null, state: null, avatarUrl: null, bio: null,
-    isVerified: false, isGuest: false, role: UserRole.USER, reputationScore: 0, totalReviews: 0,
+    isVerified: false, role: UserRole.USER, reputationScore: 0, totalReviews: 0,
     createdAt: new Date(), updatedAt: new Date(), deletedAt: null, suspendedAt: null, suspensionReason: null,
   };
   let sut: AppleAuthUseCase;

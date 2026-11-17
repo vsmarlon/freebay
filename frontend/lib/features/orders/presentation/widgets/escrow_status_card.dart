@@ -65,6 +65,7 @@ class EscrowStatusCard extends StatelessWidget {
                         EscrowStatus.held => strings.escrowStatusHeld,
                         EscrowStatus.released => strings.escrowStatusReleased,
                         EscrowStatus.refunded => strings.escrowStatusRefunded,
+                        EscrowStatus.unknown => strings.escrowStatusUnknown,
                       },
                       style: TextStyle(
                         fontFamily: AppTypography.headlineFontFamily,
@@ -164,6 +165,8 @@ class EscrowStatusCard extends StatelessWidget {
         return AppColors.success;
       case EscrowStatus.refunded:
         return AppColors.info;
+      case EscrowStatus.unknown:
+        return AppColors.warning;
     }
   }
 
@@ -175,6 +178,8 @@ class EscrowStatusCard extends StatelessWidget {
         return Icons.check_circle_outlined;
       case EscrowStatus.refunded:
         return Icons.replay_outlined;
+      case EscrowStatus.unknown:
+        return Icons.help_outline;
     }
   }
 
@@ -190,6 +195,8 @@ class EscrowStatusCard extends StatelessWidget {
         return isBuyer
             ? strings.escrowRefundedBuyer
             : strings.escrowRefundedSeller;
+      case EscrowStatus.unknown:
+        return strings.escrowStatusUnknown;
     }
   }
 }

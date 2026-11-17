@@ -15,7 +15,9 @@ import { SuspendUserUseCase } from './usecases/suspend-user.usecase';
 import { RemoveContentUseCase } from './usecases/remove-content.usecase';
 import { ListModerationActionsUseCase } from './usecases/list-moderation-actions.usecase';
 import { ListTransferFailuresUseCase } from './usecases/list-transfer-failures.usecase';
+import { ListAdminDisputesUseCase } from '@/modules/disputes';
 import {
+  AdminDisputeQueryDTO,
   AdminReportQueryDTO,
   ModerationReasonDTO,
   ResolveReportDTO,
@@ -33,6 +35,7 @@ export class AdminController {
     private readonly removeContentUseCase: RemoveContentUseCase,
     private readonly listModerationActionsUseCase: ListModerationActionsUseCase,
     private readonly listTransferFailuresUseCase: ListTransferFailuresUseCase,
+    private readonly listAdminDisputesUseCase: ListAdminDisputesUseCase,
   ) {}
 
   @GetAdmin('reports', {
@@ -184,5 +187,14 @@ export class AdminController {
   })
   async listTransferFailures(@Query() query: CursorQueryDTO) {
     return this.listTransferFailuresUseCase.execute({ cursor: query.cursor, limit: query.limit });
+  }
+
+  @GetAdmin('disputes', {
+    summary: 'List disputes for moderation',
+    description:
+      'Escalated and active disputes, oldest first. Includes order, participants, product, and evidence so the queue needs no follow-up request.',
+  })
+  async listDisputes(@Query() query: AdminDisputeQueryDTO) {
+    return this.listAdminDisputesUseCase.execute({ status: query.status, limit: query.limit });
   }
 }

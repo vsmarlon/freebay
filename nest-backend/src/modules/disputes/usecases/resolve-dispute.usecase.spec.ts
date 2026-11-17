@@ -37,7 +37,6 @@ describe('ResolveDisputeUseCase buyer refunds', () => {
       sellerAmount: 9000,
       status: 'DISPUTED',
       escrowStatus: 'HELD',
-      meetingScheduledAt: null,
       deliveryConfirmedAt: null,
       cancellationReason: null,
       createdAt: now,

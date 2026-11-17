@@ -102,13 +102,13 @@ describe('OrderDatabaseRepository.claimCancellation', () => {
     const repository = module.get(OrderDatabaseRepository);
 
     const initial = await repository.claimCancellation(
-      'order-1', 'CONFIRMED', 'Original reason', { refundOperationId: 'refund-op-1' },
+      'order-1', 'CONFIRMED', 'Original reason', 'BUYER_REQUEST', { refundOperationId: 'refund-op-1' },
     );
     const retry = await repository.claimCancellation(
-      'order-1', 'CONFIRMED', 'Changed reason', { refundOperationId: 'refund-op-1' },
+      'order-1', 'CONFIRMED', 'Changed reason', 'BUYER_REQUEST', { refundOperationId: 'refund-op-1' },
     );
     const unrelated = await repository.claimCancellation(
-      'order-1', 'CONFIRMED', 'Unrelated request', { refundOperationId: 'refund-op-2' },
+      'order-1', 'CONFIRMED', 'Unrelated request', 'BUYER_REQUEST', { refundOperationId: 'refund-op-2' },
     );
 
     expect(initial.isRight() && initial.value).toBe(true);
@@ -168,7 +168,7 @@ describe('OrderDatabaseRepository.claimCheckoutAbandoned', () => {
 
     expect(updateMany).toHaveBeenCalledWith({
       where: { id: 'order-1', status: 'PENDING', transaction: { is: null } },
-      data: { status: 'CANCELLED', cancellationReason: 'CHECKOUT_ABANDONED' },
+      data: { status: 'CANCELLED', cancellationReason: 'CHECKOUT_ABANDONED', cancellationKind: 'CHECKOUT_ABANDONED' },
     });
     expect(claimed.isRight() && claimed.value).toBe(true);
   });

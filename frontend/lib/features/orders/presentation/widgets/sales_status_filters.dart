@@ -35,7 +35,9 @@ class SalesStatusFilters extends StatelessWidget {
               ),
             ),
             Spacing.hSm,
-            for (final status in OrderStatus.values) ...[
+            for (final status in OrderStatus.values.where(
+              (status) => status != OrderStatus.unknown,
+            )) ...[
               Semantics(
                 container: true,
                 button: true,
@@ -48,6 +50,8 @@ class SalesStatusFilters extends StatelessWidget {
                   OrderStatus.completed => strings.orderStatusCompleted,
                   OrderStatus.cancelled => strings.orderStatusCancelled,
                   OrderStatus.disputed => strings.orderStatusDisputed,
+                  OrderStatus.refundPending => strings.orderStatusRefundPending,
+                  OrderStatus.unknown => strings.orderStatusUnknown,
                 },
                 child: BrutalistFilterChip(
                   label: switch (status) {
@@ -58,6 +62,9 @@ class SalesStatusFilters extends StatelessWidget {
                     OrderStatus.completed => strings.orderStatusCompleted,
                     OrderStatus.cancelled => strings.orderStatusCancelled,
                     OrderStatus.disputed => strings.orderStatusDisputed,
+                    OrderStatus.refundPending =>
+                      strings.orderStatusRefundPending,
+                    OrderStatus.unknown => strings.orderStatusUnknown,
                   }.toUpperCase(),
                   selected: selected == status,
                   onTap: () => onChanged(status),

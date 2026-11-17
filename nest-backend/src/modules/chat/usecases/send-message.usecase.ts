@@ -16,6 +16,7 @@ import {
 } from './location-message-metadata';
 import { isOwnedUpload } from '@/shared/utils/file.utils';
 import { withoutPinMetadata } from './message-pin-metadata';
+import { canSendDirect } from '../domain/conversation-state';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -33,6 +34,17 @@ export class SendMessageUseCase {
   async execute(input: SendMessageInput): Promise<Either<AppError, SendMessageInternalOutput>> {
     const resolved = await this.threadAccess.resolveThread(input.senderId, input.conversationId);
     if (resolved.isLeft()) return left(resolved.value);
+
+    if (resolved.value.directConversationId) {
+      const directStatus = resolved.value.directStatus;
+      if (!directStatus || !canSendDirect({
+        status: directStatus,
+        senderId: input.senderId,
+        initiatorId: resolved.value.initiatorId ?? null,
+      })) {
+        return left(new ForbiddenError('A conversa aguarda o aceite do destinatário'));
+      }
+    }
 
     const isOrder = !!resolved.value.orderId;
     const result = await this.runMessagePipeline(input, {
@@ -147,6 +159,16 @@ export class SendMessageUseCase {
       lastMessageAt: new Date(),
     });
     if (updateResult.isLeft()) return left(updateResult.value);
+
+    // A new message brings a deleted conversation back for its recipient.
+    const unhide = await this.preferenceRepository.upsert({
+      userId: ctx.otherUserId,
+      directConversationId: ctx.threadId,
+      isDeleted: false,
+    });
+    if (unhide.isLeft()) {
+      this.logger.warn('Failed to restore a deleted conversation preference');
+    }
 
     const msg = messageResult.value;
     return right(this.toInternalOutput(msg, msg.conversationId, ctx.otherUserId));

@@ -63,7 +63,7 @@ describe('UserDataExportRepository', () => {
       select: expect.not.objectContaining({ externalId: true, idempotencyKey: true, transferLastError: true }),
     }));
     expect(prisma.report.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      select: expect.not.objectContaining({ status: true, reviewedById: true, hideFromUser: true }),
+      select: expect.not.objectContaining({ status: true, reviewedById: true }),
     }));
   });
 });

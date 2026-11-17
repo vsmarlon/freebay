@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, ProductStatus, ReportStatus } from '@prisma/client';
+import { Prisma, ProductPauseReason, ProductStatus, ReportStatus } from '@prisma/client';
+import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
@@ -39,7 +41,10 @@ const REPORT_SELECT = {
 @Injectable()
 export class ModerationDatabaseRepository
 {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
+  ) {
   }
 
   async findReports(params: {
@@ -77,7 +82,11 @@ export class ModerationDatabaseRepository
   ): RepositoryResponse<{ count: number }> {
     return repositoryResponse(async () => {
       const result = await (tx ?? this.prisma).report.updateMany({
-        where: { id: reportId, status: ReportStatus.PENDING },
+        where: {
+          id: reportId,
+          // REVIEWED is a legacy intermediate state; it must still be resolvable.
+          status: { in: [ReportStatus.PENDING, ReportStatus.REVIEWED] },
+        },
         data: {
           status: data.status,
           reviewedAt: new Date(),
@@ -86,6 +95,39 @@ export class ModerationDatabaseRepository
       });
       return { count: result.count };
     }, 'Erro ao resolver denúncia');
+  }
+
+  /**
+   * Resolve the report and record its audit action in one transaction. A
+   * failure after the status change used to leave a resolved report with no
+   * moderation trail.
+   */
+  @Transactional()
+  async resolveReportAndRecord(input: {
+    reportId: string;
+    status: ReportStatus;
+    adminId: string;
+    action: CreateModerationActionInput['action'];
+    note: string | null;
+  }): Promise<boolean> {
+    const resolved = await this.resolveReport(
+      input.reportId,
+      { status: input.status, reviewedById: input.adminId },
+      this.txHost.tx,
+    );
+    if (resolved.isLeft()) throw new Error(resolved.value.message);
+    if (resolved.value.count === 0) return false;
+
+    const recorded = await this.recordAction({
+      actorId: input.adminId,
+      targetType: 'REPORT',
+      targetId: input.reportId,
+      action: input.action,
+      reason: input.note,
+      reportId: input.reportId,
+    }, this.txHost.tx);
+    if (recorded.isLeft()) throw new Error(recorded.value.message);
+    return true;
   }
 
   async recordAction(
@@ -172,7 +214,7 @@ export class ModerationDatabaseRepository
     return repositoryResponse(async () => {
       const result = await this.prisma.product.updateMany({
         where: { id: productId, deletedAt: null },
-        data: { deletedAt: new Date(), status: ProductStatus.PAUSED },
+        data: { deletedAt: new Date(), status: ProductStatus.PAUSED, pauseReason: ProductPauseReason.MODERATION },
       });
       return { count: result.count };
     }, 'Erro ao remover produto');

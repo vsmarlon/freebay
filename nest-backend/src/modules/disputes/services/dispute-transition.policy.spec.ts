@@ -27,27 +27,39 @@ describe('DisputeTransitionPolicy', () => {
     it('returns true when dispute status is AWAITING_BUYER', () => {
       expect(sut.canResolve('AWAITING_BUYER')).toBe(true);
     });
+
+    it('returns true when dispute status is ESCALATED', () => {
+      expect(sut.canResolve('ESCALATED')).toBe(true);
+    });
   });
 
   describe('canSubmitEvidence', () => {
     it('returns false when dispute status is RESOLVED', () => {
-      expect(sut.canSubmitEvidence('RESOLVED')).toBe(false);
+      expect(sut.canSubmitEvidence('RESOLVED', 'BUYER')).toBe(false);
     });
 
     it('returns false when dispute status is CANCELLED', () => {
-      expect(sut.canSubmitEvidence('CANCELLED')).toBe(false);
+      expect(sut.canSubmitEvidence('CANCELLED', 'BUYER')).toBe(false);
     });
 
-    it('returns true when dispute status is OPEN', () => {
-      expect(sut.canSubmitEvidence('OPEN')).toBe(true);
+    it('returns false when dispute status is ESCALATED because the admin queue owns it', () => {
+      expect(sut.canSubmitEvidence('ESCALATED', 'BUYER')).toBe(false);
+      expect(sut.canSubmitEvidence('ESCALATED', 'SELLER')).toBe(false);
     });
 
-    it('returns true when dispute status is AWAITING_SELLER', () => {
-      expect(sut.canSubmitEvidence('AWAITING_SELLER')).toBe(true);
+    it('returns true for either party when dispute status is OPEN', () => {
+      expect(sut.canSubmitEvidence('OPEN', 'BUYER')).toBe(true);
+      expect(sut.canSubmitEvidence('OPEN', 'SELLER')).toBe(true);
     });
 
-    it('returns true when dispute status is AWAITING_BUYER', () => {
-      expect(sut.canSubmitEvidence('AWAITING_BUYER')).toBe(true);
+    it('returns true only for the seller when the dispute awaits the seller', () => {
+      expect(sut.canSubmitEvidence('AWAITING_SELLER', 'SELLER')).toBe(true);
+      expect(sut.canSubmitEvidence('AWAITING_SELLER', 'BUYER')).toBe(false);
+    });
+
+    it('returns true only for the buyer when the dispute awaits the buyer', () => {
+      expect(sut.canSubmitEvidence('AWAITING_BUYER', 'BUYER')).toBe(true);
+      expect(sut.canSubmitEvidence('AWAITING_BUYER', 'SELLER')).toBe(false);
     });
   });
 
@@ -70,6 +82,10 @@ describe('DisputeTransitionPolicy', () => {
 
     it('returns true when dispute status is AWAITING_BUYER', () => {
       expect(sut.canWithdraw('AWAITING_BUYER')).toBe(true);
+    });
+
+    it('returns true when dispute status is ESCALATED', () => {
+      expect(sut.canWithdraw('ESCALATED')).toBe(true);
     });
   });
 

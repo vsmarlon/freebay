@@ -116,6 +116,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               isBuyer: isBuyer,
               isLoading: state.isPerformingAction,
               onConfirmDelivery: _handleConfirmDelivery,
+              onMarkShipped: _handleMarkShipped,
+              onMarkDelivered: _handleMarkDelivered,
               onReview: () => _handleReview(
                 order,
                 state.canReviewResponse?.reviewType,
@@ -291,6 +293,40 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       await ref
           .read(orderDetailProvider(widget.orderId).notifier)
           .confirmDelivery();
+    }
+  }
+
+  Future<void> _handleMarkShipped() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => BrutalistConfirmDialog(
+        title: l10n(context).ordersMarkHandover,
+        message: l10n(context).ordersMarkHandoverBody,
+        confirmLabel: l10n(context).commonConfirm,
+        cancelLabel: l10n(context).commonCancel,
+      ),
+    );
+    if (ok == true) {
+      await ref
+          .read(orderDetailProvider(widget.orderId).notifier)
+          .markAsShipped();
+    }
+  }
+
+  Future<void> _handleMarkDelivered() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => BrutalistConfirmDialog(
+        title: l10n(context).ordersMarkReceived,
+        message: l10n(context).ordersMarkReceivedBody,
+        confirmLabel: l10n(context).commonConfirm,
+        cancelLabel: l10n(context).commonCancel,
+      ),
+    );
+    if (ok == true) {
+      await ref
+          .read(orderDetailProvider(widget.orderId).notifier)
+          .markAsDelivered();
     }
   }
 

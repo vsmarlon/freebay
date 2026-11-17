@@ -1,7 +1,6 @@
 import { IsUUID, IsString, MinLength, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Dispute, DisputeStatus, Order, User, Product, Prisma } from '@prisma/client';
-import { DisputeWinner } from '../dispute.constants';
+import { Dispute, DisputeStatus, DisputeWinner, Order, User, Product, Prisma } from '@prisma/client';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
 export class OpenDisputeDTO {

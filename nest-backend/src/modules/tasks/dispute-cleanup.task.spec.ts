@@ -1,19 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DisputeCleanupTask } from './dispute-cleanup.task';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { DisputeResolutionExecutionService } from '@/modules/disputes/services/dispute-resolution-execution.service';
 
 const mockPrisma = {
-  $transaction: jest.fn(),
   dispute: {
-    findMany: jest.fn(),
-    update: jest.fn(),
+    updateMany: jest.fn(),
   },
-};
-
-const mockResolutionExecution = {
-  resolveInFavorOfBuyer: jest.fn(),
-  resolveInFavorOfSeller: jest.fn().mockResolvedValue(undefined),
 };
 
 describe('DisputeCleanupTask', () => {
@@ -24,7 +16,6 @@ describe('DisputeCleanupTask', () => {
       providers: [
         DisputeCleanupTask,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: DisputeResolutionExecutionService, useValue: mockResolutionExecution },
       ],
     }).compile();
 
@@ -32,20 +23,26 @@ describe('DisputeCleanupTask', () => {
     jest.clearAllMocks();
   });
 
-  it('keeps expired disputes held for manual review instead of awarding the seller', async () => {
-    const dispute = { id: 'dispute-1', order: { id: 'order-1', sellerId: 'seller-1', sellerAmount: 9000 } };
-    mockPrisma.dispute.findMany.mockResolvedValue([dispute]);
-    await sut.cleanupExpiredDisputes();
+  it('escalates every expired non-escalated dispute in one guarded update', async () => {
+    const now = new Date('2026-11-09T12:00:00.000Z');
+    mockPrisma.dispute.updateMany.mockResolvedValue({ count: 2 });
 
-    expect(mockPrisma.dispute.findMany).toHaveBeenCalled();
-    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
-    expect(mockResolutionExecution.resolveInFavorOfSeller).not.toHaveBeenCalled();
+    await sut.cleanupExpiredDisputes(now);
+
+    expect(mockPrisma.dispute.updateMany).toHaveBeenCalledWith({
+      where: {
+        status: { in: ['OPEN', 'AWAITING_SELLER', 'AWAITING_BUYER'] },
+        expiresAt: { lt: now },
+      },
+      data: { status: 'ESCALATED' },
+    });
   });
 
-  it('does nothing when no expired disputes', async () => {
-    mockPrisma.dispute.findMany.mockResolvedValue([]);
-    await sut.cleanupExpiredDisputes();
-    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
-    expect(mockResolutionExecution.resolveInFavorOfSeller).not.toHaveBeenCalled();
+  it('does nothing when no dispute is expired', async () => {
+    mockPrisma.dispute.updateMany.mockResolvedValue({ count: 0 });
+
+    await sut.cleanupExpiredDisputes(new Date('2026-11-09T12:00:00.000Z'));
+
+    expect(mockPrisma.dispute.updateMany).toHaveBeenCalledTimes(1);
   });
 });

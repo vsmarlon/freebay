@@ -789,7 +789,7 @@ From [`nest-backend/prisma/schema.prisma`](file:///C:/Users/Qiyana/Documents/Git
 
 | Model Name | Description & Key Fields | Relations |
 |------------|-------------------------|-----------|
-| **`User`** | Platform user entity.<br>• `id` (UUID pk), `displayName`, `username` (unique), `email` (unique), `role` (`USER`/`ADMIN`), `reputationScore`, `isVerified`, `isGuest`, `deletedAt`, `suspendedAt`, `fcmToken`, `notificationPrefs` | 1:1 `Wallet`, 1:1 `ConnectAccount`, 1:N `Product`, 1:N `Post`, 1:N `Order` (Buyer/Seller), 1:N `Review`, 1:N `Follow`, 1:N `Block`, 1:N `Dispute`, 1:N `DirectConversation`, 1:N `Notification` |
+| **`User`** | Platform user entity.<br>• `id` (UUID pk), `displayName`, `username` (unique), `email` (unique), `role` (`USER`/`ADMIN`), `reputationScore`, `isVerified`, `deletedAt`, `suspendedAt`, `fcmToken`, `notificationPrefs` | 1:1 `Wallet`, 1:1 `ConnectAccount`, 1:N `Product`, 1:N `Post`, 1:N `Order` (Buyer/Seller), 1:N `Review`, 1:N `Follow`, 1:N `Block`, 1:N `Dispute`, 1:N `DirectConversation`, 1:N `Notification` |
 | **`PasswordRecoveryCode`** | Temporary 6-digit recovery code.<br>• `userId`, `codeHash`, `attempts`, `expiresAt`, `usedAt` | N:1 `User` (onDelete: Cascade) |
 | **`WebMagicLink`** | Passwordless web login tokens.<br>• `email`, `tokenHash` (unique), `consentGranted`, `expiresAt`, `consumedAt`, `activatedAt` | None |
 | **`PhoneVerificationCode`** | SMS verification code.<br>• `userId`, `phone`, `codeHash`, `attempts`, `expiresAt`, `usedAt` | N:1 `User` (onDelete: Cascade) |

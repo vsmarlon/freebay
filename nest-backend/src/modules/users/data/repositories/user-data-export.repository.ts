@@ -34,7 +34,7 @@ const COMMENT_SELECT = {
 
 const ORDER_SELECT = {
   id: true, productId: true, quantity: true, amount: true, platformFee: true, sellerAmount: true,
-  status: true, escrowStatus: true, meetingScheduledAt: true, deliveryConfirmedAt: true,
+  status: true, escrowStatus: true, deliveryConfirmedAt: true,
   cancellationReason: true, createdAt: true, updatedAt: true,
 } satisfies Prisma.OrderSelect;
 

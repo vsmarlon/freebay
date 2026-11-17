@@ -8,33 +8,40 @@ enum DisputeStatus {
   open,
   awaitingSeller,
   awaitingBuyer,
+  escalated,
   resolved,
-  cancelled;
+  cancelled,
+  unknown;
 
   static DisputeStatus fromString(String value) =>
       switch (value.toUpperCase()) {
         'OPEN' => DisputeStatus.open,
         'AWAITING_SELLER' => DisputeStatus.awaitingSeller,
         'AWAITING_BUYER' => DisputeStatus.awaitingBuyer,
+        'ESCALATED' => DisputeStatus.escalated,
         'RESOLVED' => DisputeStatus.resolved,
         'CANCELLED' => DisputeStatus.cancelled,
-        _ => DisputeStatus.open,
+        _ => DisputeStatus.unknown,
       };
 
   String get label => switch (this) {
     DisputeStatus.open => 'Aberta',
     DisputeStatus.awaitingSeller => 'Aguardando vendedor',
     DisputeStatus.awaitingBuyer => 'Aguardando comprador',
+    DisputeStatus.escalated => 'Em análise',
     DisputeStatus.resolved => 'Resolvida',
     DisputeStatus.cancelled => 'Cancelada',
+    DisputeStatus.unknown => 'Desconhecida',
   };
 
   String toApiString() => switch (this) {
     DisputeStatus.open => 'OPEN',
     DisputeStatus.awaitingSeller => 'AWAITING_SELLER',
     DisputeStatus.awaitingBuyer => 'AWAITING_BUYER',
+    DisputeStatus.escalated => 'ESCALATED',
     DisputeStatus.resolved => 'RESOLVED',
     DisputeStatus.cancelled => 'CANCELLED',
+    DisputeStatus.unknown => 'UNKNOWN',
   };
 }
 
@@ -66,7 +73,8 @@ abstract class DisputeEntity with _$DisputeEntity {
   bool get isOpen =>
       status == DisputeStatus.open ||
       status == DisputeStatus.awaitingSeller ||
-      status == DisputeStatus.awaitingBuyer;
+      status == DisputeStatus.awaitingBuyer ||
+      status == DisputeStatus.escalated;
   bool get isResolved => status == DisputeStatus.resolved;
   bool get isCancelled => status == DisputeStatus.cancelled;
 

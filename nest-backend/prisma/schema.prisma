@@ -28,6 +28,12 @@ enum ProductStatus {
   DELETED
 }
 
+enum ProductPauseReason {
+  SELLER
+  RESERVED
+  MODERATION
+}
+
 enum PostType {
   PRODUCT
   REGULAR
@@ -39,8 +45,18 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   DISPUTED
+  REFUND_PENDING
   COMPLETED
   CANCELLED
+}
+
+enum CancellationKind {
+  BUYER_REQUEST
+  SELLER_REQUEST
+  CHECKOUT_ABANDONED
+  DISPUTE_REFUND
+  PAYMENT_FAILED
+  SYSTEM
 }
 
 enum WalletBalanceKind {
@@ -107,8 +123,14 @@ enum DisputeStatus {
   OPEN
   AWAITING_SELLER
   AWAITING_BUYER
+  ESCALATED
   RESOLVED
   CANCELLED
+}
+
+enum DisputeWinner {
+  BUYER
+  SELLER
 }
 
 enum ReviewType {
@@ -182,7 +204,6 @@ model User {
   bannerUrl       String?
   bio             String?   @db.VarChar(150)
   isVerified      Boolean   @default(false)
-  isGuest         Boolean   @default(false)
   role            UserRole  @default(USER)
   reputationScore Float     @default(0)
   totalReviews    Int       @default(0)
@@ -368,6 +389,7 @@ model Product {
   condition   Condition
   categoryId  String?
   status      ProductStatus @default(ACTIVE)
+  pauseReason ProductPauseReason?
   quantity    Int           @default(1)
   soldCount   Int           @default(0)
   sellerId    String
@@ -581,11 +603,12 @@ model Order {
   amount              Int
   platformFee         Int
   sellerAmount        Int
-  status              OrderStatus  @default(PENDING)
-  escrowStatus        EscrowStatus @default(HELD)
-  meetingScheduledAt  DateTime?
+  status              OrderStatus       @default(PENDING)
+  escrowStatus        EscrowStatus      @default(HELD)
   deliveryConfirmedAt DateTime?
   cancellationReason  String?
+  cancellationKind    CancellationKind?
+  preDisputeStatus    OrderStatus?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 
@@ -741,10 +764,12 @@ model Dispute {
   reason         String
   buyerEvidence  Json?
   sellerEvidence Json?
+  winner         DisputeWinner?
   resolution     String?
   resolvedAt     DateTime?
   resolvedById   String?
   createdAt      DateTime      @default(now())
+  // Escalation deadline: active disputes move to ESCALATED when this passes.
   expiresAt      DateTime
 
   order      Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -994,6 +1019,7 @@ model DirectConversation {
   id            String             @id @default(uuid())
   user1Id       String
   user2Id       String
+  initiatorId   String?
   productId     String?
   scopeKey      String             @default("DIRECT")
   status        ConversationStatus @default(PENDING)
@@ -1056,7 +1082,6 @@ model ConversationPreference {
   isArchived           Boolean   @default(false)
   isDeleted            Boolean   @default(false)
   muted                Boolean   @default(false)
-  deletedAt            DateTime?
   theme                ChatTheme @default(DEFAULT)
   backgroundUrl        String?
   createdAt            DateTime  @default(now())
@@ -1102,7 +1127,6 @@ model Report {
   reportedChatMessageId        String?
   reason                       ReportReason
   description                  String?
-  hideFromUser                 Boolean          @default(false)
   status                       ReportStatus     @default(PENDING)
   createdAt                    DateTime         @default(now())
   reviewedAt                   DateTime?

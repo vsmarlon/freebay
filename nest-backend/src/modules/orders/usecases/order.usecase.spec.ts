@@ -33,6 +33,9 @@ describe('ConfirmDeliveryUseCase', () => {
         buyerId: 'user-123',
         sellerId: 'seller-123',
         status: 'CONFIRMED',
+        escrowStatus: 'HELD',
+        cancellationReason: null,
+        transaction: { status: 'PAID' },
         sellerAmount: 9000,
       }),
     );
@@ -57,7 +60,8 @@ describe('ConfirmDeliveryUseCase', () => {
 
   it('allows the buyer to confirm a shipped order through the guarded release seam', async () => {
     mockOrderRepository.findById.mockResolvedValue(right({
-      id: 'order-123', buyerId: 'user-123', sellerId: 'seller-123', status: 'SHIPPED', sellerAmount: 9000,
+      id: 'order-123', buyerId: 'user-123', sellerId: 'seller-123', status: 'SHIPPED',
+      escrowStatus: 'HELD', cancellationReason: null, transaction: { status: 'PAID' }, sellerAmount: 9000,
     }));
 
     const result = await sut.execute({ orderId: 'order-123', buyerId: 'user-123' });

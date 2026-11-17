@@ -9,6 +9,7 @@ import {
   DISPUTE_OPENED_ERROR,
   ESCROW_RELEASE_DELAY_DAYS,
 } from './task.constants';
+import { ACTIVE_DISPUTE_STATUSES } from '@/modules/disputes/domain/dispute-state';
 
 @Injectable()
 export class EscrowReleaseTask {
@@ -27,13 +28,16 @@ export class EscrowReleaseTask {
       where: {
         status: OrderStatus.DELIVERED,
         deliveryConfirmedAt: { lt: releaseCutoff },
-        dispute: null,
+        OR: [
+          { dispute: { is: null } },
+          { dispute: { is: { status: { notIn: [...ACTIVE_DISPUTE_STATUSES] } } } },
+        ],
       },
       include: { dispute: true },
     });
 
     for (const order of orders) {
-      if (order.dispute) continue;
+      if (order.dispute && ACTIVE_DISPUTE_STATUSES.some((status) => status === order.dispute!.status)) continue;
 
       try {
         const released = await this.prisma.$transaction(async (tx) => {
@@ -54,7 +58,7 @@ export class EscrowReleaseTask {
           }
 
           const dispute = await tx.dispute.findUnique({ where: { orderId: order.id } });
-          if (dispute) {
+          if (dispute && ACTIVE_DISPUTE_STATUSES.some((status) => status === dispute.status)) {
             throw new Error(DISPUTE_OPENED_ERROR);
           }
 

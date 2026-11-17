@@ -6,6 +6,7 @@ import { SubmitEvidenceUseCase } from './usecases/submit-evidence.usecase';
 import { ResolveDisputeUseCase } from './usecases/resolve-dispute.usecase';
 import { GetUserDisputesUseCase } from './usecases/get-user-disputes.usecase';
 import { WithdrawDisputeUseCase } from './usecases/withdraw-dispute.usecase';
+import { ListAdminDisputesUseCase } from './usecases/list-admin-disputes.usecase';
 import { DisputeDatabaseRepository } from './data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from './services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from './services/dispute-resolution-execution.service';
@@ -21,9 +22,11 @@ import { PaymentsModule } from '../payments/payments.module';
     ResolveDisputeUseCase,
     GetUserDisputesUseCase,
     WithdrawDisputeUseCase,
+    ListAdminDisputesUseCase,
     DisputeDatabaseRepository,
     DisputeTransitionPolicy,
     DisputeResolutionExecutionService,
   ],
+  exports: [ListAdminDisputesUseCase],
 })
 export class DisputesModule {}

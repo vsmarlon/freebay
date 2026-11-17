@@ -5,6 +5,7 @@ import { AppError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { AuthUser } from '@/shared/core/types';
 import { UserRole } from '@prisma/client';
 import { OrderFullPayload } from '../types/order.types';
+import { availableOrderActions, OrderAction } from '../domain/order-state';
 
 @Injectable()
 export class GetOrderUseCase {
@@ -13,7 +14,7 @@ export class GetOrderUseCase {
   async execute(
     id: string,
     user: AuthUser,
-  ): Promise<Either<AppError, { order: OrderFullPayload }>> {
+  ): Promise<Either<AppError, { order: OrderFullPayload; allowedActions: OrderAction[] }>> {
     const result = await this.orderRepository.findById(id);
     if (result.isLeft()) return left(result.value);
     if (!result.value) return left(new NotFoundError('Pedido'));
@@ -31,6 +32,10 @@ export class GetOrderUseCase {
       );
     }
 
-    return right({ order });
+    return right({
+      order,
+      // Admins see the order but are not participants, so they get no participant actions.
+      allowedActions: availableOrderActions(order, user.userId),
+    });
   }
 }

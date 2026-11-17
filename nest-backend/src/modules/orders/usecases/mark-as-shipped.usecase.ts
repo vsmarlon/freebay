@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { OrderStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
 import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { MarkAsShippedInput } from '../dtos/order.dto';
+import { canMarkShipped } from '../domain/order-state';
 
 @Injectable()
 export class MarkAsShippedUseCase {
@@ -18,7 +18,7 @@ export class MarkAsShippedUseCase {
       return left(new UnauthorizedError('Only seller can mark as shipped'));
     }
 
-    if (orderResult.value.status !== OrderStatus.CONFIRMED) {
+    if (!canMarkShipped(orderResult.value, input.sellerId)) {
       return left(new InvalidOrderStateError('CONFIRMED to ship', orderResult.value.status));
     }
 

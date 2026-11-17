@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction, MessageType, StarredMessage } from '@prisma/client';
+import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, ConversationStatus, MessageReaction, MessageType, StarredMessage } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
@@ -24,6 +24,15 @@ export class ConversationDatabaseRepository {
   findProductSummary(productId: string): RepositoryResponse<ProductConversationSummaryRecord | null> { return repositoryResponse(() => lookups.findProductSummary(this.prisma, productId), 'Erro ao buscar produto'); }
   createDirectConversation(data: Prisma.DirectConversationCreateInput): RepositoryResponse<ConversationStartRecord> { return lookups.createDirectConversation(this.prisma, data); }
   updateDirectConversation(id: string, data: Prisma.DirectConversationUpdateInput): RepositoryResponse<DirectConversation> { return repositoryResponse(() => lookups.updateDirectConversation(this.prisma, id, data), 'Erro ao atualizar conversa'); }
+  acceptDirectConversation(id: string): RepositoryResponse<boolean> {
+    return repositoryResponse(async () => {
+      const claimed = await this.prisma.directConversation.updateMany({
+        where: { id, status: ConversationStatus.PENDING },
+        data: { status: ConversationStatus.ACTIVE },
+      });
+      return claimed.count > 0;
+    }, 'Erro ao aceitar conversa');
+  }
 
   findDirectMessageByClientId(conversationId: string, senderId: string, clientMessageId: string): RepositoryResponse<DirectMessage | null> { return repositoryResponse(() => messages.findDirectMessageByClientId(this.prisma, conversationId, senderId, clientMessageId), 'Erro ao buscar mensagem existente'); }
   createDirectMessage(data: Prisma.DirectMessageCreateInput, includeSender?: boolean): RepositoryResponse<DirectMessage | DirectMessageWithSender> { return messages.createDirectMessage(this.prisma, data, includeSender); }

@@ -1,10 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
-import { ReportStatus } from '@prisma/client';
+import { DisputeStatus, ReportStatus } from '@prisma/client';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 import { CursorQueryDTO } from '@/shared/dtos/pagination.dto';
 
-export const RESOLVABLE_REPORT_STATUSES = [ReportStatus.REVIEWED, ReportStatus.RESOLVED, ReportStatus.REJECTED] as const;
+export const RESOLVABLE_REPORT_STATUSES = [ReportStatus.RESOLVED, ReportStatus.REJECTED] as const;
 export type ResolvableReportStatus = (typeof RESOLVABLE_REPORT_STATUSES)[number];
 
 export class AdminReportQueryDTO extends CursorQueryDTO {
@@ -12,6 +12,13 @@ export class AdminReportQueryDTO extends CursorQueryDTO {
   @IsOptional()
   @IsIn(Object.values(ReportStatus))
   readonly status?: ReportStatus;
+}
+
+export class AdminDisputeQueryDTO extends CursorQueryDTO {
+  @ApiPropertyOptional({ enum: DisputeStatus, description: 'Filter by dispute status' })
+  @IsOptional()
+  @IsIn(Object.values(DisputeStatus))
+  readonly status?: DisputeStatus;
 }
 
 export class ResolveReportDTO {

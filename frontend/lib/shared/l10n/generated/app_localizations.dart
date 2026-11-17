@@ -771,6 +771,18 @@ abstract class AppLocalizations {
   /// **'Conversation restored'**
   String get chatConversationRestored;
 
+  /// No description provided for @chatAcceptConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept conversation'**
+  String get chatAcceptConversation;
+
+  /// No description provided for @chatAcceptedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation accepted'**
+  String get chatAcceptedSuccess;
+
   /// No description provided for @chatDeleteUndoExplanation.
   ///
   /// In en, this message translates to:
@@ -1272,7 +1284,7 @@ abstract class AppLocalizations {
   /// No description provided for @orderStatusShipped.
   ///
   /// In en, this message translates to:
-  /// **'Shipped'**
+  /// **'Handover arranged'**
   String get orderStatusShipped;
 
   /// No description provided for @orderStatusDelivered.
@@ -1298,6 +1310,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'In dispute'**
   String get orderStatusDisputed;
+
+  /// No description provided for @orderStatusRefundPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund pending'**
+  String get orderStatusRefundPending;
+
+  /// No description provided for @orderStatusUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown status — update the app'**
+  String get orderStatusUnknown;
+
+  /// No description provided for @ordersMarkHandover.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark handover'**
+  String get ordersMarkHandover;
+
+  /// No description provided for @ordersMarkHandoverBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The buyer confirms receipt, then the payment is released.'**
+  String get ordersMarkHandoverBody;
+
+  /// No description provided for @ordersMarkReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as received'**
+  String get ordersMarkReceived;
+
+  /// No description provided for @ordersMarkReceivedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This records that you received the item. You can still open a dispute if something is wrong.'**
+  String get ordersMarkReceivedBody;
+
+  /// No description provided for @escrowStatusUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown escrow status'**
+  String get escrowStatusUnknown;
 
   /// No description provided for @ordersDispute.
   ///

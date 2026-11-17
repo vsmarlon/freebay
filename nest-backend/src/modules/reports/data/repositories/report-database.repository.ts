@@ -51,7 +51,6 @@ export class ReportDatabaseRepository {
         targetType: data.targetType,
         reason: data.reason,
         description: data.description,
-        hideFromUser: data.hideFromUser,
       };
       if (data.reportedUserId) prismaData.reportedUser = { connect: { id: data.reportedUserId } };
       if (data.reportedPostId) prismaData.reportedPost = { connect: { id: data.reportedPostId } };

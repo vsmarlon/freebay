@@ -7,6 +7,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { createTransactionClient } from '@/shared/testing/test-doubles';
 import { DisputeResolutionExecutionService } from './dispute-resolution-execution.service';
 import { WalletMissingError } from '@/shared/wallet/wallet-mutation';
+import { DisputeWinner } from '@prisma/client';
 import { DisputeWithOrder } from '../types/dispute.types';
 
 describe('DisputeResolutionExecutionService', () => {
@@ -74,6 +75,7 @@ describe('DisputeResolutionExecutionService', () => {
       reason: 'Item não recebido',
       buyerEvidence: null,
       sellerEvidence: null,
+      winner: null,
       resolution: null,
       resolvedAt: null,
       resolvedById: null,
@@ -90,9 +92,10 @@ describe('DisputeResolutionExecutionService', () => {
         sellerAmount: 9000,
         status: 'DISPUTED',
         escrowStatus: 'HELD',
-        meetingScheduledAt: null,
         deliveryConfirmedAt: null,
         cancellationReason: null,
+        cancellationKind: null,
+        preDisputeStatus: null,
         createdAt: now,
         updatedAt: now,
         ...overrides,
@@ -106,7 +109,7 @@ describe('DisputeResolutionExecutionService', () => {
 
       await sut.finalizeBuyer(buildDispute(), {
         operationId: 'refund-op-1', providerId: 're_1', amount: 10000,
-      }, { resolution: 'Buyer wins', resolvedById: null });
+      }, { resolution: 'Buyer wins', resolvedById: null, winner: DisputeWinner.BUYER });
 
       expect(fake.order.updateMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({ id: 'order-1', cancellationReason: 'DISPUTE_REFUND_PENDING' }),
@@ -128,7 +131,7 @@ describe('DisputeResolutionExecutionService', () => {
 
       await sut.finalizeBuyer(buildDispute(), {
         operationId: 'refund-op-1', providerId: 're_1', amount: 10000,
-      }, { resolution: 'Buyer wins', resolvedById: null });
+      }, { resolution: 'Buyer wins', resolvedById: null, winner: DisputeWinner.BUYER });
 
       const buyerCall = (fake.wallet.update as jest.Mock).mock.calls.find(
         ([arg]) => arg.where.userId === 'buyer-1',
@@ -141,7 +144,7 @@ describe('DisputeResolutionExecutionService', () => {
 
       await expect(sut.finalizeBuyer(buildDispute(), {
         operationId: 'refund-op-1', providerId: 're_1', amount: 10000,
-      }, { resolution: 'Buyer wins', resolvedById: null })).rejects.toThrow(WalletMissingError);
+      }, { resolution: 'Buyer wins', resolvedById: null, winner: DisputeWinner.BUYER })).rejects.toThrow(WalletMissingError);
     });
 
     it('moves no money when the escrow was already released', async () => {
@@ -149,7 +152,7 @@ describe('DisputeResolutionExecutionService', () => {
 
       await expect(sut.finalizeBuyer(buildDispute(), {
         operationId: 'refund-op-1', providerId: 're_1', amount: 10000,
-      }, { resolution: 'Buyer wins', resolvedById: null })).rejects.toThrow('DISPUTE_ORDER_CLAIM_LOST');
+      }, { resolution: 'Buyer wins', resolvedById: null, winner: DisputeWinner.BUYER })).rejects.toThrow('DISPUTE_ORDER_CLAIM_LOST');
 
       expect(fake.wallet.update).not.toHaveBeenCalled();
     });
@@ -159,7 +162,7 @@ describe('DisputeResolutionExecutionService', () => {
     it('claims the escrow and moves sellerAmount from pending to available and totalEarned', async () => {
       const fake = await compileSuite();
 
-      await sut.finalizeSeller(buildDispute(), { resolution: 'Seller wins', resolvedById: 'admin-1' });
+      await sut.finalizeSeller(buildDispute(), { resolution: 'Seller wins', resolvedById: 'admin-1', winner: DisputeWinner.SELLER });
 
       expect(fake.order.updateMany).toHaveBeenCalledWith({
         where: { id: 'order-1', status: 'DISPUTED', escrowStatus: 'HELD', cancellationReason: null },
@@ -182,14 +185,14 @@ describe('DisputeResolutionExecutionService', () => {
     it('refuses to pay out against a seller wallet that does not exist', async () => {
       await compileSuite(false);
 
-      await expect(sut.finalizeSeller(buildDispute(), { resolution: 'Seller wins', resolvedById: null }))
+      await expect(sut.finalizeSeller(buildDispute(), { resolution: 'Seller wins', resolvedById: null, winner: DisputeWinner.SELLER }))
         .rejects.toThrow(WalletMissingError);
     });
 
     it('moves no money when the escrow was already released', async () => {
       const fake = await compileSuite(true, 0);
 
-      await expect(sut.finalizeSeller(buildDispute(), { resolution: 'Seller wins', resolvedById: null }))
+      await expect(sut.finalizeSeller(buildDispute(), { resolution: 'Seller wins', resolvedById: null, winner: DisputeWinner.SELLER }))
         .rejects.toThrow('DISPUTE_ORDER_CLAIM_LOST');
 
       expect(fake.wallet.update).not.toHaveBeenCalled();

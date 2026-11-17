@@ -13,6 +13,7 @@ import { PaymentGroupSnapshot } from '../types/payment-group.types';
 import { ProcessWebhookInput, WebhookDataPayload } from '../dtos/payment.dto';
 
 const GROUP_RACE_SKIP = 'GROUP_RACE_SKIP';
+const GROUP_ORDER_NOT_PENDING = 'GROUP_ORDER_NOT_PENDING';
 
 const COMPLETION_EVENTS = [
   'payment_intent.succeeded',
@@ -103,8 +104,11 @@ export class ProcessGroupWebhookUseCase {
           if (paid.isLeft()) throw new Error(paid.value.message);
           if (paid.value.count === 0) continue;
 
+          const confirmed = await this.orderRepo.confirm(order.orderId, tx);
+          if (confirmed.isLeft()) throw new Error(confirmed.value.message);
+          if (!confirmed.value) throw new Error(GROUP_ORDER_NOT_PENDING);
+
           await this.productRepo.updateInventoryOnSale(order.productId, tx);
-          await this.orderRepo.confirm(order.orderId, tx);
           await this.walletRepo.creditPending(order.sellerId, order.sellerAmount, order.orderId, tx);
         }
       });
@@ -112,6 +116,12 @@ export class ProcessGroupWebhookUseCase {
       if (error instanceof Error && error.message === GROUP_RACE_SKIP) {
         this.logger.log(
           `Payment group ${group.id} lost the completion race; a concurrent delivery already paid it`,
+        );
+        return right(undefined);
+      }
+      if (error instanceof Error && error.message === GROUP_ORDER_NOT_PENDING) {
+        this.logger.error(
+          `Payment group ${group.id} has an order that is no longer PENDING; refusing to confirm and credit it from a payment webhook`,
         );
         return right(undefined);
       }

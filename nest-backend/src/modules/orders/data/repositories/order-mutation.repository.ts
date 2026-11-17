@@ -1,6 +1,8 @@
 import {
-  EscrowStatus,
+  CancellationKind,
   DisputeStatus,
+  DisputeWinner,
+  EscrowStatus,
   OrderStatus,
   Prisma,
   TransactionStatus,
@@ -103,6 +105,7 @@ export class OrderMutationRepository {
     orderId: string,
     status: OrderStatus,
     reason: string,
+    kind: CancellationKind,
     owner?: CancellationClaimOwner,
   ): RepositoryResponse<boolean> {
     return repositoryResponse(async () => {
@@ -112,7 +115,7 @@ export class OrderMutationRepository {
           status,
           ...(owner ? { cancellationReason: null } : { OR: [{ cancellationReason: null }, { cancellationReason: reason }] }),
         },
-        data: { cancellationReason: reason },
+        data: { cancellationReason: reason, cancellationKind: kind },
       });
       if (claimed.count > 0 || !owner) return claimed.count > 0;
       const transactionOwner = 'refundOperationId' in owner
@@ -172,6 +175,7 @@ export class OrderMutationRepository {
           where: { orderId: data.orderId, status: { notIn: [DisputeStatus.RESOLVED, DisputeStatus.CANCELLED] } },
           data: {
             status: DisputeStatus.RESOLVED,
+            winner: DisputeWinner.BUYER,
             resolution: data.disputeResolution ?? 'Stripe refund succeeded',
             resolvedById: data.resolvedById ?? null,
             resolvedAt: new Date(),
@@ -193,12 +197,13 @@ export class OrderMutationRepository {
     }, "Failed to confirm order");
   }
 
-  markRefundPending(orderId: string, reason: string): RepositoryResponse<void> {
+  markRefundPending(orderId: string, reason: string, kind: CancellationKind): RepositoryResponse<boolean> {
     return repositoryResponse(async () => {
-      await this.prisma.order.updateMany({
-        where: { id: orderId, status: OrderStatus.CONFIRMED },
-        data: { cancellationReason: reason },
+      const claimed = await this.prisma.order.updateMany({
+        where: { id: orderId, status: OrderStatus.CONFIRMED, cancellationReason: reason },
+        data: { status: OrderStatus.REFUND_PENDING, cancellationKind: kind },
       });
+      return claimed.count > 0;
     }, 'Erro ao registrar reembolso pendente');
   }
 
@@ -216,8 +221,8 @@ export class OrderMutationRepository {
     return repositoryResponse(async () => {
       const client = tx ?? this.prisma;
       const claimed = await client.order.updateMany({
-        where: { id: orderId, status: { notIn: [OrderStatus.CANCELLED, OrderStatus.COMPLETED, OrderStatus.DELIVERED, OrderStatus.SHIPPED] } },
-        data: { status: OrderStatus.CANCELLED },
+        where: { id: orderId, status: OrderStatus.PENDING },
+        data: { status: OrderStatus.CANCELLED, cancellationKind: CancellationKind.PAYMENT_FAILED },
       });
       return claimed.count > 0;
     }, "Failed to cancel order");
@@ -228,7 +233,11 @@ export class OrderMutationRepository {
       const client = tx ?? this.prisma;
       const claimed = await client.order.updateMany({
         where: { id: orderId, status: OrderStatus.PENDING, transaction: { is: null } },
-        data: { status: OrderStatus.CANCELLED, cancellationReason: CHECKOUT_ABANDONED_REASON },
+        data: {
+          status: OrderStatus.CANCELLED,
+          cancellationReason: CHECKOUT_ABANDONED_REASON,
+          cancellationKind: CancellationKind.CHECKOUT_ABANDONED,
+        },
       });
       return claimed.count > 0;
     }, "Failed to claim abandoned checkout");

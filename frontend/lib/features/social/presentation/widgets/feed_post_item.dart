@@ -58,124 +58,123 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
         ref.watch(repostsProvider.select((s) => s.getCountOverride(post.id))) ??
         post.sharesCount;
 
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: AppMotion.base,
-      builder: (context, value, child) => Opacity(opacity: value, child: child),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (post.repostedBy != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  strings.feedRepostedBy(post.repostedBy!.displayNameOrDefault),
-                  style: AppTypography.labelSmall.copyWith(
-                    color: context.textSecondary,
-                  ),
+    // ponytail: no entrance fade per row. Every row built during a scroll ran a
+    // 180ms Opacity animation, i.e. a saveLayer of the whole post (image
+    // included) per frame — that was the feed's raster jank. Rows appear
+    // instantly, which is what every other list in the app does.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (post.repostedBy != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                strings.feedRepostedBy(post.repostedBy!.displayNameOrDefault),
+                style: AppTypography.labelSmall.copyWith(
+                  color: context.textSecondary,
                 ),
               ),
-            SocialPost(
-              userId: post.user.id,
-              userName: post.user.displayNameOrDefault,
-              userAvatarUrl: post.user.avatarUrl,
-              userAvatarBlurHash: post.user.avatarBlurHash,
-              content: post.content,
-              media: post.socialMedia,
-              likesCount: likesCount,
-              commentsCount: post.commentsCount,
-              sharesCount: sharesCount,
-              isLiked: isLiked,
-              isSaved: isSaved,
-              isReposted: isReposted,
-              isVerified: post.user.isVerified,
-              createdAt: post.createdAt,
-              heroTag: canHeroToPostDetail ? 'post-media-${post.id}' : null,
-              price: price,
-              isSelling: post.type == PostType.product,
-              isCloseFriends: post.audience == PostAudience.closeFriends,
-              quotePreview: post.isQuote
-                  ? QuoteSourcePreview(source: post.quoteSource)
-                  : null,
-              onQuote: !post.isQuote && post.audience == PostAudience.everyone
-                  ? () => context.push(
-                      AppRoutes.createPost,
-                      extra: QuoteSource.post(id: post.id, post: post),
-                    )
-                  : null,
-              closeFriendsLabel: strings.feedAudienceCloseFriends,
-              onTap: () => context.push(AppRoutes.postPath(post.id)),
-              onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
-              onSave: () async {
-                final user = ref.read(authControllerProvider).value;
-                if (user == null) {
-                  if (context.mounted) {
-                    AppSnackbar.warning(context, strings.feedLoginToSave);
-                  }
-                  return false;
-                }
-                final success = await ref
-                    .read(savesProvider.notifier)
-                    .toggleSave(post.id, initialIsSaved: post.isSaved);
-                if (success && post.isSaved) widget.onUnsaved?.call();
-                return success;
-              },
-              onLike: () async {
-                final user = ref.read(authControllerProvider).value;
-                if (user == null) {
-                  if (context.mounted) {
-                    AppSnackbar.warning(context, strings.feedLoginToLike);
-                  }
-                  return false;
-                }
-                final success = await ref
-                    .read(likesProvider.notifier)
-                    .toggleLike(
-                      post.id,
-                      initialIsLiked: post.isLiked,
-                      initialCount: post.likesCount,
-                    );
-                return success;
-              },
-              onRepost: () async {
-                final user = ref.read(authControllerProvider).value;
-                if (user == null) {
-                  if (context.mounted) {
-                    AppSnackbar.warning(context, strings.feedLoginToRepost);
-                  }
-                  return false;
-                }
-                final success = await ref
-                    .read(repostsProvider.notifier)
-                    .toggleRepost(
-                      post.id,
-                      initialIsReposted: post.hasReposted,
-                      initialCount: post.sharesCount,
-                    );
-                if (success && context.mounted) {
-                  ref.invalidate(
-                    profileTimelineProvider(
-                      user.id,
-                      kind: 'reposts',
-                      viewerId: user.id,
-                    ),
-                  );
-                }
-                return success;
-              },
-              onComment: () => context.push(AppRoutes.postPath(post.id)),
-              onMore: () => showPostOverflowMenu(
-                context,
-                ref,
-                postId: post.id,
-                authorId: post.user.id,
-                viewerId: ref.read(authControllerProvider).value?.id,
-              ),
             ),
-          ],
-        ),
+          SocialPost(
+            userId: post.user.id,
+            userName: post.user.displayNameOrDefault,
+            userAvatarUrl: post.user.avatarUrl,
+            userAvatarBlurHash: post.user.avatarBlurHash,
+            content: post.content,
+            media: post.socialMedia,
+            likesCount: likesCount,
+            commentsCount: post.commentsCount,
+            sharesCount: sharesCount,
+            isLiked: isLiked,
+            isSaved: isSaved,
+            isReposted: isReposted,
+            isVerified: post.user.isVerified,
+            createdAt: post.createdAt,
+            heroTag: canHeroToPostDetail ? 'post-media-${post.id}' : null,
+            price: price,
+            isSelling: post.type == PostType.product,
+            isCloseFriends: post.audience == PostAudience.closeFriends,
+            quotePreview: post.isQuote
+                ? QuoteSourcePreview(source: post.quoteSource)
+                : null,
+            onQuote: !post.isQuote && post.audience == PostAudience.everyone
+                ? () => context.push(
+                    AppRoutes.createPost,
+                    extra: QuoteSource.post(id: post.id, post: post),
+                  )
+                : null,
+            closeFriendsLabel: strings.feedAudienceCloseFriends,
+            onTap: () => context.push(AppRoutes.postPath(post.id)),
+            onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
+            onSave: () async {
+              final user = ref.read(authControllerProvider).value;
+              if (user == null) {
+                if (context.mounted) {
+                  AppSnackbar.warning(context, strings.feedLoginToSave);
+                }
+                return false;
+              }
+              final success = await ref
+                  .read(savesProvider.notifier)
+                  .toggleSave(post.id, initialIsSaved: post.isSaved);
+              if (success && post.isSaved) widget.onUnsaved?.call();
+              return success;
+            },
+            onLike: () async {
+              final user = ref.read(authControllerProvider).value;
+              if (user == null) {
+                if (context.mounted) {
+                  AppSnackbar.warning(context, strings.feedLoginToLike);
+                }
+                return false;
+              }
+              final success = await ref
+                  .read(likesProvider.notifier)
+                  .toggleLike(
+                    post.id,
+                    initialIsLiked: post.isLiked,
+                    initialCount: post.likesCount,
+                  );
+              return success;
+            },
+            onRepost: () async {
+              final user = ref.read(authControllerProvider).value;
+              if (user == null) {
+                if (context.mounted) {
+                  AppSnackbar.warning(context, strings.feedLoginToRepost);
+                }
+                return false;
+              }
+              final success = await ref
+                  .read(repostsProvider.notifier)
+                  .toggleRepost(
+                    post.id,
+                    initialIsReposted: post.hasReposted,
+                    initialCount: post.sharesCount,
+                  );
+              if (success && context.mounted) {
+                ref.invalidate(
+                  profileTimelineProvider(
+                    user.id,
+                    kind: 'reposts',
+                    viewerId: user.id,
+                  ),
+                );
+              }
+              return success;
+            },
+            onComment: () => context.push(AppRoutes.postPath(post.id)),
+            onMore: () => showPostOverflowMenu(
+              context,
+              ref,
+              postId: post.id,
+              authorId: post.user.id,
+              viewerId: ref.read(authControllerProvider).value?.id,
+            ),
+          ),
+        ],
       ),
     );
   }

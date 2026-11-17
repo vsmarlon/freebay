@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { DisputeStatus, EscrowStatus, OrderStatus, TransactionStatus, WalletEntryReason } from '@prisma/client';
+import { DisputeStatus, DisputeWinner, EscrowStatus, OrderStatus, TransactionStatus, WalletEntryReason } from '@prisma/client';
 import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 import { applyWalletDelta } from '@/shared/wallet/wallet-mutation';
 import { DisputeWithOrder } from '../types/dispute.types';
+import { ACTIVE_DISPUTE_STATUSES } from '../domain/dispute-state';
 
 @Injectable()
 export class DisputeResolutionExecutionService {
@@ -18,11 +19,12 @@ export class DisputeResolutionExecutionService {
   async finalizeBuyer(
     dispute: DisputeWithOrder,
     refund: { operationId: string; providerId: string; amount: number },
-    patch: { resolution: string; resolvedById: string | null },
+    patch: { resolution: string; resolvedById: string | null; winner: DisputeWinner },
   ): Promise<void> {
     const claimedDispute = await this.txHost.tx.dispute.updateMany({
-      where: { id: dispute.id, status: { notIn: [DisputeStatus.RESOLVED, DisputeStatus.CANCELLED] } },
+      where: { id: dispute.id, status: { in: [...ACTIVE_DISPUTE_STATUSES] } },
       data: {
+        winner: patch.winner,
         resolution: patch.resolution,
         resolvedById: patch.resolvedById,
         status: DisputeStatus.RESOLVED,
@@ -66,10 +68,11 @@ export class DisputeResolutionExecutionService {
    * Claims the dispute and completes a seller release inside one transaction.
    */
   @Transactional()
-  async finalizeSeller(dispute: DisputeWithOrder, patch: { resolution: string; resolvedById: string | null }): Promise<void> {
+  async finalizeSeller(dispute: DisputeWithOrder, patch: { resolution: string; resolvedById: string | null; winner: DisputeWinner }): Promise<void> {
     const claimedDispute = await this.txHost.tx.dispute.updateMany({
-      where: { id: dispute.id, status: { notIn: [DisputeStatus.RESOLVED, DisputeStatus.CANCELLED] } },
+      where: { id: dispute.id, status: { in: [...ACTIVE_DISPUTE_STATUSES] } },
       data: {
+        winner: patch.winner,
         resolution: patch.resolution,
         resolvedById: patch.resolvedById,
         status: DisputeStatus.RESOLVED,

@@ -9,7 +9,7 @@ Accepted
 ## Context
 
 FreeBay's order lifecycle already assumes in-person handover: `Order` carries
-`meetingScheduledAt` and `deliveryConfirmedAt`, the buyer confirms receipt, and
+`deliveryConfirmedAt`, the buyer confirms receipt, and
 escrow releases after confirmation. The schema has no address, carrier,
 tracking, shipping-cost, or label fields, and neither client has a shipping UI.
 

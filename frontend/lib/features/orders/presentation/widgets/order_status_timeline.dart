@@ -19,6 +19,8 @@ class OrderStatusTimeline extends StatelessWidget {
   int get _currentIndex {
     if (currentStatus == OrderStatus.cancelled) return -1;
     if (currentStatus == OrderStatus.disputed) return -1;
+    if (currentStatus == OrderStatus.refundPending) return -1;
+    if (currentStatus == OrderStatus.unknown) return -1;
     return _statusOrder.indexOf(currentStatus);
   }
 
@@ -40,6 +42,24 @@ class OrderStatusTimeline extends StatelessWidget {
         strings.orderStatusDisputed,
         Icons.gavel_outlined,
         AppColors.warning,
+      );
+    }
+
+    if (currentStatus == OrderStatus.refundPending) {
+      return _buildSpecialStatus(
+        context,
+        strings.orderStatusRefundPending,
+        Icons.hourglass_bottom,
+        AppColors.warning,
+      );
+    }
+
+    if (currentStatus == OrderStatus.unknown) {
+      return _buildSpecialStatus(
+        context,
+        strings.orderStatusUnknown,
+        Icons.help_outline,
+        AppColors.info,
       );
     }
 
@@ -89,6 +109,8 @@ class OrderStatusTimeline extends StatelessWidget {
                 OrderStatus.completed => strings.orderStatusCompleted,
                 OrderStatus.cancelled => strings.orderStatusCancelled,
                 OrderStatus.disputed => strings.orderStatusDisputed,
+                OrderStatus.refundPending => strings.orderStatusRefundPending,
+                OrderStatus.unknown => strings.orderStatusUnknown,
               },
               style: TextStyle(
                 fontFamily: AppTypography.headlineFontFamily,

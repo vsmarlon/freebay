@@ -1,20 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { DisputeStatus } from '@prisma/client';
-
-const TERMINAL_STATUSES = [DisputeStatus.RESOLVED, DisputeStatus.CANCELLED] as const;
+import {
+  DisputeParty,
+  evidenceTarget,
+  isActiveDisputeStatus,
+} from '../domain/dispute-state';
 
 @Injectable()
 export class DisputeTransitionPolicy {
   canResolve(status: DisputeStatus): boolean {
-    return !TERMINAL_STATUSES.some((terminalStatus) => terminalStatus === status);
+    return isActiveDisputeStatus(status);
   }
 
-  canSubmitEvidence(status: DisputeStatus): boolean {
-    return !TERMINAL_STATUSES.some((terminalStatus) => terminalStatus === status);
+  canSubmitEvidence(status: DisputeStatus, party: DisputeParty): boolean {
+    return evidenceTarget(status, party) !== null;
   }
 
   canWithdraw(status: DisputeStatus): boolean {
-    return !TERMINAL_STATUSES.some((terminalStatus) => terminalStatus === status);
+    return isActiveDisputeStatus(status);
   }
 
   isOpener(dispute: { openedById: string }, userId: string): boolean {

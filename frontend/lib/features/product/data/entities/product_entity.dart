@@ -21,6 +21,7 @@ abstract class ProductEntity with _$ProductEntity {
     @ProductStatusConverter()
     @Default(ProductStatus.active)
     ProductStatus status,
+    String? pauseReason,
     required String sellerId,
     String? postId,
     UserEntity? seller,

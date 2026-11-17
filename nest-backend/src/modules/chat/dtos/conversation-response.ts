@@ -1,4 +1,4 @@
-import { ChatThreadType, ConversationPreference, User } from '@prisma/client';
+import { ChatThreadType, ConversationPreference, ConversationStatus, User } from '@prisma/client';
 import { ConversationCounterpartSummary, ProductConversationSummary, StartConversationOutput } from './chat.dto';
 import {
   DirectConversationWithDetails,
@@ -50,6 +50,7 @@ export interface UnifiedConversationResponse {
   lastMessage: { content: string; createdAt: string; senderId: string } | null;
   unreadCount: number;
   status: string;
+  canAccept: boolean;
   createdAt: string;
   preference: { isArchived: boolean; theme: string; backgroundUrl: string | null; muted: boolean } | null;
 }
@@ -57,12 +58,13 @@ export interface UnifiedConversationResponse {
 type UnifiedUser = Pick<User, 'id' | 'displayName' | 'avatarUrl' | 'isVerified'>;
 type UnifiedLastMessage = Pick<DirectMessageWithSender, 'content' | 'createdAt' | 'senderId'>;
 
-function unifiedConversationFields(otherUser: UnifiedUser, lastMsg: UnifiedLastMessage | null, unreadCount: number, status: string, createdAt: Date, preference?: ConversationPreference | null): Omit<UnifiedConversationResponse, 'id' | 'threadType' | 'product' | 'orderInfo'> {
+function unifiedConversationFields(otherUser: UnifiedUser, lastMsg: UnifiedLastMessage | null, unreadCount: number, status: string, canAccept: boolean, createdAt: Date, preference?: ConversationPreference | null): Omit<UnifiedConversationResponse, 'id' | 'threadType' | 'product' | 'orderInfo'> {
   return {
     otherUser,
     lastMessage: lastMsg ? { content: lastMsg.content ?? '', createdAt: lastMsg.createdAt.toISOString(), senderId: lastMsg.senderId } : null,
     unreadCount,
     status,
+    canAccept,
     createdAt: createdAt.toISOString(),
     preference: preference
       ? { isArchived: preference.isArchived, theme: preference.theme, backgroundUrl: preference.backgroundUrl, muted: preference.muted }
@@ -74,11 +76,13 @@ export function toUnifiedDirect(conv: DirectConversationWithDetails, userId: str
   const otherUser = conv.user1Id === userId ? conv.user2 : conv.user1;
   const lastMsg = conv.messages?.[0] ?? null;
   const unreadCount = conv._count?.messages ?? (conv.messages ?? []).filter((message) => message.senderId !== userId && !message.readAt).length;
+  const canAccept = conv.status === ConversationStatus.PENDING
+    && (conv.initiatorId === null || conv.initiatorId !== userId);
   return {
     id: conv.id,
     threadType: ChatThreadType.DIRECT,
     ...(conv.product ? { product: { id: conv.product.id, title: conv.product.title, imageUrl: conv.product.media[0]?.url ?? null, status: conv.product.status } } : {}),
-    ...unifiedConversationFields(otherUser, lastMsg, unreadCount, conv.status, conv.createdAt, preference),
+    ...unifiedConversationFields(otherUser, lastMsg, unreadCount, conv.status, canAccept, conv.createdAt, preference),
   };
 }
 
@@ -89,6 +93,6 @@ export function toUnifiedOrder(order: OrderWithChat, userId: string, preference?
     id: order.id,
     threadType: ChatThreadType.ORDER,
     orderInfo: { id: order.id, productTitle: order.product.title, status: order.status },
-    ...unifiedConversationFields(otherUser, lastMsg, order.unreadCount, order.status, order.createdAt, preference),
+    ...unifiedConversationFields(otherUser, lastMsg, order.unreadCount, order.status, false, order.createdAt, preference),
   };
 }

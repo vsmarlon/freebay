@@ -311,7 +311,7 @@ export class AccountLifecycleDatabaseRepository {
                 ],
               }),
             },
-            data: { deletedAt: purgedAt, status: 'PAUSED', ...(product.hasPreservedReference ? {} : { title: 'Anúncio removido', description: '' }) },
+            data: { deletedAt: purgedAt, status: 'PAUSED', pauseReason: 'MODERATION', ...(product.hasPreservedReference ? {} : { title: 'Anúncio removido', description: '' }) },
           });
           if (updated.count === 0) {
             hasUnresolvedProductReference = true;

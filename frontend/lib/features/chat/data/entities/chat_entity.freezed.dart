@@ -287,7 +287,7 @@ as String,
 /// @nodoc
 mixin _$ChatEntity {
 
- String get id; ChatThreadType get threadType; UserEntity get otherUser;@JsonKey(name: 'lastMessage') LastMessageInfo? get lastMessageInfo; DateTime get createdAt; ConversationPreference? get preference; OrderInfo? get orderInfo; ChatProductInfo? get product; int get unreadCount;
+ String get id; ChatThreadType get threadType; UserEntity get otherUser;@JsonKey(name: 'lastMessage') LastMessageInfo? get lastMessageInfo; DateTime get createdAt; ConversationPreference? get preference; OrderInfo? get orderInfo; ChatProductInfo? get product; int get unreadCount; bool get canAccept;
 /// Create a copy of ChatEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -300,16 +300,16 @@ $ChatEntityCopyWith<ChatEntity> get copyWith => _$ChatEntityCopyWithImpl<ChatEnt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.threadType, threadType) || other.threadType == threadType)&&(identical(other.otherUser, otherUser) || other.otherUser == otherUser)&&(identical(other.lastMessageInfo, lastMessageInfo) || other.lastMessageInfo == lastMessageInfo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.preference, preference) || other.preference == preference)&&(identical(other.orderInfo, orderInfo) || other.orderInfo == orderInfo)&&(identical(other.product, product) || other.product == product)&&(identical(other.unreadCount, unreadCount) || other.unreadCount == unreadCount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.threadType, threadType) || other.threadType == threadType)&&(identical(other.otherUser, otherUser) || other.otherUser == otherUser)&&(identical(other.lastMessageInfo, lastMessageInfo) || other.lastMessageInfo == lastMessageInfo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.preference, preference) || other.preference == preference)&&(identical(other.orderInfo, orderInfo) || other.orderInfo == orderInfo)&&(identical(other.product, product) || other.product == product)&&(identical(other.unreadCount, unreadCount) || other.unreadCount == unreadCount)&&(identical(other.canAccept, canAccept) || other.canAccept == canAccept));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,threadType,otherUser,lastMessageInfo,createdAt,preference,orderInfo,product,unreadCount);
+int get hashCode => Object.hash(runtimeType,id,threadType,otherUser,lastMessageInfo,createdAt,preference,orderInfo,product,unreadCount,canAccept);
 
 @override
 String toString() {
-  return 'ChatEntity(id: $id, threadType: $threadType, otherUser: $otherUser, lastMessageInfo: $lastMessageInfo, createdAt: $createdAt, preference: $preference, orderInfo: $orderInfo, product: $product, unreadCount: $unreadCount)';
+  return 'ChatEntity(id: $id, threadType: $threadType, otherUser: $otherUser, lastMessageInfo: $lastMessageInfo, createdAt: $createdAt, preference: $preference, orderInfo: $orderInfo, product: $product, unreadCount: $unreadCount, canAccept: $canAccept)';
 }
 
 
@@ -320,7 +320,7 @@ abstract mixin class $ChatEntityCopyWith<$Res>  {
   factory $ChatEntityCopyWith(ChatEntity value, $Res Function(ChatEntity) _then) = _$ChatEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, ChatThreadType threadType, UserEntity otherUser,@JsonKey(name: 'lastMessage') LastMessageInfo? lastMessageInfo, DateTime createdAt, ConversationPreference? preference, OrderInfo? orderInfo, ChatProductInfo? product, int unreadCount
+ String id, ChatThreadType threadType, UserEntity otherUser,@JsonKey(name: 'lastMessage') LastMessageInfo? lastMessageInfo, DateTime createdAt, ConversationPreference? preference, OrderInfo? orderInfo, ChatProductInfo? product, int unreadCount, bool canAccept
 });
 
 
@@ -337,7 +337,7 @@ class _$ChatEntityCopyWithImpl<$Res>
 
 /// Create a copy of ChatEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? threadType = null,Object? otherUser = null,Object? lastMessageInfo = freezed,Object? createdAt = null,Object? preference = freezed,Object? orderInfo = freezed,Object? product = freezed,Object? unreadCount = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? threadType = null,Object? otherUser = null,Object? lastMessageInfo = freezed,Object? createdAt = null,Object? preference = freezed,Object? orderInfo = freezed,Object? product = freezed,Object? unreadCount = null,Object? canAccept = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,threadType: null == threadType ? _self.threadType : threadType // ignore: cast_nullable_to_non_nullable
@@ -348,7 +348,8 @@ as DateTime,preference: freezed == preference ? _self.preference : preference //
 as ConversationPreference?,orderInfo: freezed == orderInfo ? _self.orderInfo : orderInfo // ignore: cast_nullable_to_non_nullable
 as OrderInfo?,product: freezed == product ? _self.product : product // ignore: cast_nullable_to_non_nullable
 as ChatProductInfo?,unreadCount: null == unreadCount ? _self.unreadCount : unreadCount // ignore: cast_nullable_to_non_nullable
-as int,
+as int,canAccept: null == canAccept ? _self.canAccept : canAccept // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 /// Create a copy of ChatEntity
@@ -490,10 +491,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  ChatThreadType threadType,  UserEntity otherUser, @JsonKey(name: 'lastMessage')  LastMessageInfo? lastMessageInfo,  DateTime createdAt,  ConversationPreference? preference,  OrderInfo? orderInfo,  ChatProductInfo? product,  int unreadCount)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  ChatThreadType threadType,  UserEntity otherUser, @JsonKey(name: 'lastMessage')  LastMessageInfo? lastMessageInfo,  DateTime createdAt,  ConversationPreference? preference,  OrderInfo? orderInfo,  ChatProductInfo? product,  int unreadCount,  bool canAccept)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatEntity() when $default != null:
-return $default(_that.id,_that.threadType,_that.otherUser,_that.lastMessageInfo,_that.createdAt,_that.preference,_that.orderInfo,_that.product,_that.unreadCount);case _:
+return $default(_that.id,_that.threadType,_that.otherUser,_that.lastMessageInfo,_that.createdAt,_that.preference,_that.orderInfo,_that.product,_that.unreadCount,_that.canAccept);case _:
   return orElse();
 
 }
@@ -511,10 +512,10 @@ return $default(_that.id,_that.threadType,_that.otherUser,_that.lastMessageInfo,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  ChatThreadType threadType,  UserEntity otherUser, @JsonKey(name: 'lastMessage')  LastMessageInfo? lastMessageInfo,  DateTime createdAt,  ConversationPreference? preference,  OrderInfo? orderInfo,  ChatProductInfo? product,  int unreadCount)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  ChatThreadType threadType,  UserEntity otherUser, @JsonKey(name: 'lastMessage')  LastMessageInfo? lastMessageInfo,  DateTime createdAt,  ConversationPreference? preference,  OrderInfo? orderInfo,  ChatProductInfo? product,  int unreadCount,  bool canAccept)  $default,) {final _that = this;
 switch (_that) {
 case _ChatEntity():
-return $default(_that.id,_that.threadType,_that.otherUser,_that.lastMessageInfo,_that.createdAt,_that.preference,_that.orderInfo,_that.product,_that.unreadCount);case _:
+return $default(_that.id,_that.threadType,_that.otherUser,_that.lastMessageInfo,_that.createdAt,_that.preference,_that.orderInfo,_that.product,_that.unreadCount,_that.canAccept);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -531,10 +532,10 @@ return $default(_that.id,_that.threadType,_that.otherUser,_that.lastMessageInfo,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  ChatThreadType threadType,  UserEntity otherUser, @JsonKey(name: 'lastMessage')  LastMessageInfo? lastMessageInfo,  DateTime createdAt,  ConversationPreference? preference,  OrderInfo? orderInfo,  ChatProductInfo? product,  int unreadCount)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  ChatThreadType threadType,  UserEntity otherUser, @JsonKey(name: 'lastMessage')  LastMessageInfo? lastMessageInfo,  DateTime createdAt,  ConversationPreference? preference,  OrderInfo? orderInfo,  ChatProductInfo? product,  int unreadCount,  bool canAccept)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatEntity() when $default != null:
-return $default(_that.id,_that.threadType,_that.otherUser,_that.lastMessageInfo,_that.createdAt,_that.preference,_that.orderInfo,_that.product,_that.unreadCount);case _:
+return $default(_that.id,_that.threadType,_that.otherUser,_that.lastMessageInfo,_that.createdAt,_that.preference,_that.orderInfo,_that.product,_that.unreadCount,_that.canAccept);case _:
   return null;
 
 }
@@ -546,7 +547,7 @@ return $default(_that.id,_that.threadType,_that.otherUser,_that.lastMessageInfo,
 @JsonSerializable()
 
 class _ChatEntity extends ChatEntity {
-  const _ChatEntity({required this.id, required this.threadType, required this.otherUser, @JsonKey(name: 'lastMessage') this.lastMessageInfo, required this.createdAt, this.preference, this.orderInfo, this.product, this.unreadCount = 0}): super._();
+  const _ChatEntity({required this.id, required this.threadType, required this.otherUser, @JsonKey(name: 'lastMessage') this.lastMessageInfo, required this.createdAt, this.preference, this.orderInfo, this.product, this.unreadCount = 0, this.canAccept = false}): super._();
   factory _ChatEntity.fromJson(Map<String, dynamic> json) => _$ChatEntityFromJson(json);
 
 @override final  String id;
@@ -558,6 +559,7 @@ class _ChatEntity extends ChatEntity {
 @override final  OrderInfo? orderInfo;
 @override final  ChatProductInfo? product;
 @override@JsonKey() final  int unreadCount;
+@override@JsonKey() final  bool canAccept;
 
 /// Create a copy of ChatEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -572,16 +574,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.threadType, threadType) || other.threadType == threadType)&&(identical(other.otherUser, otherUser) || other.otherUser == otherUser)&&(identical(other.lastMessageInfo, lastMessageInfo) || other.lastMessageInfo == lastMessageInfo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.preference, preference) || other.preference == preference)&&(identical(other.orderInfo, orderInfo) || other.orderInfo == orderInfo)&&(identical(other.product, product) || other.product == product)&&(identical(other.unreadCount, unreadCount) || other.unreadCount == unreadCount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.threadType, threadType) || other.threadType == threadType)&&(identical(other.otherUser, otherUser) || other.otherUser == otherUser)&&(identical(other.lastMessageInfo, lastMessageInfo) || other.lastMessageInfo == lastMessageInfo)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.preference, preference) || other.preference == preference)&&(identical(other.orderInfo, orderInfo) || other.orderInfo == orderInfo)&&(identical(other.product, product) || other.product == product)&&(identical(other.unreadCount, unreadCount) || other.unreadCount == unreadCount)&&(identical(other.canAccept, canAccept) || other.canAccept == canAccept));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,threadType,otherUser,lastMessageInfo,createdAt,preference,orderInfo,product,unreadCount);
+int get hashCode => Object.hash(runtimeType,id,threadType,otherUser,lastMessageInfo,createdAt,preference,orderInfo,product,unreadCount,canAccept);
 
 @override
 String toString() {
-  return 'ChatEntity(id: $id, threadType: $threadType, otherUser: $otherUser, lastMessageInfo: $lastMessageInfo, createdAt: $createdAt, preference: $preference, orderInfo: $orderInfo, product: $product, unreadCount: $unreadCount)';
+  return 'ChatEntity(id: $id, threadType: $threadType, otherUser: $otherUser, lastMessageInfo: $lastMessageInfo, createdAt: $createdAt, preference: $preference, orderInfo: $orderInfo, product: $product, unreadCount: $unreadCount, canAccept: $canAccept)';
 }
 
 
@@ -592,7 +594,7 @@ abstract mixin class _$ChatEntityCopyWith<$Res> implements $ChatEntityCopyWith<$
   factory _$ChatEntityCopyWith(_ChatEntity value, $Res Function(_ChatEntity) _then) = __$ChatEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, ChatThreadType threadType, UserEntity otherUser,@JsonKey(name: 'lastMessage') LastMessageInfo? lastMessageInfo, DateTime createdAt, ConversationPreference? preference, OrderInfo? orderInfo, ChatProductInfo? product, int unreadCount
+ String id, ChatThreadType threadType, UserEntity otherUser,@JsonKey(name: 'lastMessage') LastMessageInfo? lastMessageInfo, DateTime createdAt, ConversationPreference? preference, OrderInfo? orderInfo, ChatProductInfo? product, int unreadCount, bool canAccept
 });
 
 
@@ -609,7 +611,7 @@ class __$ChatEntityCopyWithImpl<$Res>
 
 /// Create a copy of ChatEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? threadType = null,Object? otherUser = null,Object? lastMessageInfo = freezed,Object? createdAt = null,Object? preference = freezed,Object? orderInfo = freezed,Object? product = freezed,Object? unreadCount = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? threadType = null,Object? otherUser = null,Object? lastMessageInfo = freezed,Object? createdAt = null,Object? preference = freezed,Object? orderInfo = freezed,Object? product = freezed,Object? unreadCount = null,Object? canAccept = null,}) {
   return _then(_ChatEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,threadType: null == threadType ? _self.threadType : threadType // ignore: cast_nullable_to_non_nullable
@@ -620,7 +622,8 @@ as DateTime,preference: freezed == preference ? _self.preference : preference //
 as ConversationPreference?,orderInfo: freezed == orderInfo ? _self.orderInfo : orderInfo // ignore: cast_nullable_to_non_nullable
 as OrderInfo?,product: freezed == product ? _self.product : product // ignore: cast_nullable_to_non_nullable
 as ChatProductInfo?,unreadCount: null == unreadCount ? _self.unreadCount : unreadCount // ignore: cast_nullable_to_non_nullable
-as int,
+as int,canAccept: null == canAccept ? _self.canAccept : canAccept // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

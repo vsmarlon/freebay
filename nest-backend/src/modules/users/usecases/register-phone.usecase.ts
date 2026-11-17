@@ -41,6 +41,8 @@ export class RegisterPhoneUseCase {
     const updateResult = await this.userRepository.update(input.userId, {
       phone: phoneDigits,
       phoneVerified: false,
+      // The public badge is phone verification; a new unverified number must not keep it.
+      isVerified: false,
     });
     if (updateResult.isLeft()) return left(updateResult.value);
 

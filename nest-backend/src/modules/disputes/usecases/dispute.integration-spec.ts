@@ -660,8 +660,11 @@ describe('Disputes Effect Integration', () => {
         const disputeBefore = await prisma.dispute.findUniqueOrThrow({ where: { id: dispute.id } });
         const orderBefore = await prisma.order.findUniqueOrThrow({ where: { id: order.id } });
 
-        await expect(repository.executeWithdrawal(dispute.id, 'missing-order-for-rollback'))
-          .rejects.toMatchObject({ code: 'P2025' });
+        await expect(repository.withdraw({
+          disputeId: dispute.id,
+          orderId: 'missing-order-for-rollback',
+          expectedStatus: dispute.status,
+        })).rejects.toThrow('DISPUTE_WITHDRAW_ORDER_NOT_DISPUTED');
 
         expect(await prisma.dispute.findUniqueOrThrow({ where: { id: dispute.id } })).toEqual(disputeBefore);
         expect(await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).toEqual(orderBefore);
@@ -689,16 +692,36 @@ describe('Disputes Effect Integration', () => {
       try {
         const failedScope = transactionHost.withTransaction(async () => {
           failedClient = transactionHost.tx;
-          await repository.update(first.dispute.id, { status: 'CANCELLED' });
+          await repository.submitEvidence({
+            disputeId: first.dispute.id,
+            expectedStatus: 'OPEN',
+            party: 'BUYER',
+            evidence: { statement: 'rolled back' },
+          });
           await rendezvous();
-          await repository.update(first.dispute.id, { resolution: 'rolled back' });
+          await repository.submitEvidence({
+            disputeId: first.dispute.id,
+            expectedStatus: 'AWAITING_SELLER',
+            party: 'SELLER',
+            evidence: { statement: 'rolled back' },
+          });
           throw new Error('force rollback');
         });
         const successfulScope = transactionHost.withTransaction(async () => {
           successfulClient = transactionHost.tx;
-          await repository.update(second.dispute.id, { status: 'CANCELLED' });
+          await repository.submitEvidence({
+            disputeId: second.dispute.id,
+            expectedStatus: 'OPEN',
+            party: 'BUYER',
+            evidence: { statement: 'committed' },
+          });
           await rendezvous();
-          await repository.update(second.dispute.id, { resolution: 'committed' });
+          await repository.submitEvidence({
+            disputeId: second.dispute.id,
+            expectedStatus: 'AWAITING_SELLER',
+            party: 'SELLER',
+            evidence: { statement: 'committed' },
+          });
         });
 
         await expect(failedScope).rejects.toThrow('force rollback');
@@ -708,9 +731,9 @@ describe('Disputes Effect Integration', () => {
         expect(failedClient).not.toBe(successfulClient);
         expect(transactionHost.tx).toBe(fallback);
         expect((await prisma.dispute.findUniqueOrThrow({ where: { id: first.dispute.id } })).status).toBe('OPEN');
-        expect((await prisma.dispute.findUniqueOrThrow({ where: { id: first.dispute.id } })).resolution).toBeNull();
-        expect((await prisma.dispute.findUniqueOrThrow({ where: { id: second.dispute.id } })).status).toBe('CANCELLED');
-        expect((await prisma.dispute.findUniqueOrThrow({ where: { id: second.dispute.id } })).resolution).toBe('committed');
+        expect((await prisma.dispute.findUniqueOrThrow({ where: { id: first.dispute.id } })).buyerEvidence).toBeNull();
+        expect((await prisma.dispute.findUniqueOrThrow({ where: { id: second.dispute.id } })).status).toBe('AWAITING_BUYER');
+        expect((await prisma.dispute.findUniqueOrThrow({ where: { id: second.dispute.id } })).sellerEvidence).toEqual({ statement: 'committed' });
       } finally {
         await module.close();
       }

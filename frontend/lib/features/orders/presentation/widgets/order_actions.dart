@@ -10,6 +10,8 @@ class OrderActions extends StatelessWidget {
   final bool isBuyer;
   final bool isLoading;
   final VoidCallback? onConfirmDelivery;
+  final VoidCallback? onMarkShipped;
+  final VoidCallback? onMarkDelivered;
   final VoidCallback? onReview;
   final VoidCallback? onChat;
   final VoidCallback? onDispute;
@@ -23,6 +25,8 @@ class OrderActions extends StatelessWidget {
     required this.isBuyer,
     this.isLoading = false,
     this.onConfirmDelivery,
+    this.onMarkShipped,
+    this.onMarkDelivered,
     this.onReview,
     this.onChat,
     this.onDispute,
@@ -62,9 +66,33 @@ class OrderActions extends StatelessWidget {
     final strings = l10n(context);
     final List<Widget> actions = [];
 
-    if (isBuyer &&
-        (order.status == OrderStatus.shipped ||
-            order.status == OrderStatus.delivered)) {
+    if (order.can('MARK_SHIPPED')) {
+      actions.add(
+        AppButton(
+          label: strings.ordersMarkHandover,
+          icon: Icons.handshake_outlined,
+          isLoading: isLoading,
+          onPressed: onMarkShipped,
+          width: double.infinity,
+        ),
+      );
+      actions.add(Spacing.vSm);
+    }
+
+    if (order.can('MARK_DELIVERED')) {
+      actions.add(
+        AppButton(
+          label: strings.ordersMarkReceived,
+          icon: Icons.inventory_2_outlined,
+          isLoading: isLoading,
+          onPressed: onMarkDelivered,
+          width: double.infinity,
+        ),
+      );
+      actions.add(Spacing.vSm);
+    }
+
+    if (order.can('CONFIRM_DELIVERY')) {
       actions.add(
         AppButton(
           label: strings.ordersConfirmReceipt,
@@ -136,13 +164,8 @@ class OrderActions extends StatelessWidget {
   }
 
   bool _canDispute() {
-    return order.status == OrderStatus.delivered ||
-        order.status == OrderStatus.shipped ||
-        order.status == OrderStatus.confirmed;
+    return order.can('OPEN_DISPUTE') || order.can('REOPEN_DISPUTE');
   }
 
-  bool _canCancel() {
-    return order.status == OrderStatus.pending ||
-        order.status == OrderStatus.confirmed;
-  }
+  bool _canCancel() => order.can('CANCEL');
 }

@@ -29,6 +29,10 @@ class OrderCard extends StatelessWidget {
         return AppColors.mediumGray;
       case OrderStatus.pending:
         return AppColors.primaryContainer;
+      case OrderStatus.refundPending:
+        return AppColors.warning;
+      case OrderStatus.unknown:
+        return AppColors.mediumGray;
     }
   }
 
@@ -113,6 +117,9 @@ class OrderCard extends StatelessWidget {
                             OrderStatus.cancelled =>
                               strings.orderStatusCancelled,
                             OrderStatus.disputed => strings.orderStatusDisputed,
+                            OrderStatus.refundPending =>
+                              strings.orderStatusRefundPending,
+                            OrderStatus.unknown => strings.orderStatusUnknown,
                           }.toUpperCase(),
                           style: TextStyle(
                             fontFamily: AppTypography.fontFamily,

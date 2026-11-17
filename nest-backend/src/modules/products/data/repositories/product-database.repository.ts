@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, ProductStatus } from '@prisma/client';
+import { Prisma, ProductPauseReason, ProductStatus } from '@prisma/client';
 import { left, right } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
@@ -28,7 +28,7 @@ export class ProductDatabaseRepository {
   async findBySellerId(sellerId: string) {
     return repositoryResponse(async () => {
       const products = await this.prisma.product.findMany({
-        where: { sellerId, status: ProductStatus.ACTIVE, deletedAt: null },
+        where: { sellerId, status: { not: ProductStatus.DELETED }, deletedAt: null },
         orderBy: { createdAt: 'desc' },
         include: PRODUCT_LIST_INCLUDE,
       });
@@ -150,11 +150,34 @@ export class ProductDatabaseRepository {
     }, 'Erro ao atualizar produto');
   }
 
+  /**
+   * Guarded status change: the expected status (and pause reason) travel in the
+   * predicate, so a reservation or moderation removal that lands between the
+   * read and the write makes the update lose instead of being overwritten.
+   */
+  async transitionStatus(
+    id: string,
+    expected: { status: ProductStatus; pauseReason?: ProductPauseReason | null },
+    data: { status: ProductStatus; pauseReason: ProductPauseReason | null },
+  ) {
+    return repositoryResponse(async () => {
+      const claimed = await this.prisma.product.updateMany({
+        where: {
+          id,
+          status: expected.status,
+          ...(expected.pauseReason !== undefined ? { pauseReason: expected.pauseReason } : {}),
+        },
+        data,
+      });
+      return claimed.count > 0;
+    }, 'Erro ao atualizar status do produto');
+  }
+
   async delete(id: string) {
     return repositoryResponse(async () => {
       await this.prisma.product.update({
         where: { id },
-        data: { status: ProductStatus.DELETED, deletedAt: new Date() },
+        data: { status: ProductStatus.DELETED, deletedAt: new Date(), pauseReason: null },
       });
     }, 'Erro ao remover produto');
   }
@@ -171,7 +194,7 @@ export class ProductDatabaseRepository {
 
       await client.product.updateMany({
         where: { id: productId, status: { not: ProductStatus.SOLD } },
-        data: { status: ProductStatus.SOLD },
+        data: { status: ProductStatus.SOLD, pauseReason: null },
       });
       return right(undefined);
     } catch {
@@ -192,12 +215,12 @@ export class ProductDatabaseRepository {
         });
         await client.product.updateMany({
           where: { id: productId, status: ProductStatus.SOLD },
-          data: { status: ProductStatus.ACTIVE },
+          data: { status: ProductStatus.ACTIVE, pauseReason: null },
         });
       } else {
         await client.product.updateMany({
-          where: { id: productId, status: ProductStatus.PAUSED },
-          data: { status: ProductStatus.ACTIVE },
+          where: { id: productId, status: ProductStatus.PAUSED, pauseReason: ProductPauseReason.RESERVED },
+          data: { status: ProductStatus.ACTIVE, pauseReason: null },
         });
       }
       return right(undefined);

@@ -15,6 +15,7 @@ import {
   OrderStatus,
   Prisma,
   Product,
+  ProductPauseReason,
   ProductStatus,
 } from '@prisma/client';
 
@@ -133,7 +134,7 @@ export class CartDatabaseRepository {
     } else {
       const reserveResult = await tx.product.updateMany({
         where: { id: data.productId, status: ProductStatus.ACTIVE },
-        data: { status: ProductStatus.PAUSED },
+        data: { status: ProductStatus.PAUSED, pauseReason: ProductPauseReason.RESERVED },
       });
       if (reserveResult.count === 0) {
         throw new Error(PRODUCT_UNAVAILABLE);
@@ -184,14 +185,14 @@ export class CartDatabaseRepository {
         data: {
           soldCount: newSoldCount >= 0 ? newSoldCount : 0,
           ...(current.status === ProductStatus.SOLD && newSoldCount < current.quantity
-            ? { status: ProductStatus.ACTIVE }
+            ? { status: ProductStatus.ACTIVE, pauseReason: null }
             : {}),
         },
       });
     } else {
       await tx.product.updateMany({
-        where: { id: productId, status: ProductStatus.PAUSED },
-        data: { status: ProductStatus.ACTIVE },
+        where: { id: productId, status: ProductStatus.PAUSED, pauseReason: ProductPauseReason.RESERVED },
+        data: { status: ProductStatus.ACTIVE, pauseReason: null },
       });
     }
   }
