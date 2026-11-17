@@ -127,23 +127,34 @@ export async function requestAppleCredential(
   return { identityToken: authorization.id_token, rawNonce: nonce.raw };
 }
 
+const scriptFlights = new Map<string, Promise<void>>();
 function loadScript(id: string, src: string): Promise<void> {
   const existing = document.getElementById(id);
   if (existing instanceof HTMLScriptElement && existing.dataset.loaded === 'true')
     return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const script =
-      existing instanceof HTMLScriptElement ? existing : document.createElement('script');
+  const inFlight = scriptFlights.get(id);
+  if (inFlight) return inFlight;
+  // A failed tag keeps its src, so reloading it never fires again: replace it instead.
+  const flight = new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script');
     script.id = id;
     script.src = src;
     script.async = true;
     script.onload = () => {
       script.dataset.loaded = 'true';
+      scriptFlights.delete(id);
       resolve();
     };
-    script.onerror = () => reject(new Error('provider_script_unavailable'));
-    if (!existing) document.head.append(script);
+    script.onerror = () => {
+      script.remove();
+      scriptFlights.delete(id);
+      reject(new Error('provider_script_unavailable'));
+    };
+    existing?.remove();
+    document.head.append(script);
   });
+  scriptFlights.set(id, flight);
+  return flight;
 }
 
 async function randomNonce(): Promise<{ raw: string; hashed: string }> {
@@ -162,7 +173,7 @@ export function OAuthButtons({ returnTo }: { returnTo?: string }) {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
-  // ponytail: GIS redirect flow, rendered on mount so Google owns the click (no popup, no double click).
+  // GIS redirect flow, rendered on mount so Google owns the click (no popup, no double click).
   const googleMount = useCallback(
     (node: HTMLDivElement | null) => {
       if (!node || !googleClientId) return;
