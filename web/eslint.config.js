@@ -80,11 +80,32 @@ export default [
         // style enums for story text overlays (never used as css class names)
         '^(classic|strong|editorial|compact)$',
       ] }],
-      // ponytail: formatting rules (class order/line wrapping/whitespace) stay off until the
-      // correctness batch is green; enabling them later is a mechanical autofix batch.
+      // Correctness rules ship first; class order/line wrapping/whitespace enforcement is a
+      // later mechanical autofix batch once that baseline is green.
       'better-tailwindcss/enforce-consistent-class-order': 'off',
       'better-tailwindcss/enforce-consistent-line-wrapping': 'off',
       'better-tailwindcss/no-unnecessary-whitespace': 'off',
+    },
+  },
+  {
+    files: ['app/features/**/domain/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['react', 'react-dom', 'react-router', '@tanstack/*', '**/components/**', '**/core/api/**', '**/application', '**/application/**', '**/data', '**/data/**', '**/presentation/**'], message: 'Domain is pure: no React, transport, cache, UI or persistence dependencies.' },
+        ],
+      }],
+      'no-restricted-globals': ['error', 'window', 'document', 'localStorage', 'sessionStorage', 'fetch'],
+    },
+  },
+  {
+    files: ['app/features/**/presentation/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['**/core/api', '**/core/api/**', '**/data', '**/data/**', '**/repository', '**/repository/**', '**/infrastructure', '**/infrastructure/**'], message: 'Presentation must consume feature hooks/use cases; do not call transport or repositories directly.' },
+        ],
+      }],
     },
   },
 ];
