@@ -11,21 +11,44 @@ import {
   useCommerceQuery,
 } from './shared';
 import { commerceApi } from './api';
-import { paymentReturnState } from './types';
+import { paymentReturnState, type Order } from './types';
 import { paths } from '../../core/routes';
+
+// Settlement is webhook-authoritative, so this page can only re-read the server
+// order state. PENDING is the one status still waiting for provider confirmation.
+function awaitingSettlement(orders: Order[], groupId: string | null, orderId: string | null) {
+  if (groupId)
+    return orders.some(
+      (order) => order.transaction?.paymentGroupId === groupId && order.status === 'PENDING',
+    );
+  if (orderId) return orders.some((order) => order.id === orderId && order.status === 'PENDING');
+  return false;
+}
 
 function PaymentReturnContent() {
   const { pathname } = useLocation();
   const [params] = useSearchParams();
   const { t, path } = useCommerce();
   const groupId = params.get('paymentGroupId');
-  const query = useCommerceQuery('payment-return-orders', [groupId], (signal) =>
-    commerceApi.purchases(null, signal, undefined, 50),
-  );
+  const orderId = params.get('orderId');
   const cancelled = paymentReturnState(pathname) === 'cancelled';
-  const groupOrders =
-    query.data?.items.filter((order) => order.transaction?.paymentGroupId === groupId) ?? [];
-  const visibleOrders = groupId ? groupOrders : (query.data?.items ?? []);
+  const query = useCommerceQuery(
+    'payment-return-orders',
+    [groupId, orderId],
+    (signal) => commerceApi.purchases(null, signal, undefined, 50),
+    true,
+    (data) =>
+      !cancelled && data && awaitingSettlement(data.items, groupId, orderId) ? 4000 : false,
+  );
+  const items = query.data?.items ?? [];
+  const scopedOrders = groupId
+    ? items.filter((order) => order.transaction?.paymentGroupId === groupId)
+    : orderId
+      ? items.filter((order) => order.id === orderId)
+      : [];
+  const visibleOrders = groupId || orderId ? scopedOrders : items;
+  const emptyTitle =
+    groupId || orderId ? t('commerce.paymentReturn.waitingOrders') : t('commerce.orders.empty');
   return (
     <CommercePage title={t('commerce.paymentReturn.title')}>
       <section className="grid gap-[14px] bg-surface p-5 [&_p]:max-w-[72ch] [&_h2]:m-0 [&_h2]:font-display [&_h2]:text-[22px] [&_h2]:font-bold">
@@ -43,16 +66,14 @@ function PaymentReturnContent() {
         <Loading label={t('commerce.loading')} />
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => void query.refetch()} />
-      ) : visibleOrders?.length ? (
+      ) : visibleOrders.length ? (
         <div className="grid gap-3">
           {visibleOrders.map((order) => (
             <OrderRow key={order.id} order={order} />
           ))}
         </div>
       ) : (
-        <Empty
-          title={groupId ? t('commerce.paymentReturn.waitingOrders') : t('commerce.orders.empty')}
-        />
+        <Empty title={emptyTitle} />
       )}
       <Link className={buttonClass('secondary')} to={path(paths.orders)}>
         {t('commerce.paymentReturn.orders')}
