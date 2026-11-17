@@ -12,7 +12,7 @@ export type ApiRequestOptions<T = unknown> = {
   schema?: ZodType<T>;
 };
 
-// ponytail: endpoint contracts are owned by the backend; keep their single trust-boundary cast here.
+// The backend owns each endpoint contract; this is the single trust-boundary cast for them.
 function backendValue<T>(value: unknown): T {
   return value as T;
 }
@@ -51,6 +51,7 @@ export async function send<T>(
       cache: 'no-store',
     });
   };
+  // Writes are not replayable, so they carry a freshly minted token (and never retry).
   let response = await execute(auth ? await getToken(write) : undefined);
   if (requestGeneration !== currentGeneration())
     throw new ApiError('Session changed during request', 401);
