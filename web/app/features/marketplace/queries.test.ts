@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appendPage, catalogQuery, parseCentsFilter } from './queries';
+import { appendPage, catalogQuery, parseCentsFilter, productKeys } from './queries';
 import { formatListingPriceInput, parseListingPrice } from './listing-input';
 
 describe('catalog query contract', () => {
@@ -65,5 +65,29 @@ describe('catalog query contract', () => {
         { products: [product('b'), product('c')], nextCursor: null },
       ),
     ).toEqual({ products: [product('a'), product('b'), product('c')], nextCursor: null });
+  });
+});
+
+describe('product cache keys', () => {
+  it('keeps favorite and follow entries under the user roots the list screens invalidate', () => {
+    expect(productKeys.favorite('user-1', 'product-1').slice(0, 3)).toEqual([
+      'user',
+      'user-1',
+      'favorites',
+    ]);
+    expect(productKeys.follow('user-1', 'seller-1').slice(0, 3)).toEqual([
+      'user',
+      'user-1',
+      'follow',
+    ]);
+  });
+
+  it('still hashes a stable key for signed-out viewers', () => {
+    expect(productKeys.favorite(undefined, 'product-1')).toEqual([
+      'anonymous',
+      'favorite',
+      'product-1',
+    ]);
+    expect(productKeys.follow(undefined, 'seller-1')).toEqual(['anonymous', 'follow', 'seller-1']);
   });
 });

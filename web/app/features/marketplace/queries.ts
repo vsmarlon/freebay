@@ -1,3 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
+import { userKey } from '../../core/query-client';
+import { productApi } from './api';
 import type { ProductPage } from './types';
 
 export type CatalogFilters = {
@@ -34,4 +37,49 @@ export function appendPage(current: ProductPage, next: ProductPage): ProductPage
     products: [...current.products, ...next.products.filter((product) => !seen.has(product.id))],
     nextCursor: next.nextCursor,
   };
+}
+
+// Favorites and follows hang off the `user` root so list screens can invalidate
+// them by prefix; signed-out viewers keep a stable placeholder key.
+export const productKeys = {
+  favorite: (userId: string | undefined, productId: string) =>
+    userId
+      ? userKey(userId, 'favorites', productId)
+      : (['anonymous', 'favorite', productId] as const),
+  follow: (userId: string | undefined, sellerId: string) =>
+    userId ? userKey(userId, 'follow', sellerId) : (['anonymous', 'follow', sellerId] as const),
+  seller: (sellerId: string) => ['public', 'seller', sellerId] as const,
+  sellerReviews: (sellerId: string) => ['public', 'reviews', sellerId] as const,
+};
+
+// Enabled for any signed-in viewer: the detail page mounts product actions only
+// for non-owners (display gate), and the backend remains the authorization boundary.
+export function useFavoriteState(userId: string | undefined, productId: string) {
+  return useQuery({
+    queryKey: productKeys.favorite(userId, productId),
+    enabled: Boolean(userId),
+    queryFn: ({ signal }) => productApi.favoriteState(productId, signal),
+  });
+}
+
+export function useFollowState(userId: string | undefined, sellerId: string) {
+  return useQuery({
+    queryKey: productKeys.follow(userId, sellerId),
+    enabled: Boolean(userId),
+    queryFn: ({ signal }) => productApi.followState(sellerId, signal),
+  });
+}
+
+export function useSellerProfile(sellerId: string) {
+  return useQuery({
+    queryKey: productKeys.seller(sellerId),
+    queryFn: ({ signal }) => productApi.seller(sellerId, signal),
+  });
+}
+
+export function useSellerReviews(sellerId: string) {
+  return useQuery({
+    queryKey: productKeys.sellerReviews(sellerId),
+    queryFn: ({ signal }) => productApi.reviews(sellerId, signal),
+  });
 }
