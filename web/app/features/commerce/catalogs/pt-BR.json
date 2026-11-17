@@ -60,6 +60,7 @@
   "commerce.order.cancelPrompt": "Cancelar este pedido? Esta ação não pode ser desfeita.",
   "commerce.order.cancelReason": "Motivo do cancelamento",
   "commerce.order.dispute": "Abrir disputa",
+  "commerce.order.viewDispute": "Ver disputa",
   "commerce.order.review": "Avaliar",
   "commerce.order.chat": "Chat do pedido",
   "commerce.order.buyer": "Comprador",

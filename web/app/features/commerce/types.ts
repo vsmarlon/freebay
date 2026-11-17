@@ -95,7 +95,8 @@ export function checkoutFailureIsDefinitive(
   code?: string,
   message?: string,
 ) {
-  // ponytail: only audited pre-reservation messages are safe; widen only with a verified backend phase contract.
+  // Only audited pre-reservation messages are safe to retry; widen this list
+  // only with a verified backend phase contract.
   return (
     status === 400 &&
     code === 'BAD_REQUEST' &&
@@ -202,8 +203,23 @@ export function safeConnectUrl(raw: string): string | null {
   }
 }
 
-export function canSubmitEvidence(status: string, isParty: boolean) {
-  return isParty && status !== 'ESCALATED' && status !== 'RESOLVED' && status !== 'CANCELLED';
+export type DisputeParty = 'BUYER' | 'SELLER';
+
+// Mirrors the backend evidence rule (disputes/domain/dispute-state.ts#evidenceTarget):
+// OPEN awaits either party, AWAITING_BUYER/AWAITING_SELLER await only the named one,
+// and ESCALATED/RESOLVED/CANCELLED await nobody. The server re-checks it; this only
+// keeps the form off a request the server will reject. GET /disputes/:id does not
+// emit allowedActions, so the rule has to be mirrored here.
+export function awaitingDisputeParty(status: string): DisputeParty | null {
+  if (status === 'AWAITING_BUYER') return 'BUYER';
+  if (status === 'AWAITING_SELLER') return 'SELLER';
+  return null;
+}
+
+export function canSubmitEvidence(status: string, party: DisputeParty | null) {
+  if (!party) return false;
+  if (status === 'OPEN') return true;
+  return awaitingDisputeParty(status) === party;
 }
 
 export function canWithdrawDispute(status: string, isOpener: boolean) {

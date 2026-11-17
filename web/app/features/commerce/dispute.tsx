@@ -14,7 +14,7 @@ import {
 } from './shared';
 import { commerceApi } from './api';
 import { userKey } from '../../core/query-client';
-import { canSubmitEvidence, canWithdrawDispute } from './types';
+import { canSubmitEvidence, canWithdrawDispute, type DisputeParty } from './types';
 
 function DisputeContent() {
   const { id, user, locale, t } = useCommerce();
@@ -29,9 +29,14 @@ function DisputeContent() {
     Boolean(id),
   );
   const dispute = query.data?.dispute;
-  const isParty = Boolean(
-    user && dispute && (user.id === dispute.order.buyerId || user.id === dispute.order.sellerId),
-  );
+  const party: DisputeParty | null =
+    !user || !dispute
+      ? null
+      : user.id === dispute.order.buyerId
+        ? 'BUYER'
+        : user.id === dispute.order.sellerId
+          ? 'SELLER'
+          : null;
   const evidenceMutation = useMutation({
     mutationFn: () => commerceApi.submitEvidence(id, evidence.trim()),
     onError: () => setReconcileNeeded(true),
@@ -130,7 +135,7 @@ function DisputeContent() {
             : t('commerce.dispute.buyer')}
           : {formatEvidence(otherEvidence)}
         </p>
-        {canSubmitEvidence(dispute.status, isParty) && (
+        {canSubmitEvidence(dispute.status, party) && (
           <form
             className="grid gap-4"
             onSubmit={(event) => {

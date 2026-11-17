@@ -281,6 +281,14 @@ function OrderContent() {
                 {t('commerce.order.dispute')}
               </Link>
             )}
+            {allowedActions.includes('VIEW_DISPUTE') && order.dispute && (
+              <Link
+                className={buttonClass('secondary')}
+                to={path(pathsFor.dispute(order.dispute.id))}
+              >
+                {t('commerce.order.viewDispute')}
+              </Link>
+            )}
             {reviewEligibilityQuery.data?.canReview && reviewEligibilityQuery.data.reviewType && (
               <Link className={buttonClass('secondary')} to={path(pathsFor.reviewOrder(id))}>
                 {reviewEligibilityQuery.data.reviewType === 'BUYER_REVIEWING_SELLER'

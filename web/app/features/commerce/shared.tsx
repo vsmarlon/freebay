@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, type Query } from '@tanstack/react-query';
 import {
   Button,
   Dialog,
@@ -72,7 +72,8 @@ export function useCommerceInfiniteQuery<T>(
   enabled = true,
 ) {
   const { user } = useSession();
-  // ponytail: cursor pages accumulate in one query; a cursor in the query key would replace the list on every "load more"
+  // Cursor pages accumulate in one query; a cursor in the query key would
+  // replace the list on every "load more".
   return useInfiniteQuery({
     queryKey: userKey(user?.id ?? 'anonymous', 'commerce', feature, ...parts),
     initialPageParam: null as string | null,
@@ -87,12 +88,19 @@ export function useCommerceQuery<T>(
   parts: readonly unknown[],
   queryFn: (signal: AbortSignal) => Promise<T>,
   enabled = true,
+  // Same option as useQuery, but the callback sees the data so a caller can stop
+  // polling once the server state it is waiting for has moved.
+  refetchInterval?: number | false | ((data: T | undefined) => number | false),
 ) {
   const { user } = useSession();
   return useQuery({
     queryKey: userKey(user?.id ?? 'anonymous', 'commerce', feature, ...parts),
     queryFn: ({ signal }) => queryFn(signal),
     enabled: enabled && Boolean(user?.id),
+    refetchInterval:
+      typeof refetchInterval === 'function'
+        ? (query: Query<T>) => refetchInterval(query.state.data)
+        : refetchInterval,
   });
 }
 
