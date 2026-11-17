@@ -78,6 +78,12 @@ export type TimelineEntry = {
 };
 export type CursorPage<T> = { items: T[]; hasMore: boolean; nextCursor?: string | null };
 export type FeedPage = { posts: Post[]; hasMore: boolean; nextCursor?: string | null };
+/** Viewer-facing fields a mutation may write through into every cached view of a post. */
+export type PostViewPatch = Partial<
+  Pick<Post, 'isLiked' | 'likesCount' | 'isSaved' | 'hasReposted' | 'sharesCount' | 'commentsCount'>
+>;
+/** Viewer-facing fields a comment reaction may write through into cached comment pages. */
+export type CommentViewPatch = Partial<Pick<Comment, 'isLiked' | 'likesCount'>>;
 /** Wire shape of the post-level like/repost mutation endpoints: { success, data: { active, count } }. */
 export type MutationState = { active: boolean; count: number };
 /** Wire shape of the save/unsave endpoints (no denormalized counter to report). */
@@ -99,6 +105,8 @@ export type Comment = {
   user?: SocialUser;
   replies: Comment[];
 };
+/** Comment lists arrive as a bare array or wrapped in `{ comments }` depending on the page. */
+export type CommentsPage = Comment[] | { comments: Comment[] };
 
 export function canApproveComment(
   comment: Comment,

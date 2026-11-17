@@ -1,7 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
-import { patchCommentInPages, patchPostInRecord, socialKeys } from './queries';
-import type { Comment, CursorPage, FeedPage, Post, TimelineEntry } from './types';
+import {
+  patchCommentRow,
+  patchCommentsPage,
+  patchCommentViews,
+  patchFeedPage,
+  patchPostItemPage,
+  patchPostList,
+  patchPostViews,
+  patchPostView,
+  patchTimelinePage,
+  socialKeys,
+} from './queries';
+import type {
+  Comment,
+  CommentsPage,
+  CursorPage,
+  FeedPage,
+  Post,
+  SocialUser,
+  TimelineEntry,
+} from './types';
 
 const post = (id: string, overrides: Partial<Post> = {}): Post => ({
   id,
@@ -46,10 +65,10 @@ const comment = (id: string, replies: Comment[] = []): Comment => ({
 
 const likeState = { isLiked: true, likesCount: 4 };
 
-describe('patchPostInRecord (authoritative mutation merge)', () => {
+describe('patchPostViews (authoritative mutation merge)', () => {
   it('patches the post inside FeedPage.posts', () => {
     const page: FeedPage = { posts: [post('p1'), post('p2')], hasMore: false, nextCursor: null };
-    expect(patchPostInRecord(page, 'p2', likeState)).toMatchObject({
+    expect(patchFeedPage(page, 'p2', likeState)).toMatchObject({
       posts: [
         { id: 'p1', isLiked: false },
         { id: 'p2', isLiked: true, likesCount: 4 },
@@ -59,7 +78,7 @@ describe('patchPostInRecord (authoritative mutation merge)', () => {
 
   it('patches the post inside CursorPage items', () => {
     const page: CursorPage<Post> = { items: [post('p1')], hasMore: false, nextCursor: null };
-    expect(patchPostInRecord(page, 'p1', likeState)).toMatchObject({
+    expect(patchPostItemPage(page, 'p1', likeState)).toMatchObject({
       items: [{ isLiked: true, likesCount: 4 }],
     });
   });
@@ -70,21 +89,36 @@ describe('patchPostInRecord (authoritative mutation merge)', () => {
       hasMore: false,
       nextCursor: null,
     };
-    expect(patchPostInRecord(page, 'p1', likeState)).toMatchObject({
+    expect(patchTimelinePage(page, 'p1', likeState)).toMatchObject({
       items: [{ post: { isLiked: true, likesCount: 4 }, isReposted: true }],
     });
   });
 
-  it('patches a bare post-detail object and skips unrelated shapes', () => {
-    expect(patchPostInRecord(post('p1'), 'p1', likeState)).toMatchObject({
+  it('patches a bare post-detail object and leaves other posts and lists untouched', () => {
+    expect(patchPostView(post('p1'), 'p1', likeState)).toMatchObject({
       id: 'p1',
       likesCount: 4,
     });
-    expect(patchPostInRecord({ unrelated: true }, 'p1', likeState)).toEqual({ unrelated: true });
-    expect(patchPostInRecord([post('p1')], 'p1', likeState)).toEqual([post('p1', likeState)]);
+    const untouched = post('p1');
+    expect(patchPostView(untouched, 'other', likeState)).toBe(untouched);
+    expect(patchPostList([post('p1')], 'p1', likeState)).toEqual([post('p1', likeState)]);
+    const list = [post('p1')];
+    expect(patchPostList(list, 'other', likeState)[0]).toBe(list[0]);
   });
 
-  it('writes through infinite pages and liked lists without changing pagination or unrelated cache data', () => {
+  it('patches both the original and the repost copy of one post in a timeline page', () => {
+    const page: CursorPage<TimelineEntry> = {
+      items: [entry('p1'), entry('p1', { repostId: null, isReposted: false, repostedBy: null })],
+      hasMore: false,
+      nextCursor: null,
+    };
+    const patched = patchTimelinePage(page, 'p1', likeState);
+    expect(patched.items.map((item) => item.post.likesCount)).toEqual([4, 4]);
+    expect(patched.items.map((item) => item.isReposted)).toEqual([true, false]);
+    expect(page.items[0].post.isLiked).toBe(false);
+  });
+
+  it('writes through every cached view by key without changing pagination or unrelated cache data', () => {
     const client = new QueryClient();
     const keys = socialKeys('viewer');
     const other = post('other');
@@ -104,18 +138,23 @@ describe('patchPostInRecord (authoritative mutation merge)', () => {
       pages: [{ items: [entry('p1')], hasMore: false, nextCursor: null }],
       pageParams: [undefined],
     };
+    const search = {
+      pages: [{ items: [post('p1'), other], hasMore: false, nextCursor: null }],
+      pageParams: [undefined],
+    };
+    const mentionSearch = { users: [{ id: 'u1', displayName: 'Uma' }] satisfies SocialUser[] };
     const outside = socialKeys('other-viewer').feed;
     client.setQueryData(keys.feed, feed);
     client.setQueryData(keys.saved, saved);
     client.setQueryData(keys.timeline('owner:all'), timeline);
+    client.setQueryData([...keys.search, 'sun', 'all'], search);
     client.setQueryData(keys.liked, [post('p1'), other]);
     client.setQueryData(keys.post('p1'), post('p1'));
     client.setQueryData(keys.comments('p1'), { pages: [[comment('c1')]], pageParams: [0] });
+    client.setQueryData([...keys.root, 'mention-search', 'ma'], mentionSearch);
     client.setQueryData(outside, feed);
 
-    client.setQueriesData({ queryKey: keys.root }, (data: unknown) =>
-      patchPostInRecord(data, 'p1', likeState),
-    );
+    patchPostViews(client, 'viewer', 'p1', likeState);
 
     expect(client.getQueryData(keys.feed)).toEqual({
       ...feed,
@@ -129,14 +168,26 @@ describe('patchPostInRecord (authoritative mutation merge)', () => {
       ...timeline,
       pages: [{ ...timeline.pages[0], items: [entry('p1', { post: post('p1', likeState) })] }],
     });
+    expect(client.getQueryData([...keys.search, 'sun', 'all'])).toEqual({
+      ...search,
+      pages: [{ ...search.pages[0], items: [post('p1', likeState), other] }],
+    });
     expect(client.getQueryData(keys.liked)).toEqual([post('p1', likeState), other]);
     expect(client.getQueryData(keys.post('p1'))).toEqual(post('p1', likeState));
     expect(client.getQueryData(keys.comments('p1'))).toEqual({
       pages: [[comment('c1')]],
       pageParams: [0],
     });
+    expect(client.getQueryData([...keys.root, 'mention-search', 'ma'])).toEqual(mentionSearch);
     expect(client.getQueryData(outside)).toEqual(feed);
     expect(feed.pages[1].posts[0].isLiked).toBe(false);
+    client.clear();
+  });
+
+  it('does not create a post-detail cache entry for a post that was never cached', () => {
+    const client = new QueryClient();
+    patchPostViews(client, 'viewer', 'ghost', likeState);
+    expect(client.getQueryData(socialKeys('viewer').post('ghost'))).toBeUndefined();
     client.clear();
   });
 });
@@ -144,30 +195,59 @@ describe('patchPostInRecord (authoritative mutation merge)', () => {
 describe('reaction flag semantics (viewer-only)', () => {
   // Regression: the owner's `isReposted` must never be folded into the viewer's `hasReposted`.
   it('keeps timeline ownership flags separate from the viewer render state', () => {
-    expect(
-      patchPostInRecord({ items: [entry('p1')] }, 'p1', { hasReposted: false, sharesCount: 2 }),
-    ).toMatchObject({
+    const page: CursorPage<TimelineEntry> = {
+      items: [entry('p1')],
+      hasMore: false,
+      nextCursor: null,
+    };
+    expect(patchTimelinePage(page, 'p1', { hasReposted: false, sharesCount: 2 })).toMatchObject({
       items: [{ isReposted: true, post: { hasReposted: false, sharesCount: 2 } }],
     });
   });
 });
 
-describe('patchCommentInPages', () => {
+describe('patchCommentViews', () => {
   const likedComment = { isLiked: true, likesCount: 3 };
 
   it('patches { comments: [] } pages including nested replies', () => {
     expect(
-      patchCommentInPages({ comments: [comment('c1', [comment('c2')])] }, 'c2', likedComment),
+      patchCommentsPage({ comments: [comment('c1', [comment('c2')])] }, 'c2', likedComment),
     ).toMatchObject({
       comments: [{ likesCount: 0, replies: [{ id: 'c2', isLiked: true, likesCount: 3 }] }],
     });
   });
 
-  it('patches plain comment arrays and ignores unknown records', () => {
-    expect(patchCommentInPages([comment('c1')], 'c1', likedComment)).toMatchObject({
+  it('patches plain comment arrays and leaves unmatched rows by reference', () => {
+    expect(patchCommentsPage([comment('c1')], 'c1', likedComment)).toMatchObject({
       0: { isLiked: true },
     });
-    expect(patchCommentInPages({ other: 1 }, 'c1', likedComment)).toEqual({ other: 1 });
+    const leaf = comment('c1');
+    const leaves = patchCommentsPage([leaf], 'missing', likedComment);
+    expect(Array.isArray(leaves) && leaves[0]).toBe(leaf);
+    // A parent row is rebuilt to hold its replies, but the untouched reply keeps its identity.
+    const reply = comment('c2');
+    const rebuilt = patchCommentsPage([comment('c1', [reply])], 'missing', likedComment);
+    expect(Array.isArray(rebuilt) && rebuilt[0].replies[0]).toBe(reply);
+  });
+
+  it('reaches a reply nested three levels deep without flattening the chain', () => {
+    const page: CommentsPage = {
+      comments: [comment('c1', [comment('c2', [comment('c3', [comment('c4')])])])],
+    };
+    expect(patchCommentsPage(page, 'c4', likedComment)).toMatchObject({
+      comments: [
+        {
+          id: 'c1',
+          replies: [
+            {
+              id: 'c2',
+              replies: [{ id: 'c3', replies: [{ id: 'c4', isLiked: true, likesCount: 3 }] }],
+            },
+          ],
+        },
+      ],
+    });
+    expect(patchCommentRow(comment('c1'), 'c1', likedComment).likesCount).toBe(3);
   });
 
   it('writes through infinite comment pages including replies and leaves post data alone', () => {
@@ -183,12 +263,8 @@ describe('patchCommentInPages', () => {
     client.setQueryData(keys.comments('p1'), data);
     client.setQueryData(keys.post('p1'), post('p1'));
 
-    client.setQueriesData({ queryKey: keys.root }, (data: unknown) =>
-      patchCommentInPages(data, 'c3', likedComment),
-    );
-    client.setQueriesData({ queryKey: keys.root }, (data: unknown) =>
-      patchCommentInPages(data, 'c1', likedComment),
-    );
+    patchCommentViews(client, 'viewer', 'c3', likedComment);
+    patchCommentViews(client, 'viewer', 'c1', likedComment);
 
     expect(client.getQueryData(keys.comments('p1'))).toEqual({
       pages: [
