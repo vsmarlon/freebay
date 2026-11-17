@@ -37,11 +37,19 @@ describe('server-driven commerce affordances', () => {
     expect(reviewTargetId(baseOrder, undefined)).toBeNull();
   });
 
-  it('allows evidence only from dispute parties before a terminal status', () => {
-    expect(canSubmitEvidence('OPEN', true)).toBe(true);
-    expect(canSubmitEvidence('RESOLVED', true)).toBe(false);
-    expect(canSubmitEvidence('CANCELLED', true)).toBe(false);
-    expect(canSubmitEvidence('OPEN', false)).toBe(false);
+  it('offers evidence only to the party the dispute is waiting for', () => {
+    // OPEN awaits either participant; AWAITING_* awaits only the named one.
+    expect(canSubmitEvidence('OPEN', 'BUYER')).toBe(true);
+    expect(canSubmitEvidence('OPEN', 'SELLER')).toBe(true);
+    expect(canSubmitEvidence('AWAITING_SELLER', 'BUYER')).toBe(false);
+    expect(canSubmitEvidence('AWAITING_SELLER', 'SELLER')).toBe(true);
+    expect(canSubmitEvidence('AWAITING_BUYER', 'BUYER')).toBe(true);
+    expect(canSubmitEvidence('AWAITING_BUYER', 'SELLER')).toBe(false);
+    // Nothing is awaited once escalated or closed.
+    expect(canSubmitEvidence('ESCALATED', 'BUYER')).toBe(false);
+    expect(canSubmitEvidence('RESOLVED', 'SELLER')).toBe(false);
+    expect(canSubmitEvidence('CANCELLED', 'BUYER')).toBe(false);
+    expect(canSubmitEvidence('OPEN', null)).toBe(false);
   });
 
   it('does not treat a browser success query as payment settlement', () => {
