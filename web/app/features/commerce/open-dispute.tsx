@@ -18,7 +18,7 @@ import { commerceApi } from './api';
 import { pathsFor } from '../../core/routes';
 
 function OpenDisputeContent() {
-  const { id, user, t, path } = useCommerce();
+  const { id, t, path } = useCommerce();
   const navigate = useNavigate();
   const [reason, setReason] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -26,7 +26,7 @@ function OpenDisputeContent() {
   const orderQuery = useCommerceQuery(
     'order-for-dispute',
     [id],
-    (signal) => commerceApi.order(id, signal),
+    (signal) => commerceApi.orderWithActions(id, signal),
     Boolean(id),
   );
   const create = useMutation({
@@ -48,16 +48,20 @@ function OpenDisputeContent() {
         <ErrorState error={orderQuery.error} />
       </CommercePage>
     );
-  const status = orderQuery.data.status;
-  const allowedStatus = ['CONFIRMED', 'SHIPPED', 'DELIVERED'].includes(status);
-  const participant = user?.id === orderQuery.data.buyerId || user?.id === orderQuery.data.sellerId;
+  const order = orderQuery.data.order;
+  // Server-computed eligibility: OPEN_DISPUTE for a fresh dispute, REOPEN_DISPUTE
+  // for a withdrawn one still inside the opening window. The backend also enforces
+  // the window, cancellation reason and participant rules behind these actions.
+  const allowedActions = orderQuery.data.allowedActions;
+  const canOpen =
+    allowedActions.includes('OPEN_DISPUTE') || allowedActions.includes('REOPEN_DISPUTE');
   return (
     <CommercePage title={t('commerce.dispute.open')}>
       <Surface>
         <p>
-          {t('commerce.dispute.order')}: {orderQuery.data.product?.title ?? id}
+          {t('commerce.dispute.order')}: {order.product?.title ?? id}
         </p>
-        {!participant || !allowedStatus ? (
+        {!canOpen ? (
           <p>{t('commerce.dispute.notAvailable')}</p>
         ) : (
           <form

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkoutGroupSchema, orderSchema, walletSchema } from './schemas';
+import { checkoutGroupSchema, orderSchema, orderWithActionsSchema, walletSchema } from './schemas';
 
 const order = {
   id: 'o1',
@@ -47,5 +47,12 @@ describe('commerce boundary schemas', () => {
       walletSchema.parse({ balance: 0, pendingBalance: 100, availableBalance: 50 }).balance,
     ).toBe(0);
     expect(() => walletSchema.parse({ balance: 0, pendingBalance: 100 })).toThrow();
+  });
+
+  it('rejects an order detail without the server action list', () => {
+    expect(
+      orderWithActionsSchema.parse({ order, allowedActions: ['MARK_SHIPPED'] }).allowedActions,
+    ).toEqual(['MARK_SHIPPED']);
+    expect(() => orderWithActionsSchema.parse({ order })).toThrow();
   });
 });
