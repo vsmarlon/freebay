@@ -60,6 +60,7 @@
   "commerce.order.cancelPrompt": "Cancel this order? This cannot be undone.",
   "commerce.order.cancelReason": "Reason for cancellation",
   "commerce.order.dispute": "Open a dispute",
+  "commerce.order.viewDispute": "View dispute",
   "commerce.order.review": "Review",
   "commerce.order.chat": "Order chat",
   "commerce.order.buyer": "Buyer",
