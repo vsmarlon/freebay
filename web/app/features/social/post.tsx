@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router';
 import { useSession, RequireAuth } from '../../core/session';
 import { useI18n } from '../../core/locale';
 import { pathsFor } from '../../core/routes';
-import { socialApi } from './data';
+import { commentList, socialApi } from './data';
 import { useComments, usePost, useSocialActions } from './queries';
 import { PostCard } from './post-card';
 import { Button, ComposerInput, Dialog, buttonClass } from '../../components';
@@ -206,8 +206,7 @@ function PostDetailPage() {
   const [content, setContent] = useState('');
   const [error, setError] = useState(false);
   const contentLength = commentGraphemeCount(content);
-  const rows =
-    comments.data?.pages.flatMap((page) => (Array.isArray(page) ? page : page.comments)) ?? [];
+  const rows = comments.data?.pages.flatMap((page) => commentList(page)) ?? [];
   function doSubmit() {
     if (!content.trim() || commentGraphemeCount(content) > COMMENT_LIMIT) return;
     setError(false);

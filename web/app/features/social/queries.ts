@@ -1,12 +1,24 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+  type QueryClient,
+} from '@tanstack/react-query';
 import { userKey } from '../../core/query-client';
-import { socialApi, searchPage } from './data';
+import { commentList, socialApi, searchPage } from './data';
 import type {
   Comment,
+  CommentsPage,
+  CommentViewPatch,
   ContentFilter,
+  CursorPage,
+  FeedPage,
   FeedType,
   MutationState,
   Post,
+  PostViewPatch,
   ProfileTimelineKind,
   SaveMutationState,
   TimelineEntry,
@@ -19,106 +31,135 @@ export function socialKeys(userId: string) {
     feed: userKey(userId, 'social', 'feed'),
     saved: userKey(userId, 'social', 'saved'),
     liked: userKey(userId, 'social', 'liked'),
+    search: userKey(userId, 'social', 'search'),
+    /** Prefix over every profile timeline of this viewer. */
+    timelines: userKey(userId, 'social', 'timeline'),
+    /** Prefix over every post's comment pages of this viewer. */
+    commentPages: userKey(userId, 'social', 'comments'),
     timeline: (id: string) => userKey(userId, 'social', 'timeline', id),
     post: (id: string) => userKey(userId, 'social', 'post', id),
     comments: (id: string) => userKey(userId, 'social', 'comments', id),
   };
 }
 
-const isPostView = (value: unknown): value is Post =>
-  typeof value === 'object' && value !== null && 'audience' in value && 'isLiked' in value;
-const isTimelineEntryView = (value: unknown): value is TimelineEntry =>
-  typeof value === 'object' && value !== null && 'post' in value && 'isReposted' in value;
-const isCommentView = (value: unknown): value is Comment =>
-  typeof value === 'object' &&
-  value !== null &&
-  'content' in value &&
-  'likesCount' in value &&
-  'isHidden' in value &&
-  !('audience' in value);
+export const patchPostView = (post: Post, postId: string, patch: PostViewPatch): Post =>
+  post.id === postId ? { ...post, ...patch } : post;
 
-type PostViewPatch = Partial<
-  Pick<Post, 'isLiked' | 'likesCount' | 'isSaved' | 'hasReposted' | 'sharesCount' | 'commentsCount'>
->;
-type CommentViewPatch = Partial<Pick<Comment, 'isLiked' | 'likesCount'>>;
-
-export function patchPostInRecord(record: unknown, postId: string, patch: PostViewPatch): unknown {
-  if (Array.isArray(record))
-    return record.map((item: unknown) => patchPostInRecord(item, postId, patch));
-  if (typeof record !== 'object' || record === null) return record;
-  if ('pages' in record && Array.isArray(record.pages)) {
-    return {
-      ...record,
-      pages: record.pages.map((page: unknown) => patchPostInRecord(page, postId, patch)),
-    };
-  }
-  if ('posts' in record && Array.isArray(record.posts)) {
-    return {
-      ...record,
-      posts: record.posts.map((item: unknown) =>
-        isPostView(item) && item.id === postId ? { ...item, ...patch } : item,
-      ),
-    };
-  }
-  if ('items' in record && Array.isArray(record.items)) {
-    return {
-      ...record,
-      items: record.items.map((item: unknown) =>
-        isTimelineEntryView(item) && item.post.id === postId
-          ? { ...item, post: { ...item.post, ...patch } }
-          : isPostView(item) && item.id === postId
-            ? { ...item, ...patch }
-            : item,
-      ),
-    };
-  }
-  if (isPostView(record) && record.id === postId) return { ...record, ...patch };
-  return record;
+export function patchPostList(posts: Post[], postId: string, patch: PostViewPatch): Post[] {
+  return posts.map((post) => patchPostView(post, postId, patch));
 }
 
-export function patchCommentInPages(
-  data: unknown,
+export function patchFeedPage(page: FeedPage, postId: string, patch: PostViewPatch): FeedPage {
+  return { ...page, posts: patchPostList(page.posts, postId, patch) };
+}
+
+export function patchPostItemPage(
+  page: CursorPage<Post>,
+  postId: string,
+  patch: PostViewPatch,
+): CursorPage<Post> {
+  return { ...page, items: patchPostList(page.items, postId, patch) };
+}
+
+// Timeline entries carry the post plus the owner's repost metadata: only the post is the
+// viewer's render state, so `isReposted`/`repostedAt` must survive a reaction patch.
+export function patchTimelinePage(
+  page: CursorPage<TimelineEntry>,
+  postId: string,
+  patch: PostViewPatch,
+): CursorPage<TimelineEntry> {
+  return {
+    ...page,
+    items: page.items.map((entry) => ({
+      ...entry,
+      post: patchPostView(entry.post, postId, patch),
+    })),
+  };
+}
+
+export function patchCommentRow(
+  comment: Comment,
   commentId: string,
   patch: CommentViewPatch,
-): unknown {
-  const patchRow = (row: unknown): unknown => {
-    if (!isCommentView(row)) return row;
-    if (row.id === commentId) return { ...row, ...patch };
-    return row.replies?.length ? { ...row, replies: row.replies.map(patchRow) } : row;
+): Comment {
+  if (comment.id === commentId) return { ...comment, ...patch };
+  if (!comment.replies?.length) return comment;
+  return {
+    ...comment,
+    replies: comment.replies.map((reply) => patchCommentRow(reply, commentId, patch)),
   };
-  if (Array.isArray(data)) return data.map(patchRow);
-  if (typeof data === 'object' && data !== null && 'pages' in data && Array.isArray(data.pages)) {
-    return {
-      ...data,
-      pages: data.pages.map((page: unknown) => patchCommentInPages(page, commentId, patch)),
-    };
-  }
-  if (
-    typeof data === 'object' &&
-    data !== null &&
-    'comments' in data &&
-    Array.isArray(data.comments)
-  ) {
-    return { ...data, comments: data.comments.map(patchRow) };
-  }
-  return data;
+}
+
+export function patchCommentsPage(
+  page: CommentsPage,
+  commentId: string,
+  patch: CommentViewPatch,
+): CommentsPage {
+  return Array.isArray(page)
+    ? page.map((comment) => patchCommentRow(comment, commentId, patch))
+    : {
+        ...page,
+        comments: page.comments.map((comment) => patchCommentRow(comment, commentId, patch)),
+      };
+}
+
+const patchInfinitePages = <TPage>(
+  data: InfiniteData<TPage>,
+  patchPage: (page: TPage) => TPage,
+): InfiniteData<TPage> => ({ ...data, pages: data.pages.map((page) => patchPage(page)) });
+
+// Authoritative write-through: the mutation response ({ active, count }) is the server's
+// post-transaction truth, so every cached *view* of this post is patched by its known key
+// instead of guessing at whatever shape happens to sit under the social root.
+export function patchPostViews(
+  client: QueryClient,
+  userId: string,
+  postId: string,
+  patch: PostViewPatch,
+) {
+  const keys = socialKeys(userId);
+  client.setQueriesData<InfiniteData<FeedPage>>({ queryKey: keys.feed }, (data) =>
+    data ? patchInfinitePages(data, (page) => patchFeedPage(page, postId, patch)) : data,
+  );
+  client.setQueriesData<InfiniteData<CursorPage<Post>>>({ queryKey: keys.saved }, (data) =>
+    data ? patchInfinitePages(data, (page) => patchPostItemPage(page, postId, patch)) : data,
+  );
+  client.setQueriesData<InfiniteData<CursorPage<Post>>>({ queryKey: keys.search }, (data) =>
+    data ? patchInfinitePages(data, (page) => patchPostItemPage(page, postId, patch)) : data,
+  );
+  client.setQueriesData<InfiniteData<CursorPage<TimelineEntry>>>(
+    { queryKey: keys.timelines },
+    (data) =>
+      data ? patchInfinitePages(data, (page) => patchTimelinePage(page, postId, patch)) : data,
+  );
+  client.setQueriesData<Post[]>({ queryKey: keys.liked }, (data) =>
+    data ? patchPostList(data, postId, patch) : data,
+  );
+  const detailKey = keys.post(postId);
+  const detail = client.getQueryData<Post>(detailKey);
+  if (detail) client.setQueryData<Post>(detailKey, patchPostView(detail, postId, patch));
+}
+
+export function patchCommentViews(
+  client: QueryClient,
+  userId: string,
+  commentId: string,
+  patch: CommentViewPatch,
+) {
+  client.setQueriesData<InfiniteData<CommentsPage>>(
+    { queryKey: socialKeys(userId).commentPages },
+    (data) =>
+      data ? patchInfinitePages(data, (page) => patchCommentsPage(page, commentId, patch)) : data,
+  );
 }
 
 export function useSocialActions(userId: string) {
   const client = useQueryClient();
   const keys = socialKeys(userId);
-  // Authoritative write-through: the mutation response ({ active, count }) is the
-  // server's post-transaction truth; patch every cached social view of the post.
-  const patchViews = (postId: string, patch: PostViewPatch) => {
-    client.setQueriesData({ queryKey: keys.root }, (data: unknown) =>
-      patchPostInRecord(data, postId, patch),
-    );
-  };
-  const patchComments = (commentId: string, patch: CommentViewPatch) => {
-    client.setQueriesData({ queryKey: keys.root }, (data: unknown) =>
-      patchCommentInPages(data, commentId, patch),
-    );
-  };
+  const patchViews = (postId: string, patch: PostViewPatch) =>
+    patchPostViews(client, userId, postId, patch);
+  const patchComments = (commentId: string, patch: CommentViewPatch) =>
+    patchCommentViews(client, userId, commentId, patch);
   const invalidateAll = (postId?: string) =>
     Promise.all([
       client.invalidateQueries({ queryKey: keys.root }),
@@ -285,13 +326,8 @@ export function useComments(userId: string, postId: string) {
     initialPageParam: 0,
     queryFn: ({ pageParam, signal }) => socialApi.comments(postId, pageParam, signal),
     getNextPageParam: (page, pages) => {
-      const rows = Array.isArray(page) ? page : page.comments;
-      return rows.length === 20
-        ? pages.reduce(
-            (count, prior) => count + (Array.isArray(prior) ? prior.length : prior.comments.length),
-            0,
-          )
-        : undefined;
+      if (commentList(page).length !== 20) return undefined;
+      return pages.reduce((count, prior) => count + commentList(prior).length, 0);
     },
     enabled: Boolean(postId),
     staleTime: 0,
@@ -305,7 +341,7 @@ export function usePostSearch(
   filter: 'all' | 'following' | 'followers',
 ) {
   return useInfiniteQuery({
-    queryKey: userKey(userId, 'social', 'search', query.trim(), filter),
+    queryKey: [...socialKeys(userId).search, query.trim(), filter],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam, signal }) =>
       searchPage(await socialApi.search(query.trim(), filter, pageParam, signal)),

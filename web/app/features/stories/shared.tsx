@@ -37,6 +37,9 @@ export type Highlight = {
   stories: Story[];
 };
 export type Feed = { stories: Group[]; userHasStory: boolean };
+/** The fields the media element renders; a highlight cover has a URL but no full story. */
+export type StoryMedia = Pick<Story, 'imageUrl'> &
+  Partial<Pick<Story, 'id' | 'mediaType' | 'caption'>>;
 
 const copy = { en, 'pt-BR': ptBR };
 export const privateMediaPath = (src: string) => {
@@ -83,7 +86,7 @@ export function Media({
   onEnded,
   onPlaybackState,
 }: {
-  story: Story;
+  story: StoryMedia;
   enabled: boolean;
   paused?: boolean;
   autoPlay?: boolean;
@@ -99,7 +102,7 @@ export function Media({
   const showControls = controls ?? Boolean(onEnded);
   return (
     <PrivateStoryMedia
-      key={`${story.id}:${user?.id ?? ''}`}
+      key={`${story.id ?? story.imageUrl}:${user?.id ?? ''}`}
       story={story}
       enabled={enabled && Boolean(user)}
       paused={paused}
@@ -126,7 +129,7 @@ function PrivateStoryMedia({
   onEnded,
   onPlaybackState,
 }: {
-  story: Story;
+  story: StoryMedia;
   enabled: boolean;
   paused: boolean;
   autoPlay: boolean;

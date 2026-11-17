@@ -2,6 +2,7 @@ import { api } from '../../core/api';
 import type { SocialUser } from './types';
 import type {
   Comment,
+  CommentsPage,
   ContentFilter,
   CreatedComment,
   CursorPage,
@@ -38,7 +39,7 @@ export const socialApi = {
   post: (id: string, signal?: AbortSignal) =>
     api.get<Post>(`/social/posts/${encodeURIComponent(id)}`, { signal }),
   comments: (id: string, offset = 0, signal?: AbortSignal) =>
-    api.get<Comment[] | { comments: Comment[] }>(
+    api.get<CommentsPage>(
       `/social/posts/${encodeURIComponent(id)}/comments${params({ limit: 20, offset })}`,
       { signal },
     ),
@@ -130,6 +131,6 @@ export function searchPage(posts: Post[]): CursorPage<Post> {
   return { items: posts, hasMore, nextCursor: hasMore ? (posts.at(-1)?.id ?? null) : null };
 }
 
-export function commentList(response: Comment[] | { comments: Comment[] }): Comment[] {
+export function commentList(response: CommentsPage): Comment[] {
   return Array.isArray(response) ? response : response.comments;
 }

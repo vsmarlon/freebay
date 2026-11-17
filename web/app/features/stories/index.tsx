@@ -22,7 +22,7 @@ export function StoryRail({ userId }: { userId?: string }) {
     ? value.length && value[0].user
       ? [{ user: value[0].user, stories: value }]
       : []
-    : ((value as Feed | undefined)?.stories ?? []);
+    : (value?.stories ?? []);
   const own = groups.find((group) => group.user.id === ownerId);
   return (
     <section aria-label={t.title} className="w-full text-ink">
@@ -91,6 +91,9 @@ export default function StoriesPage() {
   );
 }
 
+const coverStory = (highlight: Highlight) =>
+  highlight.stories.find((story) => story.id === highlight.coverStoryId) ?? highlight.stories[0];
+
 export function ProfileHighlights({ userId }: { userId: string }) {
   const { path, t } = useStoryCopy();
   const { value, error, retry } = useStories<{ highlights: Highlight[] }>(
@@ -117,13 +120,10 @@ export function ProfileHighlights({ userId }: { userId: string }) {
             >
               <span className="aspect-square w-16 overflow-hidden bg-surface-high">
                 <Media
-                  story={
-                    {
-                      ...(highlight.stories.find((story) => story.id === highlight.coverStoryId) ??
-                        highlight.stories[0]),
-                      imageUrl: highlight.coverUrl,
-                    } as Story
-                  }
+                  story={{
+                    imageUrl: highlight.coverUrl,
+                    caption: coverStory(highlight)?.caption ?? null,
+                  }}
                   enabled
                   autoPlay={false}
                   controls={false}
