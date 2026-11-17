@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLatest } from '../../../core/use-latest';
 import { chatRepository } from '../repository';
 import { shouldRefreshReadState, deletedCopy, type ChatMessage } from '../model';
 import { createChatSocket, type ChatSocket } from '../socket';
 import { chatKeys, patchThreadMessage, patchThreadMessages } from '../queries';
 
 // One socket per Thread mount: the keyed <Thread> remounts per conversation, so
-// every hook argument is a constant for the mount lifetime and the handlers can
-// close over them safely.
+// `id` and the viewer are constants for the mount lifetime. The counterpart id
+// only arrives with the transcript, so event handlers read it through a
+// latest-ref instead of tearing down and rebuilding the connection mid-open.
 export function useChatSocket(
   id: string,
   otherUserId: string | undefined,
@@ -20,6 +22,7 @@ export function useChatSocket(
   const [joinError, setJoinError] = useState('');
   const socketRef = useRef<ChatSocket | null>(null);
   const typingTimer = useRef<number | null>(null);
+  const counterpartId = useLatest(otherUserId);
 
   useEffect(() => {
     if (!id || !userId) return;
@@ -30,9 +33,10 @@ export function useChatSocket(
       socket.emit(
         'join_conversation',
         { conversationId: id },
-        (response: { error?: string } | undefined) => {
-          if (response?.error) setJoinError(response.error);
-        },
+        (response: { error?: string } | undefined) =>
+          // A reconnect can succeed after an earlier refusal; never keep a stale
+          // join error on screen once the server accepted the join.
+          setJoinError(response?.error ?? ''),
       );
       // Canonical read-refresh and catch-up: server truth lands through the invalidation.
       void client.invalidateQueries({ queryKey: chatKeys.thread(id) });
@@ -67,16 +71,16 @@ export function useChatSocket(
       }) => patchThreadMessage(client, id, messageId, (message) => ({ ...message, reactions })),
     );
     socket.on('user_typing', ({ userId: senderId }: { userId: string }) => {
-      if (senderId === otherUserId) setTyping(true);
+      if (senderId === counterpartId.current) setTyping(true);
     });
     socket.on('user_stopped_typing', ({ userId: senderId }: { userId: string }) => {
-      if (senderId === otherUserId) setTyping(false);
+      if (senderId === counterpartId.current) setTyping(false);
     });
     socket.on('user_online', ({ userId: senderId }: { userId: string }) => {
-      if (senderId === otherUserId) setOnline(true);
+      if (senderId === counterpartId.current) setOnline(true);
     });
     socket.on('user_offline', ({ userId: senderId }: { userId: string }) => {
-      if (senderId === otherUserId) setOnline(false);
+      if (senderId === counterpartId.current) setOnline(false);
     });
     socket.connect();
     return () => {
@@ -90,7 +94,7 @@ export function useChatSocket(
       socket.disconnect();
       if (socketRef.current === socket) socketRef.current = null;
     };
-  }, [id, otherUserId, userId, client]);
+  }, [id, userId, client, counterpartId]);
 
   const emitDraftActivity = useCallback(
     (value: string) => {
