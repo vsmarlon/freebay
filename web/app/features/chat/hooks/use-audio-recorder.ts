@@ -29,6 +29,7 @@ export function useAudioRecorder(onReady: (file: File, durationMs: number) => vo
   const chunksRef = useRef<Blob[]>([]);
   const startedAt = useRef(0);
   const cancelled = useRef(false);
+  const starting = useRef(false);
   const limitTimer = useRef<number | null>(null);
   const tickTimer = useRef<number | null>(null);
 
@@ -56,12 +57,22 @@ export function useAudioRecorder(onReady: (file: File, durationMs: number) => vo
   );
 
   const start = useCallback(async () => {
+    // A second click while the permission prompt is open would open a second
+    // microphone stream and leave the first one live for the life of the page.
+    if (starting.current) return;
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setUnsupported(true);
       return;
     }
+    starting.current = true;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Unmounted while the prompt was open: nothing will clean this stream up
+      // later, so release the microphone instead of recording into a dead hook.
+      if (cancelled.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       streamRef.current = stream;
       const mimeType = mimeTypes.find((type) => MediaRecorder.isTypeSupported(type));
       if (!mimeType) {
@@ -118,6 +129,8 @@ export function useAudioRecorder(onReady: (file: File, durationMs: number) => vo
           ? 'permission'
           : 'recorder',
       );
+    } finally {
+      starting.current = false;
     }
   }, []);
 

@@ -152,11 +152,15 @@ export function ThreadComposer(props: ComposerProps) {
           onClose={() => setLocationOpen(false)}
           onSend={(metadata) => {
             setLocationOpen(false);
-            void sender.sendAsync({
-              type: 'LOCATION',
-              clientMessageId: crypto.randomUUID(),
-              metadata,
-            });
+            // The mutation already surfaces the failure banner; swallow the
+            // rejection so a failed location send cannot escape as unhandled.
+            void sender
+              .sendAsync({
+                type: 'LOCATION',
+                clientMessageId: crypto.randomUUID(),
+                metadata,
+              })
+              .catch(() => {});
           }}
         />
       ) : null}
