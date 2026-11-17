@@ -16,7 +16,7 @@ compartilham a mesma API NestJS.
 
 ## Diagrama
 
-> No preview do editor, os nós são clicáveis e abrem a pasta correspondente.
+> No preview do editor, os nós são clicáveis e abrem a pasta correspondente. No GitHub o Mermaid renderiza em modo estrito e os nós **não** são interativos — use os atalhos abaixo do diagrama.
 
 ```mermaid
 flowchart LR
@@ -40,6 +40,8 @@ flowchart LR
     click redis href "nest-backend/src/modules/" "Módulos da API"
     click stripe href "nest-backend/src/modules/payments/" "Pagamentos"
 ```
+
+**Atalhos:** [App Flutter](frontend/) · [Web React](web/) · [Módulos da API](nest-backend/src/modules/) · [Schema Prisma](nest-backend/prisma/schema.prisma) · [Pagamentos](nest-backend/src/modules/payments/)
 
 ## Telas
 
