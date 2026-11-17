@@ -104,10 +104,7 @@ export function CreatePost({ userId }: { userId: string }) {
     return false;
   }
   return (
-    <form
-      className="border border-(--hairline) bg-surface p-4 grid gap-3"
-      onSubmit={submit}
-    >
+    <form className="border border-(--hairline) bg-surface p-4 grid gap-3" onSubmit={submit}>
       <ComposerInput
         id="social-post-content"
         label={t('social.create.placeholder')}
@@ -218,4 +215,3 @@ export function CreatePost({ userId }: { userId: string }) {
     </form>
   );
 }
-
