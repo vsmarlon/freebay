@@ -4,6 +4,68 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { AuthSessionStateDatabaseRepository } from '@/shared/infra/prisma/auth-session-state-database.repository';
 import { AccountLifecycleDatabaseRepository } from './account-lifecycle-database.repository';
 
+describe('AccountLifecycleDatabaseRepository deletion blockers integration', () => {
+  let repository: AccountLifecycleDatabaseRepository;
+
+  beforeAll(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        AccountLifecycleDatabaseRepository,
+        { provide: PrismaService, useValue: prisma },
+        { provide: AuthSessionStateDatabaseRepository, useValue: {} },
+      ],
+    }).compile();
+    repository = module.get(AccountLifecycleDatabaseRepository);
+  });
+
+  async function seedClosedOrderWithDispute(status: 'ESCALATED' | 'RESOLVED') {
+    const suffix = `${Date.now()}-${Math.random()}`;
+    const buyer = await prisma.user.create({ data: { email: `blockers-buyer-${suffix}@example.test`, displayName: 'Blockers buyer' } });
+    const seller = await prisma.user.create({ data: { email: `blockers-seller-${suffix}@example.test`, displayName: 'Blockers seller' } });
+    const product = await prisma.product.create({ data: {
+      sellerId: seller.id, title: 'Blockers listing', description: 'Dispute blocker seed', price: 12500, condition: 'USED',
+    } });
+    const order = await prisma.order.create({ data: {
+      buyerId: buyer.id, sellerId: seller.id, productId: product.id, quantity: 1, amount: 12500, platformFee: 1250, sellerAmount: 11250,
+      status: 'CANCELLED', escrowStatus: 'REFUNDED', cancellationReason: 'refunded while dispute escalated',
+    } });
+    const dispute = await prisma.dispute.create({ data: {
+      orderId: order.id, openedById: buyer.id, reason: 'synthetic blocker dispute', status,
+      expiresAt: new Date('2027-01-01T00:00:00.000Z'),
+      ...(status === 'RESOLVED' ? { resolvedAt: new Date('2026-06-01T00:00:00.000Z') } : {}),
+    } });
+    return { buyer, seller, order, dispute };
+  }
+
+  it('blocks deletion on an ESCALATED dispute even when no open order masks it', async () => {
+    const { buyer } = await seedClosedOrderWithDispute('ESCALATED');
+
+    const blockers = await repository.findDeletionBlockers(buyer.id);
+
+    expect(blockers.isRight()).toBe(true);
+    if (blockers.isRight()) {
+      expect(blockers.value.openDisputes).toBe(1);
+      expect(blockers.value.openOrdersAsBuyer).toBe(0);
+      expect(blockers.value.openOrdersAsSeller).toBe(0);
+      expect(blockers.value.walletBalance).toBe(0);
+    }
+  });
+
+  it('does not block deletion for a resolved dispute on a closed order', async () => {
+    const { buyer } = await seedClosedOrderWithDispute('RESOLVED');
+
+    const blockers = await repository.findDeletionBlockers(buyer.id);
+
+    expect(blockers.isRight()).toBe(true);
+    if (blockers.isRight()) {
+      expect(blockers.value.openDisputes).toBe(0);
+      expect(blockers.value.openOrdersAsBuyer).toBe(0);
+      expect(blockers.value.openOrdersAsSeller).toBe(0);
+      expect(blockers.value.walletBalance).toBe(0);
+    }
+  });
+});
+
 describe('AccountLifecycleDatabaseRepository personal purge integration', () => {
   let repository: AccountLifecycleDatabaseRepository;
 

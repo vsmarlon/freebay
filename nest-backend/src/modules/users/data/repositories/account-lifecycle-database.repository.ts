@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { OrderStatus, DisputeStatus, Prisma } from '@prisma/client';
+import { OrderStatus, Prisma } from '@prisma/client';
+import { ACTIVE_DISPUTE_STATUSES } from '@/modules/disputes';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse } from '@/shared/core/either';
@@ -8,7 +9,6 @@ import { UserDataExportRepository } from './user-data-export.repository';
 import { AuthSessionStateDatabaseRepository } from '@/shared/infra/prisma/auth-session-state-database.repository';
 
 const OPEN_ORDER_STATUSES: OrderStatus[] = [OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.DISPUTED];
-const OPEN_DISPUTE_STATUSES: DisputeStatus[] = [DisputeStatus.OPEN, DisputeStatus.AWAITING_SELLER, DisputeStatus.AWAITING_BUYER];
 
 @Injectable()
 export class AccountLifecycleDatabaseRepository {
@@ -26,7 +26,7 @@ export class AccountLifecycleDatabaseRepository {
       const [openOrdersAsBuyer, openOrdersAsSeller, openDisputes, wallet] = await Promise.all([
         this.prisma.order.count({ where: { buyerId: userId, status: { in: OPEN_ORDER_STATUSES } } }),
         this.prisma.order.count({ where: { sellerId: userId, status: { in: OPEN_ORDER_STATUSES } } }),
-        this.prisma.dispute.count({ where: { status: { in: OPEN_DISPUTE_STATUSES }, order: { OR: [{ buyerId: userId }, { sellerId: userId }] } } }),
+        this.prisma.dispute.count({ where: { status: { in: [...ACTIVE_DISPUTE_STATUSES] }, order: { OR: [{ buyerId: userId }, { sellerId: userId }] } } }),
         this.prisma.wallet.findUnique({ where: { userId }, select: { availableBalance: true, pendingBalance: true } }),
       ]);
       return { openOrdersAsBuyer, openOrdersAsSeller, openDisputes, walletBalance: (wallet?.availableBalance ?? 0) + (wallet?.pendingBalance ?? 0) };
