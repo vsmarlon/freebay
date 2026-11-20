@@ -339,12 +339,6 @@ export interface SearchPostsQuery {
   cursor?: string;
 }
 
-export interface SavedPostsQuery {
-  userId: string;
-  limit?: number;
-  cursor?: string;
-}
-
 export interface SavedPostsCursor {
   scope: "saved-posts";
   userId: string;

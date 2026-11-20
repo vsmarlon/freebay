@@ -108,32 +108,6 @@ export async function paginateById<TRow extends { id: string }, TArgs extends ob
   return buildIdCursorPage(rows, page.limit);
 }
 
-interface OffsetArgs {
-  take: number;
-  skip: number;
-}
-
-/**
- * Offset pagination behind the same opaque-cursor envelope, for rankings and
- * scored windows where a keyset cursor cannot be derived from a row.
- */
-export async function paginateByOffset<TRow, TArgs extends object>(
-  findMany: (args: TArgs & OffsetArgs) => Promise<TRow[]>,
-  count: () => Promise<number>,
-  baseArgs: TArgs,
-  raw: { cursor?: string; limit?: number },
-): Promise<CursorPage<TRow>> {
-  const limit = clampLimit(raw.limit);
-  const offset = decodeOffsetCursor(raw.cursor);
-
-  const [items, total] = await Promise.all([
-    findMany({ ...baseArgs, take: limit, skip: offset } as TArgs & OffsetArgs),
-    count(),
-  ]);
-
-  return buildOffsetCursorPage(items, offset, limit, total);
-}
-
 export function mapPage<TIn, TOut>(
   page: CursorPage<TIn>,
   map: (item: TIn) => TOut,

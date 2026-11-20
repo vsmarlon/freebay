@@ -61,12 +61,6 @@ export class InvalidOrderStateError extends AppError {
   }
 }
 
-export class ValidationError extends AppError {
-  constructor(message: string) {
-    super('VALIDATION_ERROR', message, 400);
-  }
-}
-
 export class BadRequestError extends AppError {
   constructor(message = 'Requisição inválida') {
     super('BAD_REQUEST', message, 400);
@@ -145,12 +139,6 @@ export class InvalidTokenError extends AppError {
   }
 }
 
-export class SessionExpiredError extends AppError {
-  constructor(message = 'Sessão expirada. Faça login novamente.') {
-    super('SESSION_EXPIRED', message, 401);
-  }
-}
-
 export class InvalidGoogleTokenError extends AppError {
   constructor(message = 'Token Google inválido') {
     super('INVALID_GOOGLE_TOKEN', message, 401);
@@ -160,12 +148,6 @@ export class InvalidGoogleTokenError extends AppError {
 export class InvalidAppleTokenError extends AppError {
   constructor(message = 'Token Apple inválido ou expirado') {
     super('INVALID_APPLE_TOKEN', message, 401);
-  }
-}
-
-export class AppleEmailCollisionError extends AppError {
-  constructor() {
-    super('APPLE_EMAIL_COLLISION', 'Este e-mail já pertence a outra conta. Entre com esse método antes de vincular Apple.', 409);
   }
 }
 
@@ -228,12 +210,6 @@ export class PaymentProviderError extends AppError {
 export class ConflictError extends AppError {
   constructor(message = 'Conflito de dados') {
     super('CONFLICT', message, 409);
-  }
-}
-
-export class EmailDeliveryFailedError extends AppError {
-  constructor(message = 'Falha ao enviar e-mail') {
-    super('EMAIL_DELIVERY_FAILED', message, 500);
   }
 }
 

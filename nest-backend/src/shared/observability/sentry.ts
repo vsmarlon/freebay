@@ -20,10 +20,6 @@ export function initSentry(): void {
   logger.log('Sentry initialized');
 }
 
-export function isSentryEnabled(): boolean {
-  return initialized;
-}
-
 export function captureError(
   error: unknown,
   tags: Record<string, string | undefined>,

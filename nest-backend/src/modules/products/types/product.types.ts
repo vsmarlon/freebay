@@ -33,4 +33,3 @@ export interface FindManyParams {
 }
 
 export const EDITABLE_PRODUCT_STATUSES = [ProductStatus.ACTIVE, ProductStatus.PAUSED] as const;
-export type EditableProductStatus = (typeof EDITABLE_PRODUCT_STATUSES)[number];

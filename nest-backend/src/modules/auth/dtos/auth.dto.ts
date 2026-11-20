@@ -290,12 +290,6 @@ export class CompleteProfileDTO {
   readonly state?: string;
 }
 
-export class ForgotPasswordDTO {
-  @ApiProperty({ example: 'john@example.com' })
-  @IsEmail()
-  readonly email: string;
-}
-
 export class UsernameAvailabilityQueryDTO {
   @ApiProperty({ example: 'john_doe', minLength: 1, maxLength: 20 })
   @IsString()
