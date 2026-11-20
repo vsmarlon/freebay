@@ -4,7 +4,7 @@ import { useI18n } from '../../../core/locale';
 import { chatCatalogs } from '../catalogs';
 import { CHAT_REACTIONS, type ChatMessage } from '../model';
 import { useAudioRecorder } from '../hooks/use-audio-recorder';
-import { chatRepository } from '../repository';
+import { myProductsApi } from '../../marketplace/api';
 import { ImageAttachmentDialog } from './image-attachment-dialog';
 import { LocationDialog } from './location-dialog';
 import { ProductPickerDialog, type ProductCard } from './product-picker-dialog';
@@ -52,7 +52,15 @@ export function ThreadComposer(props: ComposerProps) {
 
   async function loadProducts() {
     try {
-      setProducts((await chatRepository.myProducts()).products);
+      const result = await myProductsApi.list();
+      setProducts(
+        result.products.map(({ id, title, price, images }) => ({
+          id,
+          title,
+          price,
+          imageUrl: images[0]?.url ?? null,
+        })),
+      );
     } catch {
       props.onError(t('chat.loadError'));
     }

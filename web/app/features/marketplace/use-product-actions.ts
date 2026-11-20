@@ -6,7 +6,7 @@ import { useLocale, useI18n } from '../../core/locale';
 import { paths, pathsFor } from '../../core/routes';
 import { userKey } from '../../core/query-client';
 import { useSession } from '../../core/session';
-import { productApi } from './api';
+import { favoritesApi, productApi } from './api';
 import { productInquiryDraftState } from './product-inquiry-draft';
 import { productKeys, useFavoriteState, useFollowState } from './queries';
 import type { ProductSummary } from './types';
@@ -46,7 +46,7 @@ export function useProductActions(product: ProductSummary) {
   function toggleFavorite() {
     if (!user) return requireLogin();
     return run(async () => {
-      await productApi.addFavorite(product.id);
+      await favoritesApi.add(product.id);
       await cache.invalidateQueries({ queryKey: productKeys.favorite(user.id, product.id) });
       await cache.invalidateQueries({ queryKey: userKey(user.id, 'favorites') });
     }, t('common.error'));
@@ -98,5 +98,3 @@ export function useProductActions(product: ProductSummary) {
     toggleFollow,
   };
 }
-
-export type ProductActionsState = ReturnType<typeof useProductActions>;
