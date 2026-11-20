@@ -134,7 +134,7 @@ test('admin resolves an escalated dispute in buyer favor and the order reflects 
   };
   await openProtectedRoute(page, state, `/en/admin`);
   await expect(page.getByRole('heading', { name: 'Câmera analógica' })).toBeVisible();
-  await expect(page.getByText('Escalated')).toBeVisible();
+  await expect(page.getByText('1 dispute(s)')).toBeVisible();
   await page.getByLabel('Decision note').fill('Refund the buyer per policy');
   await page.getByRole('button', { name: 'Confirm decision' }).click();
   await expect(page.getByText('Queue empty')).toBeVisible({ timeout: 10_000 });
@@ -157,7 +157,8 @@ test('wallet balances, provider status and dashboard step-up follow the server',
   await openProtectedRoute(page, state, '/en/wallet');
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
   await expect(page.getByText('Total balance')).toBeVisible();
-  await expect(page.getByText('$50.00')).toHaveCount(3);
+  await expect(page.getByText('$50.00')).toHaveCount(2);
+  await expect(page.getByText('$0.00')).toHaveCount(1);
   await expect(page.getByText('Provider status: Transfer ready')).toBeVisible();
   await expect(page.getByText('Ledger')).toBeVisible();
   // transfer-ready hides onboarding; the dashboard still needs step-up.

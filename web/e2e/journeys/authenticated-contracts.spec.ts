@@ -127,7 +127,7 @@ test('favorite and cart remain separate; cart quantity is stock bounded and chec
     '/en/payments/success?paymentGroupId=50000000-0000-4000-8000-000000000005&payment_status=success',
   );
   await expect(page.getByRole('heading', { name: 'Confirmation pending' })).toBeVisible();
-  await expect(page.getByText('Pending')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Câmera analógica.*Pending/ })).toBeVisible();
   expect(state.orderStatus).toBe('PENDING');
   expect(state.calls.filter((call) => call.path === `/favorites/${productId}`)).toHaveLength(1);
   expect(state.calls.filter((call) => call.path === `/cart/${productId}`)).toHaveLength(1);
