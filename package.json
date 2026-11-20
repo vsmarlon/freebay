@@ -7,7 +7,7 @@
   "scripts": {
     "prepare": "husky",
     "ci:check": "node scripts/ci-check.js",
-    "test:ci-scripts": "node --test scripts/ci-check.test.js scripts/perf-check.test.js scripts/dev.test.cjs scripts/readiness.test.cjs scripts/config.test.cjs",
+    "test:ci-scripts": "node --test scripts/ci-check.test.js scripts/perf-check.test.js scripts/dev.test.cjs scripts/readiness.test.cjs scripts/config.test.cjs .opencode/phase2-tools/loc.test.mjs",
     "config:validate": "node scripts/config.cjs validate --profile development",
     "config:generate": "node scripts/config.cjs generate --profile development --target all",
     "dev:profile": "node scripts/dev.cjs --mode profile",
