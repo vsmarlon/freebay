@@ -1,4 +1,4 @@
-import type { Page, Route } from '@playwright/test';
+import { expect, type Page, type Route } from '@playwright/test';
 import { createHash } from 'node:crypto';
 
 const productId = 'web-fixture-camera';
@@ -20,6 +20,7 @@ export type BrowserFixture = {
   }>;
   consumeCount: number;
   userId: string;
+  role: 'USER' | 'ADMIN';
   profile: {
     id: string;
     displayName: string;
@@ -59,7 +60,22 @@ export type BrowserFixture = {
   deletionStatus: number | null;
   closeFriendIds: Set<string>;
   starredIds: Set<string>;
-  orderStatus: 'PENDING' | null;
+  orderStatus:
+    | 'PENDING'
+    | 'CONFIRMED'
+    | 'SHIPPED'
+    | 'DELIVERED'
+    | 'DISPUTED'
+    | 'COMPLETED'
+    | 'CANCELLED'
+    | null;
+  orderEscrow: 'HELD' | 'RELEASED' | 'REFUNDED';
+  dispute: {
+    id: string;
+    status: 'OPEN' | 'AWAITING_SELLER' | 'AWAITING_BUYER' | 'ESCALATED' | 'RESOLVED' | 'CANCELLED';
+    reason: string;
+    buyerEvidence: string | null;
+  } | null;
   checkoutAmount: number | null;
   isArchived: boolean;
   reactionCount: number;
@@ -71,6 +87,7 @@ export function newBrowserFixture(): BrowserFixture {
     calls: [],
     consumeCount: 0,
     userId: userIds[0],
+    role: 'USER',
     profile: { id: userIds[0], displayName: 'Synthetic Buyer', username: null, avatarUrl: null },
     favorites: new Set(),
     cartQuantity: 0,
@@ -114,6 +131,8 @@ export function newBrowserFixture(): BrowserFixture {
     closeFriendIds: new Set([userIds[1]]),
     starredIds: new Set(),
     orderStatus: null,
+    orderEscrow: 'HELD',
+    dispute: null,
     checkoutAmount: null,
     isArchived: false,
     reactionCount: 0,
@@ -142,6 +161,72 @@ const product = {
   },
   images: [{ id: 'image-fixture', url: 'https://images.example.invalid/camera.jpg', order: 0 }],
 };
+const orderId = '60000000-0000-4000-8000-000000000006';
+const paymentGroupId = '50000000-0000-4000-8000-000000000005';
+const disputeId = 'a0000000-0000-4000-8000-00000000000a';
+type DisputeState = NonNullable<BrowserFixture['dispute']>;
+
+// Mirrors backend availableOrderActions for the synthetic buyer
+// (orders/domain/order-state.ts): a PAID transaction with a captured charge and
+// HELD escrow decides cancel/confirm/dispute eligibility; PENDING with an
+// in-flight payment group offers nothing.
+function buyerAllowedActions(state: BrowserFixture): string[] {
+  if (state.orderStatus === 'CONFIRMED') return ['CANCEL', 'CONFIRM_DELIVERY', 'OPEN_DISPUTE'];
+  if (state.orderStatus === 'SHIPPED') return ['CONFIRM_DELIVERY', 'OPEN_DISPUTE'];
+  if (state.orderStatus === 'DELIVERED')
+    return ['CONFIRM_DELIVERY', state.dispute ? 'REOPEN_DISPUTE' : 'OPEN_DISPUTE'];
+  if (state.orderStatus === 'DISPUTED') return ['VIEW_DISPUTE'];
+  return [];
+}
+
+function orderView(state: BrowserFixture) {
+  return {
+    id: orderId,
+    buyerId: state.userId,
+    sellerId: userIds[1],
+    productId,
+    amount: 12500,
+    platformFee: 0,
+    sellerAmount: 12500,
+    status: state.orderStatus,
+    escrowStatus: state.orderEscrow,
+    createdAt: '2026-10-07T10:00:00.000Z',
+    product: { title: product.title },
+    buyer: { id: state.userId, displayName: state.profile.displayName, avatarUrl: null },
+    seller: { id: userIds[1], displayName: product.seller.displayName, avatarUrl: null },
+    transaction: {
+      status: state.orderStatus === 'PENDING' ? 'PENDING' : 'PAID',
+      paymentGroupId,
+      chargeId: state.orderStatus === 'PENDING' ? null : 'ch_fixture_order',
+      externalId: null,
+    },
+    dispute: state.dispute ? { id: state.dispute.id, status: state.dispute.status } : null,
+  };
+}
+
+function disputeView(state: BrowserFixture, dispute: DisputeState) {
+  return {
+    id: dispute.id,
+    orderId,
+    openedById: state.userId,
+    reason: dispute.reason,
+    status: dispute.status,
+    resolution: null,
+    buyerEvidence: dispute.buyerEvidence,
+    sellerEvidence: null,
+    createdAt: '2026-10-07T11:00:00.000Z',
+    expiresAt: '2026-10-10T11:00:00.000Z',
+    resolvedAt: null,
+    order: {
+      buyerId: state.userId,
+      sellerId: userIds[1],
+      buyer: { displayName: state.profile.displayName },
+      seller: { displayName: product.seller.displayName },
+      product: { title: product.title },
+    },
+  };
+}
+
 const envelope = (data: unknown) => ({ data });
 const send = (route: Route, data: unknown, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(envelope(data)) });
@@ -185,6 +270,12 @@ export async function installBrowserFixture(page: Page, state = newBrowserFixtur
       !path.startsWith('/categories') &&
       !path.startsWith('/favorites') &&
       !path.startsWith('/cart') &&
+      !path.startsWith('/orders') &&
+      !path.startsWith('/reviews') &&
+      !path.startsWith('/payments') &&
+      !path.startsWith('/wallet') &&
+      !path.startsWith('/disputes') &&
+      !path.startsWith('/admin') &&
       !path.startsWith('/social') &&
       !path.startsWith('/stories') &&
       !path.startsWith('/chat') &&
@@ -243,7 +334,7 @@ export async function installBrowserFixture(page: Page, state = newBrowserFixtur
     }
     if (path === '/users/me' && method === 'GET')
       return state.userId
-        ? send(route, { ...state.profile, id: state.userId })
+        ? send(route, { ...state.profile, id: state.userId, role: state.role })
         : send(route, { message: 'Unauthorized' }, 401);
     if (path === '/users/me/stats' && method === 'GET')
       return send(route, { followersCount: 2, followingCount: 1, postsCount: 1, productsCount: 0 });
@@ -360,12 +451,13 @@ export async function installBrowserFixture(page: Page, state = newBrowserFixtur
     if (path === '/cart/checkout/recovery' && method === 'GET') return send(route, null);
     if (path === '/cart/checkout' && method === 'POST') {
       state.orderStatus = 'PENDING';
+      state.orderEscrow = 'HELD';
       state.checkoutAmount = 12500;
       return send(route, {
-        paymentGroupId: '50000000-0000-4000-8000-000000000005',
+        paymentGroupId,
         items: [
           {
-            orderId: '60000000-0000-4000-8000-000000000006',
+            orderId,
             productId,
             productTitle: product.title,
             quantity: state.cartQuantity,
@@ -380,27 +472,123 @@ export async function installBrowserFixture(page: Page, state = newBrowserFixtur
     }
     if (path === '/orders/my/purchases' && method === 'GET')
       return send(route, {
-        items: state.orderStatus
-          ? [
-              {
-                id: '60000000-0000-4000-8000-000000000006',
-                buyerId: state.userId,
-                sellerId: userIds[1],
-                productId,
-                paymentGroupId: '50000000-0000-4000-8000-000000000005',
-                amount: 12500,
-                platformFee: 0,
-                sellerAmount: 12500,
-                status: state.orderStatus,
-                escrowStatus: 'PENDING',
-                createdAt: '2026-10-07T10:00:00.000Z',
-                product: { title: product.title },
-              },
-            ]
-          : [],
+        items: state.orderStatus ? [orderView(state)] : [],
         hasMore: false,
         nextCursor: null,
       });
+    if (path === '/orders/my/sales' && method === 'GET')
+      return send(route, { items: [], hasMore: false, nextCursor: null });
+    if (path === `/orders/${orderId}` && method === 'GET') {
+      if (!state.orderStatus) return send(route, { message: 'Not found' }, 404);
+      return send(route, { order: orderView(state), allowedActions: buyerAllowedActions(state) });
+    }
+    if (path === `/orders/${orderId}/ship` && method === 'PATCH') {
+      state.orderStatus = 'SHIPPED';
+      return send(route, { order: orderView(state) });
+    }
+    if (path === `/orders/${orderId}/deliver` && method === 'PATCH') {
+      state.orderStatus = 'DELIVERED';
+      return send(route, { order: orderView(state) });
+    }
+    if (path === `/orders/${orderId}/confirm` && method === 'PATCH') {
+      state.orderStatus = 'COMPLETED';
+      state.orderEscrow = 'RELEASED';
+      return send(route, { order: orderView(state) });
+    }
+    if (path === `/orders/${orderId}/cancel` && method === 'PATCH') {
+      state.orderStatus = 'CANCELLED';
+      return send(route, { order: orderView(state) });
+    }
+    if (path === `/payments/checkout/${orderId}` && method === 'POST')
+      return send(route, { checkoutUrl: 'https://checkout.stripe.com/c/pay/synthetic' });
+    if (path === '/disputes' && method === 'POST') {
+      const input = body as { orderId: string; reason: string };
+      if (state.dispute) {
+        state.dispute.status = 'OPEN';
+        state.dispute.reason = input.reason;
+      } else
+        state.dispute = {
+          id: disputeId,
+          status: 'OPEN',
+          reason: input.reason,
+          buyerEvidence: null,
+        };
+      state.orderStatus = 'DISPUTED';
+      return send(route, { id: state.dispute.id });
+    }
+    if (path === '/disputes' && method === 'GET')
+      return send(route, { disputes: state.dispute ? [disputeView(state, state.dispute)] : [] });
+    if (path === `/disputes/${disputeId}` && method === 'GET') {
+      if (!state.dispute) return send(route, { message: 'Not found' }, 404);
+      return send(route, { dispute: disputeView(state, state.dispute) });
+    }
+    if (path === `/disputes/${disputeId}/evidence` && method === 'POST') {
+      const input = body as { evidence: string };
+      if (state.dispute) {
+        state.dispute.status = 'AWAITING_SELLER';
+        state.dispute.buyerEvidence = input.evidence;
+      }
+      return send(route, { ok: true });
+    }
+    if (path === `/disputes/${disputeId}/withdraw` && method === 'PATCH') {
+      if (state.dispute) {
+        state.dispute.status = 'CANCELLED';
+        state.orderStatus = 'DELIVERED';
+      }
+      return send(route, { ok: true });
+    }
+    if (path === `/disputes/${disputeId}/resolve` && method === 'PATCH') {
+      const input = body as { resolution: string; winner: 'BUYER' | 'SELLER' };
+      if (state.dispute) {
+        state.dispute.status = 'RESOLVED';
+        if (input.winner === 'BUYER') {
+          state.orderStatus = 'CANCELLED';
+          state.orderEscrow = 'REFUNDED';
+        } else {
+          state.orderStatus = 'COMPLETED';
+          state.orderEscrow = 'RELEASED';
+        }
+      }
+      return send(route, { ok: true });
+    }
+    if (path === '/admin/disputes' && method === 'GET') {
+      if (!state.dispute) return send(route, { disputes: [] });
+      const status = url.searchParams.get('status');
+      const matches = !status || status === 'ALL' || state.dispute.status === status;
+      if (!matches) return send(route, { disputes: [] });
+      return send(route, {
+        disputes: [
+          {
+            ...disputeView(state, state.dispute),
+            winner: null,
+            resolution: null,
+            order: {
+              id: orderId,
+              buyerId: state.userId,
+              sellerId: userIds[1],
+              amount: 12500,
+              status: state.orderStatus ?? 'DISPUTED',
+              buyer: { id: state.userId, displayName: state.profile.displayName },
+              seller: { id: userIds[1], displayName: product.seller.displayName },
+              product: { title: product.title, imageUrl: null },
+            },
+            openedBy: { id: state.userId, displayName: state.profile.displayName },
+          },
+        ],
+      });
+    }
+    if (path === '/wallet' && method === 'GET')
+      return send(route, { balance: 5000, pendingBalance: 0, availableBalance: 5000 });
+    if (path === '/wallet/transactions' && method === 'GET')
+      return send(route, { items: [], hasMore: false, nextCursor: null });
+    if (path === '/payments/connect/status' && method === 'GET')
+      return send(route, { status: 'transfer-ready', requirementsDue: [] });
+    if (path === '/payments/connect/onboarding' && method === 'POST')
+      return send(route, { onboardingUrl: 'https://connect.stripe.com/synthetic-onboarding' });
+    if (path === '/payments/connect/dashboard' && method === 'POST')
+      return send(route, { dashboardUrl: 'https://dashboard.stripe.com/synthetic' });
+    if (path === `/reviews/orders/${orderId}/can-review` && method === 'GET')
+      return send(route, { canReview: false, reason: 'ORDER_NOT_COMPLETED' });
     if (path === '/social/feed' && method === 'GET')
       return send(route, {
         posts: [
@@ -820,4 +1008,39 @@ export async function installBrowserFixture(page: Page, state = newBrowserFixtur
   return state;
 }
 
-export { productId, userIds };
+export { disputeId, orderId, productId, userIds };
+
+export async function finishWelcome(page: Page) {
+  await page.getByRole('button', { name: 'Skip' }).click();
+}
+
+export async function waitForHydration(page: Page) {
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(1000);
+}
+
+export async function openProtectedRoute(page: Page, state: BrowserFixture, path: string) {
+  state.profile.username = 'buyer_01';
+  const targetPath = new URL(path, 'http://localhost').pathname;
+  await page.addInitScript((userId) => {
+    localStorage.setItem(`freebay.welcome.seen.${encodeURIComponent(userId)}`, 'true');
+  }, state.userId);
+  await page.goto(path);
+  await waitForHydration(page);
+  const skip = page.getByRole('button', { name: 'Skip' });
+  await expect
+    .poll(
+      async () => {
+        if (new URL(page.url()).pathname === targetPath) return 'target';
+        if (await skip.isVisible().catch(() => false)) return 'welcome';
+        return 'pending';
+      },
+      { timeout: 10_000 },
+    )
+    .toMatch(/target|welcome/);
+  if (await skip.isVisible().catch(() => false)) {
+    await finishWelcome(page);
+  }
+  await expect.poll(() => new URL(page.url()).pathname, { timeout: 15_000 }).toBe(targetPath);
+  await expect(page).toHaveURL((url) => url.pathname === targetPath);
+}

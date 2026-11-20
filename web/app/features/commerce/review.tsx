@@ -158,6 +158,7 @@ function ReviewContent() {
               </Link>
             )}
             <Button
+              type="submit"
               disabled={
                 submit.isPending || submit.isError || upload.isPending || imageIds.length > 5
               }

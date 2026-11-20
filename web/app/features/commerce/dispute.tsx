@@ -150,6 +150,7 @@ function DisputeContent() {
               onChange={(event) => setEvidence(event.currentTarget.value)}
             />
             <Button
+              type="submit"
               pending={evidenceMutation.isPending}
               disabled={reconcileNeeded || !evidence.trim()}
             >
