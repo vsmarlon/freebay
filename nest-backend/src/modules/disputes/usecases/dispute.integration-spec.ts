@@ -496,7 +496,7 @@ describe('Disputes Effect Integration', () => {
   });
 
   describe('DisputeCleanupTask — auto-expiry', () => {
-    it('keeps expired dispute and escrow held for manual review on repeated cleanup runs', async () => {
+    it('escalates an expired dispute to the admin queue on repeated cleanup runs without touching escrow or wallets', async () => {
       const buyer = await userFactory.createWithWallet({}, { availableBalance: 5000 });
       const seller = await userFactory.createWithWallet({}, { pendingBalance: 9000, availableBalance: 2000 });
       const product = await productFactory.create(seller.id, { price: 10000 });
@@ -522,7 +522,7 @@ describe('Disputes Effect Integration', () => {
         where: { orderId: order.id },
         orderBy: { createdAt: 'desc' },
       });
-      expect(dbDispute?.status).toBe('OPEN');
+      expect(dbDispute?.status).toBe('ESCALATED');
       expect(dbDispute?.resolution).toBeNull();
 
       const dbOrder = await prisma.order.findUnique({ where: { id: order.id } });
