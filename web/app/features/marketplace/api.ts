@@ -49,7 +49,6 @@ export const productApi = {
     api.get<SellerProfile>(`/users/${sellerId}`, { auth: false, signal }),
   reviews: (sellerId: string, signal?: AbortSignal) =>
     api.get<ReviewList>(`/reviews/users/${sellerId}?limit=5`, { auth: false, signal }),
-  addFavorite: (productId: string) => api.post(`/favorites/${productId}`),
   addToCart: (productId: string, quantity: number) => api.post(`/cart/${productId}`, { quantity }),
   contactSeller: (input: { targetUserId: string; productId: string }) =>
     api.post<Conversation>('/chat/conversations', input),

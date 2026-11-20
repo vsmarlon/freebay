@@ -1,9 +1,8 @@
-import { useState, type FormEvent, type PropsWithChildren } from 'react';
-import { Link, useLocation, useParams } from 'react-router';
-import { ApiError } from '../../core/api';
+import { type PropsWithChildren } from 'react';
+import { Link } from 'react-router';
 import { paths, pathsFor } from '../../core/routes';
 import { useI18n, type Catalogs } from '../../core/locale';
-import { RequireAuth, useSession } from '../../core/session';
+import { RequireAuth } from '../../core/session';
 import enCatalog from './catalogs/en.json';
 import ptBR from './catalogs/pt-BR.json';
 
@@ -85,13 +84,6 @@ export function Panel({ children }: PropsWithChildren) {
     </section>
   );
 }
-export function ErrorText({ error }: { error: unknown }) {
-  return (
-    <p role="alert" className="text-danger">
-      {error instanceof ApiError ? error.message : 'Request failed.'}
-    </p>
-  );
-}
 export function PersonLink({ user }: { user: User }) {
   const { path } = useAccountText();
   return (
@@ -118,30 +110,4 @@ export function PersonCard({ user, action }: { user: User; action?: React.ReactN
       {action}
     </div>
   );
-}
-export function useFormSubmit(run: () => Promise<void>) {
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState(false);
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    setPending(true);
-    setError(false);
-    try {
-      await run();
-    } catch {
-      setError(true);
-    } finally {
-      setPending(false);
-    }
-  };
-  return { submit, pending, error };
-}
-export function useCurrentUser() {
-  return useSession();
-}
-export function useAccountParams() {
-  return useParams();
-}
-export function useAccountLocation() {
-  return useLocation();
 }

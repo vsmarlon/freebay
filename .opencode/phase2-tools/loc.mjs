@@ -1,202 +1,173 @@
 #!/usr/bin/env node
-// Phase 2 LOC baseline/delta tool.
-// Requested by the mission as `loc.py`; implemented as Node because no Python
-// runtime exists on this machine. Same CLI contract: --base <SHA> --json.
-// Counts handwritten TypeScript under nest-backend/src; no tests, no generated.
-import { readdir, readFile } from 'node:fs/promises';
+// Counts handwritten production source in the two supported FreeBay scopes.
+// "code" is nonblank lines (including comments), not parsed executable statements.
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-function parseArgs(argv) {
-  const out = {};
-  for (let i = 2; i < argv.length; i++) {
-    const key = argv[i].replace(/^--/, '');
-    const next = argv[i + 1];
-    if (next === undefined || next.startsWith('--')) out[key] = true;
-    else {
-      out[key] = next;
-      i += 1;
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const SCOPES = new Set(['nest-backend/src', 'web/app']);
+
+export function countText(text) {
+  if (!text) return { physical: 0, code: 0 };
+  const lines = text.split(/\r\n|\n|\r/);
+  if (/(?:\r\n|\n|\r)$/.test(text)) lines.pop();
+  return { physical: lines.length, code: lines.filter((line) => line.trim().length > 0).length };
+}
+
+export function isCounted(relativePath, scope) {
+  const name = relativePath.replaceAll('\\', '/');
+  if (scope === 'web/app') return /\.tsx?$/.test(name) && !/\.(?:test|spec)\.tsx?$/.test(name);
+  if (scope === 'nest-backend/src') {
+    return /\.ts$/.test(name)
+      && !/\.(?:spec|integration-spec|smoke-spec|e2e-spec)\.ts$/.test(name)
+      && !name.split('/').includes('test');
+  }
+  throw new Error(`Unsupported scope: ${scope}`);
+}
+
+function options(argv) {
+  const args = { scope: 'nest-backend/src' };
+  for (let i = 0; i < argv.length; i++) {
+    const flag = argv[i];
+    if (flag === '--json') continue; // Output is JSON by default (legacy CLI compatibility).
+    if (!['--scope', '--base', '--out'].includes(flag)) throw new Error(`Unknown option: ${flag}`);
+    const value = argv[++i];
+    if (!value || value.startsWith('--')) throw new Error(`${flag} requires a value`);
+    args[flag.slice(2)] = value;
+  }
+  if (!SCOPES.has(args.scope)) throw new Error(`Unsupported scope: ${args.scope}`);
+  return args;
+}
+
+function git(args, input = '') {
+  return new Promise((resolve, reject) => {
+    const child = spawn('git', args, { cwd: ROOT, windowsHide: true, stdio: [input ? 'pipe' : 'ignore', 'pipe', 'pipe'] });
+    const chunks = [];
+    let errorOutput = '';
+    child.stdout.on('data', (chunk) => chunks.push(chunk));
+    child.stderr.on('data', (chunk) => { errorOutput += chunk.toString('utf8'); });
+    child.on('error', reject);
+    child.on('close', (code) => code === 0
+      ? resolve(Buffer.concat(chunks))
+      : reject(new Error(`git ${args[0]} failed (${code}): ${errorOutput.trim()}`)));
+    if (input) child.stdin.on('error', reject).end(input);
+  });
+}
+
+function summarize(counts) {
+  const total = { files: 0, physical: 0, code: 0 };
+  const byArea = {};
+  for (const [rel, value] of Object.entries(counts)) {
+    const parts = rel.split('/');
+    const area = parts[0] === 'modules' && parts.length > 1 ? `modules/${parts[1]}` : parts.length > 1 ? parts[0] : '(root)';
+    const group = (byArea[area] ??= { files: 0, physical: 0, code: 0 });
+    for (const target of [total, group]) {
+      target.files++;
+      target.physical += value.physical;
+      target.code += value.code;
     }
   }
-  return out;
+  return { ...total, byArea };
 }
 
-const args = parseArgs(process.argv);
-const ROOT = new URL('../../', import.meta.url).pathname
-  .replace(/^\/([A-Za-z]:)/, '$1')
-  .replace(/\//g, '\\');
-const SCOPE = args.scope ?? 'nest-backend/src';
-const WEB_RE = /\.tsx?$/;
-const WEB_TEST_RE = /\.test\.tsx?$/;
-const TS_RE = /\.ts$/;
-const TEST_RE = /\.(spec|integration-spec|smoke-spec|e2e-spec)\.ts$/;
-const isWebScope = SCOPE.startsWith('web/');
-
-function isCounted(relPath) {
-  if (isWebScope) return WEB_RE.test(relPath) && !WEB_TEST_RE.test(relPath);
-  return TS_RE.test(relPath) && !TEST_RE.test(relPath) && !relPath.includes('\\test\\');
-}
-
-function count(text) {
-  const lines = text.split(/\r\n|\n|\r/);
-  return { physical: lines.length, code: lines.filter((l) => l.trim().length > 0).length };
-}
-
-function areaOf(relPath) {
-  const parts = relPath.split('\\');
-  if (parts[0] === 'modules' && parts.length > 1) return `modules/${parts[1]}`;
-  return parts.length > 1 ? parts[0] : '(root)';
-}
-
-async function walk(dir) {
-  const out = [];
-  for (const entry of await readdir(dir, { withFileTypes: true })) {
-    const full = `${dir}\\${entry.name}`;
-    if (entry.isDirectory()) out.push(...(await walk(full)));
-    else out.push(full);
-  }
-  return out;
-}
-
-async function countWorkingTree() {
-  const files = (await walk(`${ROOT}${SCOPE}`)).map((f) => f.slice(ROOT.length + SCOPE.length + 1));
+async function countWorkingTree(scope) {
   const counts = {};
-  const byArea = {};
-  for (const rel of files.filter(isCounted)) {
-    const text = await readFile(`${ROOT}${SCOPE}\\${rel}`, 'utf8');
-    const c = count(text);
-    counts[rel] = c;
-    const a = areaOf(rel);
-    byArea[a] ??= { files: 0, physical: 0, code: 0 };
-    byArea[a].files += 1;
-    byArea[a].physical += c.physical;
-    byArea[a].code += c.code;
-  }
-  return { counts, byArea };
-}
-
-function git(args) {
-  return new Promise((resolve, reject) => {
-    const p = spawn('git', args, { cwd: ROOT, windowsHide: true });
-    let out = Buffer.alloc(0);
-    p.stdout.on('data', (d) => (out = Buffer.concat([out, d])));
-    p.stderr.on('data', (d) => process.stderr.write(d));
-    p.on('error', reject);
-    p.on('close', (code) => (code === 0 ? resolve(out) : reject(new Error(`git ${args.join(' ')} exited ${code}`))));
-  });
-}
-
-// One `git cat-file --batch` process for every file at the base revision.
-async function countAtRevision(sha) {
-  const listRaw = await git(['ls-tree', '-r', '--name-only', '-z', sha, '--', SCOPE]);
-  const paths = listRaw.toString('utf8').split('\0').filter((p) => p.length > 0 && isCounted(p.replaceAll('/', '\\')));
-  const child = spawn('git', ['cat-file', '--batch'], { cwd: ROOT, windowsHide: true });
-  const counts = {};
-  const byArea = {};
-  let buf = Buffer.alloc(0);
-  let pending = null; // { rel, size, got, chunks }
-  const done = new Promise((resolve, reject) => {
-    child.stdout.on('data', (chunk) => {
-      buf = Buffer.concat([buf, chunk]);
-      for (;;) {
-        if (!pending) {
-          const nl = buf.indexOf(0x0a);
-          if (nl < 0) break;
-          const header = buf.subarray(0, nl).toString('utf8');
-          buf = buf.subarray(nl + 1);
-          const parts = header.split(' ');
-          if (parts.length < 3) {
-            // A "<request> missing" response carries no content but does consume
-            // a queue entry; an empty line is just the blob-content separator.
-            if (header.length > 0) queue.shift();
-            continue;
-          }
-          const [, , sizeRaw] = parts;
-          const next = queue.shift();
-          if (next === undefined) break;
-          pending = { rel: next.rel, size: Number(sizeRaw), got: 0, chunks: [] };
-        }
-        if (buf.length === 0) break;
-        const need = pending.size - pending.got;
-        const take = buf.subarray(0, need);
-        pending.chunks.push(take);
-        pending.got += take.length;
-        buf = buf.subarray(take.length);
-        if (pending.got === pending.size) {
-          const text = Buffer.concat(pending.chunks).toString('utf8');
-          const c = count(text);
-          counts[pending.rel] = c;
-          const a = areaOf(pending.rel);
-          byArea[a] ??= { files: 0, physical: 0, code: 0 };
-          byArea[a].files += 1;
-          byArea[a].physical += c.physical;
-          byArea[a].code += c.code;
-          pending = null;
-          if (queue.length === 0 && closedStdin) child.stdin.end();
-        }
+  const sourceRoot = path.join(ROOT, ...scope.split('/'));
+  async function visit(directory, relative = '') {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const nextPath = path.join(directory, entry.name);
+      const nextRelative = relative ? `${relative}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) await visit(nextPath, nextRelative);
+      else if (entry.isFile() && isCounted(nextRelative, scope)) {
+        counts[nextRelative] = countText(await readFile(nextPath, 'utf8'));
       }
-    });
-    child.on('error', reject);
-    child.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`cat-file exited ${code}`))));
-  });
-  const queue = paths.map((p) => ({ request: `${sha}:${p}`, rel: p.slice(SCOPE.length + 1).replaceAll('/', '\\') }));
-  for (const { request } of queue) child.stdin.write(`${request}\n`);
-  closedStdin = true;
-  if (queue.length === 0) child.stdin.end();
-  await done;
-  return { counts, byArea };
+    }
+  }
+  await visit(sourceRoot);
+  return counts;
 }
 
-let closedStdin = false;
+async function countAtRevision(revision, scope) {
+  const tree = (await git(['ls-tree', '-r', '-z', revision, '--', scope])).toString('utf8');
+  const entries = tree.split('\0').filter(Boolean).map((line) => {
+    const tab = line.indexOf('\t');
+    if (tab < 0) throw new Error('Unexpected git ls-tree entry');
+    const [mode, type, sha] = line.slice(0, tab).split(' ');
+    const filename = line.slice(tab + 1);
+    return { mode, type, sha, filename, rel: filename.slice(scope.length + 1) };
+  }).filter(({ type, filename, rel }) => type === 'blob' && filename.startsWith(`${scope}/`) && isCounted(rel, scope));
+  if (!entries.length) return {};
 
-function aggregate(counts) {
-  let files = 0;
-  let physical = 0;
-  let code = 0;
-  for (const c of Object.values(counts)) {
-    files += 1;
-    physical += c.physical;
-    code += c.code;
+  // One batch fetch for every blob. Parse byte lengths, never newline-delimit blob bodies.
+  const output = await git(['cat-file', '--batch'], `${entries.map(({ sha }) => sha).join('\n')}\n`);
+  let offset = 0;
+  const counts = {};
+  for (const entry of entries) {
+    const newline = output.indexOf(10, offset);
+    if (newline === -1) throw new Error('Incomplete git cat-file header');
+    const header = output.subarray(offset, newline).toString('ascii');
+    const match = /^[a-f0-9]{40,64} blob (\d+)$/.exec(header);
+    if (!match) throw new Error(`Unexpected git cat-file header: ${header}`);
+    const end = newline + 1 + Number(match[1]);
+    if (end >= output.length || output[end] !== 10) throw new Error('Truncated git cat-file blob');
+    counts[entry.rel] = countText(output.subarray(newline + 1, end).toString('utf8'));
+    offset = end + 1;
   }
-  return { files, physical, code };
+  return counts;
 }
 
-const current = await countWorkingTree();
-const result = {
-  scope: SCOPE,
-  exclusions: isWebScope
-    ? 'test-suffixed *.ts[x] (*.test.ts, *.test.tsx)'
-    : 'test-suffixed *.ts (*.spec.ts, *.integration-spec.ts, *.smoke-spec.ts, *.e2e-spec.ts), src\\test\\',
-  current: { ...aggregate(current.counts), byArea: current.byArea },
-};
-if (args.base) {
-  const base = await countAtRevision(args.base);
-  const curAgg = aggregate(current.counts);
-  const baseAgg = aggregate(base.counts);
-  const areas = new Set([...Object.keys(base.byArea), ...Object.keys(current.byArea)]);
-  const byAreaDelta = {};
-  for (const a of areas) {
-    const b = base.byArea[a] ?? { files: 0, physical: 0, code: 0 };
-    const c = current.byArea[a] ?? { files: 0, physical: 0, code: 0 };
-    byAreaDelta[a] = { files: c.files - b.files, physical: c.physical - b.physical, code: c.code - b.code };
-  }
-  const changed = [];
-  for (const p of new Set([...Object.keys(base.counts), ...Object.keys(current.counts)])) {
-    const b = base.counts[p];
-    const c = current.counts[p];
-    if (b === undefined) changed.push({ path: p, status: 'added', physical: c.physical, code: c.code });
-    else if (c === undefined) changed.push({ path: p, status: 'removed', physical: -b.physical, code: -b.code });
-    else if (b.physical !== c.physical || b.code !== c.code)
-      changed.push({ path: p, status: 'modified', physical: c.physical - b.physical, code: c.code - b.code });
-  }
-  result.base = { sha: args.base, ...baseAgg, byArea: base.byArea };
-  result.delta = {
-    files: curAgg.files - baseAgg.files,
-    physical: curAgg.physical - baseAgg.physical,
-    code: curAgg.code - baseAgg.code,
-    byArea: byAreaDelta,
-    changedFiles: changed.sort((a, b) => a.path.localeCompare(b.path)),
+async function main() {
+  const args = options(process.argv.slice(2));
+  const currentCounts = await countWorkingTree(args.scope);
+  const current = summarize(currentCounts);
+  const result = {
+    scope: args.scope,
+    exclusions: args.scope === 'web/app'
+      ? 'test/spec-suffixed *.ts[x]'
+      : 'spec/integration-spec/smoke-spec/e2e-spec-suffixed *.ts and src/test/',
+    current,
   };
+  if (args.base) {
+    const baseCounts = await countAtRevision(args.base, args.scope);
+    const base = summarize(baseCounts);
+    const byArea = {};
+    for (const area of new Set([...Object.keys(base.byArea), ...Object.keys(current.byArea)])) {
+      const before = base.byArea[area] ?? { files: 0, physical: 0, code: 0 };
+      const after = current.byArea[area] ?? { files: 0, physical: 0, code: 0 };
+      byArea[area] = {
+        files: after.files - before.files,
+        physical: after.physical - before.physical,
+        code: after.code - before.code,
+      };
+    }
+    const changedFiles = [];
+    for (const name of new Set([...Object.keys(baseCounts), ...Object.keys(currentCounts)])) {
+      const before = baseCounts[name];
+      const after = currentCounts[name];
+      if (before?.physical === after?.physical && before?.code === after?.code) continue;
+      changedFiles.push({
+        path: name,
+        status: before === undefined ? 'added' : after === undefined ? 'removed' : 'modified',
+        physical: (after?.physical ?? 0) - (before?.physical ?? 0),
+        code: (after?.code ?? 0) - (before?.code ?? 0),
+      });
+    }
+    result.base = { sha: args.base, ...base };
+    result.delta = {
+      files: current.files - base.files,
+      physical: current.physical - base.physical,
+      code: current.code - base.code,
+      byArea,
+      changedFiles: changedFiles.sort((a, b) => a.path.localeCompare(b.path)),
+    };
+  }
+  const json = `${JSON.stringify(result, null, 2)}\n`;
+  if (args.out) await writeFile(args.out, json, 'utf8');
+  else process.stdout.write(json);
 }
-const json = `${JSON.stringify(result, null, 2)}\n`;
-if (args.out) await (await import('node:fs/promises')).writeFile(args.out, json, 'utf8');
-else process.stdout.write(json);
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => { console.error(error.message); process.exitCode = 1; });
+}

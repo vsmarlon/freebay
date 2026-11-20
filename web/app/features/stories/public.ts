@@ -1,1 +1,0 @@
-export { ProfileHighlights } from './index';

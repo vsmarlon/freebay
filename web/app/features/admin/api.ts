@@ -47,6 +47,3 @@ export const isActiveDispute = (status: DisputeStatus) =>
   status === 'AWAITING_SELLER' ||
   status === 'AWAITING_BUYER' ||
   status === 'ESCALATED';
-
-export const money = (cents: number, locale: string) =>
-  new Intl.NumberFormat(locale, { style: 'currency', currency: 'BRL' }).format(cents / 100);
