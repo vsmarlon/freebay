@@ -1,5 +1,6 @@
-import { IsString, IsNotEmpty, IsUUID, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, MaxLength, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { PushTestType } from '../types/push-delivery.types';
 
 export class RegisterFcmTokenDTO {
   @ApiProperty({ example: 'fcm-token-abc123' })
@@ -11,6 +12,31 @@ export class RegisterFcmTokenDTO {
   @ApiProperty({ description: 'Stable UUID of this app installation' })
   @IsUUID('4')
   readonly installationId: string;
+}
+
+export class PushTestDTO {
+  @ApiProperty({ required: false, example: 'Teste de push do FreeBay' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(120)
+  readonly title?: string;
+
+  @ApiProperty({ required: false, example: 'Se você recebeu isto, o envio push está funcionando.' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(240)
+  readonly body?: string;
+
+  @ApiProperty({
+    required: false,
+    enum: PushTestType,
+    description: 'Exercises the matching push preference; omitted sends without a category',
+  })
+  @IsOptional()
+  @IsEnum(PushTestType)
+  readonly type?: PushTestType;
 }
 
 export class NotificationResponse {

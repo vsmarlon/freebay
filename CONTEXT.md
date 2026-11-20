@@ -75,3 +75,7 @@ _Avoid_: Confirmed user, validated user
 **Offer**:
 A price proposal attached to a product conversation that the seller can accept or decline, producing a negotiated price for that buyer.
 _Avoid_: Discount, coupon
+
+**Push test**:
+A diagnostic push a signed-in account requests to its own registered devices to check the push path; it reports whether the provider accepted the message, never that a device displayed it.
+_Avoid_: Push blast, notification spam
