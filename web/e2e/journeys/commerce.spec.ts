@@ -166,8 +166,10 @@ test('wallet balances, provider status and dashboard step-up follow the server',
   await page.getByRole('button', { name: 'Open provider dashboard' }).click();
   await page.getByRole('textbox', { name: 'Password', exact: true }).fill('Synthetic-password-123');
   await page.getByRole('button', { name: 'Verify and continue' }).click();
+  await expect
+    .poll(() => state.calls.find((call) => call.path === '/payments/connect/dashboard')?.hasStepUp)
+    .toBe(true);
   const dashboard = state.calls.find((call) => call.path === '/payments/connect/dashboard');
-  await expect.poll(() => dashboard?.hasStepUp).toBe(true);
   expect(dashboard).toMatchObject({ method: 'POST', hasBearer: true });
   expect(
     state.calls.find(
