@@ -1,0 +1,116 @@
+# FreeBay root configuration contract.
+#
+# WHAT THIS FILE IS: the single versioned declaration of NON-SECRET application
+# configuration and per-profile behavior for the backend (nest-backend/), the web
+# client (web/) and the Flutter app (frontend/). Profiles: development, test,
+# production. The consuming entry points stay framework-native: NestJS reads
+# ConfigModule + env, Vite/SSR reads .env + process env, Flutter consumes
+# generated --dart-define values. No app parses this YAML at runtime.
+#
+# WHAT THIS FILE IS NOT: no secrets live here. DATABASE_URL, JWT secrets, CPF
+# keys, Stripe secrets, Firebase private keys, SMTP credentials, OAuth secrets
+# and S3 keys are owned by the deployment environment. Browser and mobile
+# artifacts are public; never add secret values anywhere in this file.
+#
+# PRECEDENCE (the one deterministic rule, ADR 0010):
+#   1. `scripts/config.cjs generate` snapshots the selected profile into an
+#      ignored, idempotent artifact; the snapshot is immutable for the
+#      consuming build/run.
+#   2. Server runtime env may override only the documented deployment keys
+#      (URLs, port, credentials); every other generated value is authoritative.
+#   3. Selection must agree with runtime mode. NODE_ENV conflicting with the
+#      selected profile, or any mock mode under the production profile, fails
+#      validation — never a silent fallback. Production endpoints marked
+#      fromEnv: below MUST be supplied by the deployment environment; there are
+#      no localhost defaults to fall back to.
+#
+# CURRENT-BEHAVIOR NOTES (recorded in docs/config/ENV_INVENTORY.md):
+#   - Development email really speaks SMTP to an Ethereal disposable mailbox;
+#     it is real protocol delivery, not a synthesized receipt.
+#   - Blank Twilio credentials log the verification code to the server console
+#     OUTSIDE PRODUCTION ONLY; production refuses to boot without real SMS.
+#   - Push is Firebase FCM wherever FIREBASE_* credentials exist; absent
+#     credentials disable FCM (diagnostics report fcm_disabled).
+#   - Uploads are local-disk storage today; no S3 capability exists yet, so no
+#     profile claims one.
+#   - The web fixture network is only reachable through the explicit e2e
+#     command (web/e2e/fixture-backend.mjs on 127.0.0.1:3333); real network is
+#     the only runtime default and production rejects fixture mode.
+#   - Flutter release builds fail closed on http/localhost API_BASE_URL
+#     (frontend AppConfig.isAllowedApiBaseUrl).
+
+schemaVersion: 1
+
+profiles:
+  development:
+    backend:
+      port: 3000
+      allowedOrigins:
+        - http://localhost:3000
+        - http://localhost:5173
+        - http://localhost:8080
+      appUrl: http://localhost:5173
+      email: smtp-ethereal        # real SMTP to a disposable mailbox; honest dev delivery
+      sms: console-code           # verification code logged to the server console (non-prod only)
+      payments: stripe-test       # Stripe test keys only; live money never moves
+      push: fcm                   # FIREBASE_* from the deployment env; absent -> fcm_disabled
+      storage: local-disk
+      swagger: true
+      debugDiagnostics: true       # LOG_DEBUG + dev-only routes such as /notifications/dev/push-test
+    web:
+      backendOrigin: http://localhost:3000   # server-only (SSR/proxy); never exposed to the browser
+      network: real
+      googleWebClientId: ''        # public browser OAuth id; blank keeps Google "not configured"
+      appleWebClientId: ''
+    flutter:
+      apiBaseUrl: http://localhost:3000
+      notifications: fcm
+      debugDiagnostics: true
+      googlePayTestEnvironment: true
+
+  test:
+    backend:
+      port: 3001
+      allowedOrigins:
+        - http://localhost:5174
+      appUrl: http://localhost:5174
+      email: mock
+      sms: mock
+      payments: mock
+      push: mock
+      storage: local-disk         # isolated per-suite database via .env.test; storage stays local
+      swagger: true
+      debugDiagnostics: true
+    web:
+      backendOrigin: http://127.0.0.1:3333   # explicit fixture lane only (web/e2e)
+      network: fixture
+      googleWebClientId: ''
+      appleWebClientId: ''
+    flutter:
+      apiBaseUrl: http://localhost:3000
+      notifications: mock
+      debugDiagnostics: true
+      googlePayTestEnvironment: true
+
+  production:
+    backend:
+      port: 3000
+      allowedOrigins: []           # fromEnv: ALLOWED_ORIGINS (https origins)
+      appUrl: ''                   # fromEnv: APP_URL (https, origin must be in ALLOWED_ORIGINS)
+      email: real
+      sms: real                    # production refuses to boot without real SMS credentials
+      payments: stripe-live
+      push: fcm
+      storage: local-disk
+      swagger: false
+      debugDiagnostics: false       # no dev routes, no LOG_DEBUG, no request-body logging
+    web:
+      backendOrigin: ''            # fromEnv: BACKEND_URL (server-only; never a VITE_ value)
+      network: real
+      googleWebClientId: ''        # fromEnv: VITE_GOOGLE_WEB_CLIENT_ID (public id)
+      appleWebClientId: ''         # fromEnv: VITE_APPLE_WEB_CLIENT_ID (public id)
+    flutter:
+      apiBaseUrl: ''               # fromEnv: API_BASE_URL (https; release fails closed on http)
+      notifications: fcm
+      debugDiagnostics: false
+      googlePayTestEnvironment: false

@@ -85,3 +85,6 @@ e2e/artifacts/
 /private-uploads/
 
 web/.e2e-real-artifacts/
+
+# Generated configuration snapshots (scripts/config.cjs; idempotent, no secrets)
+.config-generated/
