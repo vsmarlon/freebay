@@ -82,11 +82,19 @@ jobs:
         with:
           node-version: 24.10.0
           cache: npm
-          cache-dependency-path: nest-backend/package-lock.json
+          cache-dependency-path: |
+            nest-backend/package-lock.json
+            package-lock.json
 
       - name: Install backend dependencies
         working-directory: nest-backend
         run: npm ci --no-audit --no-fund
+
+      # Root scripts are tested in this job (scripts/config.cjs parses YAML), so
+      # the root toolchain deps must exist here too. --ignore-scripts skips the
+      # husky prepare hook, which has no job in CI.
+      - name: Install root tooling dependencies
+        run: npm ci --no-audit --no-fund --ignore-scripts
 
       - name: Audit production dependencies
         run: node scripts/audit-production.cjs nest-backend
