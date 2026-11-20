@@ -1,9 +1,10 @@
 import { Prisma } from '@prisma/client';
+import { USER_SELECT_BASIC } from '@/shared/utils/prisma-selects';
 
 export const reviewWithReviewer = Prisma.validator<Prisma.ReviewDefaultArgs>()({
   include: {
     reviewer: {
-      select: { id: true, displayName: true, avatarUrl: true, isVerified: true },
+      select: USER_SELECT_BASIC,
     },
     images: { orderBy: { order: 'asc' as const } },
   },
@@ -14,10 +15,10 @@ export type ReviewWithReviewer = Prisma.ReviewGetPayload<typeof reviewWithReview
 export const reviewWithDetails = Prisma.validator<Prisma.ReviewDefaultArgs>()({
   include: {
     reviewer: {
-      select: { id: true, displayName: true, avatarUrl: true, isVerified: true },
+      select: USER_SELECT_BASIC,
     },
     reviewed: {
-      select: { id: true, displayName: true, avatarUrl: true, isVerified: true },
+      select: USER_SELECT_BASIC,
     },
     images: { orderBy: { order: 'asc' as const } },
   },

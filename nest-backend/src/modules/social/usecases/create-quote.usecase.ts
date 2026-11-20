@@ -4,7 +4,7 @@ import { AppError, BadRequestError } from '@/shared/core/errors';
 import { Either, left, right } from '@/shared/core/either';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { QuoteDatabaseRepository } from '../data/repositories/quote-database.repository';
-import { PostResponse } from '../types/social.types';
+import { PostResponse, QUOTE_MAX_LENGTH } from '../types/social.types';
 import { CreateQuoteInput } from '../dtos/social.dto';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class CreateQuoteUseCase {
 
   async execute(input: CreateQuoteInput): Promise<Either<AppError, PostResponse>> {
     const content = input.content.trim();
-    if (content.length < 1 || content.length > 1000 || Boolean(input.sourcePostId) === Boolean(input.sourceCommentId)) {
+    if (content.length < 1 || content.length > QUOTE_MAX_LENGTH || Boolean(input.sourcePostId) === Boolean(input.sourceCommentId)) {
       return left(new BadRequestError('A quote deve conter texto e exatamente uma publicação ou resposta de origem'));
     }
     const mentionIds = [...new Set(input.mentionIds ?? [])].filter((id) => id !== input.userId).sort();

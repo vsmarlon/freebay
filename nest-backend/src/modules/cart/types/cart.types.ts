@@ -1,9 +1,10 @@
 import { Prisma, ProductStatus } from '@prisma/client';
+import { USER_SELECT_BASIC } from '@/shared/utils/prisma-selects';
 
 export const CART_ITEM_INCLUDE = {
   product: {
     include: {
-      seller: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
+      seller: { select: USER_SELECT_BASIC },
       media: { orderBy: { order: 'asc' as const }, take: 1 },
     },
   },

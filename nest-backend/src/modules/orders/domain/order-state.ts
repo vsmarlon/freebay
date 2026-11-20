@@ -1,4 +1,5 @@
 import { ACTIVE_DISPUTE_STATUSES, DISPUTE_STATUS, DisputeStatus } from '@/modules/disputes/domain/dispute-state';
+import { DISPUTE_HOUR_IN_MILLISECONDS, DISPUTE_OPENING_WINDOW_HOURS } from '@/modules/disputes/dispute.constants';
 
 // Mirrors the persisted enums: domain files must not import @prisma/client
 // (ADR 0005, B5). Values are identical, so Prisma rows are accepted.
@@ -117,7 +118,7 @@ export function canConfirmDelivery(order: OrderParticipantView, viewerId: string
 function isWithinDisputeOpeningWindow(order: OrderParticipantView, now: Date): boolean {
   if (order.status === ORDER_STATUS.SHIPPED) return true;
   const deliveryTime = order.deliveryConfirmedAt ?? order.createdAt;
-  return (now.getTime() - deliveryTime.getTime()) <= 48 * 60 * 60 * 1000;
+  return (now.getTime() - deliveryTime.getTime()) <= DISPUTE_OPENING_WINDOW_HOURS * DISPUTE_HOUR_IN_MILLISECONDS;
 }
 
 function isDisputableOrder(order: OrderParticipantView): boolean {

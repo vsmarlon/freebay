@@ -1,10 +1,11 @@
 import { Prisma, StoryAudience, StoryMediaType } from "@prisma/client";
 import { StoryTextBlock } from "../dtos/stories.dto";
+import { USER_SELECT_BASIC, USER_SELECT_MINIMAL } from "@/shared/utils/prisma-selects";
 
 export const storyWithViewsValidator =
   Prisma.validator<Prisma.StoryDefaultArgs>()({
     include: {
-      user: { select: { id: true, displayName: true, avatarUrl: true } },
+      user: { select: USER_SELECT_MINIMAL },
       _count: { select: { views: true } },
     },
   });
@@ -15,7 +16,7 @@ export type StoryWithViews = Prisma.StoryGetPayload<
 
 export const highlightPayload = Prisma.validator<Prisma.StoryHighlightDefaultArgs>()({
   include: {
-    user: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
+    user: { select: USER_SELECT_BASIC },
     stories: {
       orderBy: { position: 'asc' },
       include: { story: true },
@@ -29,12 +30,7 @@ export const storyCreatePayloadValidator =
   Prisma.validator<Prisma.StoryDefaultArgs>()({
     include: {
       user: {
-        select: {
-          id: true,
-          displayName: true,
-          avatarUrl: true,
-          isVerified: true,
-        },
+        select: USER_SELECT_BASIC,
       },
     },
   });
