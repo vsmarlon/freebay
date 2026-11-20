@@ -24,5 +24,4 @@ abstract interface class ReviewRepository {
     int limit = defaultReviewPageLimit,
     int offset = 0,
   });
-  Future<Either<Failure, bool>> canReviewOrder(String orderId);
 }

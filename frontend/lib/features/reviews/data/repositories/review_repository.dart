@@ -67,10 +67,4 @@ class ReviewRepositoryImpl implements ReviewRepository {
     decoder: (response) =>
         Right(ReviewListResponse.fromJson(response.data['data'])),
   );
-
-  @override
-  Future<Either<Failure, bool>> canReviewOrder(String orderId) => requestEither(
-    () => client.get('/reviews/orders/$orderId/can-review'),
-    decoder: (response) => Right(response.data['data']['canReview'] == true),
-  );
 }

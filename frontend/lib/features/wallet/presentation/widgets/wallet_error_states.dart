@@ -33,31 +33,3 @@ class WalletErrorState extends StatelessWidget {
     );
   }
 }
-
-class WalletHistoryError extends StatelessWidget {
-  const WalletHistoryError({
-    super.key,
-    required this.message,
-    required this.onRetry,
-  });
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = l10n(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(message, style: TextStyle(color: context.textSecondary)),
-        Spacing.vSm,
-        AppButton(
-          label: strings.commonRetry.toUpperCase(),
-          variant: AppButtonVariant.secondary,
-          onPressed: onRetry,
-        ),
-      ],
-    );
-  }
-}

@@ -10,15 +10,6 @@ import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
-final userReviewsProvider = FutureProvider.family<ReviewListResponse, String>((
-  ref,
-  userId,
-) async {
-  final usecase = ref.watch(getUserReviewsUsecaseProvider);
-  final result = await usecase(GetUserReviewsParams(userId: userId));
-  return result.fold((failure) => throw failure, (response) => response);
-});
-
 class UserReviewsPage extends ConsumerStatefulWidget {
   final String userId;
   final String? userName;

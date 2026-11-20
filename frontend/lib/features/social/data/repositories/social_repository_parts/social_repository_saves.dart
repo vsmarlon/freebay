@@ -51,21 +51,6 @@ mixin SocialRepositorySaves {
     ),
   );
 
-  Future<Either<Failure, List<UserPostEntry>>> getRepostsByUser(
-    String userId, {
-    int limit = 20,
-    String? cursor,
-  }) => requestEither(
-    () => client.get(
-      '/social/posts/user/$userId/reposts',
-      queryParameters: {'limit': limit, 'cursor': ?cursor},
-    ),
-    decoder: (response) {
-      final raw = response.data['data'];
-      return Right(_jsonMaps(raw).map(UserPostEntry.fromJson).toList());
-    },
-  );
-
   Future<Either<Failure, CursorPage<UserPostEntry>>> getProfileTimeline(
     String userId, {
     int limit = 15,
