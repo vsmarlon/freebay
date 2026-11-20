@@ -26,11 +26,16 @@ export class ReviewsService {
     orderId: string,
     body: CreateReviewInput,
   ) {
-    const imageUrls = (body.imageIds ?? [])
-      .map((id) => this.tempImages.get(id))
-      .filter((v): v is string => v !== undefined);
-
-    body.imageIds?.forEach((id) => this.tempImages.delete(id));
+    const imageUrls: string[] = [];
+    for (const id of body.imageIds ?? []) {
+      const entry = this.tempImages.get(id);
+      // ponytail: a pending image resolves only for the user who uploaded it;
+      // anyone else naming the id must neither claim nor destroy it.
+      if (entry?.ownerId === user.userId) {
+        imageUrls.push(entry.url);
+        this.tempImages.delete(id);
+      }
+    }
 
     return this.createReviewUseCase.execute({
       reviewerId: user.userId,
@@ -57,7 +62,9 @@ export class ReviewsService {
     });
   }
 
-  private tempImages = new Map<string, string>();
+  // ponytail: in-memory pending-image map — entries with no TTL leak on abandoned
+  // uploads and are per-process; Redis-backed mapping if multi-instance ever ships.
+  private tempImages = new Map<string, { url: string; ownerId: string }>();
 
   async uploadImage(orderId: string, file: Express.Multer.File | undefined, userId: string): Promise<Either<AppError, { imageId: string; url: string }>> {
     if (!file) {
@@ -86,7 +93,7 @@ export class ReviewsService {
       return left(result.value);
     }
 
-    this.tempImages.set(result.value.imageId, result.value.url);
+    this.tempImages.set(result.value.imageId, { url: result.value.url, ownerId: userId });
 
     return right({ imageId: result.value.imageId, url: result.value.url });
   }
