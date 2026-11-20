@@ -9,6 +9,7 @@ import { Pool } from 'pg';
 import type { Express } from 'express';
 import { AppModule } from '../../src/app.module';
 import { StripeProvider } from '../../src/modules/payments/providers/stripe-provider';
+import { ProcessRefundUseCase } from '../../src/modules/payments/usecases/process-refund.usecase';
 import { PaymentProviderError } from '../../src/shared/core/errors';
 import { left, right } from '../../src/shared/core/either';
 import { AllExceptionsFilter } from '../../src/shared/http/exception-filter';
@@ -79,6 +80,7 @@ describe('Marketplace journey (HTTP + real database)', () => {
   const stripe = {
     refundPayment: jest.fn(),
     cancelPendingPayment: jest.fn(),
+    retrieveRefund: jest.fn(),
     retrieveChargeRefunds: jest.fn().mockResolvedValue(right({
       id: 'ch_test_paid', amount: 5000, amountRefunded: 0, refunds: [],
     })),
@@ -759,10 +761,6 @@ describe('Marketplace journey (HTTP + real database)', () => {
       .mockResolvedValueOnce(right({
         id: 're_test_paid_refund', chargeId: 'ch_test_paid', amount: 5000,
         status: 'pending', orderId: order.id, operationId: null,
-      }))
-      .mockResolvedValueOnce(right({
-        id: 're_test_paid_refund', chargeId: 'ch_test_paid', amount: 5000,
-        status: 'succeeded', orderId: order.id, operationId: null,
       }));
     const refundClientIp = '198.51.100.27';
     const failed = await cancelOrderWithFreshProof(order.id, buyerToken, { reason: 'Changed mind' }, refundClientIp);
@@ -774,12 +772,22 @@ describe('Marketplace journey (HTTP + real database)', () => {
     const pending = await cancelOrderWithFreshProof(order.id, buyerToken, { reason: 'Changed mind' }, refundClientIp);
     expect(pending.status).toBe(200);
     expect(pending.json.data).toBe('REFUND_PENDING');
-    expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('CONFIRMED');
+    // Since 758f440 the pending provider refund is an explicit order state: the
+    // order no longer masquerades as a plain CONFIRMED purchase, and cancel
+    // rejects REFUND_PENDING orders, so finalization moved to the recovery lane.
+    expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('REFUND_PENDING');
     expect((await patch(`/orders/${order.id}/ship`, sellerToken, {})).status).toBe(422);
+    expect(stripe.refundPayment).toHaveBeenCalledTimes(2);
 
-    const succeeded = await cancelOrderWithFreshProof(order.id, buyerToken, { reason: 'Changed mind' }, refundClientIp);
-    expect(succeeded.status).toBe(200);
-    expect(stripe.refundPayment).toHaveBeenCalledTimes(3);
+    // The provider refund settles asynchronously; the cron recovery lane
+    // finalizes it without issuing another provider refund.
+    const reserved = await prisma.transaction.findUniqueOrThrow({ where: { orderId: order.id } });
+    stripe.retrieveRefund.mockResolvedValueOnce(right({
+      id: 're_test_paid_refund', chargeId: 'ch_test_paid', amount: 5000,
+      status: 'succeeded', orderId: order.id, operationId: reserved.refundOperationId,
+    }));
+    const recovery = app.get(ProcessRefundUseCase);
+    expect((await recovery.recoverPendingRefunds()).isRight()).toBe(true);
     expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('CANCELLED');
     expect((await prisma.wallet.findUniqueOrThrow({ where: { userId: seller.id } })).pendingBalance).toBe(0);
     expect((await prisma.wallet.findUniqueOrThrow({ where: { userId: buyer.id } })).availableBalance).toBe(0);
