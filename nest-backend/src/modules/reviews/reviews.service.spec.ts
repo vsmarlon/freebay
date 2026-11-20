@@ -75,6 +75,39 @@ describe('ReviewsService.createReview pending-image ownership', () => {
       imageUrls: undefined,
     }));
   });
+
+  it('does not resolve a pending image on a different order than it was uploaded for', async () => {
+    reviewRepository.uploadImage.mockResolvedValue(
+      right({ imageId: 'image-2', url: '/uploads/review/image-2.png' }),
+    );
+    const uploaded = await sut.uploadImage('order-1', pngFile, 'buyer-1');
+    expect(uploaded.isRight()).toBe(true);
+
+    await sut.createReview(auth('buyer-1'), 'order-2', reviewBody(['image-2']));
+    expect(createReviewUseCase.execute).toHaveBeenCalledWith(expect.objectContaining({
+      orderId: 'order-2',
+      imageUrls: undefined,
+    }));
+
+    await sut.createReview(auth('buyer-1'), 'order-1', reviewBody(['image-2']));
+    expect(createReviewUseCase.execute).toHaveBeenLastCalledWith(expect.objectContaining({
+      orderId: 'order-1',
+      imageUrls: ['/uploads/review/image-2.png'],
+    }));
+  });
+
+  it('resolves duplicate image ids once instead of duplicating image rows', async () => {
+    reviewRepository.uploadImage.mockResolvedValue(
+      right({ imageId: 'image-3', url: '/uploads/review/image-3.png' }),
+    );
+    await sut.uploadImage('order-1', pngFile, 'buyer-1');
+
+    await sut.createReview(auth('buyer-1'), 'order-1', reviewBody(['image-3', 'image-3']));
+
+    expect(createReviewUseCase.execute).toHaveBeenCalledWith(expect.objectContaining({
+      imageUrls: ['/uploads/review/image-3.png'],
+    }));
+  });
 });
 
 describe('ReviewsService uploadImage', () => {
