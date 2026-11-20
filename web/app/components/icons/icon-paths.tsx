@@ -144,12 +144,6 @@ export const appIcons = {
       <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
     </>
   ),
-  camera: (
-    <>
-      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-      <circle cx="12" cy="13" r="4" />
-    </>
-  ),
   mic: (
     <>
       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -202,7 +196,6 @@ export const appIcons = {
       <path d="m12 19-7-7 7-7" />
     </>
   ),
-  stop: <rect x="6" y="6" width="12" height="12" rx="1" />,
   mail: (
     <>
       <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -254,13 +247,6 @@ export const appIcons = {
     </>
   ),
   shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
-  smile: (
-    <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M8.5 14.5a4 4 0 0 0 7 0" />
-      <path d="M9 9.5h.01M15 9.5h.01" />
-    </>
-  ),
   wallet: (
     <>
       <path d="M3 6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />

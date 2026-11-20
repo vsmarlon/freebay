@@ -63,10 +63,3 @@ export function ImageEditor({ file, onSave, onCancel }: ImageEditorProps) {
     </section>
   );
 }
-
-export {
-  boundedImageSize,
-  editedImageFile,
-  rotatedImageSize,
-  supportedEditorFile,
-} from './geometry';
