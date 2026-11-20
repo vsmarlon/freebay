@@ -1,40 +1,11 @@
-import { expect, test, type Page } from '@playwright/test';
-import { installBrowserFixture, productId, type BrowserFixture } from './browser-fixture';
-
-async function finishWelcome(page: Page) {
-  await page.getByRole('button', { name: 'Skip' }).click();
-}
-
-async function waitForHydration(page: Page) {
-  await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(1000);
-}
-
-async function openProtectedRoute(page: Page, state: BrowserFixture, path: string) {
-  state.profile.username = 'buyer_01';
-  const targetPath = new URL(path, 'http://localhost').pathname;
-  await page.addInitScript((userId) => {
-    localStorage.setItem(`freebay.welcome.seen.${encodeURIComponent(userId)}`, 'true');
-  }, state.userId);
-  await page.goto(path);
-  await waitForHydration(page);
-  const skip = page.getByRole('button', { name: 'Skip' });
-  await expect
-    .poll(
-      async () => {
-        if (new URL(page.url()).pathname === targetPath) return 'target';
-        if (await skip.isVisible().catch(() => false)) return 'welcome';
-        return 'pending';
-      },
-      { timeout: 10_000 },
-    )
-    .toMatch(/target|welcome/);
-  if (await skip.isVisible().catch(() => false)) {
-    await finishWelcome(page);
-  }
-  await expect.poll(() => new URL(page.url()).pathname, { timeout: 15_000 }).toBe(targetPath);
-  await expect(page).toHaveURL((url) => url.pathname === targetPath);
-}
+import { expect, test } from '@playwright/test';
+import {
+  finishWelcome,
+  installBrowserFixture,
+  openProtectedRoute,
+  productId,
+  waitForHydration,
+} from './browser-fixture';
 
 test('magic-link GET is inert, explicit confirmation consumes once, and profile completes through cookie-backed session', async ({
   page,
