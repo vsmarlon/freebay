@@ -39,21 +39,6 @@ export {
   TextArea,
 };
 export { orderStatuses } from './types';
-export type {
-  Cart,
-  CartItem,
-  CheckoutGroup,
-  ConnectStatus,
-  CursorPage,
-  Dispute,
-  EscrowStatus,
-  Order,
-  OrderStatus,
-  Review,
-  ReviewEligibility,
-  Wallet,
-  WalletEntry,
-} from './types';
 
 export function useCommerce() {
   const { id = '' } = useParams();

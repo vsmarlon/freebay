@@ -9,7 +9,7 @@ import {
   editedImageFile,
   rotatedImageSize,
   supportedEditorFile,
-} from '../app/components/image-editor';
+} from '../app/components/image-editor/geometry';
 import { translator } from '../app/core/locale';
 
 describe('locale translation fallback', () => {

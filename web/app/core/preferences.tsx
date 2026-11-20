@@ -80,9 +80,6 @@ function update(next: Prefs) {
   notify();
 }
 
-export function PreferencesProvider({ children }: React.PropsWithChildren) {
-  return children;
-}
 export function usePreferences() {
   const prefs = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
   return {

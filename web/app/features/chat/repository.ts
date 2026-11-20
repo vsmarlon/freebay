@@ -23,19 +23,6 @@ export const chatRepository = {
       `/users/${encodeURIComponent(userId)}/following?limit=20&offset=0`,
       { signal },
     ),
-  myProducts: async () => {
-    const result = await api.get<{
-      products: Array<{ id: string; title: string; price: number; images: Array<{ url: string }> }>;
-    }>('/products/mine/all');
-    return {
-      products: result.products.map(({ id, title, price, images }) => ({
-        id,
-        title,
-        price,
-        imageUrl: images[0]?.url ?? null,
-      })),
-    };
-  },
   conversations: (
     input: { q?: string; cursor?: string; archived?: boolean; signal?: AbortSignal } = {},
   ) => {

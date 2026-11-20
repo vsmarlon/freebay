@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Button, Empty, ErrorState, Loading, Status, Surface } from '../../components';
-import { useI18n } from '../../core/locale';
-import { adminApi, disputeStatusLabel, isActiveDispute, money } from './api';
+import { useI18n, type Locale } from '../../core/locale';
+import { formatMoney } from '../../core/money';
+import { adminApi, disputeStatusLabel, isActiveDispute } from './api';
 import type { AdminDispute, DisputeStatus, DisputeWinner } from './types';
 
 const FILTERS: Array<DisputeStatus | 'ALL'> = [
@@ -140,7 +141,7 @@ function DisputeDetail({
   onResolve,
 }: {
   dispute: AdminDispute;
-  locale: string;
+  locale: Locale;
   pt: boolean;
   pending: boolean;
   error: string | null;
@@ -157,7 +158,7 @@ function DisputeDetail({
           <h2 className="m-0">{dispute.order.product.title}</h2>
           <p className="m-0 text-sm text-muted">
             {pt ? 'Pedido' : 'Order'} {dispute.orderId.slice(0, 8)} ·{' '}
-            {money(dispute.order.amount, locale)}
+            {formatMoney(dispute.order.amount, locale)}
           </p>
         </div>
         <Status tone={tone(dispute.status)}>

@@ -13,16 +13,7 @@ export type CartItem = {
   };
 };
 export type Cart = { items: CartItem[]; totalItems: number; totalPrice: number };
-export type OrderStatus =
-  | 'PENDING'
-  | 'CONFIRMED'
-  | 'SHIPPED'
-  | 'DELIVERED'
-  | 'DISPUTED'
-  | 'REFUND_PENDING'
-  | 'COMPLETED'
-  | 'CANCELLED';
-export const orderStatuses: OrderStatus[] = [
+export const orderStatuses = [
   'PENDING',
   'CONFIRMED',
   'SHIPPED',
@@ -31,7 +22,8 @@ export const orderStatuses: OrderStatus[] = [
   'REFUND_PENDING',
   'COMPLETED',
   'CANCELLED',
-];
+] as const;
+export type OrderStatus = (typeof orderStatuses)[number];
 export type EscrowStatus = 'HELD' | 'RELEASED' | 'REFUNDED';
 export type Order = {
   id: string;
@@ -68,15 +60,6 @@ export type CheckoutGroup = {
   totalOrders: number;
   totalAmount: number;
   checkoutUrl: string | null;
-  expiresAt: string | null;
-};
-export type CheckoutRecovery = {
-  status: 'CHECKING' | 'PAID';
-  paymentGroupId: string;
-  orderIds: string[];
-  totalAmount: number;
-  checkoutUrl: string | null;
-  paymentIntentClientSecret: string | null;
   expiresAt: string | null;
 };
 export function canonicalCheckoutGroup(group: CheckoutGroup) {
