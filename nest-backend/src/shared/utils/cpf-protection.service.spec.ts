@@ -37,7 +37,11 @@ describe('CpfProtectionService', () => {
       if (processHmacKey === undefined) delete process.env.CPF_HMAC_KEY;
       else process.env.CPF_HMAC_KEY = processHmacKey;
     }
-    const tampered = `${encrypted.slice(0, -1)}${encrypted.endsWith('A') ? 'B' : 'A'}`;
+    expect(service.decrypt(encrypted)).toBe('52998224725');
+    const ciphertextStart = encrypted.lastIndexOf(':') + 1;
+    const ciphertext = Buffer.from(encrypted.slice(ciphertextStart), 'base64url');
+    ciphertext[0] ^= 1;
+    const tampered = `${encrypted.slice(0, ciphertextStart)}${ciphertext.toString('base64url')}`;
     expect(() => service.decrypt(tampered)).toThrow();
   });
 });
