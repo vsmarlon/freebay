@@ -78,7 +78,7 @@ function OpenDisputeContent() {
               value={reason}
               onChange={(event) => setReason(event.currentTarget.value)}
             />
-            <Button disabled={!reason.trim() || create.isPending || uncertain}>
+            <Button type="submit" disabled={!reason.trim() || create.isPending || uncertain}>
               {t('commerce.dispute.submit')}
             </Button>
           </form>

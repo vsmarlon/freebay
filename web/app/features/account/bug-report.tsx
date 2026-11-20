@@ -60,7 +60,9 @@ export default function BugReportPage() {
           />
           <p className="text-sm text-secondary">{t('diagnosticsPrivacyNote')}</p>
           <p className="text-sm text-secondary">{t('browserDiagnosticsNote')}</p>
-          <Button disabled={pending}>{pending ? t('loading') : t('send')}</Button>
+          <Button type="submit" disabled={pending}>
+            {pending ? t('loading') : t('send')}
+          </Button>
           {sent ? <p role="status">{t('sent')}</p> : null}
           {error ? (
             <p role="alert" className="text-danger">
